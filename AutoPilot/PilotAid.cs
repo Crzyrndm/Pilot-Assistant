@@ -11,12 +11,12 @@ namespace PilotAid
         private PID.PID_Controller RollController = new PID.PID_Controller(0.01, 0.01, 0.01, -1, 1, -0.1, 0.1);
 
         private PID.PID_Controller AltitudeToClimbRate = new PID.PID_Controller(0.1, 0, 0, -30, 30, -1, 1); // P control for converting altitude hold to climb rate
-        private PID.PID_Controller PitchController = new PID.PID_Controller(3, 0.4, 1.5, -10, 10, -2, 2); // Input craft altitude, output target craft pitch
+        private PID.PID_Controller PitchController = new PID.PID_Controller(3, 0.4, 1.5, -10, 10, -10, 10); // Input craft altitude, output target craft pitch
         private PID.PID_Controller ElevatorController = new PID.PID_Controller(0.01, 0.01, 0.01, -1, 1, -0.1, 0.1); // Convert pitch input to control surface deflection
 
         private PID.PID_Controller YawController = new PID.PID_Controller(0.01, 0.01, 0.01, 0, 0, 0, 0);
 
-        private Rect window = new Rect(200, 40, 1500, 500);
+        private Rect window = new Rect(10, 50, 500, 500);
         // RollController
         private bool rollActive = false;
         private bool rollWasActive = false;
@@ -225,7 +225,7 @@ namespace PilotAid
 
             //// Pitch Controls
             GUILayout.Label("", GUILayout.Height(10)); // vertical spacer
-            GUILayout.Label("Altitude Hold");
+            GUILayout.Label("Vertical Control");
             
             GUILayout.BeginHorizontal();
             GUILayout.Label("Target Altitude: ", GUILayout.Width(100));
@@ -297,24 +297,24 @@ namespace PilotAid
                         GUILayout.Space(5);
 
                         GUILayout.Label("Altitude Min Out: ", GUILayout.Width(120));
-                        text = GUILayout.TextField((-AltitudeToClimbRate.OutMin).ToString(), GUILayout.Width(60));
-                        AltitudeToClimbRate.OutMin = -1 * double.Parse(text);
+                        text = GUILayout.TextField(AltitudeToClimbRate.OutMax.ToString(), GUILayout.Width(60));
+                        AltitudeToClimbRate.OutMax = double.Parse(text);
 
                         GUILayout.Space(5);
 
                         GUILayout.Label("Altitude Max Out: ", GUILayout.Width(120));
-                        text = GUILayout.TextField((-AltitudeToClimbRate.OutMax).ToString(), GUILayout.Width(60));
-                        AltitudeToClimbRate.OutMax = -1 * double.Parse(text);
+                        text = GUILayout.TextField(AltitudeToClimbRate.OutMin.ToString(), GUILayout.Width(60));
+                        AltitudeToClimbRate.OutMin = double.Parse(text);
 
                         GUILayout.Space(5);
 
-                        GUILayout.Label("Clamp Min: ", GUILayout.Width(120));
+                        GUILayout.Label("Clamp Lower: ", GUILayout.Width(120));
                         text = GUILayout.TextField(AltitudeToClimbRate.ClampLower.ToString(), GUILayout.Width(60));
                         AltitudeToClimbRate.ClampLower = double.Parse(text);
 
                         GUILayout.Space(5);
 
-                        GUILayout.Label("Clamp Max: ", GUILayout.Width(120));
+                        GUILayout.Label("Clamp Upper: ", GUILayout.Width(120));
                         text = GUILayout.TextField(AltitudeToClimbRate.ClampUpper.ToString(), GUILayout.Width(60));
                         AltitudeToClimbRate.ClampUpper = double.Parse(text);
                     }
@@ -344,24 +344,24 @@ namespace PilotAid
                     GUILayout.Space(5);
 
                     GUILayout.Label("Pitch Min Out: ", GUILayout.Width(120));
-                    text = GUILayout.TextField((-PitchController.OutMin).ToString(), GUILayout.Width(60));
-                    PitchController.OutMin = -1 * double.Parse(text);
+                    text = GUILayout.TextField(PitchController.OutMax.ToString(), GUILayout.Width(60));
+                    PitchController.OutMax = double.Parse(text);
 
                     GUILayout.Space(5);
 
                     GUILayout.Label("Pitch Max Out: ", GUILayout.Width(120));
-                    text = GUILayout.TextField((-PitchController.OutMax).ToString(), GUILayout.Width(60));
-                    PitchController.OutMax = -1 * double.Parse(text);
+                    text = GUILayout.TextField(PitchController.OutMin.ToString(), GUILayout.Width(60));
+                    PitchController.OutMin = double.Parse(text);
 
                     GUILayout.Space(5);
 
-                    GUILayout.Label("Pitch Clamp Min: ", GUILayout.Width(120));
+                    GUILayout.Label("Pitch Clamp Lower: ", GUILayout.Width(120));
                     text = GUILayout.TextField(PitchController.ClampLower.ToString(), GUILayout.Width(60));
                     PitchController.ClampLower = double.Parse(text);
 
                     GUILayout.Space(5);
 
-                    GUILayout.Label("Pitch Clamp Max: ", GUILayout.Width(120));
+                    GUILayout.Label("Pitch Clamp Upper: ", GUILayout.Width(120));
                     text = GUILayout.TextField(PitchController.ClampUpper.ToString(), GUILayout.Width(60));
                     PitchController.ClampUpper = double.Parse(text);
                 }
@@ -401,13 +401,13 @@ namespace PilotAid
 
                     GUILayout.Space(5);
 
-                    GUILayout.Label("Elevator Clamp Min: ", GUILayout.Width(120));
+                    GUILayout.Label("Elevator Clamp Lower: ", GUILayout.Width(120));
                     text = GUILayout.TextField(ElevatorController.ClampLower.ToString(), GUILayout.Width(60));
                     ElevatorController.ClampLower = double.Parse(text);
 
                     GUILayout.Space(5);
 
-                    GUILayout.Label("Elevator Clamp Max ", GUILayout.Width(120));
+                    GUILayout.Label("Elevator Clamp Upper ", GUILayout.Width(120));
                     text = GUILayout.TextField(ElevatorController.ClampUpper.ToString(), GUILayout.Width(60));
                     ElevatorController.ClampUpper = double.Parse(text);
                 }
@@ -435,6 +435,8 @@ namespace PilotAid
                 window.height = 300;
             }
             GUILayout.EndVertical();
+
+
 
             GUI.DragWindow();
         }
