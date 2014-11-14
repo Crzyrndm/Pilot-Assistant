@@ -114,10 +114,7 @@ namespace PilotAid
                 double.TryParse(targetHeading, out newHdg);
                 if (newHdg >= 0 && newHdg <= 360)
                 {
-                    if (newHdg - heading <= 180 || newHdg - heading >= -180)
-                        HeadingController.SetPoint = newHdg;
-                    else
-                        HeadingController.SetPoint = newHdg - 360;
+                    HeadingController.SetPoint = newHdg;
                     rollActive = true;
                 }
             }
@@ -223,7 +220,7 @@ namespace PilotAid
                 }
                 GUILayout.EndHorizontal();
             }
-            rollActive = GUILayout.Toggle(rollActive, "Heading lock is Active?", GUILayout.Width(200));
+            rollActive = GUILayout.Toggle(rollActive, "Heading Lock Active", GUILayout.Width(200));
 
 
             //// Pitch Controls
@@ -271,7 +268,7 @@ namespace PilotAid
             GUILayout.Label("Current Speed: " + thisVessel.verticalSpeed.ToString("N3") + "m/s", GUILayout.Width(250));
             GUILayout.EndHorizontal();
 
-            bAltitudeHold = GUILayout.Toggle(bAltitudeHold, "Altitude Hold", GUILayout.Width(200));
+            bAltitudeHold = GUILayout.Toggle(bAltitudeHold, bAltitudeHold ? "Mode: Altitude" : "Mode: Vertical Speed", GUILayout.Width(200));
 
             if (showPIDGains)
             {
@@ -390,7 +387,6 @@ namespace PilotAid
 
                 if (showPIDLimits)
                 {
-
                     GUILayout.Space(5);
 
                     GUILayout.Label("Elevator Min Out: ", GUILayout.Width(120));
@@ -463,11 +459,15 @@ namespace PilotAid
                 clearRollTrim = false;
             }
             
-            // Wing leveller
+            // Heading Control
             if (rollActive)
             {
-                RollController.SetPoint = HeadingController.Response(heading);
-
+                if (HeadingController.SetPoint - heading >= -180 && HeadingController.SetPoint - heading <= 180)
+                    RollController.SetPoint = HeadingController.Response(heading);
+                else if (HeadingController.SetPoint - heading < -180)
+                    RollController.SetPoint = HeadingController.Response(heading - 360);
+                else if (HeadingController.SetPoint - heading > 180)
+                    RollController.SetPoint = HeadingController.Response(heading + 360);
                 state.roll = (float)Clamp(RollController.Response(roll) + state.roll, -1, 1);
             }
 
