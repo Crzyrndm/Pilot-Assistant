@@ -63,7 +63,7 @@ namespace PilotAid.PID
             }
 
             sum += error * dt * k_integral;
-            Clamp(sum, integralClampLower, integralClampUpper); // AIW
+            sum = Clamp(sum, integralClampLower, integralClampUpper); // AIW
 
             return sum;
         }
