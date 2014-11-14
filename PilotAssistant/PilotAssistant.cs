@@ -1,10 +1,10 @@
 ﻿using System;
 using UnityEngine;
 
-namespace PilotAid
+namespace PilotAssistant
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
-    class PilotAid : MonoBehaviour
+    class PilotAssistant : MonoBehaviour
     {        
         private Vessel thisVessel = null;
         private PID.PID_Controller HeadingController = new PID.PID_Controller(1, 0.1, 0, -30, 30, -0.1, 0.1);

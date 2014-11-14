@@ -7,8 +7,8 @@
     <ProjectGuid>{D283D199-0B7A-4DCD-A991-C82091190104}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PilotAid</RootNamespace>
-    <AssemblyName>AutoPilot</AssemblyName>
+    <RootNamespace>PilotAssistant</RootNamespace>
+    <AssemblyName>PilotAssistant</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\..\..\Desktop\Kerbal Space Program Dev\GameData\PilotAssistant\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -25,7 +25,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\..\..\Desktop\Kerbal Space Program Dev\GameData\FlightAids\</OutputPath>
+    <OutputPath>..\..\..\..\Desktop\Kerbal Space Program Dev\GameData\PilotAssistant\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -48,7 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="PID_Controller.cs" />
-    <Compile Include="PilotAid.cs" />
+    <Compile Include="PilotAssistant.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

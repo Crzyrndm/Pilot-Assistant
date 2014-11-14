@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace PilotAid.PID
+namespace PilotAssistant.PID
 {
     public class PID_Controller : MonoBehaviour
     {
