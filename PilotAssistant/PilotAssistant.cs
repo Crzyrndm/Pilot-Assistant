@@ -537,7 +537,7 @@ namespace PilotAssistant
             btnLauncher = ApplicationLauncher.Instance.AddModApplication(OnToggleTrue, OnToggleFalse,
                                                                         null, null, null, null,
                                                                         ApplicationLauncher.AppScenes.ALWAYS,
-                                                                        GameDatabase.Instance.GetTexture("FlightAids/Icons/AppLauncherIcon", false));
+                                                                        GameDatabase.Instance.GetTexture("PilotAssistant/Icons/AppLauncherIcon", false));
         }
 
         private void OnGameSceneChange(GameScenes scene)
