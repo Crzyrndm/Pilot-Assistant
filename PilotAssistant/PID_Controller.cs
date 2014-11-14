@@ -26,7 +26,7 @@ namespace PilotAssistant.PID
         private double integralClampUpper; // AIW clamp
         private double integralClampLower; // AIW clamp
 
-        private double dt = 1; // standardised response for any physics dt setting. Check if this can be changed after module initialisation (ie. in flight)
+        private double dt = 1; // standardised response for any physics dt
 
         public PID_Controller(double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper)
         {
@@ -74,7 +74,7 @@ namespace PilotAssistant.PID
                 return 0;
 
             double difference = (input - previous) / dt;
-            rolling_diff = rolling_diff * rollingFactor + difference * (1 - rollingFactor); // rolling average might help smooth out jumpy derivative response
+            rolling_diff = rolling_diff * rollingFactor + difference * (1 - rollingFactor); // rolling average sometimes helps smooth out a jumpy derivative response
             
             previous = input;
             return rolling_diff * k_derivative;

@@ -25,7 +25,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\..\..\Desktop\Kerbal Space Program Dev\GameData\PilotAssistant\</OutputPath>
+    <OutputPath>..\GameData\PilotAssistant\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -52,6 +52,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>set SOURCE="C:\Users\Joshua\Documents\GitHub\PilotAssistant\GameData\PilotAssistant"
+set DESTINATION="C:\Users\Joshua\Desktop\Kerbal Space Program Dev\GameData\PilotAssistant"
+xcopy %25SOURCE%25 %25DESTINATION%25 /E /C /R /I /K /Y</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

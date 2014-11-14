@@ -7,14 +7,14 @@ namespace PilotAssistant
     class PilotAssistant : MonoBehaviour
     {        
         private Vessel thisVessel = null;
-        private PID.PID_Controller HeadingController = new PID.PID_Controller(1, 0.1, 0, -30, 30, -0.1, 0.1);
+        private PID.PID_Controller HeadingController = new PID.PID_Controller(3, 0.1, 0, -30, 30, -0.1, 0.1);
         private PID.PID_Controller RollController = new PID.PID_Controller(0.01, 0.01, 0.01, -1, 1, -0.1, 0.1);
 
         private PID.PID_Controller AltitudeToClimbRate = new PID.PID_Controller(0.1, 0, 0, -30, 30, -1, 1); // P control for converting altitude hold to climb rate
         private PID.PID_Controller PitchController = new PID.PID_Controller(3, 0.4, 1.5, -10, 10, -10, 10); // Input craft altitude, output target craft pitch
         private PID.PID_Controller ElevatorController = new PID.PID_Controller(0.01, 0.01, 0.01, -1, 1, -0.1, 0.1); // Convert pitch input to control surface deflection
 
-        private PID.PID_Controller YawController = new PID.PID_Controller(0.01, 0.01, 0.01, 0, 0, 0, 0);
+        private PID.PID_Controller YawController = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 1, -0.1, 0.1);
 
         private Rect window = new Rect(10, 50, 500, 500);
         // RollController
@@ -30,10 +30,6 @@ namespace PilotAssistant
         private string targetAltitude = "0";
         private string targetSpeed = "0";
         private string targetHeading = "0";
-
-
-        private bool clearRollTrim = false;
-        private bool clearPitchTrim = false;
 
         private bool showPIDGains = false;
         private bool showPIDLimits = false;
@@ -62,23 +58,21 @@ namespace PilotAssistant
                 rollWasActive = false;
                 HeadingController.Clear();
                 RollController.Clear();
-                clearRollTrim = true;
             }
 
             if (pitchActive && !pitchWasActive)
             {
+                pitchWasActive = true;
                 if (bAltitudeHold)
                     targetAltitude = thisVessel.altitude.ToString("N1");
                 AltitudeToClimbRate.SetPoint = thisVessel.altitude;
-                pitchWasActive = true;
             }
             if (!pitchActive && pitchWasActive)
             {
+                pitchWasActive = false;
                 AltitudeToClimbRate.Clear();
                 PitchController.Clear();
                 ElevatorController.Clear();
-                pitchWasActive = false;
-                clearPitchTrim = true;
             }
         }
 
@@ -98,11 +92,10 @@ namespace PilotAssistant
         {
             string text;
             GUILayout.BeginVertical();
-            
 
+            #region Roll GUI
             // Roll Control
             GUILayout.Label("Heading Hold");
-
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("Target Heading: ", GUILayout.Width(100));
@@ -123,6 +116,7 @@ namespace PilotAssistant
             GUILayout.Label("Current Heading: " + heading.ToString("N2") + "\u00B0", GUILayout.Width(250));
             GUILayout.EndHorizontal();
 
+            #region Heading Controller
             if (showPIDGains)
             {
                 GUILayout.BeginHorizontal();
@@ -171,8 +165,11 @@ namespace PilotAssistant
                 }
                 GUILayout.EndHorizontal();
             }
+            #endregion
 
             GUILayout.Label("Target Angle: " + RollController.SetPoint.ToString("N3") + "\u00B0", GUILayout.Width(250));
+
+            #region Roll Controller
             if (showPIDGains)
             {
                 GUILayout.BeginHorizontal();
@@ -220,9 +217,11 @@ namespace PilotAssistant
                 }
                 GUILayout.EndHorizontal();
             }
+            #endregion
             rollActive = GUILayout.Toggle(rollActive, "Heading Lock Active", GUILayout.Width(200));
+            #endregion
 
-
+            #region Pitch GUI
             //// Pitch Controls
             GUILayout.Label("", GUILayout.Height(10)); // vertical spacer
             GUILayout.Label("Vertical Control");
@@ -255,7 +254,6 @@ namespace PilotAssistant
             {
                 double newSpeed;
                 double.TryParse(targetSpeed, out newSpeed);
-                print(newSpeed);
                 if (newSpeed != 0)
                 {
                     PitchController.SetPoint = newSpeed;
@@ -272,6 +270,7 @@ namespace PilotAssistant
 
             if (showPIDGains)
             {
+                #region Altitude Controller
                 if (bAltitudeHold)
                 {
                     GUILayout.BeginHorizontal();
@@ -297,14 +296,14 @@ namespace PilotAssistant
                         GUILayout.Space(5);
 
                         GUILayout.Label("Altitude Min Out: ", GUILayout.Width(120));
-                        text = GUILayout.TextField(AltitudeToClimbRate.OutMax.ToString(), GUILayout.Width(60));
-                        AltitudeToClimbRate.OutMax = double.Parse(text);
+                        text = GUILayout.TextField((-AltitudeToClimbRate.OutMax).ToString(), GUILayout.Width(60));
+                        AltitudeToClimbRate.OutMax = -1 * double.Parse(text);
 
                         GUILayout.Space(5);
 
                         GUILayout.Label("Altitude Max Out: ", GUILayout.Width(120));
-                        text = GUILayout.TextField(AltitudeToClimbRate.OutMin.ToString(), GUILayout.Width(60));
-                        AltitudeToClimbRate.OutMin = double.Parse(text);
+                        text = GUILayout.TextField((-AltitudeToClimbRate.OutMin).ToString(), GUILayout.Width(60));
+                        AltitudeToClimbRate.OutMin = -1 * double.Parse(text);
 
                         GUILayout.Space(5);
 
@@ -321,21 +320,24 @@ namespace PilotAssistant
 
                     GUILayout.EndHorizontal();
                 }
+                #endregion
+
+                #region AoA Controller
                 GUILayout.BeginHorizontal();
 
-                GUILayout.Label("Pitch Kp: ", GUILayout.Width(80));
+                GUILayout.Label("AoA Kp: ", GUILayout.Width(80));
                 text = GUILayout.TextField(PitchController.PGain.ToString(), GUILayout.Width(60));
                 PitchController.PGain = double.Parse(text);
 
                 GUILayout.Space(20);
 
-                GUILayout.Label("Pitch Ki: ", GUILayout.Width(80));
+                GUILayout.Label("AoA Ki: ", GUILayout.Width(80));
                 text = GUILayout.TextField(PitchController.IGain.ToString(), GUILayout.Width(60));
                 PitchController.IGain = double.Parse(text);
 
                 GUILayout.Space(20);
 
-                GUILayout.Label("Pitch Kd: ", GUILayout.Width(80));
+                GUILayout.Label("AoA Kd: ", GUILayout.Width(80));
                 text = GUILayout.TextField(PitchController.DGain.ToString(), GUILayout.Width(60));
                 PitchController.DGain = double.Parse(text);
 
@@ -343,45 +345,47 @@ namespace PilotAssistant
                 {
                     GUILayout.Space(5);
 
-                    GUILayout.Label("Pitch Min Out: ", GUILayout.Width(120));
-                    text = GUILayout.TextField(PitchController.OutMax.ToString(), GUILayout.Width(60));
-                    PitchController.OutMax = double.Parse(text);
+                    GUILayout.Label("AoA Min Out: ", GUILayout.Width(120));
+                    text = GUILayout.TextField((-PitchController.OutMax).ToString(), GUILayout.Width(60));
+                    PitchController.OutMax = -1 * double.Parse(text);
 
                     GUILayout.Space(5);
 
-                    GUILayout.Label("Pitch Max Out: ", GUILayout.Width(120));
-                    text = GUILayout.TextField(PitchController.OutMin.ToString(), GUILayout.Width(60));
-                    PitchController.OutMin = double.Parse(text);
+                    GUILayout.Label("AoA Max Out: ", GUILayout.Width(120));
+                    text = GUILayout.TextField((-PitchController.OutMin).ToString(), GUILayout.Width(60));
+                    PitchController.OutMin = -1 * double.Parse(text);
 
                     GUILayout.Space(5);
 
-                    GUILayout.Label("Pitch Clamp Lower: ", GUILayout.Width(120));
+                    GUILayout.Label("AoA Clamp Lower: ", GUILayout.Width(120));
                     text = GUILayout.TextField(PitchController.ClampLower.ToString(), GUILayout.Width(60));
                     PitchController.ClampLower = double.Parse(text);
 
                     GUILayout.Space(5);
 
-                    GUILayout.Label("Pitch Clamp Upper: ", GUILayout.Width(120));
+                    GUILayout.Label("AoA Clamp Upper: ", GUILayout.Width(120));
                     text = GUILayout.TextField(PitchController.ClampUpper.ToString(), GUILayout.Width(60));
                     PitchController.ClampUpper = double.Parse(text);
                 }
                 GUILayout.EndHorizontal();
+                #endregion
 
+                #region Elevator Controller
                 GUILayout.BeginHorizontal();
 
-                GUILayout.Label("Elevator Kp: ", GUILayout.Width(80));
+                GUILayout.Label("Elev Kp: ", GUILayout.Width(80));
                 text = GUILayout.TextField(ElevatorController.PGain.ToString(), GUILayout.Width(60));
                 ElevatorController.PGain = double.Parse(text);
 
                 GUILayout.Space(20);
 
-                GUILayout.Label("Elevator Ki: ", GUILayout.Width(80));
+                GUILayout.Label("Elev Ki: ", GUILayout.Width(80));
                 text = GUILayout.TextField(ElevatorController.IGain.ToString(), GUILayout.Width(60));
                 ElevatorController.IGain = double.Parse(text);
 
                 GUILayout.Space(20);
 
-                GUILayout.Label("Elevator Kd: ", GUILayout.Width(80));
+                GUILayout.Label("Elev Kd: ", GUILayout.Width(80));
                 text = GUILayout.TextField(ElevatorController.DGain.ToString(), GUILayout.Width(60));
                 ElevatorController.DGain = double.Parse(text);
 
@@ -389,37 +393,96 @@ namespace PilotAssistant
                 {
                     GUILayout.Space(5);
 
-                    GUILayout.Label("Elevator Min Out: ", GUILayout.Width(120));
+                    GUILayout.Label("Elev Min Out: ", GUILayout.Width(120));
                     text = GUILayout.TextField(ElevatorController.OutMin.ToString(), GUILayout.Width(60));
                     ElevatorController.OutMin = double.Parse(text);
 
                     GUILayout.Space(5);
 
-                    GUILayout.Label("Elevator Max Out: ", GUILayout.Width(120));
+                    GUILayout.Label("Elev Max Out: ", GUILayout.Width(120));
                     text = GUILayout.TextField(ElevatorController.OutMax.ToString(), GUILayout.Width(60));
                     ElevatorController.OutMax = double.Parse(text);
 
                     GUILayout.Space(5);
 
-                    GUILayout.Label("Elevator Clamp Lower: ", GUILayout.Width(120));
+                    GUILayout.Label("Elev Clamp Lower: ", GUILayout.Width(120));
                     text = GUILayout.TextField(ElevatorController.ClampLower.ToString(), GUILayout.Width(60));
                     ElevatorController.ClampLower = double.Parse(text);
 
                     GUILayout.Space(5);
 
-                    GUILayout.Label("Elevator Clamp Upper ", GUILayout.Width(120));
+                    GUILayout.Label("Elev Clamp Upper ", GUILayout.Width(120));
                     text = GUILayout.TextField(ElevatorController.ClampUpper.ToString(), GUILayout.Width(60));
                     ElevatorController.ClampUpper = double.Parse(text);
                 }
                 GUILayout.EndHorizontal();
+                #endregion
             }
+
             pitchActive = GUILayout.Toggle(pitchActive, "Pitch Control Active", GUILayout.Width(200));
+            #endregion
+
+            #region Yaw damper
+            GUILayout.Label("", GUILayout.Height(20)); // spacer
+            GUILayout.Label("Yaw Damper", GUILayout.Width(150));
+
+            if (showPIDGains)
+            {
+                GUILayout.BeginHorizontal();
+
+                GUILayout.Label("Yaw Kp: ", GUILayout.Width(80));
+                text = GUILayout.TextField(YawController.PGain.ToString(), GUILayout.Width(60));
+                YawController.PGain = double.Parse(text);
+
+                GUILayout.Space(20);
+
+                GUILayout.Label("Yaw Ki: ", GUILayout.Width(80));
+                text = GUILayout.TextField(YawController.IGain.ToString(), GUILayout.Width(60));
+                YawController.IGain = double.Parse(text);
+
+                GUILayout.Space(20);
+
+                GUILayout.Label("Yaw Kd: ", GUILayout.Width(80));
+                text = GUILayout.TextField(YawController.DGain.ToString(), GUILayout.Width(60));
+                YawController.DGain = double.Parse(text);
+
+                if (showPIDLimits)
+                {
+                    GUILayout.Space(5);
+
+                    GUILayout.Label("Yaw Min Out: ", GUILayout.Width(120));
+                    text = GUILayout.TextField(YawController.OutMin.ToString(), GUILayout.Width(60));
+                    YawController.OutMin = double.Parse(text);
+
+                    GUILayout.Space(5);
+
+                    GUILayout.Label("Yaw Max Out: ", GUILayout.Width(120));
+                    text = GUILayout.TextField(YawController.OutMax.ToString(), GUILayout.Width(60));
+                    YawController.OutMax = double.Parse(text);
+
+                    GUILayout.Space(5);
+
+                    GUILayout.Label("Yaw Clamp Lower: ", GUILayout.Width(120));
+                    text = GUILayout.TextField(YawController.ClampLower.ToString(), GUILayout.Width(60));
+                    YawController.ClampLower = double.Parse(text);
+
+                    GUILayout.Space(5);
+
+                    GUILayout.Label("Yaw Clamp Upper ", GUILayout.Width(120));
+                    text = GUILayout.TextField(YawController.ClampUpper.ToString(), GUILayout.Width(60));
+                    YawController.ClampUpper = double.Parse(text);
+                }
+                GUILayout.EndHorizontal();
+            }
+            bool yawActive = GUILayout.Toggle(pitchActive || rollActive, "Yaw Damper Active", GUILayout.Width(200));
+            #endregion
+
             GUILayout.Label("");
             showPIDGains = GUILayout.Toggle(showPIDGains, "Show PID Gains", GUILayout.Width(200));
             if (showPIDGains)
             {
                 showPIDLimits = GUILayout.Toggle(showPIDLimits, "Show PID Limits", GUILayout.Width(200));
-                window.height = 450;
+                window.height = 550;
                 if (showPIDLimits)
                 {
                     window.width = 1300;
@@ -432,7 +495,7 @@ namespace PilotAssistant
             else
             {
                 window.width = 600;
-                window.height = 300;
+                window.height = 375;
             }
             GUILayout.EndVertical();
 
@@ -449,27 +512,18 @@ namespace PilotAssistant
                 return;
 
             updateAttitude();
-
-            if (clearPitchTrim)
-            {
-                state.pitchTrim = 0;
-                clearPitchTrim = false;
-            }
-            if (clearRollTrim)
-            {
-                state.rollTrim = 0;
-                clearRollTrim = false;
-            }
             
             // Heading Control
             if (rollActive)
             {
+                // Fix heading so it behaves properly traversing 0/360 degrees
                 if (HeadingController.SetPoint - heading >= -180 && HeadingController.SetPoint - heading <= 180)
                     RollController.SetPoint = HeadingController.Response(heading);
                 else if (HeadingController.SetPoint - heading < -180)
                     RollController.SetPoint = HeadingController.Response(heading - 360);
                 else if (HeadingController.SetPoint - heading > 180)
                     RollController.SetPoint = HeadingController.Response(heading + 360);
+
                 state.roll = (float)Clamp(RollController.Response(roll) + state.roll, -1, 1);
             }
 
@@ -482,7 +536,13 @@ namespace PilotAssistant
                     PitchController.SetPoint = -AltitudeToClimbRate.Response(thisVessel.altitude);
 
                 ElevatorController.SetPoint = -PitchController.Response(thisVessel.verticalSpeed);
-                state.pitch = (float)Clamp(-ElevatorController.Response(pitch) + state.pitch, -1, 1);
+                state.pitch = (float)Clamp(-ElevatorController.Response(AoA) + state.pitch, -1, 1);
+            }
+
+            if (rollActive || pitchActive)
+            {
+                print("Yaw: " + yaw.ToString());
+                state.yaw = (float)Clamp(YawController.Response(yaw) + state.yaw, -1, 1);
             }
         }
 
@@ -500,14 +560,14 @@ namespace PilotAssistant
             roll = (vesselRot.eulerAngles.z > 180) ? (vesselRot.eulerAngles.z - 360) : vesselRot.eulerAngles.z;
             heading = vesselRot.eulerAngles.y;
 
-            // AoA
+            // pitch AoA
             Vector3 tmpVec = thisVessel.ReferenceTransform.up * Vector3.Dot(thisVessel.ReferenceTransform.up, thisVessel.srf_velocity.normalized) + thisVessel.ReferenceTransform.forward * Vector3.Dot(thisVessel.ReferenceTransform.forward, thisVessel.srf_velocity.normalized);   //velocity vector projected onto a plane that divides the airplane into left and right halves
             AoA = Vector3.Dot(tmpVec.normalized, thisVessel.ReferenceTransform.forward);
             AoA = 180 / Math.PI * Math.Asin(AoA);
             if (double.IsNaN(AoA))
                 AoA = 0;
 
-            // yaw? horizontal AoA?
+            // yaw AoA
             tmpVec = thisVessel.ReferenceTransform.up * Vector3.Dot(thisVessel.ReferenceTransform.up, thisVessel.srf_velocity.normalized) + thisVessel.ReferenceTransform.right * Vector3.Dot(thisVessel.ReferenceTransform.right, thisVessel.srf_velocity.normalized);     //velocity vector projected onto the vehicle-horizontal plane
             yaw = Vector3.Dot(tmpVec.normalized, thisVessel.ReferenceTransform.right);
             yaw = 180 / Math.PI * Math.Asin(yaw);
