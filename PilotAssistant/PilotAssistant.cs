@@ -66,41 +66,50 @@ namespace PilotAssistant
 
         public void Update()
         {
-            if (rollActive && !rollWasActive)
+            // hdg control toggled
+            if (rollActive != rollWasActive)
             {
-                rollWasActive = true;
-                HeadingController.SetPoint = heading;
-                targetHeading = heading.ToString("N2");
-            }
-            else if (!rollActive && rollWasActive)
-            {
-                rollWasActive = false;
-                HeadingController.Clear();
-                AileronController.Clear();
-            }
-
-            if (pitchActive && !pitchWasActive)
-            {
-                pitchWasActive = true;
-                if (bAltitudeHold)
+                rollWasActive = rollActive;
+                if (rollActive)
                 {
-                    targetVert = thisVessel.altitude.ToString("N1");
-                    AltitudeToClimbRate.SetPoint = thisVessel.altitude;
+                    HeadingController.SetPoint = heading;
+                    targetHeading = heading.ToString("N2");
                 }
                 else
                 {
-                    targetVert = thisVessel.verticalSpeed.ToString("N3");
-                    AoAController.SetPoint = thisVessel.verticalSpeed;
+                    HeadingController.Clear();
+                    AileronController.Clear();
+                    RudderController.Clear();
+                    HeadingYawController.Clear();
                 }
             }
-            else if (!pitchActive && pitchWasActive)
+
+            // vertical control toggled
+            if (pitchActive != pitchWasActive)
             {
-                pitchWasActive = false;
-                AltitudeToClimbRate.Clear();
-                AoAController.Clear();
-                ElevatorController.Clear();
+                pitchWasActive = pitchActive;
+                if (pitchActive)
+                {
+                    if (bAltitudeHold)
+                    {
+                        AltitudeToClimbRate.SetPoint = thisVessel.altitude;
+                        targetVert = AltitudeToClimbRate.SetPoint.ToString("N1");
+                    }
+                    else
+                    {
+                        AoAController.SetPoint = thisVessel.verticalSpeed;
+                        targetVert = AoAController.SetPoint.ToString("N3");
+                    }
+                }
+                else
+                {
+                    AltitudeToClimbRate.Clear();
+                    AoAController.Clear();
+                    ElevatorController.Clear();
+                }
             }
 
+            // Altitude/speed control toggled
             if (bAltitudeHold != bWasAltitudeHold)
             {
                 bWasAltitudeHold = bAltitudeHold;
@@ -116,6 +125,7 @@ namespace PilotAssistant
                 }
             }
 
+            // Window resizing
             if (showPIDGains)
                 window.height = 700;
             else
@@ -171,7 +181,7 @@ namespace PilotAssistant
                 if (newHdg >= 0 && newHdg <= 360)
                 {
                     HeadingController.SetPoint = newHdg;
-                    rollActive = true;
+                    rollActive = rollWasActive = true;
                 }
             }
 
@@ -207,7 +217,7 @@ namespace PilotAssistant
 
             if (GUILayout.Button(bAltitudeHold ? "Update Target Altitude" : "Update Target Speed", GUILayout.Width(200)))
             {
-                pitchActive = true;
+                pitchActive = pitchWasActive = true;
 
                 double newVal;
                 double.TryParse(targetVert, out newVal);
