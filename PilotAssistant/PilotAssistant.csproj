@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="PID_Controller.cs" />
     <Compile Include="PilotAssistant.cs" />
+    <Compile Include="Preset.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

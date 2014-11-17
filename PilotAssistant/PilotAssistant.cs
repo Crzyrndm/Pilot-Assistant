@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
+using KSP.IO;
 
 namespace PilotAssistant
 {
@@ -7,7 +9,7 @@ namespace PilotAssistant
     class PilotAssistant : MonoBehaviour
     {        
         private Vessel thisVessel = null;
-        private PID.PID_Controller HeadingController = new PID.PID_Controller(3, 0.1, 0, -30, 30, -0.1, 0.1);
+        private PID.PID_Controller HeadingBankController = new PID.PID_Controller(3, 0.1, 0, -30, 30, -0.1, 0.1);
         private PID.PID_Controller HeadingYawController = new PID.PID_Controller(0, 0, 0, -2, 2, -2, 2);
         private PID.PID_Controller AileronController = new PID.PID_Controller(0.01, 0.01, 0.01, -1, 1, -0.1, 0.1);
         private PID.PID_Controller RudderController = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 1, -0.1, 0.1);
@@ -16,7 +18,11 @@ namespace PilotAssistant
         private PID.PID_Controller AoAController = new PID.PID_Controller(3, 0.4, 1.5, -10, 10, -10, 10); // Input craft altitude, output target craft AoA
         private PID.PID_Controller ElevatorController = new PID.PID_Controller(0.01, 0.01, 0.01, -1, 1, -0.1, 0.1); // Convert pitch input to control surface deflection
 
-        private Rect window = new Rect(10, 50, 500, 380);
+        // Presets window
+        private bool showPresets = false;
+        private Rect presetWindow = new Rect(0, 0, 200, 350);
+
+        private Rect window = new Rect(10, 50, 10, 10);
         // RollController
         private bool rollActive = false;
         private bool rollWasActive = false;
@@ -39,6 +45,15 @@ namespace PilotAssistant
         private Vector2 scrollbarHdg = Vector2.zero;
         private Vector2 scrollbarVert = Vector2.zero;
 
+        GUIStyle labelStyle;
+        GUIStyle textStyle;
+        GUIStyle btnStyle1;
+        GUIStyle btnStyle2;
+
+        // Presets
+        private Preset defaultTuning;
+        private List<Preset> PresetList = new List<Preset>();
+
         public void Start()
         {
             thisVessel = FlightGlobals.ActiveVessel;
@@ -47,12 +62,117 @@ namespace PilotAssistant
 
             AileronController.InMax = 180;
             AileronController.InMin = -180;
-
             AltitudeToClimbRate.InMin = 0;
+
+            // Set up a default preset that can be easily returned to
+            List<PID.PID_Controller> controllers = new List<PID.PID_Controller>();
+            controllers.Add(HeadingBankController);
+            controllers.Add(HeadingYawController);
+            controllers.Add(AileronController);
+            controllers.Add(RudderController);
+            controllers.Add(AltitudeToClimbRate);
+            controllers.Add(AoAController);
+            controllers.Add(ElevatorController);
+
+            defaultTuning = new Preset(controllers, "default");
+            
+            // Load all other presets available
+            loadPresetsFromFile();
+            print("loaded");
         }
 
-        public void vesselSwitch(Vessel v)
+        private void loadPresetsFromFile()
         {
+            PresetList.Clear();
+            print(0);
+            foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("PIDPreset"))
+            {
+                List<double[]> gains = new List<double[]>();
+                gains.Add(controllerGains(node.GetNode("HdgBankController")));
+                gains.Add(controllerGains(node.GetNode("HdgYawController")));
+                gains.Add(controllerGains(node.GetNode("AileronController")));
+                gains.Add(controllerGains(node.GetNode("RudderController")));
+                gains.Add(controllerGains(node.GetNode("AltitudeController")));
+                gains.Add(controllerGains(node.GetNode("AoAController")));
+                gains.Add(controllerGains(node.GetNode("ElevatorController")));
+                PresetList.Add(new Preset(gains, node.GetValue("name")));
+            }
+        }
+
+        private double[] controllerGains(ConfigNode node)
+        {
+            double[] gains = new double[7];
+            double val;
+            double.TryParse(node.GetValue("PGain"), out val);
+            gains[0] = val;
+            double.TryParse(node.GetValue("IGain"), out val);
+            gains[1] = val;
+            double.TryParse(node.GetValue("DGain"), out val);
+            gains[2] = val;
+            double.TryParse(node.GetValue("MinOut"), out val);
+            gains[3] = val;
+            double.TryParse(node.GetValue("MaxOut"), out val);
+            gains[4] = val;
+            double.TryParse(node.GetValue("ClampLower"), out val);
+            gains[5] = val;
+            double.TryParse(node.GetValue("ClampUpper"), out val);
+            gains[6] = val;
+
+            return gains;
+        }
+
+        private void saveCFG()
+        {
+            ConfigNode node = new ConfigNode();
+            foreach (Preset p in PresetList)
+            {
+                node.AddNode(PresetNode(p.ToString()));
+            }
+            node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/PilotAssistant/Presets.cfg");
+        }
+
+        private ConfigNode PresetNode(string name)
+        {
+            ConfigNode node = new ConfigNode("PIDPreset");
+            node.AddValue("name", name);
+            node.AddNode(PIDnode("HdgBankController", 0));
+            node.AddNode(PIDnode("HdgYawController", 1));
+            node.AddNode(PIDnode("AileronController", 2));
+            node.AddNode(PIDnode("RudderController", 3));
+            node.AddNode(PIDnode("AltitudeController", 4));
+            node.AddNode(PIDnode("AoAController", 5));
+            node.AddNode(PIDnode("ElevatorController", 6));
+
+            return node;
+        }
+
+        private ConfigNode PIDnode(string name, int index)
+        {
+            ConfigNode node = new ConfigNode(name);
+            node.AddValue("PGain", defaultTuning.PIDGains[index][0]);
+            node.AddValue("IGain", defaultTuning.PIDGains[index][1]);
+            node.AddValue("DGain", defaultTuning.PIDGains[index][2]);
+            node.AddValue("MinOut", defaultTuning.PIDGains[index][3]);
+            node.AddValue("MaxOut", defaultTuning.PIDGains[index][4]);
+            node.AddValue("ClampLower", defaultTuning.PIDGains[index][5]);
+            node.AddValue("ClampUpper", defaultTuning.PIDGains[index][6]);
+            return node;
+        }
+
+        private void loadPreset(Preset p)
+        {
+            HeadingBankController = new PID.PID_Controller(p.PIDGains[0][0], p.PIDGains[0][1], p.PIDGains[0][2], p.PIDGains[0][3], p.PIDGains[0][4], p.PIDGains[0][5], p.PIDGains[0][6]);
+            HeadingYawController = new PID.PID_Controller(p.PIDGains[1][0], p.PIDGains[1][1], p.PIDGains[1][2], p.PIDGains[1][3], p.PIDGains[1][4], p.PIDGains[1][5], p.PIDGains[1][6]);
+            AileronController = new PID.PID_Controller(p.PIDGains[2][0], p.PIDGains[2][1], p.PIDGains[2][2], p.PIDGains[2][3], p.PIDGains[2][4], p.PIDGains[2][5], p.PIDGains[2][6]);
+            RudderController = new PID.PID_Controller(p.PIDGains[3][0], p.PIDGains[3][1], p.PIDGains[3][2], p.PIDGains[3][3], p.PIDGains[3][4], p.PIDGains[3][5], p.PIDGains[3][6]);
+            AltitudeToClimbRate = new PID.PID_Controller(p.PIDGains[4][0], p.PIDGains[4][1], p.PIDGains[4][2], p.PIDGains[4][3], p.PIDGains[4][4], p.PIDGains[4][5], p.PIDGains[4][6]);
+            AoAController = new PID.PID_Controller(p.PIDGains[5][0], p.PIDGains[5][1], p.PIDGains[5][2], p.PIDGains[5][3], p.PIDGains[5][4], p.PIDGains[5][5], p.PIDGains[5][6]);
+            ElevatorController = new PID.PID_Controller(p.PIDGains[6][0], p.PIDGains[6][1], p.PIDGains[6][2], p.PIDGains[6][3], p.PIDGains[6][4], p.PIDGains[6][5], p.PIDGains[6][6]);
+        }
+
+        private void vesselSwitch(Vessel v)
+        {
+            ball = null;
             thisVessel.OnFlyByWire -= new FlightInputCallback(vesselController);
             thisVessel = v;
             thisVessel.OnFlyByWire += new FlightInputCallback(vesselController);
@@ -72,12 +192,12 @@ namespace PilotAssistant
                 rollWasActive = rollActive;
                 if (rollActive)
                 {
-                    HeadingController.SetPoint = heading;
+                    HeadingBankController.SetPoint = heading;
                     targetHeading = heading.ToString("N2");
                 }
                 else
                 {
-                    HeadingController.Clear();
+                    HeadingBankController.Clear();
                     AileronController.Clear();
                     RudderController.Clear();
                     HeadingYawController.Clear();
@@ -132,7 +252,7 @@ namespace PilotAssistant
                 window.height = 390;
 
             if (showPIDLimits && showPIDGains)
-                window.width = 390;
+                window.width = 420;
             else
                 window.width = 245;
         }
@@ -145,22 +265,48 @@ namespace PilotAssistant
         {
             if (!bDisplay)
                 return;
+            
+            labelStyle = new GUIStyle(GUI.skin.label);
+            labelStyle.alignment = TextAnchor.MiddleLeft;
+            labelStyle.margin = new RectOffset(4, 4, 5, 3);
+
+            textStyle = new GUIStyle(GUI.skin.textField);
+            textStyle.alignment = TextAnchor.MiddleLeft;
+            textStyle.margin = new RectOffset(4, 0, 5, 3);
+
+            btnStyle1 = new GUIStyle(GUI.skin.button);
+            btnStyle1.margin = new RectOffset(0, 4, 2, 0);
+
+            btnStyle2 = new GUIStyle(GUI.skin.button);
+            btnStyle2.margin = new RectOffset(0, 4, 0, 2);
 
             window = GUI.Window(34244, window, displayWindow, "");
+
+            presetWindow.x = window.x + window.width;
+            presetWindow.y = window.y;
+            if (showPresets)
+                presetWindow = GUI.Window(34245, presetWindow, displayPresetWindow, "");
         }
 
         private void displayWindow(int id)
         {
+            if (GUILayout.Button("Show Presets"))
+            {
+                showPresets = !showPresets;
+            }
+
+            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(window.width - 50));
+
             showPIDGains = GUILayout.Toggle(showPIDGains, "Show PID Gains", GUILayout.Width(200));
             if (showPIDGains)
             {
                 showPIDLimits = GUILayout.Toggle(showPIDLimits, "Show PID Limits", GUILayout.Width(200));
                 showControlSurfaces = GUILayout.Toggle(showControlSurfaces, "Show Control Surfaces", GUILayout.Width(200));
             }
+
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(window.width - 50));
 
             GUILayout.BeginVertical();
-
             #region Hdg GUI
             GUILayout.Label("Heading Control", GUILayout.Width(100));
 
@@ -180,14 +326,14 @@ namespace PilotAssistant
                 double.TryParse(targetHeading, out newHdg);
                 if (newHdg >= 0 && newHdg <= 360)
                 {
-                    HeadingController.SetPoint = newHdg;
-                    rollActive = rollWasActive = true;
+                    HeadingBankController.SetPoint = newHdg;
+                    rollActive = rollWasActive = true; // skip toggle check to avoid being overwritten
                 }
             }
 
             scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, showPIDGains ? GUILayout.Height(160) : GUILayout.Height(0));
 
-            drawPIDvalues(HeadingController, "Hdg Roll", "\u00B0", heading, 2, "Bank", "\u00B0");
+            drawPIDvalues(HeadingBankController, "Hdg Roll", "\u00B0", heading, 2, "Bank", "\u00B0");
             if (showControlSurfaces)
                 drawPIDvalues(AileronController, "Bank", "\u00B0", roll, 3, "Deflection", "\u00B0");
             drawPIDvalues(HeadingYawController, "Hdg Yaw", "\u00B0", heading, 2, "Yaw", "\u00B0", false, false);
@@ -217,7 +363,7 @@ namespace PilotAssistant
 
             if (GUILayout.Button(bAltitudeHold ? "Update Target Altitude" : "Update Target Speed", GUILayout.Width(200)))
             {
-                pitchActive = pitchWasActive = true;
+                pitchActive = pitchWasActive = true; // skip the toggle check so value isn't overwritten
 
                 double newVal;
                 double.TryParse(targetVert, out newVal);
@@ -260,10 +406,10 @@ namespace PilotAssistant
 
                 GUILayout.BeginHorizontal();
                 GUILayout.BeginVertical();
-                
-                controller.PGain = labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.PGain.ToString(), 80);
-                controller.IGain = labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.IGain.ToString(), 80);
-                controller.DGain = labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.DGain.ToString(), 80);
+
+                controller.PGain = labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.PGain.ToString("G3"), 80);
+                controller.IGain = labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.IGain.ToString("G3"), 80);
+                controller.DGain = labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.DGain.ToString("G3"), 80);
 
                 if (showPIDLimits)
                 {
@@ -272,17 +418,17 @@ namespace PilotAssistant
 
                     if (!invertOutput)
                     {
-                        controller.OutMin = labPlusNumBox(string.Format("Min {0}{1}: ", outputName, outputUnits), controller.OutMin.ToString());
-                        controller.OutMax = labPlusNumBox(string.Format("Max {0}{1}: ", outputName, outputUnits), controller.OutMax.ToString());
-                        controller.ClampLower = labPlusNumBox("I Clamp Lower", controller.ClampLower.ToString());
-                        controller.ClampUpper = labPlusNumBox("I Clamp Upper", controller.ClampUpper.ToString());
+                        controller.OutMin = labPlusNumBox(string.Format("Min {0}{1}: ", outputName, outputUnits), controller.OutMin.ToString("G3"));
+                        controller.OutMax = labPlusNumBox(string.Format("Max {0}{1}: ", outputName, outputUnits), controller.OutMax.ToString("G3"));
+                        controller.ClampLower = labPlusNumBox("I Clamp Lower", controller.ClampLower.ToString("G3"));
+                        controller.ClampUpper = labPlusNumBox("I Clamp Upper", controller.ClampUpper.ToString("G3"));
                     }
                     else
                     { // used when response * -1 is used to get the correct output
-                        controller.OutMax = -1 * labPlusNumBox(string.Format("Min {0}{1}: ", outputName, outputUnits), (-controller.OutMax).ToString());
-                        controller.OutMin = -1 * labPlusNumBox(string.Format("Max {0}{1}: ", outputName, outputUnits), (-controller.OutMin).ToString());
-                        controller.ClampUpper = -1 * labPlusNumBox("I Clamp Lower", (-controller.ClampUpper).ToString());
-                        controller.ClampLower = -1 * labPlusNumBox("I Clamp Upper", (-controller.ClampLower).ToString());
+                        controller.OutMax = -1 * labPlusNumBox(string.Format("Min {0}{1}: ", outputName, outputUnits), (-controller.OutMax).ToString("G3"));
+                        controller.OutMin = -1 * labPlusNumBox(string.Format("Max {0}{1}: ", outputName, outputUnits), (-controller.OutMin).ToString("G3"));
+                        controller.ClampUpper = -1 * labPlusNumBox("I Clamp Lower", (-controller.ClampUpper).ToString("G3"));
+                        controller.ClampLower = -1 * labPlusNumBox("I Clamp Upper", (-controller.ClampLower).ToString("G3"));
                     }
                 }
                 GUILayout.EndVertical();
@@ -290,19 +436,55 @@ namespace PilotAssistant
             }
         }
 
-        private double labPlusNumBox(string labelText, string boxText, float labelWidth = 120, float boxWidth = 60)
+        private double labPlusNumBox(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
         {
+            double val;
             GUILayout.BeginHorizontal();
-            GUILayout.Label(labelText, GUILayout.Width(labelWidth));
-            string text = GUILayout.TextField(boxText, GUILayout.Width(boxWidth));
-            GUILayout.EndHorizontal();
+
+            GUILayout.Label(labelText, labelStyle, GUILayout.Width(labelWidth));
+            string text = GUILayout.TextField(boxText, textStyle, GUILayout.Width(boxWidth));
+            //
             try
             {
-                return double.Parse(text);
+                val = double.Parse(text);
             }
             catch
             {
-                return double.Parse(boxText);
+                val = double.Parse(boxText);
+            }
+            //
+            GUILayout.BeginVertical();
+            if (GUILayout.Button("+", btnStyle1, GUILayout.Width(20),GUILayout.Height(13)))
+            {
+                if (val != 0)
+                    val *= 1.1;
+                else
+                    val = 0.01;
+            }
+            if (GUILayout.Button("-", btnStyle2, GUILayout.Width(20), GUILayout.Height(13)))
+            {
+                val /= 1.1;
+            }
+            GUILayout.EndVertical();
+            //
+            GUILayout.EndHorizontal();
+            return val;
+        }
+
+        private void displayPresetWindow(int id)
+        {
+            if(GUILayout.Button("Default Tuning"))
+            {
+                print("Loading default tunig parameters");
+                loadPreset(defaultTuning);
+            }
+            foreach(Preset p in PresetList)
+            {
+                if(GUILayout.Button(p.name))
+                {
+                    print("Loading alternate preset");
+                    loadPreset(p);
+                }
             }
         }
 
@@ -319,19 +501,19 @@ namespace PilotAssistant
             if (rollActive)
             {
                 // Fix heading so it behaves properly traversing 0/360 degrees
-                if (HeadingController.SetPoint - heading >= -180 && HeadingController.SetPoint - heading <= 180)
+                if (HeadingBankController.SetPoint - heading >= -180 && HeadingBankController.SetPoint - heading <= 180)
                 {
-                    AileronController.SetPoint = HeadingController.Response(heading);
+                    AileronController.SetPoint = HeadingBankController.Response(heading);
                     RudderController.SetPoint = HeadingYawController.Response(heading);
                 }
-                else if (HeadingController.SetPoint - heading < -180)
+                else if (HeadingBankController.SetPoint - heading < -180)
                 {
-                    AileronController.SetPoint = HeadingController.Response(heading - 360);
+                    AileronController.SetPoint = HeadingBankController.Response(heading - 360);
                     RudderController.SetPoint = HeadingYawController.Response(heading - 360);
                 }
-                else if (HeadingController.SetPoint - heading > 180)
+                else if (HeadingBankController.SetPoint - heading > 180)
                 {
-                    AileronController.SetPoint = HeadingController.Response(heading + 360);
+                    AileronController.SetPoint = HeadingBankController.Response(heading + 360);
                     RudderController.SetPoint = HeadingYawController.Response(heading + 360);
                 }
 
