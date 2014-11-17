@@ -126,36 +126,36 @@ namespace PilotAssistant
             ConfigNode node = new ConfigNode();
             foreach (Preset p in PresetList)
             {
-                node.AddNode(PresetNode(p.ToString()));
+                node.AddNode(PresetNode(p));
             }
             node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/PilotAssistant/Presets.cfg");
         }
 
-        private ConfigNode PresetNode(string name)
+        private ConfigNode PresetNode(Preset preset)
         {
             ConfigNode node = new ConfigNode("PIDPreset");
-            node.AddValue("name", name);
-            node.AddNode(PIDnode("HdgBankController", 0));
-            node.AddNode(PIDnode("HdgYawController", 1));
-            node.AddNode(PIDnode("AileronController", 2));
-            node.AddNode(PIDnode("RudderController", 3));
-            node.AddNode(PIDnode("AltitudeController", 4));
-            node.AddNode(PIDnode("AoAController", 5));
-            node.AddNode(PIDnode("ElevatorController", 6));
+            node.AddValue("name", preset.name);
+            node.AddNode(PIDnode("HdgBankController", 0, preset));
+            node.AddNode(PIDnode("HdgYawController", 1, preset));
+            node.AddNode(PIDnode("AileronController", 2, preset));
+            node.AddNode(PIDnode("RudderController", 3, preset));
+            node.AddNode(PIDnode("AltitudeController", 4, preset));
+            node.AddNode(PIDnode("AoAController", 5, preset));
+            node.AddNode(PIDnode("ElevatorController", 6, preset));
 
             return node;
         }
 
-        private ConfigNode PIDnode(string name, int index)
+        private ConfigNode PIDnode(string name, int index, Preset preset)
         {
             ConfigNode node = new ConfigNode(name);
-            node.AddValue("PGain", defaultTuning.PIDGains[index][0]);
-            node.AddValue("IGain", defaultTuning.PIDGains[index][1]);
-            node.AddValue("DGain", defaultTuning.PIDGains[index][2]);
-            node.AddValue("MinOut", defaultTuning.PIDGains[index][3]);
-            node.AddValue("MaxOut", defaultTuning.PIDGains[index][4]);
-            node.AddValue("ClampLower", defaultTuning.PIDGains[index][5]);
-            node.AddValue("ClampUpper", defaultTuning.PIDGains[index][6]);
+            node.AddValue("PGain", preset.PIDGains[index][0]);
+            node.AddValue("IGain", preset.PIDGains[index][1]);
+            node.AddValue("DGain", preset.PIDGains[index][2]);
+            node.AddValue("MinOut", preset.PIDGains[index][3]);
+            node.AddValue("MaxOut", preset.PIDGains[index][4]);
+            node.AddValue("ClampLower", preset.PIDGains[index][5]);
+            node.AddValue("ClampUpper", preset.PIDGains[index][6]);
             return node;
         }
 
@@ -182,6 +182,7 @@ namespace PilotAssistant
         {
             appDestroy();
             GameEvents.onVesselChange.Remove(vesselSwitch);
+            saveCFG();
         }
 
         public void Update()
@@ -471,8 +472,30 @@ namespace PilotAssistant
             return val;
         }
 
+        private string newPresetName = "";
         private void displayPresetWindow(int id)
         {
+            GUILayout.BeginHorizontal();
+            newPresetName = GUILayout.TextField(newPresetName);
+            if (GUILayout.Button("+", GUILayout.Width(15)))
+            {
+                if (newPresetName != "")
+                {
+                    List<PID.PID_Controller> controllers = new List<PID.PID_Controller>();
+                    controllers.Add(HeadingBankController);
+                    controllers.Add(HeadingYawController);
+                    controllers.Add(AileronController);
+                    controllers.Add(RudderController);
+                    controllers.Add(AltitudeToClimbRate);
+                    controllers.Add(AoAController);
+                    controllers.Add(ElevatorController);
+
+                    PresetList.Add(new Preset(controllers, newPresetName));
+                    newPresetName = "";
+                }
+            }
+            GUILayout.EndHorizontal();
+
             if(GUILayout.Button("Default Tuning"))
             {
                 print("Loading default tunig parameters");
