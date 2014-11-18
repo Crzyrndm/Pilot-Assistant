@@ -20,7 +20,7 @@ namespace PilotAssistant
 
         // Presets window
         private bool showPresets = false;
-        private Rect presetWindow = new Rect(0, 0, 200, 350);
+        private Rect presetWindow = new Rect(0, 0, 200, 10);
 
         private Rect window = new Rect(10, 50, 10, 10);
         // RollController
@@ -53,6 +53,7 @@ namespace PilotAssistant
         // Presets
         private Preset defaultTuning;
         private List<Preset> PresetList = new List<Preset>();
+        private Preset activePreset;
 
         public void Start()
         {
@@ -78,15 +79,16 @@ namespace PilotAssistant
             
             // Load all other presets available
             loadPresetsFromFile();
-            print("loaded");
         }
 
         private void loadPresetsFromFile()
         {
             PresetList.Clear();
-            print(0);
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("PIDPreset"))
             {
+                if (node == null || node.GetValue("name") == "delete")
+                    continue;
+
                 List<double[]> gains = new List<double[]>();
                 gains.Add(controllerGains(node.GetNode("HdgBankController")));
                 gains.Add(controllerGains(node.GetNode("HdgYawController")));
@@ -161,13 +163,25 @@ namespace PilotAssistant
 
         private void loadPreset(Preset p)
         {
-            HeadingBankController = new PID.PID_Controller(p.PIDGains[0][0], p.PIDGains[0][1], p.PIDGains[0][2], p.PIDGains[0][3], p.PIDGains[0][4], p.PIDGains[0][5], p.PIDGains[0][6]);
-            HeadingYawController = new PID.PID_Controller(p.PIDGains[1][0], p.PIDGains[1][1], p.PIDGains[1][2], p.PIDGains[1][3], p.PIDGains[1][4], p.PIDGains[1][5], p.PIDGains[1][6]);
-            AileronController = new PID.PID_Controller(p.PIDGains[2][0], p.PIDGains[2][1], p.PIDGains[2][2], p.PIDGains[2][3], p.PIDGains[2][4], p.PIDGains[2][5], p.PIDGains[2][6]);
-            RudderController = new PID.PID_Controller(p.PIDGains[3][0], p.PIDGains[3][1], p.PIDGains[3][2], p.PIDGains[3][3], p.PIDGains[3][4], p.PIDGains[3][5], p.PIDGains[3][6]);
-            AltitudeToClimbRate = new PID.PID_Controller(p.PIDGains[4][0], p.PIDGains[4][1], p.PIDGains[4][2], p.PIDGains[4][3], p.PIDGains[4][4], p.PIDGains[4][5], p.PIDGains[4][6]);
-            AoAController = new PID.PID_Controller(p.PIDGains[5][0], p.PIDGains[5][1], p.PIDGains[5][2], p.PIDGains[5][3], p.PIDGains[5][4], p.PIDGains[5][5], p.PIDGains[5][6]);
-            ElevatorController = new PID.PID_Controller(p.PIDGains[6][0], p.PIDGains[6][1], p.PIDGains[6][2], p.PIDGains[6][3], p.PIDGains[6][4], p.PIDGains[6][5], p.PIDGains[6][6]);
+            List<PID.PID_Controller> c = new List<PID.PID_Controller>();
+            c.Add(HeadingBankController);
+            c.Add(HeadingYawController);
+            c.Add(AileronController);
+            c.Add(RudderController);
+            c.Add(AltitudeToClimbRate);
+            c.Add(AoAController);
+            c.Add(ElevatorController);
+
+            for (int i = 0; i < 7; i++)
+            {
+                c[i].PGain = p.PIDGains[i][0];
+                c[i].IGain = p.PIDGains[i][1];
+                c[i].DGain = p.PIDGains[i][2];
+                c[i].OutMin = p.PIDGains[i][3];
+                c[i].OutMax = p.PIDGains[i][4];
+                c[i].ClampLower = p.PIDGains[i][5];
+                c[i].ClampUpper = p.PIDGains[i][6];
+            }
         }
 
         private void vesselSwitch(Vessel v)
@@ -248,9 +262,9 @@ namespace PilotAssistant
 
             // Window resizing
             if (showPIDGains)
-                window.height = 700;
+                window.height = 750;
             else
-                window.height = 390;
+                window.height = 430;
 
             if (showPIDLimits && showPIDGains)
                 window.width = 420;
@@ -286,12 +300,14 @@ namespace PilotAssistant
             presetWindow.x = window.x + window.width;
             presetWindow.y = window.y;
             if (showPresets)
-                presetWindow = GUI.Window(34245, presetWindow, displayPresetWindow, "");
+            {
+                presetWindow = GUILayout.Window(34245, presetWindow, displayPresetWindow, "", GUILayout.Width(200), GUILayout.MaxHeight(500));
+            }
         }
 
         private void displayWindow(int id)
         {
-            if (GUILayout.Button("Show Presets"))
+            if (GUILayout.Button(showPresets ? "Hide Presets" : "Show Presets"))
             {
                 showPresets = !showPresets;
             }
@@ -475,10 +491,37 @@ namespace PilotAssistant
         private string newPresetName = "";
         private void displayPresetWindow(int id)
         {
+            if (activePreset != null)
+            {
+                GUILayout.Label(string.Format("Active Preset: {0}", activePreset.name));
+                if (activePreset.name != "default")
+                {
+                    if (GUILayout.Button("Update Preset"))
+                    {
+                        List<PID.PID_Controller> c = new List<PID.PID_Controller>();
+                        c.Add(HeadingBankController);
+                        c.Add(HeadingYawController);
+                        c.Add(AileronController);
+                        c.Add(RudderController);
+                        c.Add(AltitudeToClimbRate);
+                        c.Add(AoAController);
+                        c.Add(RudderController);
+                        activePreset.Update(c);
+                    }
+                }
+                GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
+            }
+
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
-            if (GUILayout.Button("+", GUILayout.Width(15)))
+            if (GUILayout.Button("+", GUILayout.Width(25)))
             {
+                foreach (Preset p in PresetList)
+                {
+                    if (newPresetName == p.name)
+                        return;
+                }
+
                 if (newPresetName != "")
                 {
                     List<PID.PID_Controller> controllers = new List<PID.PID_Controller>();
@@ -492,22 +535,38 @@ namespace PilotAssistant
 
                     PresetList.Add(new Preset(controllers, newPresetName));
                     newPresetName = "";
+
+                    activePreset = PresetList[PresetList.Count - 1];
                 }
             }
             GUILayout.EndHorizontal();
 
-            if(GUILayout.Button("Default Tuning"))
+            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
+
+            if(GUILayout.Button("Reset to Default Tuning"))
             {
-                print("Loading default tunig parameters");
                 loadPreset(defaultTuning);
+                activePreset = defaultTuning;
             }
+
+            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
+
             foreach(Preset p in PresetList)
             {
+                GUILayout.BeginHorizontal();
                 if(GUILayout.Button(p.name))
                 {
-                    print("Loading alternate preset");
                     loadPreset(p);
+                    activePreset = p;
                 }
+                if(GUILayout.Button("x", GUILayout.Width(25)))
+                {
+                    if (activePreset == p)
+                        activePreset = null;
+                    PresetList.Remove(p);
+                    saveCFG();
+                }
+                GUILayout.EndHorizontal();
             }
         }
 
@@ -607,7 +666,7 @@ namespace PilotAssistant
             btnLauncher = ApplicationLauncher.Instance.AddModApplication(OnToggleTrue, OnToggleFalse,
                                                                         null, null, null, null,
                                                                         ApplicationLauncher.AppScenes.ALWAYS,
-                                                                        GameDatabase.Instance.GetTexture("PilotAssistant/Icons/AppLauncherIcon", false));
+                                                                        GameDatabase.Instance.GetTexture("Pilot Assistant/Icons/AppLauncherIcon", false));
         }
 
         private void OnGameSceneChange(GameScenes scene)

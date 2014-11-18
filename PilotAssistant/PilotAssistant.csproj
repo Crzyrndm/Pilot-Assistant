@@ -55,7 +55,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>set SOURCE="C:\Users\Joshua\Documents\GitHub\PilotAssistant\GameData\PilotAssistant"
-set DESTINATION="C:\Users\Joshua\Desktop\Kerbal Space Program Dev\GameData\PilotAssistant"
+set DESTINATION="C:\Users\Joshua\Desktop\Kerbal Space Program Dev\GameData\Pilot Assistant"
 xcopy %25SOURCE%25 %25DESTINATION%25 /E /C /R /I /K /Y</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

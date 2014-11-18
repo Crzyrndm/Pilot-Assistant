@@ -6,7 +6,7 @@ using System.Text;
 namespace PilotAssistant
 {
     /// <summary>
-    /// Holds all the PID tuning values for the 7 (or more if required) controllers involved
+    /// Holds all the PID tuning values for the 7 (or more if required) controllers involved.
     /// </summary>
     class Preset
     {
@@ -36,6 +36,25 @@ namespace PilotAssistant
         {
             name = Name;
             PIDGains = gains;        
+        }
+
+        public void Update(List<PID.PID_Controller> controllers)
+        {
+            List<double[]> newPIDGains = new List<double[]>();
+            for (int i = 0; i < numControllers; i++) // currently 7 PID controlers to save
+            {
+                double[] gains = new double[7];
+                gains[0] = controllers[i].PGain;
+                gains[1] = controllers[i].IGain;
+                gains[2] = controllers[i].DGain;
+                gains[3] = controllers[i].OutMin;
+                gains[4] = controllers[i].OutMax;
+                gains[5] = controllers[i].ClampLower;
+                gains[6] = controllers[i].ClampUpper;
+
+                newPIDGains.Add(gains);
+            }
+            PIDGains = newPIDGains;
         }
     }
 }
