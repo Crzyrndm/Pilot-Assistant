@@ -126,11 +126,16 @@ namespace PilotAssistant
         private void saveCFG()
         {
             ConfigNode node = new ConfigNode();
-            foreach (Preset p in PresetList)
+            if (PresetList.Count == 0)
+                node.AddValue("dummy", "do not delete me");
+            else
             {
-                node.AddNode(PresetNode(p));
+                foreach (Preset p in PresetList)
+                {
+                    node.AddNode(PresetNode(p));
+                }
             }
-            node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/PilotAssistant/Presets.cfg");
+            node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/Pilot Assistant/Presets.cfg");
         }
 
         private ConfigNode PresetNode(Preset preset)
