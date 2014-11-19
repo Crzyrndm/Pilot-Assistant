@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace PilotAssistant
+namespace PilotAssistant.Presets
 {
     /// <summary>
     /// Holds all the PID tuning values for the 7 (or more if required) controllers involved.

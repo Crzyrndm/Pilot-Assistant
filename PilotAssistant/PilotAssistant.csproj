@@ -47,10 +47,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PID_Controller.cs" />
+    <Compile Include="AppLauncher\AppLauncherInstance.cs" />
+    <Compile Include="PID\PID_Controller.cs" />
     <Compile Include="PilotAssistant.cs" />
-    <Compile Include="Preset.cs" />
+    <Compile Include="Presets\Preset.cs" />
+    <Compile Include="Presets\PresetManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UI\MainWindow.cs" />
+    <Compile Include="UI\SettingsWindow.cs" />
+    <Compile Include="Utility\FlightData.cs" />
+    <Compile Include="Utility\Functions.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
