@@ -91,6 +91,8 @@ namespace PilotAssistant
 
             if (bAltitudeHold != bWasAltitudeHold)
                 altToggle();
+
+            keyPressChanges();
         }
 
         public void FixedUpdate()
@@ -135,11 +137,9 @@ namespace PilotAssistant
                 }
 
                 state.roll = (float)Functions.Clamp(controllers[(int)PIDList.Aileron].Response(FlightData.roll) + state.roll, -1, 1);
-                state.yaw = (float)Functions.Clamp(controllers[(int)PIDList.Rudder].Response(FlightData.yaw) + state.yaw, -1, 1);
+                state.yaw = (float)controllers[(int)PIDList.Rudder].Response(FlightData.yaw);
             }
 
-            // Pitch Controller
-            // Work on vertical speed, altitude hold uses a proportional error as input
             if (bVertActive)
             {
                 // Set requested vertical speed
@@ -147,7 +147,7 @@ namespace PilotAssistant
                     controllers[(int)PIDList.AoA].SetPoint = -controllers[(int)PIDList.Altitude].Response(FlightData.thisVessel.altitude);
 
                 controllers[(int)PIDList.Elevator].SetPoint = -controllers[(int)PIDList.AoA].Response(FlightData.thisVessel.verticalSpeed);
-                state.pitch = (float)Functions.Clamp(-controllers[(int)PIDList.Elevator].Response(FlightData.AoA) + state.pitch, -1, 1);
+                state.pitch = (float)-controllers[(int)PIDList.Elevator].Response(FlightData.AoA);
             }
         }
 
@@ -204,6 +204,63 @@ namespace PilotAssistant
             {
                 controllers[(int)PIDList.AoA].SetPoint = FlightData.thisVessel.verticalSpeed;
                 MainWindow.targetVert = controllers[(int)PIDList.AoA].SetPoint.ToString("N3");
+            }
+        }
+
+        private void keyPressChanges()
+        {
+            if (GameSettings.YAW_LEFT.GetKey() && bHdgActive)
+            {
+                double hdg = double.Parse(MainWindow.targetHeading);
+                hdg -= GameSettings.MODIFIER_KEY.GetKey() ? 0.04 : 0.4;
+                if (hdg < 0)
+                    hdg += 360;
+                controllers[(int)PIDList.HdgBank].SetPoint = hdg;
+                controllers[(int)PIDList.HdgYaw].SetPoint = hdg;
+                MainWindow.targetHeading = hdg.ToString();
+            }
+            else if (GameSettings.YAW_RIGHT.GetKey() && bHdgActive)
+            {
+                double hdg = double.Parse(MainWindow.targetHeading);
+                hdg += GameSettings.MODIFIER_KEY.GetKey() ? 0.04 : 0.4;
+                if (hdg > 360)
+                    hdg -= 360;
+                controllers[(int)PIDList.HdgBank].SetPoint = hdg;
+                controllers[(int)PIDList.HdgYaw].SetPoint = hdg;
+                MainWindow.targetHeading = hdg.ToString();
+            }
+
+            if (GameSettings.PITCH_DOWN.GetKey() && bVertActive)
+            {
+                double vert = double.Parse(MainWindow.targetVert);
+                if (bAltitudeHold)
+                {
+                    vert -= GameSettings.MODIFIER_KEY.GetKey() ? 0.4 : 4;
+                    if (vert < 0)
+                        vert = 0;
+                    controllers[(int)PIDList.Altitude].SetPoint = vert;
+                }
+                else
+                {
+                    vert -= GameSettings.MODIFIER_KEY.GetKey() ? 0.04 : 0.4;
+                    controllers[(int)PIDList.AoA].SetPoint = vert;
+                }
+                MainWindow.targetVert = vert.ToString();
+            }
+            if (GameSettings.PITCH_UP.GetKey() && bVertActive)
+            {
+                double vert = double.Parse(MainWindow.targetVert);
+                if (bAltitudeHold)
+                {
+                    vert += GameSettings.MODIFIER_KEY.GetKey() ? 0.4 : 4;
+                    controllers[(int)PIDList.Altitude].SetPoint = vert;
+                }
+                else
+                {
+                    vert += GameSettings.MODIFIER_KEY.GetKey() ? 0.04 : 0.4;
+                    controllers[(int)PIDList.AoA].SetPoint = vert;
+                }
+                MainWindow.targetVert = vert.ToString();
             }
         }
     }
