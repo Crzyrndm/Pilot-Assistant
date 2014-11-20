@@ -60,7 +60,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>set SOURCE="C:\Users\Joshua\Documents\GitHub\PilotAssistant\GameData\PilotAssistant"
+    <PostBuildEvent>set SOURCE="C:\Users\Joshua\Documents\GitHub\PilotAssistant\GameData\Pilot Assistant"
 set DESTINATION="C:\Users\Joshua\Desktop\Kerbal Space Program Dev\GameData\Pilot Assistant"
 xcopy %25SOURCE%25 %25DESTINATION%25 /E /C /R /I /K /Y</PostBuildEvent>
   </PropertyGroup>
