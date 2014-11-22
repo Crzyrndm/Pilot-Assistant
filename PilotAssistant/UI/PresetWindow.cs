@@ -5,7 +5,7 @@ using PilotAssistant.Presets;
 
 namespace PilotAssistant.UI
 {
-    static class SettingsWindow
+    static class PresetWindow
     {
         internal static string newPresetName = "";
         internal static bool showPresets = false;
@@ -26,6 +26,7 @@ namespace PilotAssistant.UI
                     if (GUILayout.Button("Update Preset"))
                     {
                         PresetManager.activePreset.Update(PilotAssistant.controllers);
+                        PresetManager.saveCFG();
                     }
                 }
                 GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
@@ -35,18 +36,18 @@ namespace PilotAssistant.UI
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
             {
-                foreach (Preset p in PresetManager.PresetList)
-                {
-                    if (newPresetName == p.name)
-                        return;
-                }
-
                 if (newPresetName != "")
                 {
+                    foreach (Preset p in PresetManager.PresetList)
+                    {
+                        if (newPresetName == p.name)
+                            return;
+                    }
+
                     PresetManager.PresetList.Add(new Preset(PilotAssistant.controllers, newPresetName));
                     newPresetName = "";
-
                     PresetManager.activePreset = PresetManager.PresetList[PresetManager.PresetList.Count - 1];
+                    PresetManager.saveCFG();
                 }
             }
             GUILayout.EndHorizontal();

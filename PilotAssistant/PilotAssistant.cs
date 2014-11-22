@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using KSP.IO;
 
-using PilotAssistant.Presets;
-using PilotAssistant.Utility;
-using PilotAssistant.PID;
-using PilotAssistant.UI;
+
 
 namespace PilotAssistant
 {
+    using Presets;
+    using Utility;
+    using PID;
+    using UI;
+
     internal enum PIDList
     {
         HdgBank,
@@ -239,11 +241,12 @@ namespace PilotAssistant
                 MainWindow.targetVert = "0";
             }
 
+            double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1;
             bool bFineControl = FlightInputHandler.fetch.precisionMode;
             if (GameSettings.YAW_LEFT.GetKey() && bHdgActive)
             {
                 double hdg = double.Parse(MainWindow.targetHeading);
-                hdg -= bFineControl ? 0.04 : 0.4;
+                hdg -= bFineControl ? 0.04 / scale : 0.4 * scale;
                 if (hdg < 0)
                     hdg += 360;
                 controllers[(int)PIDList.HdgBank].SetPoint = hdg;
@@ -253,7 +256,7 @@ namespace PilotAssistant
             else if (GameSettings.YAW_RIGHT.GetKey() && bHdgActive)
             {
                 double hdg = double.Parse(MainWindow.targetHeading);
-                hdg += bFineControl ? 0.04 : 0.4;
+                hdg += bFineControl ? 0.04 / scale : 0.4 * scale;
                 if (hdg > 360)
                     hdg -= 360;
                 controllers[(int)PIDList.HdgBank].SetPoint = hdg;
@@ -266,14 +269,14 @@ namespace PilotAssistant
                 double vert = double.Parse(MainWindow.targetVert);
                 if (bAltitudeHold)
                 {
-                    vert -= bFineControl ? 0.4 : 4;
+                    vert -= bFineControl ? 0.4 / scale : 4 * scale;
                     if (vert < 0)
                         vert = 0;
                     controllers[(int)PIDList.Altitude].SetPoint = vert;
                 }
                 else
                 {
-                    vert -= bFineControl ? 0.04 : 0.4;
+                    vert -= bFineControl ? 0.04 / scale : 0.4 * scale;
                     controllers[(int)PIDList.VertSpeed].SetPoint = vert;
                 }
                 MainWindow.targetVert = vert.ToString();
@@ -283,12 +286,12 @@ namespace PilotAssistant
                 double vert = double.Parse(MainWindow.targetVert);
                 if (bAltitudeHold)
                 {
-                    vert += bFineControl ? 0.4 : 4;
+                    vert += bFineControl ? 0.4 / scale : 4 * scale;
                     controllers[(int)PIDList.Altitude].SetPoint = vert;
                 }
                 else
                 {
-                    vert += bFineControl ? 0.04 : 0.4;
+                    vert += bFineControl ? 0.04 / scale : 0.4 * scale;
                     controllers[(int)PIDList.VertSpeed].SetPoint = vert;
                 }
                 MainWindow.targetVert = vert.ToString();

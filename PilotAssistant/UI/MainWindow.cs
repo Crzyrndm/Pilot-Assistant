@@ -44,11 +44,11 @@ namespace PilotAssistant.UI
 
             window = GUI.Window(34244, window, UI.MainWindow.displayWindow, "");
 
-            SettingsWindow.presetWindow.x = window.x + window.width;
-            SettingsWindow.presetWindow.y = window.y;
+            PresetWindow.presetWindow.x = window.x + window.width;
+            PresetWindow.presetWindow.y = window.y;
             if (showPresets)
             {
-                SettingsWindow.Draw();
+                PresetWindow.Draw();
             }
 
             // Window resizing

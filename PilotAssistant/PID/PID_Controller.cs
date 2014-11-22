@@ -28,7 +28,9 @@ namespace PilotAssistant.PID
 
         private double dt = 1; // standardised response for any physics dt
 
-        public PID_Controller(double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper)
+        private double scale = 1;
+
+        public PID_Controller(double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1)
         {
             k_proportional = Kp;
             k_integral = Ki;
@@ -37,6 +39,7 @@ namespace PilotAssistant.PID
             outMax = OutputMax;
             integralClampLower = intClampLower;
             integralClampUpper = intClampUpper;
+            scale = scalar;
         }
 
         public double Response(double input)
@@ -239,6 +242,18 @@ namespace PilotAssistant.PID
             set
             {
                 integralClampUpper = value;
+            }
+        }
+
+        public double Scalar
+        {
+            get
+            {
+                return scale;
+            }
+            set
+            {
+                scale = value;
             }
         }
 
