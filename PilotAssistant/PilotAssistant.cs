@@ -109,7 +109,7 @@ namespace PilotAssistant
 
         public void OnGUI()
         {
-            if (!AppLauncher.AppLauncherInstance.bDisplay)
+            if (!AppLauncher.AppLauncherInstance.bDisplayAssistant)
                 return;
 
             MainWindow.Draw();
@@ -122,7 +122,7 @@ namespace PilotAssistant
             if (FlightData.thisVessel == null)
                 return;
 
-            Utility.FlightData.updateAttitude();
+            FlightData.updateAttitude();
 
             if (bPause)
                 return;

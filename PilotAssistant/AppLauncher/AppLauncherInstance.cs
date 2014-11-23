@@ -8,11 +8,14 @@ namespace PilotAssistant.AppLauncher
     public class AppLauncherInstance : MonoBehaviour
     {
         private static ApplicationLauncherButton btnLauncher;
-        public static bool bDisplay = false;
+        private static Rect window = new Rect(Screen.width - 180, 40, 30, 30);
+
+        public static bool bDisplayOptions = false;
+        public static bool bDisplayAssistant = false;
+        public static bool bDisplaySAS = false;
 
         private void Awake()
         {
-            Debug.Log("wa");
             GameEvents.onGUIApplicationLauncherReady.Add(this.OnAppLauncherReady);
         }
 
@@ -21,7 +24,7 @@ namespace PilotAssistant.AppLauncher
             GameEvents.onGUIApplicationLauncherReady.Remove(this.OnAppLauncherReady);
             if (btnLauncher != null)
                 ApplicationLauncher.Instance.RemoveModApplication(btnLauncher);
-            bDisplay = false;
+            bDisplayAssistant = false;
         }
 
         private void OnAppLauncherReady()
@@ -34,18 +37,34 @@ namespace PilotAssistant.AppLauncher
 
         private void OnGameSceneChange(GameScenes scene)
         {
-            bDisplay = false;
+            bDisplayAssistant = false;
             ApplicationLauncher.Instance.RemoveModApplication(btnLauncher);
         }
 
         private void OnToggleTrue()
         {
-            bDisplay = true;
+            bDisplayOptions = true;
         }
 
         private void OnToggleFalse()
         {
-            bDisplay = false;
+            bDisplayOptions = false;
+        }
+
+        private void OnGUI()
+        {
+            if (bDisplayOptions)
+            {
+                window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.MaxWidth(200));
+            }
+        }
+
+        private void optionsWindow(int id)
+        {
+            if (GUILayout.Button("Pilot Assistant"))
+                bDisplayAssistant = !bDisplayAssistant;
+            if (GUILayout.Button("SAS System"))
+                bDisplaySAS = !bDisplaySAS;
         }
     }
 }

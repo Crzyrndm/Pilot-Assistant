@@ -47,14 +47,14 @@ namespace PilotAssistant.PID
             input = Clamp(input, inMin, inMax);
             dt = TimeWarp.fixedDeltaTime;
             error = input - setpoint;
-            return Clamp(proportionalError(input) + integralError(input) + derivativeError(input), outMin, outMax);
+            return Clamp((proportionalError(input) + integralError(input) + derivativeError(input)), outMin, outMax);
         }
 
         private double proportionalError(double input)
         {
             if (k_proportional == 0)
                 return 0;
-            return error * k_proportional;
+            return error * k_proportional / scale;
         }
 
         private double integralError(double input)
@@ -65,7 +65,7 @@ namespace PilotAssistant.PID
                 return sum;
             }
 
-            sum += error * dt * k_integral;
+            sum += error * dt * k_integral / scale;
             sum = Clamp(sum, integralClampLower, integralClampUpper); // AIW
 
             return sum;
@@ -80,7 +80,7 @@ namespace PilotAssistant.PID
             rolling_diff = rolling_diff * rollingFactor + difference * (1 - rollingFactor); // rolling average sometimes helps smooth out a jumpy derivative response
             
             previous = input;
-            return rolling_diff * k_derivative;
+            return rolling_diff * k_derivative / scale;
         }
 
         public void Clear()
