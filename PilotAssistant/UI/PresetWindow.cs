@@ -18,14 +18,14 @@ namespace PilotAssistant.UI
 
         private static void displayPresetWindow(int id)
         {
-            if (PresetManager.activePreset != null)
+            if (PresetManager.activePAPreset != null)
             {
-                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.activePreset.name));
-                if (PresetManager.activePreset.name != "default")
+                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.activePAPreset.name));
+                if (PresetManager.activePAPreset.name != "Default")
                 {
                     if (GUILayout.Button("Update Preset"))
                     {
-                        PresetManager.activePreset.Update(PilotAssistant.controllers);
+                        PresetManager.activePAPreset.Update(PilotAssistant.controllers);
                         PresetManager.saveCFG();
                     }
                 }
@@ -38,15 +38,15 @@ namespace PilotAssistant.UI
             {
                 if (newPresetName != "")
                 {
-                    foreach (Preset p in PresetManager.PresetList)
+                    foreach (PresetPA p in PresetManager.PAPresetList)
                     {
                         if (newPresetName == p.name)
                             return;
                     }
 
-                    PresetManager.PresetList.Add(new Preset(PilotAssistant.controllers, newPresetName));
+                    PresetManager.PAPresetList.Add(new PresetPA(PilotAssistant.controllers, newPresetName));
                     newPresetName = "";
-                    PresetManager.activePreset = PresetManager.PresetList[PresetManager.PresetList.Count - 1];
+                    PresetManager.activePAPreset = PresetManager.PAPresetList[PresetManager.PAPresetList.Count - 1];
                     PresetManager.saveCFG();
                 }
             }
@@ -56,25 +56,25 @@ namespace PilotAssistant.UI
 
             if (GUILayout.Button("Reset to Default Tuning"))
             {
-                PresetManager.loadPreset(PresetManager.defaultTuning);
-                PresetManager.activePreset = PresetManager.defaultTuning;
+                PresetManager.loadPAPreset(PresetManager.defaultPATuning);
+                PresetManager.activePAPreset = PresetManager.defaultPATuning;
             }
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
-            foreach (Preset p in PresetManager.PresetList)
+            foreach (PresetPA p in PresetManager.PAPresetList)
             {
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(p.name))
                 {
-                    PresetManager.loadPreset(p);
-                    PresetManager.activePreset = p;
+                    PresetManager.loadPAPreset(p);
+                    PresetManager.activePAPreset = p;
                 }
                 if (GUILayout.Button("x", GUILayout.Width(25)))
                 {
-                    if (PresetManager.activePreset == p)
-                        PresetManager.activePreset = null;
-                    PresetManager.PresetList.Remove(p);
+                    if (PresetManager.activePAPreset == p)
+                        PresetManager.activePAPreset = null;
+                    PresetManager.PAPresetList.Remove(p);
                     PresetManager.saveCFG();
                 }
                 GUILayout.EndHorizontal();

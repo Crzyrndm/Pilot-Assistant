@@ -65,7 +65,7 @@ namespace PilotAssistant
             AltitudeToClimbRate.InMin = 0;
 
             // Set up a default preset that can be easily returned to
-            PresetManager.defaultTuning = new Preset(controllers, "default");
+            PresetManager.defaultPATuning = new PresetPA(controllers, "Default");
             
             // register vessel
             FlightData.thisVessel = FlightGlobals.ActiveVessel;
@@ -231,6 +231,22 @@ namespace PilotAssistant
                 bHdgWasActive = false; // reset heading/vert lock on unpausing
                 bVertWasActive = false;
                 bPause = !bPause;
+                if (!bPause)
+                    FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+            }
+
+            if (GameSettings.SAS_TOGGLE.GetKeyDown())
+            {
+                if (!bPause)
+                {
+                    if (!FlightData.thisVessel.ctrlState.killRot && !AtmoSAS.bActive)
+                        bPause = true;
+                }
+                else
+                {
+                    if (FlightData.thisVessel.ctrlState.killRot || AtmoSAS.bActive)
+                        bPause = false;
+                }
             }
 
             if (GameSettings.MODIFIER_KEY.GetKey() && Input.GetKeyDown(KeyCode.X))

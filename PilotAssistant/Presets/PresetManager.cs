@@ -9,9 +9,15 @@ namespace PilotAssistant.Presets
     [KSPAddon(KSPAddon.Startup.MainMenu, true)]
     internal class PresetManager : MonoBehaviour
     {
-        internal static Preset defaultTuning;
-        internal static List<Preset> PresetList = new List<Preset>();
-        internal static Preset activePreset;
+        internal static PresetPA defaultPATuning;
+        internal static List<PresetPA> PAPresetList = new List<PresetPA>();
+        internal static PresetPA activePAPreset;
+
+        internal static PresetSAS defaultSASTuning;
+        internal static PresetSAS defaultStockSASTuning;
+        internal static List<PresetSAS> SASPresetList = new List<PresetSAS>();
+        internal static PresetSAS activeSASPreset;
+        internal static PresetSAS activeStockSASPreset;
 
         public void Start()
         {
@@ -26,7 +32,7 @@ namespace PilotAssistant.Presets
 
         internal static void loadPresetsFromFile()
         {
-            PresetList.Clear();
+            PAPresetList.Clear();
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("PIDPreset"))
             {
                 if (node == null)
@@ -40,20 +46,36 @@ namespace PilotAssistant.Presets
                 gains.Add(controllerGains(node.GetNode("AltitudeController")));
                 gains.Add(controllerGains(node.GetNode("AoAController")));
                 gains.Add(controllerGains(node.GetNode("ElevatorController")));
-                PresetList.Add(new Preset(gains, node.GetValue("name")));
+                PAPresetList.Add(new PresetPA(gains, node.GetValue("name")));
+            }
+
+            foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("SASPreset"))
+            {
+                if (node == null)
+                    continue;
+
+                List<double[]> gains = new List<double[]>();
+                gains.Add(controllerSASGains(node.GetNode("AileronController")));
+                gains.Add(controllerSASGains(node.GetNode("RudderController")));
+                gains.Add(controllerSASGains(node.GetNode("ElevatorController")));
+                SASPresetList.Add(new PresetSAS(gains, node.GetValue("name"), bool.Parse(node.GetValue("stock"))));
             }
         }
 
         internal static void saveCFG()
         {
             ConfigNode node = new ConfigNode();
-            if (PresetList.Count == 0)
+            if (PAPresetList.Count == 0 && SASPresetList.Count == 0)
                 node.AddValue("dummy", "do not delete me");
             else
             {
-                foreach (Preset p in PresetList)
+                foreach (PresetPA p in PAPresetList)
                 {
-                    node.AddNode(PresetNode(p));
+                    node.AddNode(PAPresetNode(p));
+                }
+                foreach (PresetSAS p in SASPresetList)
+                {
+                    node.AddNode(SASPresetNode(p));
                 }
             }
             node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/Pilot Assistant/Presets.cfg");
@@ -61,7 +83,7 @@ namespace PilotAssistant.Presets
 
         private static double[] controllerGains(ConfigNode node)
         {
-            double[] gains = new double[7];
+            double[] gains = new double[8];
             double val;
             double.TryParse(node.GetValue("PGain"), out val);
             gains[0] = val;
@@ -77,11 +99,29 @@ namespace PilotAssistant.Presets
             gains[5] = val;
             double.TryParse(node.GetValue("ClampUpper"), out val);
             gains[6] = val;
+            double.TryParse(node.GetValue("Scalar"), out val);
+            gains[7] = val;
 
             return gains;
         }
 
-        private static ConfigNode PresetNode(Preset preset)
+        private static double[] controllerSASGains(ConfigNode node)
+        {
+            double[] gains = new double[4];
+            double val;
+            double.TryParse(node.GetValue("PGain"), out val);
+            gains[0] = val;
+            double.TryParse(node.GetValue("IGain"), out val);
+            gains[1] = val;
+            double.TryParse(node.GetValue("DGain"), out val);
+            gains[2] = val;
+            double.TryParse(node.GetValue("Scalar"), out val);
+            gains[3] = val;
+
+            return gains;
+        }
+
+        private static ConfigNode PAPresetNode(PresetPA preset)
         {
             ConfigNode node = new ConfigNode("PIDPreset");
             node.AddValue("name", preset.name);
@@ -96,7 +136,19 @@ namespace PilotAssistant.Presets
             return node;
         }
 
-        private static ConfigNode PIDnode(string name, int index, Preset preset)
+        private static ConfigNode SASPresetNode(PresetSAS preset)
+        {
+            ConfigNode node = new ConfigNode("SASPreset");
+            node.AddValue("name", preset.name);
+            node.AddValue("stock", preset.bStockSAS);
+            node.AddNode(PIDnode("AileronController", 0, preset));
+            node.AddNode(PIDnode("RudderController", 1, preset));
+            node.AddNode(PIDnode("ElevatorController", 2, preset));
+
+            return node;
+        }
+
+        private static ConfigNode PIDnode(string name, int index, PresetPA preset)
         {
             ConfigNode node = new ConfigNode(name);
             node.AddValue("PGain", preset.PIDGains[index][0]);
@@ -106,10 +158,25 @@ namespace PilotAssistant.Presets
             node.AddValue("MaxOut", preset.PIDGains[index][4]);
             node.AddValue("ClampLower", preset.PIDGains[index][5]);
             node.AddValue("ClampUpper", preset.PIDGains[index][6]);
+            node.AddValue("Scalar", preset.PIDGains[index][7]);
             return node;
         }
 
-        internal static void loadPreset(Preset p)
+        private static ConfigNode PIDnode(string name, int index, PresetSAS preset)
+        {
+            ConfigNode node = new ConfigNode(name);
+            node.AddValue("PGain", preset.PIDGains[index][0]);
+            node.AddValue("IGain", preset.PIDGains[index][1]);
+            node.AddValue("DGain", preset.PIDGains[index][2]);
+            node.AddValue("MinOut", preset.PIDGains[index][3]);
+            node.AddValue("MaxOut", preset.PIDGains[index][4]);
+            node.AddValue("ClampLower", preset.PIDGains[index][5]);
+            node.AddValue("ClampUpper", preset.PIDGains[index][6]);
+            node.AddValue("Scalar", preset.PIDGains[index][7]);
+            return node;
+        }
+
+        internal static void loadPAPreset(PresetPA p)
         {
             List<PID.PID_Controller> c = PilotAssistant.controllers;
 
@@ -122,6 +189,24 @@ namespace PilotAssistant.Presets
                 c[i].OutMax = p.PIDGains[i][4];
                 c[i].ClampLower = p.PIDGains[i][5];
                 c[i].ClampUpper = p.PIDGains[i][6];
+                c[i].Scalar = p.PIDGains[i][7];
+            }
+        }
+
+        internal static void loadSASPreset(PresetSAS p)
+        {
+            List<PID.PID_Controller> c = AtmoSAS.SASControllers;
+
+            for (int i = 0; i < 3; i++)
+            {
+                c[i].PGain = p.PIDGains[i][0];
+                c[i].IGain = p.PIDGains[i][1];
+                c[i].DGain = p.PIDGains[i][2];
+                c[i].OutMin = p.PIDGains[i][3];
+                c[i].OutMax = p.PIDGains[i][4];
+                c[i].ClampLower = p.PIDGains[i][5];
+                c[i].ClampUpper = p.PIDGains[i][6];
+                c[i].Scalar = p.PIDGains[i][7];
             }
         }
     }

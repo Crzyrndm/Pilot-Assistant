@@ -22,6 +22,7 @@ namespace PilotAssistant.UI
         internal static string targetHeading = "0";
 
         static GUIStyle labelStyle;
+        static GUIStyle labelAlertStyle;
         static GUIStyle textStyle;
         static GUIStyle btnStyle1;
         static GUIStyle btnStyle2;
@@ -31,6 +32,11 @@ namespace PilotAssistant.UI
             labelStyle = new GUIStyle(GUI.skin.label);
             labelStyle.alignment = TextAnchor.MiddleLeft;
             labelStyle.margin = new RectOffset(4, 4, 5, 3);
+
+            labelAlertStyle = new GUIStyle(GUI.skin.label);
+            labelAlertStyle.normal.textColor = XKCDColors.Red;
+            labelAlertStyle.fontSize = 24;
+            labelAlertStyle.fontStyle = FontStyle.Bold;
 
             textStyle = new GUIStyle(GUI.skin.textField);
             textStyle.alignment = TextAnchor.MiddleLeft;
@@ -61,8 +67,8 @@ namespace PilotAssistant.UI
                 height += 80;
             if (PilotAssistant.bAltitudeHold)
                 height += 30;
-            if (PilotAssistant.bPause && (PilotAssistant.bVertActive || PilotAssistant.bHdgActive))
-                height += 30;
+            if (PilotAssistant.bPause)
+                height += 40;
             MainWindow.window.height = height;
 
             if (MainWindow.showPIDLimits && MainWindow.showPIDGains)
@@ -73,12 +79,9 @@ namespace PilotAssistant.UI
 
         private static void displayWindow(int id)
         {
-            if (PilotAssistant.bPause && (PilotAssistant.bHdgActive || PilotAssistant.bVertActive))
+            if (PilotAssistant.bPause)
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.Space(50);
-                GUILayout.Label("CONTROL PAUSED");
-                GUILayout.EndHorizontal();
+                GUILayout.Label("CONTROL PAUSED", labelAlertStyle);
             }
 
             if (GUILayout.Button(showPresets ? "Hide Presets" : "Show Presets"))
@@ -128,10 +131,11 @@ namespace PilotAssistant.UI
                 }
             }
 
+            GUILayout.Label("Current Hdg: " + FlightData.heading.ToString("N3") + "\u00B0", GUILayout.Width(200));
+
             scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, (showPIDGains && !PilotAssistant.bWingLeveller) ? GUILayout.Height(160) : GUILayout.Height(0));
             if (!PilotAssistant.bWingLeveller)
             {
-                GUILayout.Label("Current Hdg: " + FlightData.heading.ToString("N3") + "\u00B0", GUILayout.Width(200));
                 drawPIDvalues(PilotAssistant.controllers[(int)PIDList.HdgBank], "Hdg Roll", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0", false, false);
             }
             if (showControlSurfaces)
@@ -183,7 +187,7 @@ namespace PilotAssistant.UI
             {
                 drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Altitude], "Alt", "m", FlightData.thisVessel.altitude, 1, "Speed ", "m/s", true);
             }
-            drawPIDvalues(PilotAssistant.controllers[(int)PIDList.VertSpeed], "Speed ", "m/s", FlightData.thisVessel.verticalSpeed, 3, "AoA", "\u00B0", true);
+            drawPIDvalues(PilotAssistant.controllers[(int)PIDList.VertSpeed], "Spd ", "m/s", FlightData.thisVessel.verticalSpeed, 3, "AoA", "\u00B0", true);
             if (showControlSurfaces)
             {
                 drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Elevator], "AoA", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0");
@@ -215,6 +219,7 @@ namespace PilotAssistant.UI
                 controller.PGain = labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.PGain.ToString("G3"), 80);
                 controller.IGain = labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.IGain.ToString("G3"), 80);
                 controller.DGain = labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.DGain.ToString("G3"), 80);
+                controller.Scalar = labPlusNumBox(string.Format("{0} Scalar", inputName), controller.Scalar.ToString("G3"), 80);
 
                 if (showPIDLimits)
                 {

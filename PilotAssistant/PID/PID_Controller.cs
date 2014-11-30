@@ -3,6 +3,8 @@ using UnityEngine;
 
 namespace PilotAssistant.PID
 {
+    using Utility;
+
     public class PID_Controller : MonoBehaviour
     {
         private double setpoint = 0; // process setpoint
@@ -14,7 +16,7 @@ namespace PilotAssistant.PID
         private double sum = 0; // integral sum
         private double previous = 0; // previous value stored for derivative action
         private double rolling_diff = 0; // used for rolling average difference
-        private double rollingFactor = 0; // rolling average proportion. 0 = all new, 1 = never changes
+        private double rollingFactor = 0.5; // rolling average proportion. 0 = all new, 1 = never changes
         private double error = 0; // error of current iteration
 
         private double inMin = -1000000000; // Minimum input value
@@ -59,7 +61,7 @@ namespace PilotAssistant.PID
 
         private double integralError(double input)
         {
-            if (k_integral == 0)
+            if (k_integral == 0 || FlightData.thisVessel.checkLanded())
             {
                 sum = 0;
                 return sum;

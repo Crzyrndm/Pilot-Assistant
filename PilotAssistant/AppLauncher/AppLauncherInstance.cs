@@ -62,9 +62,15 @@ namespace PilotAssistant.AppLauncher
         private void optionsWindow(int id)
         {
             if (GUILayout.Button("Pilot Assistant"))
+            {
                 bDisplayAssistant = !bDisplayAssistant;
+                btnLauncher.toggleButton.SetFalse();
+            }
             if (GUILayout.Button("SAS System"))
+            {
                 bDisplaySAS = !bDisplaySAS;
+                btnLauncher.toggleButton.SetFalse();
+            }
         }
     }
 }

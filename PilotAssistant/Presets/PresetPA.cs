@@ -8,18 +8,18 @@ namespace PilotAssistant.Presets
     /// <summary>
     /// Holds all the PID tuning values for the 7 (or more if required) controllers involved.
     /// </summary>
-    class Preset
+    class PresetPA
     {
         public string name;
         public List<double[]> PIDGains = new List<double[]>();
         private int numControllers = 7;
 
-        public Preset(List<PID.PID_Controller> controllers, string Name) // used for adding a new preset, can clone the current values
+        public PresetPA(List<PID.PID_Controller> controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
             for (int i = 0; i < numControllers; i++) // currently 7 PID controlers to save
             {
-                double[] gains = new double[7];
+                double[] gains = new double[8];
                 gains[0] = controllers[i].PGain;
                 gains[1] = controllers[i].IGain;
                 gains[2] = controllers[i].DGain;
@@ -27,12 +27,13 @@ namespace PilotAssistant.Presets
                 gains[4] = controllers[i].OutMax;
                 gains[5] = controllers[i].ClampLower;
                 gains[6] = controllers[i].ClampUpper;
+                gains[7] = controllers[i].Scalar;
 
                 PIDGains.Add(gains);
             }
         }
 
-        public Preset(List<double[]> gains, string Name) // used for loading presets from file
+        public PresetPA(List<double[]> gains, string Name) // used for loading presets from file
         {
             name = Name;
             PIDGains = gains;        
@@ -43,7 +44,7 @@ namespace PilotAssistant.Presets
             List<double[]> newPIDGains = new List<double[]>();
             for (int i = 0; i < numControllers; i++) // currently 7 PID controlers to save
             {
-                double[] gains = new double[7];
+                double[] gains = new double[8];
                 gains[0] = controllers[i].PGain;
                 gains[1] = controllers[i].IGain;
                 gains[2] = controllers[i].DGain;
@@ -51,6 +52,7 @@ namespace PilotAssistant.Presets
                 gains[4] = controllers[i].OutMax;
                 gains[5] = controllers[i].ClampLower;
                 gains[6] = controllers[i].ClampUpper;
+                gains[7] = controllers[i].Scalar;
 
                 newPIDGains.Add(gains);
             }
