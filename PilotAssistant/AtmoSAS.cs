@@ -57,25 +57,20 @@ namespace PilotAssistant
                 PIDclamp c = FlightData.thisVessel.VesselSAS.pidLockedPitch;
                 double[] p1 = { c.kp, c.ki, c.kd, c.clamp };
                 stockSAS.Add(p1);
-
-                PID_Controller pitch = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2);
-                SASControllers.Add(pitch);
-
                 c = FlightData.thisVessel.VesselSAS.pidLockedYaw;
                 double[] p2 = { c.kp, c.ki, c.kd, c.clamp };
                 stockSAS.Add(p2);
-
-                PID_Controller yaw = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2);
-                SASControllers.Add(yaw);
-
                 c = FlightData.thisVessel.VesselSAS.pidLockedRoll;
                 double[] p3 = { c.kp, c.ki, c.kd, c.clamp };
                 stockSAS.Add(p3);
+                PresetManager.defaultStockSASTuning = new PresetSAS(stockSAS, "Stock", true);
 
+                PID_Controller pitch = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
+                SASControllers.Add(pitch);
+                PID_Controller yaw = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
+                SASControllers.Add(yaw);
                 PID_Controller roll = new PID.PID_Controller(0.1, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
                 SASControllers.Add(roll);
-
-                PresetManager.defaultStockSASTuning = new PresetSAS(stockSAS, "Stock", true);
                 PresetManager.defaultSASTuning = new PresetSAS(SASControllers, "Default", false);
 
                 bInit = true;
@@ -113,7 +108,7 @@ namespace PilotAssistant
             }
             else if (FlightData.thisVessel.staticPressure == 0 && bAtmosphere)
             {
-                bAtmosphere = true;
+                bAtmosphere = false;
                 if (bActive)
                 {
                     bActive = false;
@@ -125,6 +120,12 @@ namespace PilotAssistant
                 SASwindow.height = 440;
             else
                 SASwindow.height = 550;
+
+            if (bShowPresets)
+            {
+                SASPresetwindow.x = SASwindow.x + SASwindow.width;
+                SASPresetwindow.y = SASwindow.y;
+            }
 
             pauseManager(); // manage activation of SAS axes depending on user input
         }
@@ -234,14 +235,30 @@ namespace PilotAssistant
 
         private void drawPresetWindow(int id)
         {
-            if (PresetManager.activeSASPreset != null)
+            if ((PresetManager.activeSASPreset != null && !bStockSAS) || (PresetManager.activeStockSASPreset != null && bStockSAS))
             {
                 GUILayout.Label(string.Format("Active Preset: {0}", bStockSAS ? PresetManager.activeStockSASPreset.name : PresetManager.activeSASPreset.name));
-                if (PresetManager.activeSASPreset.name != "Default" || PresetManager.activeSASPreset.name != "Stock")
+                if (PresetManager.activeSASPreset.name != "Default" || PresetManager.activeStockSASPreset.name != "Stock")
                 {
                     if (GUILayout.Button("Update Preset"))
                     {
-                        PresetManager.activeSASPreset.Update(PilotAssistant.controllers);
+                        if (bStockSAS)
+                        {
+                            List<double[]> stockSAS = new List<double[]>();
+
+                            PIDclamp c = FlightData.thisVessel.VesselSAS.pidLockedPitch;
+                            double[] p1 = { c.kp, c.ki, c.kd, c.clamp };
+                            stockSAS.Add(p1);
+                            c = FlightData.thisVessel.VesselSAS.pidLockedYaw;
+                            double[] p2 = { c.kp, c.ki, c.kd, c.clamp };
+                            stockSAS.Add(p2);
+                            c = FlightData.thisVessel.VesselSAS.pidLockedRoll;
+                            double[] p3 = { c.kp, c.ki, c.kd, c.clamp };
+                            stockSAS.Add(p3);
+                            PresetManager.activeStockSASPreset.Update(stockSAS);
+                        }
+                        else
+                            PresetManager.activeSASPreset.Update(SASControllers);
                         PresetManager.saveCFG();
                     }
                 }
@@ -260,12 +277,28 @@ namespace PilotAssistant
                             return;
                     }
 
-                    PresetManager.SASPresetList.Add(new PresetSAS(AtmoSAS.SASControllers, newPresetName, bStockSAS));
-                    newPresetName = "";
                     if (bStockSAS)
+                    {
+                        List<double[]> stockSAS = new List<double[]>();
+
+                        PIDclamp c = FlightData.thisVessel.VesselSAS.pidLockedPitch;
+                        double[] p1 = { c.kp, c.ki, c.kd, c.clamp };
+                        stockSAS.Add(p1);
+                        c = FlightData.thisVessel.VesselSAS.pidLockedYaw;
+                        double[] p2 = { c.kp, c.ki, c.kd, c.clamp };
+                        stockSAS.Add(p2);
+                        c = FlightData.thisVessel.VesselSAS.pidLockedRoll;
+                        double[] p3 = { c.kp, c.ki, c.kd, c.clamp };
+                        stockSAS.Add(p3);
+                        PresetManager.SASPresetList.Add(new PresetSAS(stockSAS, newPresetName, true));
                         PresetManager.activeStockSASPreset = PresetManager.SASPresetList[PresetManager.SASPresetList.Count - 1];
+                    }
                     else
+                    {
+                        PresetManager.SASPresetList.Add(new PresetSAS(SASControllers, newPresetName, false));
                         PresetManager.activeSASPreset = PresetManager.SASPresetList[PresetManager.SASPresetList.Count - 1];
+                    }
+                    newPresetName = "";
                     PresetManager.saveCFG();
                 }
             }
@@ -273,11 +306,11 @@ namespace PilotAssistant
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
-            if (GUILayout.Button("Reset to Default Tuning"))
+            if (GUILayout.Button("Reset to Defaults"))
             {
                 if (bStockSAS)
                 {
-                    PresetManager.loadSASPreset(PresetManager.defaultStockSASTuning);
+                    PresetManager.loadStockSASPreset(PresetManager.defaultStockSASTuning);
                     PresetManager.activeStockSASPreset = PresetManager.defaultStockSASTuning;
                 }
                 else
@@ -289,42 +322,48 @@ namespace PilotAssistant
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
+            // Stock Presets
             foreach (PresetSAS p in PresetManager.SASPresetList)
             {
-                if (p.bStockSAS == true)
+                GUILayout.BeginHorizontal();
+                if (!p.bStockSAS)
+                    continue;
+
+                if (GUILayout.Button(p.name))
                 {
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button(p.name))
-                    {
-                        PresetManager.loadSASPreset(p);
-                        PresetManager.activeStockSASPreset = p;
-                    }
-                    if (GUILayout.Button("x", GUILayout.Width(25)))
-                    {
-                        if (PresetManager.activeStockSASPreset == p)
-                            PresetManager.activeStockSASPreset = null;
-                        PresetManager.SASPresetList.Remove(p);
-                        PresetManager.saveCFG();
-                    }
-                    GUILayout.EndHorizontal();
+                    PresetManager.loadStockSASPreset(p);
+                    PresetManager.activeStockSASPreset = p;
                 }
-                else
+                if (GUILayout.Button("x", GUILayout.Width(25)))
                 {
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button(p.name))
-                    {
-                        PresetManager.loadSASPreset(p);
-                        PresetManager.activeSASPreset = p;
-                    }
-                    if (GUILayout.Button("x", GUILayout.Width(25)))
-                    {
-                        if (PresetManager.activeSASPreset == p)
-                            PresetManager.activeSASPreset = null;
-                        PresetManager.SASPresetList.Remove(p);
-                        PresetManager.saveCFG();
-                    }
-                    GUILayout.EndHorizontal();
+                    if (PresetManager.activeStockSASPreset == p)
+                        PresetManager.activeStockSASPreset = null;
+                    PresetManager.SASPresetList.Remove(p);
+                    PresetManager.saveCFG();
                 }
+                GUILayout.EndHorizontal();
+            }
+
+            // Atmo presets
+            foreach (PresetSAS p in PresetManager.SASPresetList)
+            {
+                if (p.bStockSAS)
+                    continue;
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button(p.name))
+                {
+                    PresetManager.loadSASPreset(p);
+                    PresetManager.activeSASPreset = p;
+                }
+                if (GUILayout.Button("x", GUILayout.Width(25)))
+                {
+                    if (PresetManager.activeSASPreset == p)
+                        PresetManager.activeSASPreset = null;
+                    PresetManager.SASPresetList.Remove(p);
+                    PresetManager.saveCFG();
+                }
+                GUILayout.EndHorizontal();
             }
         }
 

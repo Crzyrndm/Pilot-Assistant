@@ -50,5 +50,10 @@ namespace PilotAssistant.Presets
             }
             PIDGains = newPIDGains;
         }
+
+        public void Update(List<double[]> controllers)
+        {
+            PIDGains = controllers;
+        }
     }
 }

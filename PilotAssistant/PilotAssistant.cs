@@ -44,19 +44,19 @@ namespace PilotAssistant
 
         public void Start()
         {
-            PID_Controller HeadingBankController = new PID.PID_Controller(3, 0.1, 0, -30, 30, -0.1, 0.1);
+            PID_Controller HeadingBankController = new PID.PID_Controller(2, 0.1, 0, -30, 30, -0.5, 0.5);
             controllers.Add(HeadingBankController);
-            PID_Controller HeadingYawController = new PID.PID_Controller(0, 0, 0, -2, 2, -2, 2);
+            PID_Controller HeadingYawController = new PID.PID_Controller(0, 0, 0.01, -2, 2, -0.5, 0.5);
             controllers.Add(HeadingYawController);
-            PID_Controller AileronController = new PID.PID_Controller(0.01, 0.01, 0.01, -1, 1, -0.1, 0.1);
+            PID_Controller AileronController = new PID.PID_Controller(0.02, 0.005, 0.01, -1, 1, -0.4, 0.4);
             controllers.Add(AileronController);
-            PID_Controller RudderController = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 1, -0.1, 0.1);
+            PID_Controller RudderController = new PID.PID_Controller(0.1, 0.08, 0.05, -1, 1, -0.4, 0.4);
             controllers.Add(RudderController);
-            PID_Controller AltitudeToClimbRate = new PID.PID_Controller(0.1, 0, 0, -30, 30, -1, 1); // P control for converting altitude hold to climb rate
+            PID_Controller AltitudeToClimbRate = new PID.PID_Controller(0.15, 0.01, 0, -50, 50, -0.01, 0.01);
             controllers.Add(AltitudeToClimbRate);
-            PID_Controller AoAController = new PID.PID_Controller(3, 0.4, 1.5, -10, 10, -10, 10); // Input craft altitude, output target craft AoA
+            PID_Controller AoAController = new PID.PID_Controller(2, 0.8, 2, -10, 10, -5, 5);
             controllers.Add(AoAController);
-            PID_Controller ElevatorController = new PID.PID_Controller(0.01, 0.01, 0.01, -1, 1, -0.1, 0.1); // Convert pitch input to control surface deflection
+            PID_Controller ElevatorController = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 1, -0.4, 0.4);
             controllers.Add(ElevatorController);
 
             // PID inits

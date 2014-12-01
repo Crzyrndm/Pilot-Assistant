@@ -109,6 +109,8 @@ namespace PilotAssistant.UI
                 PilotAssistant.bHdgActive = !PilotAssistant.bHdgActive;
                 if (PilotAssistant.bPause)
                     PilotAssistant.bPause = false;
+                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                AtmoSAS.bActive = false;
             }
             PilotAssistant.bWingLeveller = GUILayout.Toggle(PilotAssistant.bWingLeveller, PilotAssistant.bWingLeveller ? "Mode: Wing Leveller" : "Mode: Hdg Control", GUILayout.Width(200));
             if (!PilotAssistant.bWingLeveller)
@@ -131,7 +133,7 @@ namespace PilotAssistant.UI
                 }
             }
 
-            GUILayout.Label("Current Hdg: " + FlightData.heading.ToString("N3") + "\u00B0", GUILayout.Width(200));
+            GUILayout.Label("Current Hdg: " + FlightData.heading.ToString("N2") + "\u00B0", GUILayout.Width(200));
 
             scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, (showPIDGains && !PilotAssistant.bWingLeveller) ? GUILayout.Height(160) : GUILayout.Height(0));
             if (!PilotAssistant.bWingLeveller)
@@ -161,6 +163,8 @@ namespace PilotAssistant.UI
                 PilotAssistant.bVertActive = !PilotAssistant.bVertActive;
                 if (PilotAssistant.bPause)
                     PilotAssistant.bPause = false;
+                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                AtmoSAS.bActive = false;
             }
 
             PilotAssistant.bAltitudeHold = GUILayout.Toggle(PilotAssistant.bAltitudeHold, PilotAssistant.bAltitudeHold ? "Mode: Altitude" : "Mode: Vertical Speed", GUILayout.Width(200));
@@ -185,9 +189,9 @@ namespace PilotAssistant.UI
             scrollbarVert = GUILayout.BeginScrollView(scrollbarVert);
             if (PilotAssistant.bAltitudeHold)
             {
-                drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Altitude], "Alt", "m", FlightData.thisVessel.altitude, 1, "Speed ", "m/s", true);
+                drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Altitude], "Alt", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true);
             }
-            drawPIDvalues(PilotAssistant.controllers[(int)PIDList.VertSpeed], "Spd ", "m/s", FlightData.thisVessel.verticalSpeed, 3, "AoA", "\u00B0", true);
+            drawPIDvalues(PilotAssistant.controllers[(int)PIDList.VertSpeed], "Spd ", "m/s", FlightData.thisVessel.verticalSpeed, 2, "AoA", "\u00B0", true);
             if (showControlSurfaces)
             {
                 drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Elevator], "AoA", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0");
