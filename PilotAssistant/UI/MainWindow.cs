@@ -110,7 +110,7 @@ namespace PilotAssistant.UI
                 if (PilotAssistant.bPause)
                     PilotAssistant.bPause = false;
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                AtmoSAS.bActive = false;
+                SurfSAS.bActive = false;
             }
             PilotAssistant.bWingLeveller = GUILayout.Toggle(PilotAssistant.bWingLeveller, PilotAssistant.bWingLeveller ? "Mode: Wing Leveller" : "Mode: Hdg Control", GUILayout.Width(200));
             if (!PilotAssistant.bWingLeveller)
@@ -164,7 +164,7 @@ namespace PilotAssistant.UI
                 if (PilotAssistant.bPause)
                     PilotAssistant.bPause = false;
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                AtmoSAS.bActive = false;
+                SurfSAS.bActive = false;
             }
 
             PilotAssistant.bAltitudeHold = GUILayout.Toggle(PilotAssistant.bAltitudeHold, PilotAssistant.bAltitudeHold ? "Mode: Altitude" : "Mode: Vertical Speed", GUILayout.Width(200));

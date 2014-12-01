@@ -239,12 +239,12 @@ namespace PilotAssistant
             {
                 if (!bPause)
                 {
-                    if (!FlightData.thisVessel.ctrlState.killRot && !AtmoSAS.bActive)
+                    if (!FlightData.thisVessel.ctrlState.killRot && !SurfSAS.bActive)
                         bPause = true;
                 }
                 else
                 {
-                    if (FlightData.thisVessel.ctrlState.killRot || AtmoSAS.bActive)
+                    if (FlightData.thisVessel.ctrlState.killRot || SurfSAS.bActive)
                         bPause = false;
                 }
             }

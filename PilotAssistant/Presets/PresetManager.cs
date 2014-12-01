@@ -191,7 +191,7 @@ namespace PilotAssistant.Presets
 
         internal static void loadSASPreset(PresetSAS p)
         {
-            List<PID.PID_Controller> c = AtmoSAS.SASControllers;
+            List<PID.PID_Controller> c = SurfSAS.SASControllers;
 
             for (int i = 0; i < 3; i++)
             {
