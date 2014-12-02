@@ -83,12 +83,16 @@ namespace PilotAssistant.UI
             if (!SurfSAS.bStockSAS)
             {
                 if (GUILayout.Button(SurfSAS.bArmed ? "Disarm SAS" : "Arm SAS"))
+                {
                     SurfSAS.bArmed = !SurfSAS.bArmed;
+                    if (!SurfSAS.bArmed)
+                        SurfSAS.bActive = false;
+                }
                 //GUILayout.Label("Atmospheric Mode: " + bAtmosphere.ToString());
 
-                SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = (float)labPlusNumBox2("Pitch:", SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint.ToString("N2"), 80);
-                SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint = (float)labPlusNumBox2("Heading:", SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint.ToString("N2"), 80);
-                SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)labPlusNumBox2("Roll:", SurfSAS.SASControllers[(int)SASList.Roll].SetPoint.ToString("N2"), 80);
+                SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Utility.Functions.Clamp((float)labPlusNumBox2("Pitch:", SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint.ToString("N2"), 80), -80, 80);
+                SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint = (float)labPlusNumBox2("Heading:", SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint.ToString("N2"), 80, 60, 360, 0);
+                SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)labPlusNumBox2("Roll:", SurfSAS.SASControllers[(int)SASList.Roll].SetPoint.ToString("N2"), 80, 60, 180, -180);
 
                 drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Pitch], "Pitch");
                 drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Roll], "Roll");
@@ -162,7 +166,7 @@ namespace PilotAssistant.UI
             return val;
         }
 
-        private static double labPlusNumBox2(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
+        private static double labPlusNumBox2(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60, float upper = 360, float lower = -360)
         {
             double val;
             GUILayout.BeginHorizontal();
@@ -183,15 +187,19 @@ namespace PilotAssistant.UI
             if (GUILayout.Button("+", btnStyle1, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val += 1;
+                if (val > upper)
+                    val = lower;
             }
             if (GUILayout.Button("-", btnStyle2, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val -= 1;
+                if (val < lower)
+                    val = upper;
             }
             GUILayout.EndVertical();
             //
             GUILayout.EndHorizontal();
-            return val;
+            return Utility.Functions.Clamp(val, lower, upper);
         }
     }
 }
