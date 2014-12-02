@@ -30,9 +30,9 @@ namespace PilotAssistant
         internal static bool bStockSAS = false;
         internal static bool bWasStockSAS = false;
 
-        internal int activationFadeRoll = 1;
-        internal int activationFadePitch = 1;
-        internal int activationFadeYaw = 1;
+        internal static float activationFadeRoll = 1;
+        internal static float activationFadePitch = 1;
+        internal static float activationFadeYaw = 1;
 
         public void Initialise()
         {
@@ -56,6 +56,16 @@ namespace PilotAssistant
                 bInit = true;
                 bPause[0] = bPause[1] = bPause[2] = false;
             }
+        }
+
+        public void OnDestroy()
+        {
+            bInit = false;
+            bArmed = false;
+            bActive = false;
+
+            AppLauncherInstance.bDisplaySAS = false;
+            SASPresetWindow.bShowPresets = false;
         }
 
         public void Update()
@@ -126,14 +136,18 @@ namespace PilotAssistant
                 {
                     FlightData.thisVessel.ctrlState.pitch = (pitchResponse * (float)Math.Cos(rollRad) - yawResponse * (float)Math.Sin(rollRad)) / activationFadePitch;
                     if (activationFadePitch > 1)
-                        activationFadePitch--;
+                        activationFadePitch *= 0.98f; // ~100 physics frames
+                    else
+                        activationFadePitch = 1;
                 }
 
                 if (!bPause[(int)SASList.Hdg])
                 {
                     FlightData.thisVessel.ctrlState.yaw = (pitchResponse * (float)Math.Sin(rollRad) + yawResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
                     if (activationFadeYaw > 1)
-                        activationFadeYaw--;
+                        activationFadeYaw *= 0.98f; // ~100 physics frames
+                    else
+                        activationFadeYaw = 1;
                 }
 
                 if (!bPause[(int)SASList.Roll])
@@ -141,21 +155,27 @@ namespace PilotAssistant
                     if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll >= -180 && SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll <= 180)
                         FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll) / activationFadeRoll;
                     else if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll > 180)
-                        FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll - 360) / activationFadeRoll;
-                    else if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll < -180)
                         FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll + 360) / activationFadeRoll;
+                    else if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll < -180)
+                        FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll - 360) / activationFadeRoll;
 
                     if (activationFadeRoll > 1)
-                        activationFadeRoll--;
+                        activationFadeRoll *= 0.98f; // ~100 physics frames
+                    else
+                        activationFadeRoll = 1;
                 }
             }
         }
 
-        private void updateTarget()
+        internal static void updateTarget()
         {
             SASControllers[(int)SASList.Pitch].SetPoint = FlightData.pitch;
             SASControllers[(int)SASList.Hdg].SetPoint = FlightData.heading;
             SASControllers[(int)SASList.Roll].SetPoint = FlightData.roll;
+
+            activationFadeRoll = 10;
+            activationFadePitch = 10;
+            activationFadeYaw = 10;
         }
 
         private void pauseManager()
@@ -175,8 +195,8 @@ namespace PilotAssistant
                     SASControllers[(int)SASList.Hdg].SetPoint = FlightData.heading;
                 }
 
-                activationFadePitch = 25;
-                activationFadeYaw = 25;
+                activationFadePitch = 10;
+                activationFadeYaw = 10;
             }
 
             if (GameSettings.ROLL_LEFT.GetKeyDown() || GameSettings.ROLL_RIGHT.GetKeyDown())
@@ -187,7 +207,7 @@ namespace PilotAssistant
                 if (bActive)
                     SASControllers[(int)SASList.Roll].SetPoint = FlightData.roll;
 
-                activationFadeRoll = 25;
+                activationFadeRoll = 10;
             }
 
             if (GameSettings.SAS_HOLD.GetKeyDown())

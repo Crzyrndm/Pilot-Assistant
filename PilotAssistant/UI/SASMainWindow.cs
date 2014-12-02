@@ -12,8 +12,11 @@ namespace PilotAssistant.UI
         internal static GUIStyle textStyle;
         internal static GUIStyle btnStyle1;
         internal static GUIStyle btnStyle2;
+        internal static GUIStyle btnStyle3;
 
         internal static Rect SASwindow = new Rect(350, 50, 200, 30);
+
+        internal static Texture2D buttonBack = new Texture2D(50, 30);
 
         public static void Draw()
         {
@@ -31,13 +34,27 @@ namespace PilotAssistant.UI
             btnStyle2 = new GUIStyle(GUI.skin.button);
             btnStyle2.margin = new RectOffset(0, 4, 0, 2);
 
+            btnStyle3 = new GUIStyle(GUI.skin.button);
+            btnStyle3.onNormal.background = buttonBack;
+
             if (AppLauncher.AppLauncherInstance.bDisplaySAS)
             {
                 SASwindow = GUI.Window(78934856, SASwindow, drawSASWindow, "");
             }
-            
-            if (SurfSAS.bArmed && SurfSAS.bActive)
-                GUI.Box(new Rect(Screen.width / 2 + 100, Screen.height - 200, 55, 30), "Active");
+
+            if (SurfSAS.bArmed)
+            {
+                Color c = GUI.backgroundColor;
+                if (SurfSAS.bActive)
+                    GUI.backgroundColor = XKCDColors.BrightSkyBlue;
+
+                if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
+                {
+                    SurfSAS.bActive = !SurfSAS.bActive;
+                    SurfSAS.updateTarget();
+                }
+                GUI.backgroundColor = c;
+            }
 
             if (SurfSAS.bStockSAS)
                 SASwindow.height = 440;
@@ -187,14 +204,14 @@ namespace PilotAssistant.UI
             if (GUILayout.Button("+", btnStyle1, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val += 1;
-                if (val > upper)
+                if (val >= upper)
                     val = lower;
             }
             if (GUILayout.Button("-", btnStyle2, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val -= 1;
                 if (val < lower)
-                    val = upper;
+                    val = upper - 1;
             }
             GUILayout.EndVertical();
             //
