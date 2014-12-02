@@ -5,7 +5,7 @@ using UnityEngine;
 using PilotAssistant.Utility;
 namespace PilotAssistant.UI
 {
-    static class MainWindow
+    static class PAMainWindow
     {
         internal static Rect window = new Rect(10, 50, 10, 10);
 
@@ -48,20 +48,20 @@ namespace PilotAssistant.UI
             btnStyle2 = new GUIStyle(GUI.skin.button);
             btnStyle2.margin = new RectOffset(0, 4, 0, 2);
 
-            window = GUI.Window(34244, window, UI.MainWindow.displayWindow, "");
+            window = GUI.Window(34244, window, UI.PAMainWindow.displayWindow, "");
 
-            PresetWindow.presetWindow.x = window.x + window.width;
-            PresetWindow.presetWindow.y = window.y;
+            PAPresetWindow.presetWindow.x = window.x + window.width;
+            PAPresetWindow.presetWindow.y = window.y;
             if (showPresets)
             {
-                PresetWindow.Draw();
+                PAPresetWindow.Draw();
             }
 
             // Window resizing
             float height = 345;
-            if (MainWindow.showPIDGains)
+            if (PAMainWindow.showPIDGains)
                 height += 150;
-            if (MainWindow.showPIDGains && !PilotAssistant.bWingLeveller)
+            if (PAMainWindow.showPIDGains && !PilotAssistant.bWingLeveller)
                 height += 150;
             if (!PilotAssistant.bWingLeveller)
                 height += 80;
@@ -69,12 +69,12 @@ namespace PilotAssistant.UI
                 height += 30;
             if (PilotAssistant.bPause)
                 height += 40;
-            MainWindow.window.height = height;
+            PAMainWindow.window.height = height;
 
-            if (MainWindow.showPIDLimits && MainWindow.showPIDGains)
-                MainWindow.window.width = 420;
+            if (PAMainWindow.showPIDLimits && PAMainWindow.showPIDGains)
+                PAMainWindow.window.width = 420;
             else
-                MainWindow.window.width = 245;
+                PAMainWindow.window.width = 245;
         }
 
         private static void displayWindow(int id)

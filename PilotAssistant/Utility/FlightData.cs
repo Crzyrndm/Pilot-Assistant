@@ -14,9 +14,10 @@ namespace PilotAssistant.Utility
         internal static double AoA = 0;
         internal static double heading = 0;
 
-        internal static Quaternion attitude = Quaternion.identity;
+        //internal static Quaternion attitude = Quaternion.identity;
 
         internal static NavBall ball;
+
         internal static void updateAttitude()
         {
             // blatant copying of FAR get attitude logic because its just so straightfoward...
@@ -45,7 +46,7 @@ namespace PilotAssistant.Utility
             if (double.IsNaN(yaw))
                 yaw = 0;
 
-            attitude = surfAtt();
+            // attitude = surfAtt();
         }
 
         internal static Quaternion surfAtt()

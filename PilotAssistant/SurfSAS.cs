@@ -64,6 +64,8 @@ namespace PilotAssistant
             bArmed = false;
             bActive = false;
 
+            SASControllers.Clear();
+
             AppLauncherInstance.bDisplaySAS = false;
             SASPresetWindow.bShowPresets = false;
         }

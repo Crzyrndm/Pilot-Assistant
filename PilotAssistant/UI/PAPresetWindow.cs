@@ -5,7 +5,7 @@ using PilotAssistant.Presets;
 
 namespace PilotAssistant.UI
 {
-    static class PresetWindow
+    static class PAPresetWindow
     {
         internal static string newPresetName = "";
         internal static bool showPresets = false;

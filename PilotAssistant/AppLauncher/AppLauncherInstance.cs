@@ -13,6 +13,7 @@ namespace PilotAssistant.AppLauncher
         public static bool bDisplayOptions = false;
         public static bool bDisplayAssistant = false;
         public static bool bDisplaySAS = false;
+        public static bool bDisplayModerator = false;
 
         private void Awake()
         {
@@ -66,9 +67,14 @@ namespace PilotAssistant.AppLauncher
                 bDisplayAssistant = !bDisplayAssistant;
                 btnLauncher.toggleButton.SetFalse();
             }
-            if (GUILayout.Button("SAS System"))
+            if (GUILayout.Button("SAS Systems"))
             {
                 bDisplaySAS = !bDisplaySAS;
+                btnLauncher.toggleButton.SetFalse();
+            }
+            if (GUILayout.Button("Input Moderator"))
+            {
+                bDisplayModerator = !bDisplayModerator;
                 btnLauncher.toggleButton.SetFalse();
             }
         }

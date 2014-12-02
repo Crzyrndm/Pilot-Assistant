@@ -12,11 +12,8 @@ namespace PilotAssistant.UI
         internal static GUIStyle textStyle;
         internal static GUIStyle btnStyle1;
         internal static GUIStyle btnStyle2;
-        internal static GUIStyle btnStyle3;
 
         internal static Rect SASwindow = new Rect(350, 50, 200, 30);
-
-        internal static Texture2D buttonBack = new Texture2D(50, 30);
 
         public static void Draw()
         {
@@ -33,9 +30,6 @@ namespace PilotAssistant.UI
 
             btnStyle2 = new GUIStyle(GUI.skin.button);
             btnStyle2.margin = new RectOffset(0, 4, 0, 2);
-
-            btnStyle3 = new GUIStyle(GUI.skin.button);
-            btnStyle3.onNormal.background = buttonBack;
 
             if (AppLauncher.AppLauncherInstance.bDisplaySAS)
             {
