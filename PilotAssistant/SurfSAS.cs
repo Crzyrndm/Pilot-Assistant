@@ -111,6 +111,7 @@ namespace PilotAssistant
 
         public void OnGUI()
         {
+            if (!PilotAssistant.hide)
             SASMainWindow.Draw();
         }
 

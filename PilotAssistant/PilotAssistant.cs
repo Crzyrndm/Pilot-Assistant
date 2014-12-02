@@ -28,6 +28,8 @@ namespace PilotAssistant
     {
         internal static List<PID_Controller> controllers = new List<PID_Controller>();
 
+        internal static bool hide = false;
+
         internal static bool bPause = false;
 
         // RollController
@@ -111,8 +113,8 @@ namespace PilotAssistant
         {
             if (!AppLauncher.AppLauncherInstance.bDisplayAssistant)
                 return;
-
-            MainWindow.Draw();
+            if (!hide)
+                MainWindow.Draw();
         }
 
         private void vesselController(FlightCtrlState state)
@@ -312,6 +314,9 @@ namespace PilotAssistant
                 }
                 MainWindow.targetVert = vert.ToString();
             }
+
+            if (GameSettings.TOGGLE_UI.GetKeyDown())
+                hide = !hide;
         }
     }
 }
