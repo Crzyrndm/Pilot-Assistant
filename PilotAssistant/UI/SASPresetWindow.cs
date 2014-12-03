@@ -14,8 +14,6 @@ namespace PilotAssistant.UI
 
         internal static void Draw()
         {
-
-
             if (bShowPresets)
             {
                 SASPresetwindow = GUILayout.Window(78934857, SASPresetwindow, drawPresetWindow, "");
@@ -26,6 +24,11 @@ namespace PilotAssistant.UI
 
         private static void drawPresetWindow(int id)
         {
+            if (GUI.Button(new Rect(SASPresetwindow.width - 16, 2, 14, 14), ""))
+            {
+                bShowPresets = false;
+            }
+
             if (SurfSAS.bStockSAS)
                 drawStockPreset();
             else

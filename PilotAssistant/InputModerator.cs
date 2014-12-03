@@ -68,10 +68,8 @@ namespace PilotAssistant
         {
             FlightData.updateAttitude();
 
-            c.pitch += Monitors[(int)MonitorList.Altitude].response(FlightData.thisVessel.altitude)
-                - Monitors[(int)MonitorList.Pitch].response(FlightData.pitch)
-                + Monitors[(int)MonitorList.AoA].response(FlightData.AoA)
-                + Monitors[(int)MonitorList.VertSpeed].response(FlightData.thisVessel.verticalSpeed);
+            c.pitch -= Monitors[(int)MonitorList.Altitude].response(FlightData.thisVessel.altitude)
+                - Monitors[(int)MonitorList.Pitch].response(FlightData.pitch);
         }
     }
 }

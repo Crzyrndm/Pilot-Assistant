@@ -32,11 +32,17 @@ namespace PilotAssistant.UI
             btnStyle2 = new GUIStyle(GUI.skin.button);
             btnStyle2.margin = new RectOffset(0, 4, 0, 2);
 
-            window = GUI.Window(95743658, window, drawWindow, "");
+            if (AppLauncher.AppLauncherInstance.bDisplayModerator)
+                window = GUI.Window(95743658, window, drawWindow, "Input Moderator");
         }
 
         private static void drawWindow(int id)
         {
+            if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
+            {
+                AppLauncher.AppLauncherInstance.bDisplayModerator = false;
+            }
+
             scroll = GUILayout.BeginScrollView(scroll);
             foreach (Monitor m in InputModerator.Monitors)
             {
@@ -49,17 +55,22 @@ namespace PilotAssistant.UI
         private static void drawMonitor(Monitor m)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label(m.Name, GUILayout.Width(150));
+            if (GUILayout.Button(m.Name, GUILayout.Width(150)))
+                m.bShow = !m.bShow;
+
             m.Active = GUILayout.Toggle(m.Active, "");
             GUILayout.EndHorizontal();
 
-            GUILayout.Label(string.Format("{0}: {1}", m.Name, m.current.ToString()));
-            m.Lower = labPlusNumBox("Lower", m.Lower.ToString());
-            m.Upper = labPlusNumBox("Upper", m.Upper.ToString());
-            m.BoundKp = labPlusNumBox("Bound Kp", m.BoundKp.ToString());
-            GUILayout.Label(string.Format("{0}': {1}", m.Name, m.diff.ToString()));
-            m.Rate = labPlusNumBox("Rate", m.Rate.ToString());
-            m.RateKp = labPlusNumBox("Rate Kp", m.RateKp.ToString());
+            if (m.bShow)
+            {
+                GUILayout.Label(string.Format("{0}: {1}", m.Name, m.current.ToString()));
+                m.Lower = labPlusNumBox("Lower", m.Lower.ToString());
+                m.Upper = labPlusNumBox("Upper", m.Upper.ToString());
+                m.BoundKp = labPlusNumBox("Bound Kp", m.BoundKp.ToString());
+                GUILayout.Label(string.Format("{0}': {1}", m.Name, m.diff.ToString()));
+                m.Rate = labPlusNumBox("Rate", m.Rate.ToString());
+                m.RateKp = labPlusNumBox("Rate Kp", m.RateKp.ToString());
+            }
         }
 
         private static double labPlusNumBox(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60)

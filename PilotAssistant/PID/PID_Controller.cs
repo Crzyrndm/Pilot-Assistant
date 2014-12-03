@@ -32,6 +32,8 @@ namespace PilotAssistant.PID
 
         private double scale = 1;
 
+        internal bool bShow = true;
+
         public PID_Controller(double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1)
         {
             k_proportional = Kp;

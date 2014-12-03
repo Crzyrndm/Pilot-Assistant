@@ -33,7 +33,7 @@ namespace PilotAssistant.UI
 
             if (AppLauncher.AppLauncherInstance.bDisplaySAS)
             {
-                SASwindow = GUI.Window(78934856, SASwindow, drawSASWindow, "");
+                SASwindow = GUI.Window(78934856, SASwindow, drawSASWindow, "SAS Module");
             }
 
             if (SurfSAS.bArmed)
@@ -60,6 +60,11 @@ namespace PilotAssistant.UI
 
         private static void drawSASWindow(int id)
         {
+            if (GUI.Button(new Rect(SASwindow.width - 16, 2, 14, 14), ""))
+            {
+                AppLauncher.AppLauncherInstance.bDisplaySAS = false;
+            }
+
             if (GUILayout.Button("SAS Presets"))
             {
                 SASPresetWindow.bShowPresets = !SASPresetWindow.bShowPresets;

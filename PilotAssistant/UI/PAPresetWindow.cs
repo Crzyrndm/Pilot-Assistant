@@ -18,6 +18,11 @@ namespace PilotAssistant.UI
 
         private static void displayPresetWindow(int id)
         {
+            if (GUI.Button(new Rect(presetWindow.width - 16, 2, 14, 14), ""))
+            {
+                showPresets = false;
+            }
+
             if (PresetManager.activePAPreset != null)
             {
                 GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.activePAPreset.name));

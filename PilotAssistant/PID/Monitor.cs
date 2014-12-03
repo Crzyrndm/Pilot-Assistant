@@ -14,7 +14,8 @@ namespace PilotAssistant.PID
         private double upper;
         private double rate;
 
-        private bool bActive;
+        private bool bActive = false;
+        internal bool bShow = false;
 
         internal double current = 0;
         internal double diff = 0;
@@ -30,7 +31,6 @@ namespace PilotAssistant.PID
             rate = Rate;
             boundKp = BoundKp;
             rateKp = RateKp;
-            bActive = false;
             name = Name;
         }
 
@@ -42,7 +42,7 @@ namespace PilotAssistant.PID
             previous = current;
             current = val;
 
-            diff = (val - previous) / dt * 0.05 + diff * 0.95;
+            diff = (val - previous) / dt * 0.02 + diff * 0.98;
 
             if (!bActive) // return 0 if monitor is inactive
                 return (float)res;
@@ -58,7 +58,7 @@ namespace PilotAssistant.PID
             }
 
             // rate of change monitor
-            if (diff > rate || diff > (-1 * rate))
+            if (Math.Abs(diff) > Math.Abs(rate))
             {
                 res += rateKp * (diff - rate);
             }

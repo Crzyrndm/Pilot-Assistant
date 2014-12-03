@@ -27,6 +27,10 @@ namespace PilotAssistant.UI
         static GUIStyle btnStyle1;
         static GUIStyle btnStyle2;
 
+        internal static bool bShowSettings = true;
+        internal static bool bShowHdg = true;
+        internal static bool bShowVert = true;
+
         public static void Draw()
         {
             labelStyle = new GUIStyle(GUI.skin.label);
@@ -48,7 +52,7 @@ namespace PilotAssistant.UI
             btnStyle2 = new GUIStyle(GUI.skin.button);
             btnStyle2.margin = new RectOffset(0, 4, 0, 2);
 
-            window = GUI.Window(34244, window, UI.PAMainWindow.displayWindow, "");
+            window = GUI.Window(34244, window, UI.PAMainWindow.displayWindow, "Pilot Assistant");
 
             PAPresetWindow.presetWindow.x = window.x + window.width;
             PAPresetWindow.presetWindow.y = window.y;
@@ -79,77 +83,92 @@ namespace PilotAssistant.UI
 
         private static void displayWindow(int id)
         {
+            if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
+            {
+                AppLauncher.AppLauncherInstance.bDisplayAssistant = false;
+            }
+
             if (PilotAssistant.bPause)
             {
                 GUILayout.Label("CONTROL PAUSED", labelAlertStyle);
             }
 
-            if (GUILayout.Button(showPresets ? "Hide Presets" : "Show Presets"))
+            if (GUILayout.Button("", GUILayout.Height(10), GUILayout.Width(230)))
             {
-                showPresets = !showPresets;
+                bShowSettings = !bShowSettings;
             }
-
-            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(window.width - 50));
-
-            showPIDGains = GUILayout.Toggle(showPIDGains, "Show PID Gains", GUILayout.Width(200));
-            if (showPIDGains)
+            if (bShowSettings)
             {
-                showPIDLimits = GUILayout.Toggle(showPIDLimits, "Show PID Limits", GUILayout.Width(200));
-                showControlSurfaces = GUILayout.Toggle(showControlSurfaces, "Show Control Surfaces", GUILayout.Width(200));
-            }
-
-            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(window.width - 50));
-
-            GUILayout.BeginVertical();
-            #region Hdg GUI
-            GUILayout.Label("Heading Control", GUILayout.Width(100));
-
-            if (GUILayout.Button(PilotAssistant.bHdgActive && !PilotAssistant.bPause ? "Deactivate" : "Activate", GUILayout.Width(200)))
-            {
-                PilotAssistant.bHdgActive = !PilotAssistant.bHdgActive;
-                if (PilotAssistant.bPause)
-                    PilotAssistant.bPause = false;
-                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                SurfSAS.bActive = false;
-            }
-            PilotAssistant.bWingLeveller = GUILayout.Toggle(PilotAssistant.bWingLeveller, PilotAssistant.bWingLeveller ? "Mode: Wing Leveller" : "Mode: Hdg Control", GUILayout.Width(200));
-            if (!PilotAssistant.bWingLeveller)
-            {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Target Hdg: ", GUILayout.Width(98));
-                targetHeading = GUILayout.TextField(targetHeading, GUILayout.Width(98));
-                GUILayout.EndHorizontal();
-
-                if (GUILayout.Button("Update Target Hdg", GUILayout.Width(200)))
+                if (GUILayout.Button(showPresets ? "Hide Presets" : "Show Presets", GUILayout.Width(230)))
                 {
-                    double newHdg;
-                    double.TryParse(targetHeading, out newHdg);
-                    if (newHdg >= 0 && newHdg <= 360)
-                    {
-                        PilotAssistant.controllers[(int)PIDList.HdgBank].SetPoint = newHdg;
-                        PilotAssistant.controllers[(int)PIDList.HdgYaw].SetPoint = newHdg;
-                        PilotAssistant.bHdgActive = PilotAssistant.bHdgWasActive = true; // skip toggle check to avoid being overwritten
-                    }
+                    showPresets = !showPresets;
+                }
+
+                showPIDGains = GUILayout.Toggle(showPIDGains, "Show PID Gains", GUILayout.Width(200));
+                if (showPIDGains)
+                {
+                    showPIDLimits = GUILayout.Toggle(showPIDLimits, "Show PID Limits", GUILayout.Width(200));
+                    showControlSurfaces = GUILayout.Toggle(showControlSurfaces, "Show Control Surfaces", GUILayout.Width(200));
                 }
             }
 
-            GUILayout.Label("Current Hdg: " + FlightData.heading.ToString("N2") + "\u00B0", GUILayout.Width(200));
+            #region Hdg GUI
 
-            scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, (showPIDGains && !PilotAssistant.bWingLeveller) ? GUILayout.Height(160) : GUILayout.Height(0));
-            if (!PilotAssistant.bWingLeveller)
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Roll and Yaw Control", GUILayout.Width(200)))
             {
-                drawPIDvalues(PilotAssistant.controllers[(int)PIDList.HdgBank], "Hdg Roll", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0", false, false);
+                bShowHdg = !bShowHdg;
             }
-            if (showControlSurfaces)
-                drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Aileron], "Bank", "\u00B0", FlightData.roll, 3, "Deflection", "\u00B0");
-            if (!PilotAssistant.bWingLeveller)
+            PilotAssistant.bHdgActive = GUILayout.Toggle(PilotAssistant.bHdgActive, "");
+            if (PilotAssistant.bHdgWasActive != PilotAssistant.bHdgActive)
             {
-                drawPIDvalues(PilotAssistant.controllers[(int)PIDList.HdgYaw], "Hdg Yaw", "\u00B0", FlightData.heading, 2, "Yaw", "\u00B0", false, false);
+                PilotAssistant.bPause = false;
+                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                SurfSAS.bActive = false;
             }
-            if (showControlSurfaces)
-                drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Rudder], "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0");
+            GUILayout.EndHorizontal();
 
-            GUILayout.EndScrollView();
+            if (bShowHdg)
+            {
+                PilotAssistant.bWingLeveller = GUILayout.Toggle(PilotAssistant.bWingLeveller, PilotAssistant.bWingLeveller ? "Mode: Wing Leveller" : "Mode: Hdg Control", GUILayout.Width(200));
+                if (!PilotAssistant.bWingLeveller)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("Target Hdg: ", GUILayout.Width(98));
+                    targetHeading = GUILayout.TextField(targetHeading, GUILayout.Width(98));
+                    GUILayout.EndHorizontal();
+
+                    if (GUILayout.Button("Update Target Hdg", GUILayout.Width(200)))
+                    {
+                        double newHdg;
+                        double.TryParse(targetHeading, out newHdg);
+                        if (newHdg >= 0 && newHdg <= 360)
+                        {
+                            PilotAssistant.controllers[(int)PIDList.HdgBank].SetPoint = newHdg;
+                            PilotAssistant.controllers[(int)PIDList.HdgYaw].SetPoint = newHdg;
+                            PilotAssistant.bHdgActive = PilotAssistant.bHdgWasActive = true; // skip toggle check to avoid being overwritten
+                        }
+                    }
+                }
+
+                GUILayout.Label("Current Hdg: " + FlightData.heading.ToString("N2") + "\u00B0", GUILayout.Width(200));
+
+                scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, (showPIDGains && (!PilotAssistant.bWingLeveller || showControlSurfaces)) ? GUILayout.Height(160) : GUILayout.Height(0));
+                if (!PilotAssistant.bWingLeveller)
+                {
+                    drawPIDvalues(PilotAssistant.controllers[(int)PIDList.HdgBank], "Hdg Roll", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0", false, false);
+                }
+                if (showControlSurfaces)
+                    drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Aileron], "Bank", "\u00B0", FlightData.roll, 3, "Deflection", "\u00B0");
+                if (!PilotAssistant.bWingLeveller)
+                {
+                    drawPIDvalues(PilotAssistant.controllers[(int)PIDList.HdgYaw], "Hdg Yaw", "\u00B0", FlightData.heading, 2, "Yaw", "\u00B0", false, false);
+                }
+                if (showControlSurfaces)
+                    drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Rudder], "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0");
+
+                GUILayout.EndScrollView();
+            }
             #endregion
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(window.width - 50));
@@ -198,7 +217,6 @@ namespace PilotAssistant.UI
             }
             #endregion
 
-            GUILayout.EndVertical();
             GUILayout.EndScrollView();
 
             GUI.DragWindow();
@@ -207,46 +225,53 @@ namespace PilotAssistant.UI
         private static void drawPIDvalues(PID.PID_Controller controller, string inputName, string inputUnits, double inputValue, int displayPrecision, string outputName, string outputUnits, bool invertOutput = false, bool showCurrent = true)
         {
             if (showPIDGains)
-                GUILayout.Box("", GUILayout.Height(5), GUILayout.Width(window.width - 50));
-
-            if (showCurrent)
-                GUILayout.Label(string.Format("Current {0}: ", inputName) + inputValue.ToString("N" + displayPrecision.ToString()) + inputUnits, GUILayout.Width(200));
-
-            if (showPIDGains)
+            {
+                if (GUILayout.Button(inputName, GUILayout.Width(window.width - 50)))
+                {
+                    controller.bShow = !controller.bShow;
+                }
+            }
+            if (controller.bShow)
             {
                 if (showCurrent)
-                    GUILayout.Label(string.Format("Target {0}: ", inputName) + controller.SetPoint.ToString("N" + displayPrecision.ToString()) + inputUnits, GUILayout.Width(200));
+                    GUILayout.Label(string.Format("Current: ", inputName) + inputValue.ToString("N" + displayPrecision.ToString()) + inputUnits, GUILayout.Width(200));
 
-                GUILayout.BeginHorizontal();
-                GUILayout.BeginVertical();
-
-                controller.PGain = labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.PGain.ToString("G3"), 80);
-                controller.IGain = labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.IGain.ToString("G3"), 80);
-                controller.DGain = labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.DGain.ToString("G3"), 80);
-                controller.Scalar = labPlusNumBox(string.Format("{0} Scalar", inputName), controller.Scalar.ToString("G3"), 80);
-
-                if (showPIDLimits)
+                if (showPIDGains)
                 {
-                    GUILayout.EndVertical();
+                    if (showCurrent)
+                        GUILayout.Label(string.Format("Target: ", inputName) + controller.SetPoint.ToString("N" + displayPrecision.ToString()) + inputUnits, GUILayout.Width(200));
+
+                    GUILayout.BeginHorizontal();
                     GUILayout.BeginVertical();
 
-                    if (!invertOutput)
+                    controller.PGain = labPlusNumBox(string.Format("Kp: ", inputName), controller.PGain.ToString("G3"), 80);
+                    controller.IGain = labPlusNumBox(string.Format("Ki: ", inputName), controller.IGain.ToString("G3"), 80);
+                    controller.DGain = labPlusNumBox(string.Format("Kd: ", inputName), controller.DGain.ToString("G3"), 80);
+                    controller.Scalar = labPlusNumBox(string.Format("Scalar", inputName), controller.Scalar.ToString("G3"), 80);
+
+                    if (showPIDLimits)
                     {
-                        controller.OutMin = labPlusNumBox(string.Format("Min {0}{1}: ", outputName, outputUnits), controller.OutMin.ToString("G3"));
-                        controller.OutMax = labPlusNumBox(string.Format("Max {0}{1}: ", outputName, outputUnits), controller.OutMax.ToString("G3"));
-                        controller.ClampLower = labPlusNumBox("I Clamp Lower", controller.ClampLower.ToString("G3"));
-                        controller.ClampUpper = labPlusNumBox("I Clamp Upper", controller.ClampUpper.ToString("G3"));
+                        GUILayout.EndVertical();
+                        GUILayout.BeginVertical();
+
+                        if (!invertOutput)
+                        {
+                            controller.OutMin = labPlusNumBox(string.Format("Min {0}{1}: ", outputName, outputUnits), controller.OutMin.ToString("G3"));
+                            controller.OutMax = labPlusNumBox(string.Format("Max {0}{1}: ", outputName, outputUnits), controller.OutMax.ToString("G3"));
+                            controller.ClampLower = labPlusNumBox("I Clamp Lower", controller.ClampLower.ToString("G3"));
+                            controller.ClampUpper = labPlusNumBox("I Clamp Upper", controller.ClampUpper.ToString("G3"));
+                        }
+                        else
+                        { // used when response * -1 is used to get the correct output
+                            controller.OutMax = -1 * labPlusNumBox(string.Format("Min {0}{1}: ", outputName, outputUnits), (-controller.OutMax).ToString("G3"));
+                            controller.OutMin = -1 * labPlusNumBox(string.Format("Max {0}{1}: ", outputName, outputUnits), (-controller.OutMin).ToString("G3"));
+                            controller.ClampUpper = -1 * labPlusNumBox("I Clamp Lower", (-controller.ClampUpper).ToString("G3"));
+                            controller.ClampLower = -1 * labPlusNumBox("I Clamp Upper", (-controller.ClampLower).ToString("G3"));
+                        }
                     }
-                    else
-                    { // used when response * -1 is used to get the correct output
-                        controller.OutMax = -1 * labPlusNumBox(string.Format("Min {0}{1}: ", outputName, outputUnits), (-controller.OutMax).ToString("G3"));
-                        controller.OutMin = -1 * labPlusNumBox(string.Format("Max {0}{1}: ", outputName, outputUnits), (-controller.OutMin).ToString("G3"));
-                        controller.ClampUpper = -1 * labPlusNumBox("I Clamp Lower", (-controller.ClampUpper).ToString("G3"));
-                        controller.ClampLower = -1 * labPlusNumBox("I Clamp Upper", (-controller.ClampLower).ToString("G3"));
-                    }
+                    GUILayout.EndVertical();
+                    GUILayout.EndHorizontal();
                 }
-                GUILayout.EndVertical();
-                GUILayout.EndHorizontal();
             }
         }
 

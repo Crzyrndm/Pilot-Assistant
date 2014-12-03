@@ -67,14 +67,14 @@ namespace PilotAssistant.AppLauncher
                 bDisplayAssistant = !bDisplayAssistant;
                 btnLauncher.toggleButton.SetFalse();
             }
-            if (GUILayout.Button("SAS Systems"))
-            {
-                bDisplaySAS = !bDisplaySAS;
-                btnLauncher.toggleButton.SetFalse();
-            }
             if (GUILayout.Button("Input Moderator"))
             {
                 bDisplayModerator = !bDisplayModerator;
+                btnLauncher.toggleButton.SetFalse();
+            }
+            if (GUILayout.Button("SAS Systems"))
+            {
+                bDisplaySAS = !bDisplaySAS;
                 btnLauncher.toggleButton.SetFalse();
             }
         }
