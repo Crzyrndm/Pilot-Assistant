@@ -5,31 +5,17 @@ using UnityEngine;
 namespace PilotAssistant.UI
 {
     using Presets;
+    using Utility;
 
     internal static class SASMainWindow
     {
-        internal static GUIStyle labelStyle;
-        internal static GUIStyle textStyle;
-        internal static GUIStyle btnStyle1;
-        internal static GUIStyle btnStyle2;
-
         internal static Rect SASwindow = new Rect(350, 50, 200, 30);
+
+        internal static bool[] stockPIDDisplay = { true, true, true };
 
         public static void Draw()
         {
-            labelStyle = new GUIStyle(GUI.skin.label);
-            labelStyle.alignment = TextAnchor.MiddleLeft;
-            labelStyle.margin = new RectOffset(4, 4, 5, 3);
-
-            textStyle = new GUIStyle(GUI.skin.textField);
-            textStyle.alignment = TextAnchor.MiddleLeft;
-            textStyle.margin = new RectOffset(4, 0, 5, 3);
-
-            btnStyle1 = new GUIStyle(GUI.skin.button);
-            btnStyle1.margin = new RectOffset(0, 4, 2, 0);
-
-            btnStyle2 = new GUIStyle(GUI.skin.button);
-            btnStyle2.margin = new RectOffset(0, 4, 0, 2);
+            GeneralUI.Styles();
 
             if (AppLauncher.AppLauncherInstance.bDisplaySAS)
             {
@@ -38,22 +24,28 @@ namespace PilotAssistant.UI
 
             if (SurfSAS.bArmed)
             {
-                Color c = GUI.backgroundColor;
                 if (SurfSAS.bActive)
-                    GUI.backgroundColor = XKCDColors.BrightSkyBlue;
+                    GUI.backgroundColor = GeneralUI.SASActiveBackground;
 
                 if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
                 {
                     SurfSAS.bActive = !SurfSAS.bActive;
                     SurfSAS.updateTarget();
                 }
-                GUI.backgroundColor = c;
+                GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             }
-
-            if (SurfSAS.bStockSAS)
-                SASwindow.height = 440;
-            else
-                SASwindow.height = 550;
+            float height = 64;
+            if (!SurfSAS.bStockSAS && SurfSAS.bArmed || SurfSAS.bStockSAS)
+                height += 86;
+            if (!SurfSAS.bStockSAS)
+                height += 113;
+            if ((stockPIDDisplay[0] && SurfSAS.bStockSAS) || (SurfSAS.SASControllers[(int)SASList.Pitch].bShow && !SurfSAS.bStockSAS))
+                height += 113;
+            if ((stockPIDDisplay[1] && SurfSAS.bStockSAS) || (SurfSAS.SASControllers[(int)SASList.Roll].bShow && !SurfSAS.bStockSAS))
+                height += 113;
+            if ((stockPIDDisplay[2] && SurfSAS.bStockSAS) || (SurfSAS.SASControllers[(int)SASList.Hdg].bShow && !SurfSAS.bStockSAS))
+                height += 113;
+            SASwindow.height = height;
 
             SASPresetWindow.Draw();
         }
@@ -104,12 +96,12 @@ namespace PilotAssistant.UI
                     if (!SurfSAS.bArmed)
                         SurfSAS.bActive = false;
                 }
-                //GUILayout.Label("Atmospheric Mode: " + bAtmosphere.ToString());
-
-                SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Utility.Functions.Clamp((float)labPlusNumBox2("Pitch:", SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint.ToString("N2"), 80), -80, 80);
-                SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint = (float)labPlusNumBox2("Heading:", SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint.ToString("N2"), 80, 60, 360, 0);
-                SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)labPlusNumBox2("Roll:", SurfSAS.SASControllers[(int)SASList.Roll].SetPoint.ToString("N2"), 80, 60, 180, -180);
-
+                if (SurfSAS.bArmed)
+                {
+                    SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Utility.Functions.Clamp((float)GeneralUI.labPlusNumBox2("Pitch:", SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint.ToString("N2"), 80), -80, 80);
+                    SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint = (float)GeneralUI.labPlusNumBox2("Heading:", SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint.ToString("N2"), 80, 60, 360, 0);
+                    SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.labPlusNumBox2("Roll:", SurfSAS.SASControllers[(int)SASList.Roll].SetPoint.ToString("N2"), 80, 60, 180, -180);
+                }
                 drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Pitch], "Pitch");
                 drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Roll], "Roll");
                 drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Hdg], "Yaw");
@@ -118,104 +110,41 @@ namespace PilotAssistant.UI
             {
                 VesselSAS sas = Utility.FlightData.thisVessel.VesselSAS;
 
-                drawPIDvalues(sas.pidLockedPitch, "Pitch");
-                drawPIDvalues(sas.pidLockedRoll, "Roll");
-                drawPIDvalues(sas.pidLockedYaw, "Yaw");
+                drawPIDvalues(sas.pidLockedPitch, "Pitch", 0);
+                drawPIDvalues(sas.pidLockedRoll, "Roll", 1);
+                drawPIDvalues(sas.pidLockedYaw, "Yaw", 2);
             }
             GUI.DragWindow();
         }
 
         private static void drawPIDvalues(PID.PID_Controller controller, string inputName)
         {
-            GUILayout.Box("", GUILayout.Height(5), GUILayout.Width(SASwindow.width - 50));
+            if (GUILayout.Button(inputName))
+                controller.bShow = !controller.bShow;
 
-            controller.PGain = labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.PGain.ToString("G3"), 80);
-            controller.IGain = labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.IGain.ToString("G3"), 80);
-            controller.DGain = labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.DGain.ToString("G3"), 80);
-            controller.Scalar = labPlusNumBox(string.Format("{0} Scalar: ", inputName), controller.Scalar.ToString("G3"), 80);
+            if (controller.bShow)
+            {
+                controller.PGain = GeneralUI.labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.PGain.ToString("G3"), 80);
+                controller.IGain = GeneralUI.labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.IGain.ToString("G3"), 80);
+                controller.DGain = GeneralUI.labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.DGain.ToString("G3"), 80);
+                controller.Scalar = GeneralUI.labPlusNumBox(string.Format("{0} Scalar: ", inputName), controller.Scalar.ToString("G3"), 80);
+            }
         }
 
-        private static void drawPIDvalues(PIDclamp controller, string inputName)
+        private static void drawPIDvalues(PIDclamp controller, string inputName, int ID)
         {
-            GUILayout.Box("", GUILayout.Height(5), GUILayout.Width(SASwindow.width - 50));
+            if (GUILayout.Button(inputName))
+            {
+                stockPIDDisplay[ID] = !stockPIDDisplay[ID];
+            }
 
-            controller.kp = labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.kp.ToString("G3"), 80);
-            controller.ki = labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.ki.ToString("G3"), 80);
-            controller.kd = labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.kd.ToString("G3"), 80);
-            controller.clamp = labPlusNumBox(string.Format("{0} Scalar: ", inputName), controller.clamp.ToString("G3"), 80);
-        }
-
-        private static double labPlusNumBox(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
-        {
-            double val;
-            GUILayout.BeginHorizontal();
-
-            GUILayout.Label(labelText, labelStyle, GUILayout.Width(labelWidth));
-            val = double.Parse(boxText);
-            boxText = val.ToString(",0.0#####");
-            string text = GUILayout.TextField(boxText, textStyle, GUILayout.Width(boxWidth));
-            //
-            try
+            if (stockPIDDisplay[ID])
             {
-                val = double.Parse(text);
+                controller.kp = GeneralUI.labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.kp.ToString("G3"), 80);
+                controller.ki = GeneralUI.labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.ki.ToString("G3"), 80);
+                controller.kd = GeneralUI.labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.kd.ToString("G3"), 80);
+                controller.clamp = GeneralUI.labPlusNumBox(string.Format("{0} Scalar: ", inputName), controller.clamp.ToString("G3"), 80);
             }
-            catch
-            {
-                val = double.Parse(boxText);
-            }
-            //
-            GUILayout.BeginVertical();
-            if (GUILayout.Button("+", btnStyle1, GUILayout.Width(20), GUILayout.Height(13)))
-            {
-                if (val != 0)
-                    val *= 1.1;
-                else
-                    val = 0.01;
-            }
-            if (GUILayout.Button("-", btnStyle2, GUILayout.Width(20), GUILayout.Height(13)))
-            {
-                val /= 1.1;
-            }
-            GUILayout.EndVertical();
-            //
-            GUILayout.EndHorizontal();
-            return val;
-        }
-
-        private static double labPlusNumBox2(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60, float upper = 360, float lower = -360)
-        {
-            double val;
-            GUILayout.BeginHorizontal();
-
-            GUILayout.Label(labelText, labelStyle, GUILayout.Width(labelWidth));
-            string text = GUILayout.TextField(boxText, textStyle, GUILayout.Width(boxWidth));
-            //
-            try
-            {
-                val = double.Parse(text);
-            }
-            catch
-            {
-                val = double.Parse(boxText);
-            }
-            //
-            GUILayout.BeginVertical();
-            if (GUILayout.Button("+", btnStyle1, GUILayout.Width(20), GUILayout.Height(13)))
-            {
-                val += 1;
-                if (val >= upper)
-                    val = lower;
-            }
-            if (GUILayout.Button("-", btnStyle2, GUILayout.Width(20), GUILayout.Height(13)))
-            {
-                val -= 1;
-                if (val < lower)
-                    val = upper - 1;
-            }
-            GUILayout.EndVertical();
-            //
-            GUILayout.EndHorizontal();
-            return Utility.Functions.Clamp(val, lower, upper);
         }
     }
 }

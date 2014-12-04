@@ -8,7 +8,6 @@ namespace PilotAssistant.UI
     static class PAPresetWindow
     {
         internal static string newPresetName = "";
-        internal static bool showPresets = false;
         internal static Rect presetWindow = new Rect(0, 0, 200, 10);
 
         internal static void Draw()
@@ -20,7 +19,7 @@ namespace PilotAssistant.UI
         {
             if (GUI.Button(new Rect(presetWindow.width - 16, 2, 14, 14), ""))
             {
-                showPresets = false;
+                PAMainWindow.showPresets = false;
             }
 
             if (PresetManager.activePAPreset != null)

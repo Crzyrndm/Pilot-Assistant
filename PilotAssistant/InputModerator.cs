@@ -35,6 +35,9 @@ namespace PilotAssistant
             FlightData.thisVessel = FlightGlobals.ActiveVessel;
             FlightData.thisVessel.OnFlyByWire += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
+
+            // Init colours
+            GeneralUI.InitColors();
         }
 
         public void OnDestroy()

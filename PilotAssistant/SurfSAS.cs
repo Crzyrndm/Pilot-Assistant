@@ -56,6 +56,9 @@ namespace PilotAssistant
                 bInit = true;
                 bPause[0] = bPause[1] = bPause[2] = false;
             }
+
+            // Init colours
+            GeneralUI.InitColors();
         }
 
         public void OnDestroy()
@@ -114,7 +117,7 @@ namespace PilotAssistant
         public void OnGUI()
         {
             if (!PilotAssistant.hide)
-            SASMainWindow.Draw();
+                SASMainWindow.Draw();
         }
 
         public void FixedUpdate()

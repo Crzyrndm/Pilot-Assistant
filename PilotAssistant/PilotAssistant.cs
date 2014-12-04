@@ -73,6 +73,9 @@ namespace PilotAssistant
             FlightData.thisVessel = FlightGlobals.ActiveVessel;
             FlightData.thisVessel.OnFlyByWire += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
+
+            // Init colours
+            GeneralUI.InitColors();
         }
 
         private void vesselSwitch(Vessel v)
@@ -236,6 +239,8 @@ namespace PilotAssistant
                 bPause = !bPause;
                 if (!bPause)
                     FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+
+                ScreenMessages.PostScreenMessage("Pilot Assistant " + (bPause ? "Paused" : "Unpaused"));
             }
 
             if (GameSettings.SAS_TOGGLE.GetKeyDown())

@@ -64,6 +64,7 @@
     <Compile Include="UI\SASPresetWindow.cs" />
     <Compile Include="Utility\FlightData.cs" />
     <Compile Include="Utility\Functions.cs" />
+    <Compile Include="Utility\GeneralUI.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

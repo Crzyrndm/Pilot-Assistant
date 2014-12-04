@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-using PilotAssistant.Utility;
 namespace PilotAssistant.UI
 {
+    using Utility;
+
     static class PAMainWindow
     {
         internal static Rect window = new Rect(10, 50, 10, 10);
@@ -21,38 +22,18 @@ namespace PilotAssistant.UI
         internal static string targetVert = "0";
         internal static string targetHeading = "0";
 
-        static GUIStyle labelStyle;
-        static GUIStyle labelAlertStyle;
-        static GUIStyle textStyle;
-        static GUIStyle btnStyle1;
-        static GUIStyle btnStyle2;
-
         internal static bool bShowSettings = true;
         internal static bool bShowHdg = true;
         internal static bool bShowVert = true;
 
+        internal static float hdgScrollHeight;
+        internal static float vertScrollHeight;
+
         public static void Draw()
         {
-            labelStyle = new GUIStyle(GUI.skin.label);
-            labelStyle.alignment = TextAnchor.MiddleLeft;
-            labelStyle.margin = new RectOffset(4, 4, 5, 3);
+            GeneralUI.Styles();
 
-            labelAlertStyle = new GUIStyle(GUI.skin.label);
-            labelAlertStyle.normal.textColor = XKCDColors.Red;
-            labelAlertStyle.fontSize = 24;
-            labelAlertStyle.fontStyle = FontStyle.Bold;
-
-            textStyle = new GUIStyle(GUI.skin.textField);
-            textStyle.alignment = TextAnchor.MiddleLeft;
-            textStyle.margin = new RectOffset(4, 0, 5, 3);
-
-            btnStyle1 = new GUIStyle(GUI.skin.button);
-            btnStyle1.margin = new RectOffset(0, 4, 2, 0);
-
-            btnStyle2 = new GUIStyle(GUI.skin.button);
-            btnStyle2.margin = new RectOffset(0, 4, 0, 2);
-
-            window = GUI.Window(34244, window, UI.PAMainWindow.displayWindow, "Pilot Assistant");
+            window = GUI.Window(34244, window, displayWindow, "Pilot Assistant");
 
             PAPresetWindow.presetWindow.x = window.x + window.width;
             PAPresetWindow.presetWindow.y = window.y;
@@ -62,23 +43,81 @@ namespace PilotAssistant.UI
             }
 
             // Window resizing
-            float height = 345;
-            if (PAMainWindow.showPIDGains)
-                height += 150;
-            if (PAMainWindow.showPIDGains && !PilotAssistant.bWingLeveller)
-                height += 150;
-            if (!PilotAssistant.bWingLeveller)
-                height += 80;
-            if (PilotAssistant.bAltitudeHold)
-                height += 30;
-            if (PilotAssistant.bPause)
-                height += 40;
-            PAMainWindow.window.height = height;
+            float height = 100;
+            hdgScrollHeight = 0;
+            vertScrollHeight = 0;
 
-            if (PAMainWindow.showPIDLimits && PAMainWindow.showPIDGains)
-                PAMainWindow.window.width = 420;
+            if (bShowSettings)
+            {
+                height += 46;
+                if (showPIDGains)
+                    height += 44;
+            }
+
+            if (bShowHdg)
+                height += 75;
+            if (bShowHdg && showPIDGains)
+            {
+                height += 55;
+                hdgScrollHeight = 55;
+                if (showPIDGains)
+                {
+                    if (PilotAssistant.controllers[(int)PIDList.HdgBank].bShow || PilotAssistant.controllers[(int)PIDList.HdgYaw].bShow && !showControlSurfaces)
+                    {
+                        height += 130;
+                        hdgScrollHeight += 130;
+                    }
+                    else if (showControlSurfaces)
+                    {
+                        height += 50;
+                        hdgScrollHeight += 50;
+                        if (PilotAssistant.controllers[(int)PIDList.Aileron].bShow || PilotAssistant.controllers[(int)PIDList.Rudder].bShow)
+                        {
+                            height += 80;
+                            hdgScrollHeight += 80;
+                        }
+                    }
+                }
+            }
+            if (bShowVert)
+                height += 75;
+            if (bShowVert && showPIDGains)
+            {
+                height += 7;
+                vertScrollHeight = 35;
+                if (PilotAssistant.bAltitudeHold)
+                {
+                    height += 27;
+                    vertScrollHeight += 27;
+                }
+
+                if (showPIDGains)
+                {
+                    if ((PilotAssistant.controllers[(int)PIDList.Altitude].bShow && PilotAssistant.bAltitudeHold) || PilotAssistant.controllers[(int)PIDList.VertSpeed].bShow && !showControlSurfaces)
+                    {
+                        height += 130;
+                        vertScrollHeight += 130;
+                    }
+                    else if (showControlSurfaces)
+                    {
+                        height += 27;
+                        vertScrollHeight += 27;
+                        if (PilotAssistant.controllers[(int)PIDList.Elevator].bShow)
+                        {
+                            height += 80;
+                            vertScrollHeight += 80;
+                        }
+                    }
+                }
+            }
+
+            
+            window.height = height;
+
+            if (showPIDLimits && showPIDGains)
+                window.width = 420;
             else
-                PAMainWindow.window.width = 245;
+                window.width = 245;
         }
 
         private static void displayWindow(int id)
@@ -90,16 +129,16 @@ namespace PilotAssistant.UI
 
             if (PilotAssistant.bPause)
             {
-                GUILayout.Label("CONTROL PAUSED", labelAlertStyle);
+                GUILayout.Label("CONTROL PAUSED", GeneralUI.labelAlertStyle);
             }
 
-            if (GUILayout.Button("", GUILayout.Height(10), GUILayout.Width(230)))
+            if (GUILayout.Button("Options", GUILayout.Width(225)))
             {
                 bShowSettings = !bShowSettings;
             }
             if (bShowSettings)
             {
-                if (GUILayout.Button(showPresets ? "Hide Presets" : "Show Presets", GUILayout.Width(230)))
+                if (GUILayout.Button(showPresets ? "Hide Presets" : "Show Presets", GUILayout.Width(200)))
                 {
                     showPresets = !showPresets;
                 }
@@ -110,18 +149,23 @@ namespace PilotAssistant.UI
                     showPIDLimits = GUILayout.Toggle(showPIDLimits, "Show PID Limits", GUILayout.Width(200));
                     showControlSurfaces = GUILayout.Toggle(showControlSurfaces, "Show Control Surfaces", GUILayout.Width(200));
                 }
+                else
+                {
+                    showPIDLimits = showControlSurfaces = false;
+                }
             }
 
             #region Hdg GUI
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Roll and Yaw Control", GUILayout.Width(200)))
+            if (GUILayout.Button("Roll and Yaw Control", GUILayout.Width(206)))
             {
                 bShowHdg = !bShowHdg;
             }
-            PilotAssistant.bHdgActive = GUILayout.Toggle(PilotAssistant.bHdgActive, "");
-            if (PilotAssistant.bHdgWasActive != PilotAssistant.bHdgActive)
+            bool toggleCheck = GUILayout.Toggle(PilotAssistant.bHdgActive, "");
+            if (toggleCheck != PilotAssistant.bHdgActive)
             {
+                PilotAssistant.bHdgActive = toggleCheck;
                 PilotAssistant.bPause = false;
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
                 SurfSAS.bActive = false;
@@ -134,11 +178,7 @@ namespace PilotAssistant.UI
                 if (!PilotAssistant.bWingLeveller)
                 {
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label("Target Hdg: ", GUILayout.Width(98));
-                    targetHeading = GUILayout.TextField(targetHeading, GUILayout.Width(98));
-                    GUILayout.EndHorizontal();
-
-                    if (GUILayout.Button("Update Target Hdg", GUILayout.Width(200)))
+                    if (GUILayout.Button("Target Hdg: ", GUILayout.Width(98)))
                     {
                         double newHdg;
                         double.TryParse(targetHeading, out newHdg);
@@ -149,11 +189,12 @@ namespace PilotAssistant.UI
                             PilotAssistant.bHdgActive = PilotAssistant.bHdgWasActive = true; // skip toggle check to avoid being overwritten
                         }
                     }
+                    targetHeading = GUILayout.TextField(targetHeading, GUILayout.Width(98));
+                    GUILayout.EndHorizontal();
                 }
-
                 GUILayout.Label("Current Hdg: " + FlightData.heading.ToString("N2") + "\u00B0", GUILayout.Width(200));
 
-                scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, (showPIDGains && (!PilotAssistant.bWingLeveller || showControlSurfaces)) ? GUILayout.Height(160) : GUILayout.Height(0));
+                scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, GeneralUI.scrollview, GUILayout.Height(hdgScrollHeight));
                 if (!PilotAssistant.bWingLeveller)
                 {
                     drawPIDvalues(PilotAssistant.controllers[(int)PIDList.HdgBank], "Hdg Roll", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0", false, false);
@@ -171,53 +212,57 @@ namespace PilotAssistant.UI
             }
             #endregion
 
-            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(window.width - 50));
-
             #region Pitch GUI
 
-            GUILayout.Label("Vertical Control");
-
-            if (GUILayout.Button(PilotAssistant.bVertActive && !PilotAssistant.bPause ? "Deactivate" : "Activate", GUILayout.Width(200)))
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Vertical Control", GUILayout.Width(206)))
             {
-                PilotAssistant.bVertActive = !PilotAssistant.bVertActive;
-                if (PilotAssistant.bPause)
+                bShowVert = !bShowVert;
+            }
+            toggleCheck = GUILayout.Toggle(PilotAssistant.bVertActive, "");
+            if (toggleCheck != PilotAssistant.bVertActive)
+            {
+                PilotAssistant.bVertActive = toggleCheck;
+                if (!toggleCheck)
                     PilotAssistant.bPause = false;
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
                 SurfSAS.bActive = false;
             }
-
-            PilotAssistant.bAltitudeHold = GUILayout.Toggle(PilotAssistant.bAltitudeHold, PilotAssistant.bAltitudeHold ? "Mode: Altitude" : "Mode: Vertical Speed", GUILayout.Width(200));
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(PilotAssistant.bAltitudeHold ? "Target Altitude: " : "Target Speed: ", GUILayout.Width(98));
-            targetVert = GUILayout.TextField(targetVert, GUILayout.Width(98));
             GUILayout.EndHorizontal();
 
-            if (GUILayout.Button(PilotAssistant.bAltitudeHold ? "Update Target Altitude" : "Update Target Speed", GUILayout.Width(200)))
+            if (bShowVert)
             {
-                PilotAssistant.bVertActive = PilotAssistant.bVertWasActive = true; // skip the toggle check so value isn't overwritten
+                PilotAssistant.bAltitudeHold = GUILayout.Toggle(PilotAssistant.bAltitudeHold, PilotAssistant.bAltitudeHold ? "Mode: Altitude" : "Mode: Vertical Speed", GUILayout.Width(200));
 
-                double newVal;
-                double.TryParse(targetVert, out newVal);
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button(PilotAssistant.bAltitudeHold ? "Target Altitude:" : "Target Speed:", GUILayout.Width(98)))
+                {
+                    PilotAssistant.bVertActive = PilotAssistant.bVertWasActive = true; // skip the toggle check so value isn't overwritten
+
+                    double newVal;
+                    double.TryParse(targetVert, out newVal);
+                    if (PilotAssistant.bAltitudeHold)
+                        PilotAssistant.controllers[(int)PIDList.Altitude].SetPoint = newVal;
+                    else
+                        PilotAssistant.controllers[(int)PIDList.VertSpeed].SetPoint = newVal;
+                }
+                targetVert = GUILayout.TextField(targetVert, GUILayout.Width(98));
+                GUILayout.EndHorizontal();
+
+                scrollbarVert = GUILayout.BeginScrollView(scrollbarVert, GeneralUI.scrollview);
                 if (PilotAssistant.bAltitudeHold)
-                    PilotAssistant.controllers[(int)PIDList.Altitude].SetPoint = newVal;
-                else
-                    PilotAssistant.controllers[(int)PIDList.VertSpeed].SetPoint = newVal;
-            }
+                {
+                    drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Altitude], "Alt", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true);
+                }
+                drawPIDvalues(PilotAssistant.controllers[(int)PIDList.VertSpeed], "Spd ", "m/s", FlightData.thisVessel.verticalSpeed, 2, "AoA", "\u00B0", true);
+                if (showControlSurfaces)
+                {
+                    drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Elevator], "AoA", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0");
+                }
 
-            scrollbarVert = GUILayout.BeginScrollView(scrollbarVert);
-            if (PilotAssistant.bAltitudeHold)
-            {
-                drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Altitude], "Alt", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true);
-            }
-            drawPIDvalues(PilotAssistant.controllers[(int)PIDList.VertSpeed], "Spd ", "m/s", FlightData.thisVessel.verticalSpeed, 2, "AoA", "\u00B0", true);
-            if (showControlSurfaces)
-            {
-                drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Elevator], "AoA", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0");
+                GUILayout.EndScrollView();
             }
             #endregion
-
-            GUILayout.EndScrollView();
 
             GUI.DragWindow();
         }
@@ -244,10 +289,10 @@ namespace PilotAssistant.UI
                     GUILayout.BeginHorizontal();
                     GUILayout.BeginVertical();
 
-                    controller.PGain = labPlusNumBox(string.Format("Kp: ", inputName), controller.PGain.ToString("G3"), 80);
-                    controller.IGain = labPlusNumBox(string.Format("Ki: ", inputName), controller.IGain.ToString("G3"), 80);
-                    controller.DGain = labPlusNumBox(string.Format("Kd: ", inputName), controller.DGain.ToString("G3"), 80);
-                    controller.Scalar = labPlusNumBox(string.Format("Scalar", inputName), controller.Scalar.ToString("G3"), 80);
+                    controller.PGain = GeneralUI.labPlusNumBox(string.Format("Kp: ", inputName), controller.PGain.ToString("G3"), 80);
+                    controller.IGain = GeneralUI.labPlusNumBox(string.Format("Ki: ", inputName), controller.IGain.ToString("G3"), 80);
+                    controller.DGain = GeneralUI.labPlusNumBox(string.Format("Kd: ", inputName), controller.DGain.ToString("G3"), 80);
+                    controller.Scalar = GeneralUI.labPlusNumBox(string.Format("Scalar", inputName), controller.Scalar.ToString("G3"), 80);
 
                     if (showPIDLimits)
                     {
@@ -256,60 +301,23 @@ namespace PilotAssistant.UI
 
                         if (!invertOutput)
                         {
-                            controller.OutMin = labPlusNumBox(string.Format("Min {0}{1}: ", outputName, outputUnits), controller.OutMin.ToString("G3"));
-                            controller.OutMax = labPlusNumBox(string.Format("Max {0}{1}: ", outputName, outputUnits), controller.OutMax.ToString("G3"));
-                            controller.ClampLower = labPlusNumBox("I Clamp Lower", controller.ClampLower.ToString("G3"));
-                            controller.ClampUpper = labPlusNumBox("I Clamp Upper", controller.ClampUpper.ToString("G3"));
+                            controller.OutMin = GeneralUI.labPlusNumBox(string.Format("Min {0}{1}: ", outputName, outputUnits), controller.OutMin.ToString("G3"));
+                            controller.OutMax = GeneralUI.labPlusNumBox(string.Format("Max {0}{1}: ", outputName, outputUnits), controller.OutMax.ToString("G3"));
+                            controller.ClampLower = GeneralUI.labPlusNumBox("I Clamp Lower", controller.ClampLower.ToString("G3"));
+                            controller.ClampUpper = GeneralUI.labPlusNumBox("I Clamp Upper", controller.ClampUpper.ToString("G3"));
                         }
                         else
                         { // used when response * -1 is used to get the correct output
-                            controller.OutMax = -1 * labPlusNumBox(string.Format("Min {0}{1}: ", outputName, outputUnits), (-controller.OutMax).ToString("G3"));
-                            controller.OutMin = -1 * labPlusNumBox(string.Format("Max {0}{1}: ", outputName, outputUnits), (-controller.OutMin).ToString("G3"));
-                            controller.ClampUpper = -1 * labPlusNumBox("I Clamp Lower", (-controller.ClampUpper).ToString("G3"));
-                            controller.ClampLower = -1 * labPlusNumBox("I Clamp Upper", (-controller.ClampLower).ToString("G3"));
+                            controller.OutMax = -1 * GeneralUI.labPlusNumBox(string.Format("Min {0}{1}: ", outputName, outputUnits), (-controller.OutMax).ToString("G3"));
+                            controller.OutMin = -1 * GeneralUI.labPlusNumBox(string.Format("Max {0}{1}: ", outputName, outputUnits), (-controller.OutMin).ToString("G3"));
+                            controller.ClampUpper = -1 * GeneralUI.labPlusNumBox("I Clamp Lower", (-controller.ClampUpper).ToString("G3"));
+                            controller.ClampLower = -1 * GeneralUI.labPlusNumBox("I Clamp Upper", (-controller.ClampLower).ToString("G3"));
                         }
                     }
                     GUILayout.EndVertical();
                     GUILayout.EndHorizontal();
                 }
             }
-        }
-
-        private static double labPlusNumBox(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
-        {
-            double val;
-            GUILayout.BeginHorizontal();
-
-            GUILayout.Label(labelText, labelStyle, GUILayout.Width(labelWidth));
-            val = double.Parse(boxText);
-            boxText = val.ToString(",0.0#####");
-            string text = GUILayout.TextField(boxText, textStyle, GUILayout.Width(boxWidth));
-            //
-            try
-            {
-                val = double.Parse(text);
-            }
-            catch
-            {
-                val = double.Parse(boxText);
-            }
-            //
-            GUILayout.BeginVertical();
-            if (GUILayout.Button("+", btnStyle1, GUILayout.Width(20), GUILayout.Height(13)))
-            {
-                if (val != 0)
-                    val *= 1.1;
-                else
-                    val = 0.01;
-            }
-            if (GUILayout.Button("-", btnStyle2, GUILayout.Width(20), GUILayout.Height(13)))
-            {
-                val /= 1.1;
-            }
-            GUILayout.EndVertical();
-            //
-            GUILayout.EndHorizontal();
-            return val;
         }
     }
 }
