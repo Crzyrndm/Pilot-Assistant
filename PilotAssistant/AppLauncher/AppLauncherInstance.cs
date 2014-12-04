@@ -25,7 +25,6 @@ namespace PilotAssistant.AppLauncher
             GameEvents.onGUIApplicationLauncherReady.Remove(this.OnAppLauncherReady);
             if (btnLauncher != null)
                 ApplicationLauncher.Instance.RemoveModApplication(btnLauncher);
-            bDisplayAssistant = false;
         }
 
         private void OnAppLauncherReady()
@@ -38,7 +37,6 @@ namespace PilotAssistant.AppLauncher
 
         private void OnGameSceneChange(GameScenes scene)
         {
-            bDisplayAssistant = false;
             ApplicationLauncher.Instance.RemoveModApplication(btnLauncher);
         }
 

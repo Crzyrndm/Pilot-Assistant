@@ -69,8 +69,8 @@ namespace PilotAssistant
 
             SASControllers.Clear();
 
-            AppLauncherInstance.bDisplaySAS = false;
-            SASPresetWindow.bShowPresets = false;
+            //AppLauncherInstance.bDisplaySAS = false;
+            //SASPresetWindow.bShowPresets = false;
         }
 
         public void Update()
