@@ -137,22 +137,24 @@ namespace PilotAssistant
             if (bHdgActive)
             {
                 if (!bWingLeveller)
-                {// Fix heading so it behaves properly traversing 0/360 degrees
+                {
                     if (controllers[(int)PIDList.HdgBank].SetPoint - FlightData.heading >= -180 && controllers[(int)PIDList.HdgBank].SetPoint - FlightData.heading <= 180)
                     {
                         controllers[(int)PIDList.Aileron].SetPoint = controllers[(int)PIDList.HdgBank].Response(FlightData.heading);
-                        controllers[(int)PIDList.Rudder].SetPoint = controllers[(int)PIDList.HdgYaw].Response(FlightData.heading);
+                        controllers[(int)PIDList.HdgYaw].SetPoint = controllers[(int)PIDList.HdgBank].Response(FlightData.heading);
                     }
                     else if (controllers[(int)PIDList.HdgBank].SetPoint - FlightData.heading < -180)
                     {
                         controllers[(int)PIDList.Aileron].SetPoint = controllers[(int)PIDList.HdgBank].Response(FlightData.heading - 360);
-                        controllers[(int)PIDList.Rudder].SetPoint = controllers[(int)PIDList.HdgYaw].Response(FlightData.heading - 360);
+                        controllers[(int)PIDList.HdgYaw].SetPoint = controllers[(int)PIDList.HdgBank].Response(FlightData.heading - 360);
                     }
                     else if (controllers[(int)PIDList.HdgBank].SetPoint - FlightData.heading > 180)
                     {
                         controllers[(int)PIDList.Aileron].SetPoint = controllers[(int)PIDList.HdgBank].Response(FlightData.heading + 360);
-                        controllers[(int)PIDList.Rudder].SetPoint = controllers[(int)PIDList.HdgYaw].Response(FlightData.heading + 360);
+                        controllers[(int)PIDList.HdgYaw].SetPoint = controllers[(int)PIDList.HdgBank].Response(FlightData.heading + 360);
                     }
+
+                    controllers[(int)PIDList.Rudder].SetPoint = -controllers[(int)PIDList.HdgYaw].Response(FlightData.yaw);
                 }
                 else
                 {
@@ -249,11 +251,13 @@ namespace PilotAssistant
                 {
                     if (!FlightData.thisVessel.ctrlState.killRot && !SurfSAS.bActive)
                         bPause = true;
+                    ScreenMessages.PostScreenMessage("Pilot Assistant control handed to SAS");
                 }
                 else
                 {
                     if (FlightData.thisVessel.ctrlState.killRot || SurfSAS.bActive)
                         bPause = false;
+                    ScreenMessages.PostScreenMessage("Pilot Assistant control retrieved from SAS");
                 }
             }
 
@@ -261,8 +265,10 @@ namespace PilotAssistant
             {
                 controllers[(int)PIDList.VertSpeed].SetPoint = 0;
                 bAltitudeHold = false;
+                bWasAltitudeHold = false;
                 bWingLeveller = true;
                 PAMainWindow.targetVert = "0";
+                ScreenMessages.PostScreenMessage("Pilot Assistant levelling off");
             }
 
             double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1;

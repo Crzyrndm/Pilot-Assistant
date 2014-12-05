@@ -44,6 +44,7 @@ namespace PilotAssistant
             if (FlightData.thisVessel.VesselSAS.pidLockedPitch != null)
             {
                 PresetManager.defaultStockSASTuning = new PresetSAS(FlightData.thisVessel.VesselSAS, "Stock");
+                PresetManager.activeStockSASPreset = PresetManager.defaultStockSASTuning;
 
                 PID_Controller pitch = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
                 SASControllers.Add(pitch);
@@ -52,6 +53,7 @@ namespace PilotAssistant
                 PID_Controller roll = new PID.PID_Controller(0.1, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
                 SASControllers.Add(roll);
                 PresetManager.defaultSASTuning = new PresetSAS(SASControllers, "Default");
+                PresetManager.activeSASPreset = PresetManager.defaultSASTuning;
 
                 bInit = true;
                 bPause[0] = bPause[1] = bPause[2] = false;

@@ -7,8 +7,9 @@ namespace PilotAssistant.Utility
     static class GeneralUI
     {
         internal static Color stockBackgroundGUIColor;
-        internal static Color SASActiveBackground;
-        internal static Color ActiveButtonBackground;
+        internal static Color ActiveBackground;
+        internal static Color InActiveBackground;
+        internal static Color HeaderButtonBackground;
 
         internal static GUIStyle labelAlertStyle;
 
@@ -22,8 +23,9 @@ namespace PilotAssistant.Utility
         internal static void InitColors()
         {
             stockBackgroundGUIColor = GUI.backgroundColor;
-            SASActiveBackground = XKCDColors.BrightSkyBlue;
-            ActiveButtonBackground = XKCDColors.BrightOrange;
+            ActiveBackground = XKCDColors.BrightOrange;
+            InActiveBackground = XKCDColors.BrightSkyBlue;
+            HeaderButtonBackground = XKCDColors.BlueBlue;
         }
 
         internal static void Styles()
@@ -34,7 +36,7 @@ namespace PilotAssistant.Utility
             // style for the paused message
             labelAlertStyle = new GUIStyle(GUI.skin.label);
             labelAlertStyle.normal.textColor = XKCDColors.Red;
-            labelAlertStyle.fontSize = 24;
+            labelAlertStyle.fontSize = 21;
             labelAlertStyle.fontStyle = FontStyle.Bold;
 
             // style for label to align with increment buttons

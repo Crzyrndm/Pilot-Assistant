@@ -25,7 +25,9 @@ namespace PilotAssistant.UI
             if (SurfSAS.bArmed)
             {
                 if (SurfSAS.bActive)
-                    GUI.backgroundColor = GeneralUI.SASActiveBackground;
+                    GUI.backgroundColor = GeneralUI.ActiveBackground;
+                else
+                    GUI.backgroundColor = GeneralUI.InActiveBackground;
 
                 if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
                 {
@@ -35,10 +37,12 @@ namespace PilotAssistant.UI
                 GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             }
             float height = 64;
-            if (!SurfSAS.bStockSAS && SurfSAS.bArmed || SurfSAS.bStockSAS)
+            if (SurfSAS.bStockSAS)
                 height += 86;
+            if (!SurfSAS.bStockSAS && SurfSAS.bArmed)
+                height += 166;
             if (!SurfSAS.bStockSAS)
-                height += 113;
+                height += 33;
             if ((stockPIDDisplay[0] && SurfSAS.bStockSAS) || (SurfSAS.SASControllers[(int)SASList.Pitch].bShow && !SurfSAS.bStockSAS))
                 height += 113;
             if ((stockPIDDisplay[1] && SurfSAS.bStockSAS) || (SurfSAS.SASControllers[(int)SASList.Roll].bShow && !SurfSAS.bStockSAS))
@@ -90,21 +94,25 @@ namespace PilotAssistant.UI
 
             if (!SurfSAS.bStockSAS)
             {
+                GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
                 if (GUILayout.Button(SurfSAS.bArmed ? "Disarm SAS" : "Arm SAS"))
                 {
+                    ScreenMessages.PostScreenMessage("Surface SAS " + (SurfSAS.bArmed ? "Armed" : "Disarmed"));
                     SurfSAS.bArmed = !SurfSAS.bArmed;
                     if (!SurfSAS.bArmed)
                         SurfSAS.bActive = false;
                 }
+                GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+
                 if (SurfSAS.bArmed)
                 {
                     SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Utility.Functions.Clamp((float)GeneralUI.labPlusNumBox2("Pitch:", SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint.ToString("N2"), 80), -80, 80);
                     SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint = (float)GeneralUI.labPlusNumBox2("Heading:", SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint.ToString("N2"), 80, 60, 360, 0);
                     SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.labPlusNumBox2("Roll:", SurfSAS.SASControllers[(int)SASList.Roll].SetPoint.ToString("N2"), 80, 60, 180, -180);
+                    drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Pitch], "Pitch");
+                    drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Roll], "Roll");
+                    drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Hdg], "Yaw");
                 }
-                drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Pitch], "Pitch");
-                drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Roll], "Roll");
-                drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Hdg], "Yaw");
             }
             else
             {
@@ -124,10 +132,10 @@ namespace PilotAssistant.UI
 
             if (controller.bShow)
             {
-                controller.PGain = GeneralUI.labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.PGain.ToString("G3"), 80);
-                controller.IGain = GeneralUI.labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.IGain.ToString("G3"), 80);
-                controller.DGain = GeneralUI.labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.DGain.ToString("G3"), 80);
-                controller.Scalar = GeneralUI.labPlusNumBox(string.Format("{0} Scalar: ", inputName), controller.Scalar.ToString("G3"), 80);
+                controller.PGain = GeneralUI.labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.PGain.ToString("G3"), 45);
+                controller.IGain = GeneralUI.labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.IGain.ToString("G3"), 45);
+                controller.DGain = GeneralUI.labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.DGain.ToString("G3"), 45);
+                controller.Scalar = GeneralUI.labPlusNumBox(string.Format("{0} Scalar: ", inputName), controller.Scalar.ToString("G3"), 45);
             }
         }
 
@@ -140,10 +148,10 @@ namespace PilotAssistant.UI
 
             if (stockPIDDisplay[ID])
             {
-                controller.kp = GeneralUI.labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.kp.ToString("G3"), 80);
-                controller.ki = GeneralUI.labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.ki.ToString("G3"), 80);
-                controller.kd = GeneralUI.labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.kd.ToString("G3"), 80);
-                controller.clamp = GeneralUI.labPlusNumBox(string.Format("{0} Scalar: ", inputName), controller.clamp.ToString("G3"), 80);
+                controller.kp = GeneralUI.labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.kp.ToString("G3"), 45);
+                controller.ki = GeneralUI.labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.ki.ToString("G3"), 45);
+                controller.kd = GeneralUI.labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.kd.ToString("G3"), 45);
+                controller.clamp = GeneralUI.labPlusNumBox(string.Format("{0} Scalar: ", inputName), controller.clamp.ToString("G3"), 45);
             }
         }
     }

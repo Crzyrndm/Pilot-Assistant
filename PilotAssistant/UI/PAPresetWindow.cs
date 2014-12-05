@@ -31,6 +31,7 @@ namespace PilotAssistant.UI
                     {
                         PresetManager.activePAPreset.Update(PilotAssistant.controllers);
                         PresetManager.saveCFG();
+                        ScreenMessages.PostScreenMessage(PresetManager.activePAPreset.name + " updated");
                     }
                 }
                 GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
@@ -45,13 +46,20 @@ namespace PilotAssistant.UI
                     foreach (PresetPA p in PresetManager.PAPresetList)
                     {
                         if (newPresetName == p.name)
+                        {
+                            ScreenMessages.PostScreenMessage("Failed to add preset with duplicate name");
                             return;
+                        }
                     }
 
                     PresetManager.PAPresetList.Add(new PresetPA(PilotAssistant.controllers, newPresetName));
                     newPresetName = "";
                     PresetManager.activePAPreset = PresetManager.PAPresetList[PresetManager.PAPresetList.Count - 1];
                     PresetManager.saveCFG();
+                }
+                else
+                {
+                    ScreenMessages.PostScreenMessage("Failed to add preset with no name");
                 }
             }
             GUILayout.EndHorizontal();
@@ -73,9 +81,11 @@ namespace PilotAssistant.UI
                 {
                     PresetManager.loadPAPreset(p);
                     PresetManager.activePAPreset = p;
+                    ScreenMessages.PostScreenMessage("Loaded preset " + p.name);
                 }
                 if (GUILayout.Button("x", GUILayout.Width(25)))
                 {
+                    ScreenMessages.PostScreenMessage("Deleted preset " + p.name);
                     if (PresetManager.activePAPreset == p)
                         PresetManager.activePAPreset = null;
                     PresetManager.PAPresetList.Remove(p);
