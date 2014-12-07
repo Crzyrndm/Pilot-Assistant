@@ -257,7 +257,7 @@ namespace PilotAssistant.PID
             }
             set
             {
-                scale = value;
+                scale = Math.Max(value, 0.01);
             }
         }
 
