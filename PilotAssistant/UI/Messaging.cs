@@ -10,6 +10,7 @@ namespace PilotAssistant.UI
         static ScreenMessage transferSASMessage = new ScreenMessage("Pilot Assistant control handed to SAS", 3, ScreenMessageStyle.UPPER_RIGHT);
         static ScreenMessage retrieveSASMessage = new ScreenMessage("Pilot Assistant control retrieved from SAS", 3, ScreenMessageStyle.UPPER_RIGHT);
         static ScreenMessage levelMessage = new ScreenMessage("Pilot Assistant is levelling off", 3, ScreenMessageStyle.UPPER_RIGHT);
+        static ScreenMessage derpMessage = new ScreenMessage("Idiot, this isn't a valid number", 3, ScreenMessageStyle.UPPER_RIGHT);
 
         internal static void statusMessage(int messageNumber)
         {
@@ -34,6 +35,7 @@ namespace PilotAssistant.UI
                         ScreenMessages.PostScreenMessage(levelMessage);
                     break;
                 default:
+                    ScreenMessages.PostScreenMessage(derpMessage); // For debugging purposes
                     break;
             }
         }

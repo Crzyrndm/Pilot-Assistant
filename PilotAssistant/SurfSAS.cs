@@ -61,6 +61,8 @@ namespace PilotAssistant
 
             // Init colours
             GeneralUI.InitColors();
+
+            RenderingManager.AddToPostDrawQueue(5, GUI);
         }
 
         public void OnDestroy()
@@ -71,8 +73,7 @@ namespace PilotAssistant
 
             SASControllers.Clear();
 
-            //AppLauncherInstance.bDisplaySAS = false;
-            //SASPresetWindow.bShowPresets = false;
+            RenderingManager.RemoveFromPostDrawQueue(5, GUI);
         }
 
         public void Update()
@@ -116,10 +117,9 @@ namespace PilotAssistant
             pauseManager(); // manage activation of SAS axes depending on user input
         }
 
-        public void OnGUI()
+        public void GUI()
         {
-            if (!PilotAssistant.hide)
-                SASMainWindow.Draw();
+            SASMainWindow.Draw();
         }
 
         public void FixedUpdate()

@@ -28,8 +28,6 @@ namespace PilotAssistant
     {
         internal static List<PID_Controller> controllers = new List<PID_Controller>();
 
-        internal static bool hide = false;
-
         internal static bool bPause = false;
 
         // RollController
@@ -77,6 +75,8 @@ namespace PilotAssistant
 
             // Init colours
             GeneralUI.InitColors();
+
+            RenderingManager.AddToPostDrawQueue(5, GUI);
         }
 
         private void vesselSwitch(Vessel v)
@@ -89,6 +89,7 @@ namespace PilotAssistant
 
         public void OnDestroy()
         {
+            RenderingManager.RemoveFromPostDrawQueue(5, GUI);
             GameEvents.onVesselChange.Remove(vesselSwitch);
             PresetManager.saveCFG();
             bHdgActive = false;
@@ -117,12 +118,11 @@ namespace PilotAssistant
         {
         }
 
-        public void OnGUI()
+        public void GUI()
         {
             if (!AppLauncher.AppLauncherInstance.bDisplayAssistant)
                 return;
-            if (!hide)
-                PAMainWindow.Draw();
+            PAMainWindow.Draw();
         }
 
         private void vesselController(FlightCtrlState state)
@@ -344,9 +344,6 @@ namespace PilotAssistant
                     PAMainWindow.targetVert = vert.ToString();
                 }
             }
-
-            if (GameSettings.TOGGLE_UI.GetKeyDown())
-                hide = !hide;
         }
     }
 }

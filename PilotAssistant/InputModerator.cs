@@ -38,10 +38,13 @@ namespace PilotAssistant
 
             // Init colours
             GeneralUI.InitColors();
+
+            RenderingManager.AddToPostDrawQueue(5, GUI);
         }
 
         public void OnDestroy()
         {
+            RenderingManager.RemoveFromPostDrawQueue(5, GUI);
             Monitors.Clear();
         }
 
@@ -61,10 +64,9 @@ namespace PilotAssistant
         {
         }
 
-        public void OnGUI()
+        public void GUI()
         {
-            if (!PilotAssistant.hide)
-                ModeratorMainWindow.Draw();
+            ModeratorMainWindow.Draw();
         }
 
         private void vesselController(FlightCtrlState c)
