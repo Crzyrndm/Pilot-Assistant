@@ -43,6 +43,7 @@ namespace PilotAssistant
         internal static bool bWasAltitudeHold = false;
         // Wing leveller / Heading control
         internal static bool bWingLeveller = false;
+        internal static bool bWasWingLeveller = false;
 
         public void Start()
         {
@@ -105,6 +106,9 @@ namespace PilotAssistant
 
             if (bAltitudeHold != bWasAltitudeHold && !bPause)
                 altToggle();
+
+            if (bWingLeveller != bWasWingLeveller && !bPause)
+                wingToggle();
 
             keyPressChanges();
         }
@@ -229,6 +233,16 @@ namespace PilotAssistant
             {
                 controllers[(int)PIDList.VertSpeed].SetPoint = FlightData.thisVessel.verticalSpeed;
                 PAMainWindow.targetVert = controllers[(int)PIDList.VertSpeed].SetPoint.ToString("N3");
+            }
+        }
+
+        private void wingToggle()
+        {
+            bWasWingLeveller = bWingLeveller;
+            if (!bWingLeveller)
+            {
+                PilotAssistant.controllers[(int)PIDList.HdgBank].SetPoint = FlightData.heading;
+                PilotAssistant.controllers[(int)PIDList.HdgYaw].SetPoint = FlightData.heading;
             }
         }
 
