@@ -133,10 +133,10 @@ namespace PilotAssistant.UI
 
             if (controller.bShow)
             {
-                controller.PGain = GeneralUI.labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.PGain.ToString("G3"), 45);
-                controller.IGain = GeneralUI.labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.IGain.ToString("G3"), 45);
-                controller.DGain = GeneralUI.labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.DGain.ToString("G3"), 45);
-                controller.Scalar = GeneralUI.labPlusNumBox(string.Format("{0} Scalar: ", inputName), controller.Scalar.ToString("G3"), 45);
+                controller.PGain = GeneralUI.labPlusNumBox("Kp: ", controller.PGain.ToString("G3"), 45);
+                controller.IGain = GeneralUI.labPlusNumBox("Ki: ", controller.IGain.ToString("G3"), 45);
+                controller.DGain = GeneralUI.labPlusNumBox("Kd: ", controller.DGain.ToString("G3"), 45);
+                controller.Scalar = GeneralUI.labPlusNumBox("Scalar: ", controller.Scalar.ToString("G3"), 45);
             }
         }
 
@@ -149,10 +149,10 @@ namespace PilotAssistant.UI
 
             if (stockPIDDisplay[ID])
             {
-                controller.kp = GeneralUI.labPlusNumBox(string.Format("{0} Kp: ", inputName), controller.kp.ToString("G3"), 45);
-                controller.ki = GeneralUI.labPlusNumBox(string.Format("{0} Ki: ", inputName), controller.ki.ToString("G3"), 45);
-                controller.kd = GeneralUI.labPlusNumBox(string.Format("{0} Kd: ", inputName), controller.kd.ToString("G3"), 45);
-                controller.clamp = GeneralUI.labPlusNumBox(string.Format("{0} Scalar: ", inputName), controller.clamp.ToString("G3"), 45);
+                controller.kp = GeneralUI.labPlusNumBox("Kp: ", controller.kp.ToString("G3"), 45);
+                controller.ki = GeneralUI.labPlusNumBox("Ki: ", controller.ki.ToString("G3"), 45);
+                controller.kd = GeneralUI.labPlusNumBox("Kd: ", controller.kd.ToString("G3"), 45);
+                controller.clamp = GeneralUI.labPlusNumBox("Scalar: ", controller.clamp.ToString("G3"), 45);
             }
         }
     }
