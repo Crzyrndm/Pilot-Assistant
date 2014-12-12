@@ -11,13 +11,13 @@ namespace PilotAssistant.Presets
     {
         internal static PresetPA defaultPATuning;
         internal static List<PresetPA> PAPresetList = new List<PresetPA>();
-        internal static PresetPA activePAPreset;
+        internal static PresetPA activePAPreset = null;
 
         internal static PresetSAS defaultSASTuning;
         internal static PresetSAS defaultStockSASTuning;
         internal static List<PresetSAS> SASPresetList = new List<PresetSAS>();
-        internal static PresetSAS activeSASPreset;
-        internal static PresetSAS activeStockSASPreset;
+        internal static PresetSAS activeSASPreset = null;
+        internal static PresetSAS activeStockSASPreset = null;
 
         public void Start()
         {

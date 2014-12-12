@@ -67,6 +67,14 @@ namespace PilotAssistant
 
             // Set up a default preset that can be easily returned to
             PresetManager.defaultPATuning = new PresetPA(controllers, "Default");
+
+            if (PresetManager.activePAPreset == null)
+                PresetManager.activePAPreset = PresetManager.defaultPATuning;
+            else
+            {
+                PresetManager.loadPAPreset(PresetManager.activePAPreset);
+                Messaging.statusMessage(5);
+            }
             
             // register vessel
             FlightData.thisVessel = FlightGlobals.ActiveVessel;

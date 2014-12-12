@@ -44,7 +44,13 @@ namespace PilotAssistant
             if (FlightData.thisVessel.VesselSAS.pidLockedPitch != null)
             {
                 PresetManager.defaultStockSASTuning = new PresetSAS(FlightData.thisVessel.VesselSAS, "Stock");
-                PresetManager.activeStockSASPreset = PresetManager.defaultStockSASTuning;
+                if (PresetManager.activeStockSASPreset == null)
+                    PresetManager.activeStockSASPreset = PresetManager.defaultStockSASTuning;
+                else
+                {
+                    PresetManager.loadStockSASPreset(PresetManager.activeStockSASPreset);
+                    Messaging.statusMessage(7);
+                }
 
                 PID_Controller pitch = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
                 SASControllers.Add(pitch);
@@ -53,13 +59,18 @@ namespace PilotAssistant
                 PID_Controller roll = new PID.PID_Controller(0.1, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
                 SASControllers.Add(roll);
                 PresetManager.defaultSASTuning = new PresetSAS(SASControllers, "Default");
-                PresetManager.activeSASPreset = PresetManager.defaultSASTuning;
+                if (PresetManager.activeSASPreset == null)
+                    PresetManager.activeSASPreset = PresetManager.defaultSASTuning;
+                else
+                {
+                    PresetManager.loadSASPreset(PresetManager.activeSASPreset);
+                    Messaging.statusMessage(6);
+                }
 
                 bInit = true;
                 bPause[0] = bPause[1] = bPause[2] = false;
             }
 
-            // Init colours
             GeneralUI.InitColors();
 
             RenderingManager.AddToPostDrawQueue(5, GUI);
@@ -124,7 +135,7 @@ namespace PilotAssistant
 
         public void FixedUpdate()
         {
-            if (bInit && bArmed && bActive)
+            if (bArmed && bActive)
             {
                 FlightData.updateAttitude();
 
