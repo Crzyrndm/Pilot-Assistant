@@ -30,10 +30,11 @@ namespace PilotAssistant.UI
 
         public static void Draw()
         {
+            GUI.skin = GeneralUI.UISkin;
             GeneralUI.Styles();
 
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
-            window = GUI.Window(34244, window, displayWindow, "Pilot Assistant");
+            window = GUI.Window(34244, window, displayWindow, "Pilot Assistant", GeneralUI.UISkin.window);
 
             PAPresetWindow.presetWindow.x = window.x + window.width;
             PAPresetWindow.presetWindow.y = window.y;

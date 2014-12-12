@@ -11,6 +11,7 @@ namespace PilotAssistant.Utility
         internal static Color InActiveBackground;
         internal static Color HeaderButtonBackground;
 
+        internal static GUISkin UISkin;
         internal static GUIStyle labelAlertStyle;
 
         internal static GUIStyle labelStyle;

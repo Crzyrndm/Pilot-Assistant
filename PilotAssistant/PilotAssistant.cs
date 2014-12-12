@@ -81,7 +81,7 @@ namespace PilotAssistant
             FlightData.thisVessel.OnFlyByWire += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
 
-            // Init colours
+            // Init UI
             GeneralUI.InitColors();
 
             RenderingManager.AddToPostDrawQueue(5, GUI);
@@ -127,6 +127,9 @@ namespace PilotAssistant
 
         public void GUI()
         {
+            if (GeneralUI.UISkin == null)
+                GeneralUI.UISkin = UnityEngine.GUI.skin;
+
             if (!AppLauncher.AppLauncherInstance.bDisplayAssistant)
                 return;
             PAMainWindow.Draw();

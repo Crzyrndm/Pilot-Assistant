@@ -15,6 +15,7 @@ namespace PilotAssistant.UI
 
         public static void Draw()
         {
+            GUI.skin = GeneralUI.UISkin;
             GeneralUI.Styles();
 
             if (AppLauncher.AppLauncherInstance.bDisplaySAS)
