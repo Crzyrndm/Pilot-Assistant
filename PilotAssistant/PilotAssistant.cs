@@ -81,7 +81,6 @@ namespace PilotAssistant
 
         private void vesselSwitch(Vessel v)
         {
-            FlightData.ball = null;
             FlightData.thisVessel.OnFlyByWire -= new FlightInputCallback(vesselController);
             FlightData.thisVessel = v;
             FlightData.thisVessel.OnFlyByWire += new FlightInputCallback(vesselController);
@@ -232,7 +231,7 @@ namespace PilotAssistant
             else
             {
                 controllers[(int)PIDList.VertSpeed].SetPoint = FlightData.thisVessel.verticalSpeed;
-                PAMainWindow.targetVert = controllers[(int)PIDList.VertSpeed].SetPoint.ToString("N3");
+                PAMainWindow.targetVert = controllers[(int)PIDList.VertSpeed].SetPoint.ToString("N2");
             }
         }
 
@@ -243,6 +242,7 @@ namespace PilotAssistant
             {
                 PilotAssistant.controllers[(int)PIDList.HdgBank].SetPoint = FlightData.heading;
                 PilotAssistant.controllers[(int)PIDList.HdgYaw].SetPoint = FlightData.heading;
+                PAMainWindow.targetHeading = controllers[(int)PIDList.HdgBank].SetPoint.ToString("N2");
             }
         }
 

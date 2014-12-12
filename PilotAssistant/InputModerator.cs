@@ -50,7 +50,6 @@ namespace PilotAssistant
 
         private void vesselSwitch(Vessel v)
         {
-            FlightData.ball = null;
             FlightData.thisVessel.OnFlyByWire -= new FlightInputCallback(vesselController);
             FlightData.thisVessel = v;
             FlightData.thisVessel.OnFlyByWire += new FlightInputCallback(vesselController);

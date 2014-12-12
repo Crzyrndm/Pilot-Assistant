@@ -14,55 +14,45 @@ namespace PilotAssistant.Utility
         internal static double AoA = 0;
         internal static double heading = 0;
 
-        //internal static Quaternion attitude = Quaternion.identity;
+        internal static Vector3d planetUp = Vector3d.zero;
+        internal static Vector3d planetNorth = Vector3d.zero;
+        internal static Vector3d planetEast = Vector3d.zero;
 
-        internal static NavBall ball;
+        internal static Vector3d surfVelForward = Vector3d.zero;
+        internal static Vector3d surfVelRight = Vector3d.zero;
+
+        internal static Vector3d surfVesForward = Vector3d.zero;
+        internal static Vector3d surfVesRight = Vector3d.zero;
 
         internal static void updateAttitude()
         {
-            // blatant copying of FAR get attitude logic because its just so straightfoward...
-            if (ball == null)
-                ball = FlightUIController.fetch.GetComponentInChildren<NavBall>();
+            // this gives me 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
 
-            // pitch/roll/heading
-            Quaternion vesselRot = Quaternion.Inverse(ball.relativeGymbal);
-            pitch = (vesselRot.eulerAngles.x > 180) ? (360 - vesselRot.eulerAngles.x) : -vesselRot.eulerAngles.x; // pitch up is +ve
-            roll = (vesselRot.eulerAngles.z > 180) ? (vesselRot.eulerAngles.z - 360) : vesselRot.eulerAngles.z;
-            heading = vesselRot.eulerAngles.y;
+            // surface vectors
+            planetUp = (thisVessel.findWorldCenterOfMass() - thisVessel.mainBody.position).normalized;
+            planetEast = thisVessel.mainBody.getRFrmVel(thisVessel.findWorldCenterOfMass()).normalized;
+            planetNorth = Vector3d.Cross(planetUp, planetEast).normalized;
+            // Velocity forward and right parallel to the surface
+            surfVelForward = (thisVessel.srf_velocity - thisVessel.verticalSpeed * planetUp).normalized;
+            surfVelRight = Vector3d.Cross(planetUp, surfVelForward).normalized;
+            // Vessel forward and right vetors, parallel to the surface
+            surfVesRight = Vector3d.Cross(planetUp, thisVessel.ReferenceTransform.up).normalized;
+            surfVesForward = Vector3d.Cross(planetUp, surfVesRight).normalized;
+            
+            
+            pitch = 90 - Vector3d.Angle(planetUp, thisVessel.ReferenceTransform.up);
+            heading = -1 * Vector3d.Angle(surfVesForward, planetNorth) * Math.Sign(Vector3d.Dot(surfVesForward, planetEast));
+            if (heading < 0)
+                heading = 360 + heading; // heading is -(0-180), so it's actually 360 - Abs(heading)
+            roll = Vector3d.Angle(surfVesRight, thisVessel.ReferenceTransform.right) * Math.Sign(Vector3d.Dot(surfVesRight, thisVessel.ReferenceTransform.forward));
 
-            // pitch AoA
-            Vector3 tmpVec = thisVessel.ReferenceTransform.up * Vector3.Dot(thisVessel.ReferenceTransform.up, thisVessel.srf_velocity.normalized) + 
-                thisVessel.ReferenceTransform.forward * Vector3.Dot(thisVessel.ReferenceTransform.forward, thisVessel.srf_velocity.normalized);   //velocity vector projected onto a plane that divides the airplane into left and right halves
-            AoA = Vector3.Dot(tmpVec.normalized, thisVessel.ReferenceTransform.forward);
-            AoA = 180 / Math.PI * Math.Asin(AoA);
-            if (double.IsNaN(AoA))
-                AoA = 0;
+            Vector3d AoAVec = (Vector3d)thisVessel.ReferenceTransform.up * Vector3d.Dot(thisVessel.ReferenceTransform.up, thisVessel.srf_velocity.normalized) +
+                (Vector3d)thisVessel.ReferenceTransform.forward * Vector3d.Dot(thisVessel.ReferenceTransform.forward, thisVessel.srf_velocity.normalized);   //velocity vector projected onto a plane that divides the airplane into left and right halves
+            AoA = Vector3d.Angle(AoAVec, thisVessel.ReferenceTransform.up) * Math.Sign(Vector3d.Dot(AoAVec, thisVessel.ReferenceTransform.forward));
 
-            // yaw AoA
-            tmpVec = thisVessel.ReferenceTransform.up * Vector3.Dot(thisVessel.ReferenceTransform.up, thisVessel.srf_velocity.normalized) + 
-                thisVessel.ReferenceTransform.right * Vector3.Dot(thisVessel.ReferenceTransform.right, thisVessel.srf_velocity.normalized);     //velocity vector projected onto the vehicle-horizontal plane
-            yaw = Vector3.Dot(tmpVec.normalized, thisVessel.ReferenceTransform.right);
-            yaw = 180 / Math.PI * Math.Asin(yaw);
-            if (double.IsNaN(yaw))
-                yaw = 0;
-
-            // attitude = surfAtt();
-        }
-
-        internal static Quaternion surfAtt()
-        {
-            // Construct surface relative forward Vector3
-            // heading is on x-y plane, z is pitch angle
-            // heading 0/360 => x = 1, y = 0
-            // heading 90 => x = 0, y = 1
-            // heading 180 => x = -1, y = 0
-            // heading 270 => x = 0, y = -1
-            // pitch 0 => z = 0
-            Vector3d surf = new Vector3d(0, 0, 0);
-            surf.x = Math.Cos(heading * Math.PI / 180);
-            surf.y = Math.Sin(heading * Math.PI / 180);
-            surf.z = Math.Sin(pitch * Math.PI / 180);
-            return Quaternion.LookRotation(surf);
+            Vector3d yawVec = (Vector3d)thisVessel.ReferenceTransform.up * Vector3d.Dot(thisVessel.ReferenceTransform.up, thisVessel.srf_velocity.normalized) +
+                (Vector3d)thisVessel.ReferenceTransform.right * Vector3d.Dot(thisVessel.ReferenceTransform.right, thisVessel.srf_velocity.normalized);     //velocity vector projected onto the vehicle-horizontal plane
+            yaw = Vector3d.Angle(yawVec, thisVessel.ReferenceTransform.up) * Math.Sign(Vector3d.Dot(yawVec, thisVessel.ReferenceTransform.right));
         }
     }
 }
