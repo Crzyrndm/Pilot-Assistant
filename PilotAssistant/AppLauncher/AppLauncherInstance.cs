@@ -52,6 +52,7 @@ namespace PilotAssistant.AppLauncher
 
         private void OnGUI()
         {
+            GUI.skin = HighLogic.Skin;
             if (bDisplayOptions)
             {
                 window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.MaxWidth(200));

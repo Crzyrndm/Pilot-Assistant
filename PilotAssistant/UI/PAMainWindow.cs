@@ -19,6 +19,7 @@ namespace PilotAssistant.UI
         internal static bool showControlSurfaces = false;
 
         internal static string targetVert = "0";
+        internal static string targetAlt = "0";
         internal static string targetHeading = "0";
 
         internal static bool bShowSettings = true;
@@ -30,11 +31,12 @@ namespace PilotAssistant.UI
 
         public static void Draw()
         {
-            GUI.skin = GeneralUI.UISkin;
+            // DON'T WANT: GUI.skin = GeneralUI.UISkin;
+            GUI.skin = HighLogic.Skin;
             GeneralUI.Styles();
 
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
-            window = GUI.Window(34244, window, displayWindow, "Pilot Assistant", GeneralUI.UISkin.window);
+            window = GUILayout.Window(34244, window, displayWindow, "Pilot Assistant", GUILayout.MinWidth(200));
 
             PAPresetWindow.presetWindow.x = window.x + window.width;
             PAPresetWindow.presetWindow.y = window.y;
@@ -43,244 +45,204 @@ namespace PilotAssistant.UI
                 PAPresetWindow.Draw();
             }
 
-            // Window resizing
-            float height = 100;
-            hdgScrollHeight = 0;
-            vertScrollHeight = 0;
-
-            if (PilotAssistant.bPause)
-                height += 36;
-            if (bShowSettings)
-            {
-                height += 68;
-            }
-            if (bShowHdg)
-            {
-                height += 35;
-                if (!PilotAssistant.bWingLeveller)
-                {
-                    height += 75;
-                    hdgScrollHeight = 55;
-                }
-                if ((PilotAssistant.controllers[(int)PIDList.HdgBank].bShow || PilotAssistant.controllers[(int)PIDList.HdgYaw].bShow) && !PilotAssistant.bWingLeveller)
-                {
-                    height += 130;
-                    hdgScrollHeight += 130;
-                }
-                else if (showControlSurfaces)
-                {
-                    height += 50;
-                    hdgScrollHeight += 50;
-                    if (PilotAssistant.controllers[(int)PIDList.Aileron].bShow || PilotAssistant.controllers[(int)PIDList.Rudder].bShow)
-                    {
-                        height += 80;
-                        hdgScrollHeight += 80;
-                    }
-                }
-            }
-            if (bShowVert) 
-            {
-                height += 82;
-                vertScrollHeight = 38;
-                if (PilotAssistant.bAltitudeHold)
-                {
-                    vertScrollHeight += 27;
-                    height += 27;
-                }
-                if ((PilotAssistant.controllers[(int)PIDList.Altitude].bShow && PilotAssistant.bAltitudeHold) || (PilotAssistant.controllers[(int)PIDList.VertSpeed].bShow))
-                {
-                    height += 150;
-                    vertScrollHeight += 150;
-                }
-                else if (showControlSurfaces)
-                {
-                    height += 27;
-                    vertScrollHeight += 27;
-                    if (PilotAssistant.controllers[(int)PIDList.Elevator].bShow)
-                    {
-                        height += 123;
-                        vertScrollHeight += 123;
-                    }
-                }
-            }
-            window.height = height;
-
-            if (showPIDLimits)
-                window.width = 370;
-            else
-                window.width = 225;
+            window.height = 0; // Force height recalculation
         }
 
         private static void displayWindow(int id)
         {
-            if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
+            // TODO: Move to GeneralUI
+            GUIStyle mybox = new GUIStyle(GUI.skin.box);
+            mybox.normal.textColor = mybox.focused.textColor = Color.white;
+            mybox.hover.textColor = mybox.active.textColor = Color.yellow;
+            mybox.onNormal.textColor = mybox.onFocused.textColor = mybox.onHover.textColor = mybox.onActive.textColor = Color.green;
+            mybox.padding = new RectOffset(4, 4, 4, 4);
+            GUIStyle mytoggle = new GUIStyle(GUI.skin.button);
+            mytoggle.normal.textColor = mytoggle.focused.textColor = Color.white;
+            mytoggle.hover.textColor = mytoggle.active.textColor = mytoggle.onActive.textColor = Color.yellow;
+            mytoggle.onNormal.textColor = mytoggle.onFocused.textColor = mytoggle.onHover.textColor = Color.green;
+            mytoggle.padding = new RectOffset(4, 4, 4, 4);
+            GUIStyle TabLabelStyle = new GUIStyle(GUI.skin.label);
+            TabLabelStyle.fontStyle = FontStyle.Bold;
+            TabLabelStyle.alignment = TextAnchor.UpperCenter;
+            // Probably the little "close" button. 
+            /*if (GUILayout.Button(new Rect(window.width - 16, 2, 14, 14), ""))
             {
                 AppLauncher.AppLauncherInstance.bDisplayAssistant = false;
-            }
+            }*/
 
+            GUILayout.BeginVertical(GUILayout.Height(200), GUILayout.Width(200), GUILayout.ExpandHeight(true));
             if (PilotAssistant.bPause)
             {
                 GUILayout.Label("CONTROL PAUSED", GeneralUI.labelAlertStyle);
             }
-            GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            if (GUILayout.Button("Options", GUILayout.Width(205)))
+            // GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
+            if (false && GUILayout.Button("Options", GUILayout.ExpandWidth(true), GUILayout.Height(30)))
             {
                 bShowSettings = !bShowSettings;
             }
-            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
-            if (bShowSettings)
-            {
-                if (GUILayout.Button(showPresets ? "Hide Presets" : "Show Presets", GUILayout.Width(200)))
-                {
-                    showPresets = !showPresets;
-                }
-                showPIDLimits = GUILayout.Toggle(showPIDLimits, "Show PID Limits", GUILayout.Width(200));
-                showControlSurfaces = GUILayout.Toggle(showControlSurfaces, "Show Control Surfaces", GUILayout.Width(200));
-            }
-
-            #region Hdg GUI
-
             GUILayout.BeginHorizontal();
-            // button background colour
-            GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            if (GUILayout.Button("Roll and Yaw Control", GUILayout.Width(186)))
-            {
-                bShowHdg = !bShowHdg;
-            }
-            // Toggle colour
-            if (PilotAssistant.bHdgActive)
-                GUI.backgroundColor = GeneralUI.ActiveBackground;
-            else
-                GUI.backgroundColor = GeneralUI.InActiveBackground;
+            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+            showPresets = GUILayout.Toggle(showPresets, "Show/hide Presets", mytoggle, GUILayout.ExpandWidth(true));
+            showPIDLimits = GUILayout.Toggle(showPIDLimits, "Show PID Limits", mytoggle, GUILayout.ExpandWidth(true));
+            showControlSurfaces = GUILayout.Toggle(showControlSurfaces, "Show Control Surfaces", mytoggle, GUILayout.ExpandWidth(true));
+            GUILayout.EndHorizontal();
 
-            bool toggleCheck = GUILayout.Toggle(PilotAssistant.bHdgActive, "");
-            if (toggleCheck != PilotAssistant.bHdgActive)
+#region New heading
+            // Heading
+            GUILayout.BeginVertical(mybox);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Roll and Yaw Control", TabLabelStyle, GUILayout.ExpandWidth(true));
+            if (GUILayout.Toggle(PilotAssistant.bHdgActive, PilotAssistant.bHdgActive ? "On" : "Off", mytoggle, GUILayout.Height(30)) != PilotAssistant.bHdgActive)
             {
-                PilotAssistant.bHdgActive = toggleCheck;
+                PilotAssistant.bHdgActive = !PilotAssistant.bHdgActive;
                 PilotAssistant.bPause = false;
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
                 SurfSAS.bActive = false;
             }
-            // reset colour
-            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             GUILayout.EndHorizontal();
-
-            if (bShowHdg)
-            {
-                PilotAssistant.bWingLeveller = GUILayout.Toggle(PilotAssistant.bWingLeveller, PilotAssistant.bWingLeveller ? "Mode: Wing Leveller" : "Mode: Hdg Control", GUILayout.Width(200));
-                if (!PilotAssistant.bWingLeveller)
-                {
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Target Hdg: ", GUILayout.Width(98)))
-                    {
-                        ScreenMessages.PostScreenMessage("Target Heading updated");
-                        double newHdg;
-                        double.TryParse(targetHeading, out newHdg);
-                        if (newHdg >= 0 && newHdg <= 360)
-                        {
-                            PilotAssistant.controllers[(int)PIDList.HdgBank].SetPoint = newHdg;
-                            PilotAssistant.controllers[(int)PIDList.HdgYaw].SetPoint = newHdg;
-                            PilotAssistant.bHdgActive = PilotAssistant.bHdgWasActive = true; // skip toggle check to avoid being overwritten
-                        }
-                    }
-                    targetHeading = GUILayout.TextField(targetHeading, GUILayout.Width(98));
-                    GUILayout.EndHorizontal();
-                }
-
-                scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, GeneralUI.scrollview, GUILayout.Height(hdgScrollHeight));
-                if (!PilotAssistant.bWingLeveller)
-                {
-                    drawPIDvalues(PilotAssistant.controllers[(int)PIDList.HdgBank], "Heading", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0", false, true, false);
-                    drawPIDvalues(PilotAssistant.controllers[(int)PIDList.HdgYaw], "Bank => Yaw", "\u00B0", FlightData.yaw, 2, "Yaw", "\u00B0", true, false, false);
-                }
-                if (showControlSurfaces)
-                {
-                    drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Aileron], "Bank", "\u00B0", FlightData.roll, 3, "Deflection", "\u00B0", false, true, false);
-                    drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Rudder], "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0", false, true, false);
-                }
-                GUILayout.EndScrollView();
-            }
-            #endregion
-
-            #region Pitch GUI
-
             GUILayout.BeginHorizontal();
-            // button background
-            GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            if (GUILayout.Button("Vertical Control", GUILayout.Width(186)))
+            GUILayout.Label("Mode:", GUILayout.Width(40));
+            bool tmpToggle1 = GUILayout.Toggle(!PilotAssistant.bWingLeveller, "Hdg control", mytoggle, GUILayout.ExpandWidth(true), GUILayout.Height(30));
+            bool tmpToggle2 = GUILayout.Toggle(PilotAssistant.bWingLeveller, "Wing leveller", mytoggle, GUILayout.ExpandWidth(true), GUILayout.Height(30));
+            // tmpToggle1 and tmpToggle2 are true when the user clicks the non-active mode, i.e. the mode changes. 
+            if (tmpToggle1 && tmpToggle2)
+                PilotAssistant.bWingLeveller = !PilotAssistant.bWingLeveller;
+                
+            GUILayout.EndHorizontal();
+            if (!PilotAssistant.bWingLeveller)
             {
-                bShowVert = !bShowVert;
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Target Hdg: ", GUILayout.ExpandWidth(true), GUILayout.Height(30));
+                targetHeading = GUILayout.TextField(targetHeading, GUILayout.ExpandWidth(true), GUILayout.Height(30));
+                if (GUILayout.Button("Set", GUILayout.ExpandWidth(true), GUILayout.Height(30)))
+                {
+                    ScreenMessages.PostScreenMessage("Target Heading updated");
+                    double newHdg;
+                    if (double.TryParse(targetHeading, out newHdg) &&
+                        newHdg >= 0 && newHdg <= 360)
+                    {
+                        PilotAssistant.controllers[(int)PIDList.HdgBank].SetPoint = newHdg;
+                        PilotAssistant.controllers[(int)PIDList.HdgYaw].SetPoint = newHdg;
+                        PilotAssistant.bHdgActive = PilotAssistant.bHdgWasActive = true; // skip toggle check to avoid being overwritten
+                    }
+                    else
+                    {
+                        // Bad input, reset UI to previous value
+                        
+                    }
+                }
+                GUILayout.EndHorizontal();
             }
-            // Toggle colour
-            if (PilotAssistant.bVertActive)
-                GUI.backgroundColor = GeneralUI.ActiveBackground;
-            else
-                GUI.backgroundColor = GeneralUI.InActiveBackground;
-
-            toggleCheck = GUILayout.Toggle(PilotAssistant.bVertActive, "");
-            if (toggleCheck != PilotAssistant.bVertActive)
+            if (!PilotAssistant.bWingLeveller)
             {
-                PilotAssistant.bVertActive = toggleCheck;
-                if (!toggleCheck)
+                drawPIDValuesNew(PIDList.HdgBank, "Heading", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0", false, true, false);
+                drawPIDValuesNew(PIDList.HdgYaw, "Bank => Yaw", "\u00B0", FlightData.yaw, 2, "Yaw", "\u00B0", true, false, false);
+            }
+            if (showControlSurfaces)
+            {
+                drawPIDValuesNew(PIDList.Aileron, "Bank", "\u00B0", FlightData.roll, 3, "Deflection", "\u00B0", false, true, false);
+                drawPIDValuesNew(PIDList.Rudder, "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0", false, true, false);
+            }
+            GUILayout.EndVertical();
+#endregion New heading
+#region New vertical
+            // Vertical speed
+            GUILayout.BeginVertical(mybox);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Vertical Control", TabLabelStyle, GUILayout.ExpandWidth(true));
+            if (GUILayout.Toggle(PilotAssistant.bVertActive, PilotAssistant.bVertActive ? "On" : "Off", mytoggle, GUILayout.Height(30)) != PilotAssistant.bVertActive)
+            {
+                PilotAssistant.bVertActive = !PilotAssistant.bVertActive;
+                if (!PilotAssistant.bVertActive)
                     PilotAssistant.bPause = false;
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
                 SurfSAS.bActive = false;
             }
-            // reset colour
-            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Mode:", GUILayout.Width(40));
+            tmpToggle1 = GUILayout.Toggle(PilotAssistant.bAltitudeHold, "Altitude", mytoggle, GUILayout.ExpandWidth(true), GUILayout.Height(30));
+            tmpToggle2 = GUILayout.Toggle(!PilotAssistant.bAltitudeHold, "Vertical Speed", mytoggle, GUILayout.ExpandWidth(true), GUILayout.Height(30));
+            // tmpToggle1 and tmpToggle2 are true when the user clicks the non-active mode, i.e. the mode changes. 
+            if (tmpToggle1 && tmpToggle2)
+                PilotAssistant.bAltitudeHold = !PilotAssistant.bAltitudeHold;
+            
             GUILayout.EndHorizontal();
 
-            if (bShowVert)
+            if (PilotAssistant.bAltitudeHold)
             {
-                PilotAssistant.bAltitudeHold = GUILayout.Toggle(PilotAssistant.bAltitudeHold, PilotAssistant.bAltitudeHold ? "Mode: Altitude" : "Mode: Vertical Speed", GUILayout.Width(200));
-
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button(PilotAssistant.bAltitudeHold ? "Target Altitude:" : "Target Speed:", GUILayout.Width(98)))
+                GUILayout.Label("Target Altitude: ", GUILayout.ExpandWidth(true), GUILayout.Height(30));
+                targetAlt = GUILayout.TextField(targetAlt, GUILayout.ExpandWidth(true), GUILayout.Height(30));
+                if (GUILayout.Button("Set", GUILayout.ExpandWidth(true), GUILayout.Height(30)))
                 {
-                    ScreenMessages.PostScreenMessage("Target " + (PilotAssistant.bAltitudeHold ? "Altitude" : "Vertical Speed") + " updated");
+                    ScreenMessages.PostScreenMessage("Target Altitude updated");
 
                     double newVal;
-                    double.TryParse(targetVert, out newVal);
-                    if (PilotAssistant.bAltitudeHold)
+                    if (double.TryParse(targetAlt, out newVal))
+                    {
                         PilotAssistant.controllers[(int)PIDList.Altitude].SetPoint = newVal;
+                        PilotAssistant.bVertActive = PilotAssistant.bVertWasActive = true; // skip the toggle check so value isn't overwritten
+                    }
                     else
-                        PilotAssistant.controllers[(int)PIDList.VertSpeed].SetPoint = newVal;
-
-                    PilotAssistant.bVertActive = PilotAssistant.bVertWasActive = true; // skip the toggle check so value isn't overwritten
+                    {
+                        // Bad input, reset UI value
+                    }
                 }
-                targetVert = GUILayout.TextField(targetVert, GUILayout.Width(98));
                 GUILayout.EndHorizontal();
-
-                scrollbarVert = GUILayout.BeginScrollView(scrollbarVert, GeneralUI.scrollview);
-                
-                if (PilotAssistant.bAltitudeHold)
-                    drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Altitude], "Altitude", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true, true, false);
-                drawPIDvalues(PilotAssistant.controllers[(int)PIDList.VertSpeed], "Vertical Speed", "m/s", FlightData.thisVessel.verticalSpeed, 2, "AoA", "\u00B0", true);
-                
-                if (showControlSurfaces)
-                    drawPIDvalues(PilotAssistant.controllers[(int)PIDList.Elevator], "Angle of Attack", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0", true, true, false);
-
-                GUILayout.EndScrollView();
             }
-            #endregion
+            else
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Target Speed: ", GUILayout.ExpandWidth(true), GUILayout.Height(30));
+                targetVert = GUILayout.TextField(targetVert, GUILayout.ExpandWidth(true), GUILayout.Height(30));
+                if (GUILayout.Button("Set", GUILayout.ExpandWidth(true), GUILayout.Height(30)))
+                {
+                    ScreenMessages.PostScreenMessage("Target Speed updated");
 
+                    double newVal;
+                    if (double.TryParse(targetVert, out newVal))
+                    {
+                        PilotAssistant.controllers[(int)PIDList.Altitude].SetPoint = newVal;
+                        PilotAssistant.bVertActive = PilotAssistant.bVertWasActive = true; // skip the toggle check so value isn't overwritten
+                    }
+                }
+                GUILayout.EndHorizontal();
+            }
+            if (PilotAssistant.bAltitudeHold)
+                drawPIDValuesNew(PIDList.Altitude, "Altitude", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true, true, false);
+            drawPIDValuesNew(PIDList.VertSpeed, "Vertical Speed", "m/s", FlightData.thisVessel.verticalSpeed, 2, "AoA", "\u00B0", true);
+            if (showControlSurfaces)
+                drawPIDValuesNew(PIDList.Elevator, "Angle of Attack", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0", true, true, false);
+            GUILayout.EndVertical();
+#endregion New vertical
+
+            GUILayout.EndVertical();
             GUI.DragWindow();
         }
 
-        private static void drawPIDvalues(PID.PID_Controller controller, string inputName, string inputUnits, double inputValue, int displayPrecision, string outputName, string outputUnits, bool invertOutput = false, bool showTarget = true, bool doublesided = true)
+        private static void drawPIDValuesNew(PIDList controllerID, string inputName, string inputUnits, double inputValue,
+                                             int displayPrecision, string outputName, string outputUnits,
+                                             bool invertOutput = false, bool showTarget = true, bool doublesided = true)
         {
-            if (GUILayout.Button(string.Format("{0}: {1}{2}", inputName, inputValue.ToString("N" + displayPrecision.ToString()), inputUnits), GUILayout.Width(window.width - 50)))
+            PID.PID_Controller controller = PilotAssistant.controllers[(int)controllerID];
+            string buttonText = string.Format("{0}: {1}{2}",
+                                              inputName,
+                                              inputValue.ToString("N" + displayPrecision),
+                                              inputUnits);
+            if (GUILayout.Button(buttonText, GUILayout.ExpandWidth(true), GUILayout.Height(30)))
             {
                 controller.bShow = !controller.bShow;
             }
+
             if (controller.bShow)
             {
                 if (showTarget)
                     GUILayout.Label(string.Format("Target: ", inputName) + controller.SetPoint.ToString("N" + displayPrecision.ToString()) + inputUnits);
-
+                
                 GUILayout.BeginHorizontal();
                 GUILayout.BeginVertical();
-
+                
                 controller.PGain = GeneralUI.labPlusNumBox(string.Format("Kp:", inputName), controller.PGain.ToString("G3"), 45);
                 controller.IGain = GeneralUI.labPlusNumBox(string.Format("Ki:", inputName), controller.IGain.ToString("G3"), 45);
                 controller.DGain = GeneralUI.labPlusNumBox(string.Format("Kd:", inputName), controller.DGain.ToString("G3"), 45);
