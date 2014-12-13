@@ -13,13 +13,7 @@ namespace PilotAssistant.Utility
 
         internal static GUISkin UISkin;
         internal static GUIStyle labelAlertStyle;
-
-        internal static GUIStyle labelStyle;
         internal static GUIStyle textStyle;
-        internal static GUIStyle btnStyle1;
-        internal static GUIStyle btnStyle2;
-
-        internal static GUIStyle scrollview;
 
         // New
         internal static bool stylesInitialized;
@@ -27,6 +21,11 @@ namespace PilotAssistant.Utility
         internal static GUIStyle toggleButtonStyle;
         internal static GUIStyle buttonStyle;
         internal static GUIStyle boldLabelStyle;
+
+        internal static GUIStyle spinnerPlusBtnStyle;
+        internal static GUIStyle spinnerMinusBtnStyle;
+
+        internal static GUIStyle labelStyle;
 
         internal static void InitColors()
         {
@@ -48,23 +47,11 @@ namespace PilotAssistant.Utility
             labelAlertStyle.fontSize = 21;
             labelAlertStyle.fontStyle = FontStyle.Bold;
 
-            // style for label to align with increment buttons
-            labelStyle = new GUIStyle(GUI.skin.label);
-            labelStyle.alignment = TextAnchor.MiddleLeft;
-            labelStyle.margin = new RectOffset(4, 4, 5, 3);
             // style for text box to align with increment buttons better
             textStyle = new GUIStyle(GUI.skin.textField);
             textStyle.alignment = TextAnchor.MiddleLeft;
             textStyle.margin = new RectOffset(4, 0, 5, 3);
-            // style for increment button
-            btnStyle1 = new GUIStyle(GUI.skin.button);
-            btnStyle1.margin = new RectOffset(0, 4, 2, 0);
-            // style for derement button
-            btnStyle2 = new GUIStyle(GUI.skin.button);
-            btnStyle2.margin = new RectOffset(0, 4, 0, 2);
 
-            scrollview = new GUIStyle(GUI.skin.scrollView);
-            
             guiSectionStyle = new GUIStyle(GUI.skin.box);
             guiSectionStyle.normal.textColor
                 = guiSectionStyle.focused.textColor
@@ -79,9 +66,6 @@ namespace PilotAssistant.Utility
                 = Color.green;
             guiSectionStyle.padding = new RectOffset(4, 4, 4, 4);
 
-            buttonStyle = new GUIStyle(GUI.skin.button);
-            buttonStyle.padding = new RectOffset(4, 4, 4, 4);
-            
             toggleButtonStyle = new GUIStyle(GUI.skin.button);
             toggleButtonStyle.normal.textColor
                 = toggleButtonStyle.focused.textColor
@@ -95,10 +79,26 @@ namespace PilotAssistant.Utility
                 = toggleButtonStyle.onHover.textColor
                 = Color.green;
             toggleButtonStyle.padding = new RectOffset(4, 4, 4, 4);
+
+            buttonStyle = new GUIStyle(GUI.skin.button);
+            buttonStyle.padding = new RectOffset(4, 4, 4, 4);
+            
+            // style for increment button
+            spinnerPlusBtnStyle = new GUIStyle(GUI.skin.button);
+            spinnerPlusBtnStyle.margin = new RectOffset(0, 2, 2, 0);
+
+            // style for derement button
+            spinnerMinusBtnStyle = new GUIStyle(GUI.skin.button);
+            spinnerMinusBtnStyle.margin = new RectOffset(0, 2, 0, 2);
+
+            // style for label to align with increment buttons
+            labelStyle = new GUIStyle(GUI.skin.label);
+            labelStyle.alignment = TextAnchor.MiddleLeft;
+            labelStyle.margin = new RectOffset(4, 4, 5, 3);
             
             boldLabelStyle = new GUIStyle(GUI.skin.label);
             boldLabelStyle.fontStyle = FontStyle.Bold;
-            // TODO: Needed?: boldLabelStyle.alignment = TextAnchor.UpperCenter;
+            boldLabelStyle.alignment = TextAnchor.MiddleLeft;
 
             stylesInitialized = false;
         }
@@ -131,14 +131,14 @@ namespace PilotAssistant.Utility
             }
             //
             GUILayout.BeginVertical();
-            if (GUILayout.Button("+", btnStyle1, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("+", spinnerPlusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 if (val != 0)
                     val *= 1.1;
                 else
                     val = 0.01;
             }
-            if (GUILayout.Button("-", btnStyle2, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("-", spinnerMinusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val /= 1.1;
             }
@@ -176,13 +176,13 @@ namespace PilotAssistant.Utility
             }
             //
             GUILayout.BeginVertical();
-            if (GUILayout.Button("+", btnStyle1, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("+", spinnerPlusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val += 1;
                 if (val >= upper)
                     val = lower;
             }
-            if (GUILayout.Button("-", btnStyle2, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("-", spinnerMinusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val -= 1;
                 if (val < lower)
