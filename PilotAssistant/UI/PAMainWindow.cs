@@ -52,7 +52,7 @@ namespace PilotAssistant.UI
             showControlSurfaces = GUILayout.Toggle(showControlSurfaces, "Ctrl Surfaces", GeneralUI.toggleButtonStyle, GUILayout.ExpandWidth(true));
             GUILayout.EndHorizontal();
 
-#region New heading
+#region Heading control
             // Heading
             GUILayout.BeginVertical(GeneralUI.guiSectionStyle, GUILayout.ExpandWidth(true));
             GUILayout.BeginHorizontal();
@@ -100,17 +100,17 @@ namespace PilotAssistant.UI
             }
             if (!PilotAssistant.bWingLeveller)
             {
-                drawPIDValuesNew(PIDList.HdgBank, "Heading", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0", false, true, false);
-                drawPIDValuesNew(PIDList.HdgYaw, "Bank => Yaw", "\u00B0", FlightData.yaw, 2, "Yaw", "\u00B0", true, false, false);
+                drawPIDValues(PIDList.HdgBank, "Heading", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0", false, true, false);
+                drawPIDValues(PIDList.HdgYaw, "Bank => Yaw", "\u00B0", FlightData.yaw, 2, "Yaw", "\u00B0", true, false, false);
             }
             if (showControlSurfaces)
             {
-                drawPIDValuesNew(PIDList.Aileron, "Bank", "\u00B0", FlightData.roll, 3, "Deflection", "\u00B0", false, true, false);
-                drawPIDValuesNew(PIDList.Rudder, "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0", false, true, false);
+                drawPIDValues(PIDList.Aileron, "Bank", "\u00B0", FlightData.roll, 3, "Deflection", "\u00B0", false, true, false);
+                drawPIDValues(PIDList.Rudder, "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0", false, true, false);
             }
             GUILayout.EndVertical();
-#endregion New heading
-#region New vertical
+#endregion Heading control
+#region Vertical control
             // Vertical speed
             GUILayout.BeginVertical(GeneralUI.guiSectionStyle, GUILayout.ExpandWidth(true));
             GUILayout.BeginHorizontal();
@@ -179,20 +179,20 @@ namespace PilotAssistant.UI
                 GUILayout.EndHorizontal();
             }
             if (PilotAssistant.bAltitudeHold)
-                drawPIDValuesNew(PIDList.Altitude, "Altitude", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true, true, false);
-            drawPIDValuesNew(PIDList.VertSpeed, "Vertical Speed", "m/s", FlightData.thisVessel.verticalSpeed, 2, "AoA", "\u00B0", true);
+                drawPIDValues(PIDList.Altitude, "Altitude", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true, true, false);
+            drawPIDValues(PIDList.VertSpeed, "Vertical Speed", "m/s", FlightData.thisVessel.verticalSpeed, 2, "AoA", "\u00B0", true);
             if (showControlSurfaces)
-                drawPIDValuesNew(PIDList.Elevator, "Angle of Attack", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0", true, true, false);
+                drawPIDValues(PIDList.Elevator, "Angle of Attack", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0", true, true, false);
             GUILayout.EndVertical();
-#endregion New vertical
+#endregion Vertical control
 
             GUILayout.EndVertical();
             GUI.DragWindow();
         }
 
-        private static void drawPIDValuesNew(PIDList controllerID, string inputName, string inputUnits, double inputValue,
-                                             int displayPrecision, string outputName, string outputUnits,
-                                             bool invertOutput = false, bool showTarget = true, bool doublesided = true)
+        private static void drawPIDValues(PIDList controllerID, string inputName, string inputUnits, double inputValue,
+                                          int displayPrecision, string outputName, string outputUnits,
+                                          bool invertOutput = false, bool showTarget = true, bool doublesided = true)
         {
             PID.PID_Controller controller = PilotAssistant.controllers[(int)controllerID];
             string buttonText = string.Format("{0}: {1}{2}",

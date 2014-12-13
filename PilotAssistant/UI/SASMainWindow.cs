@@ -15,13 +15,9 @@ namespace PilotAssistant.UI
 
         public static void Draw()
         {
-            GUI.skin = GeneralUI.UISkin;
             GeneralUI.Styles();
 
-            if (AppLauncher.AppLauncherInstance.bDisplaySAS)
-            {
-                SASwindow = GUILayout.Window(78934856, SASwindow, drawSASWindow, "SAS Module", GUILayout.Width(0), GUILayout.Height(0));            
-            }
+            SASwindow = GUILayout.Window(78934856, SASwindow, drawSASWindow, "SAS Module", GUILayout.Width(0), GUILayout.Height(0));            
 
             if (SurfSAS.bArmed)
             {
@@ -87,25 +83,25 @@ namespace PilotAssistant.UI
                     SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Utility.Functions.Clamp((float)GeneralUI.labPlusNumBox2("Pitch:", SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint.ToString("N2"), 80), -80, 80);
                     SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint = (float)GeneralUI.labPlusNumBox2("Heading:", SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint.ToString("N2"), 80, 60, 360, 0);
                     SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.labPlusNumBox2("Roll:", SurfSAS.SASControllers[(int)SASList.Roll].SetPoint.ToString("N2"), 80, 60, 180, -180);
-                    drawPIDValuesNew(SASList.Pitch, "Pitch");
-                    drawPIDValuesNew(SASList.Roll, "Roll");
-                    drawPIDValuesNew(SASList.Hdg, "Yaw");
+                    drawPIDValues(SASList.Pitch, "Pitch");
+                    drawPIDValues(SASList.Roll, "Roll");
+                    drawPIDValues(SASList.Hdg, "Yaw");
                 }
             }
             else
             {
                 VesselSAS sas = Utility.FlightData.thisVessel.VesselSAS;
 
-                drawPIDValuesNew(sas.pidLockedPitch, "Pitch", 0);
-                drawPIDValuesNew(sas.pidLockedRoll, "Roll", 1);
-                drawPIDValuesNew(sas.pidLockedYaw, "Yaw", 2);
+                drawPIDValues(sas.pidLockedPitch, "Pitch", 0);
+                drawPIDValues(sas.pidLockedRoll, "Roll", 1);
+                drawPIDValues(sas.pidLockedYaw, "Yaw", 2);
             }
  
             GUILayout.EndVertical();
             GUI.DragWindow();
         }
 
-        private static void drawPIDValuesNew(SASList controllerID, string inputName)
+        private static void drawPIDValues(SASList controllerID, string inputName)
         {
             PID.PID_Controller controller = SurfSAS.SASControllers[(int)controllerID];
             if (GUILayout.Button(inputName, GeneralUI.buttonStyle, GUILayout.ExpandWidth(true)))
@@ -120,7 +116,7 @@ namespace PilotAssistant.UI
             }
         }
 
-        private static void drawPIDValuesNew(PIDclamp controller, string inputName, int ID)
+        private static void drawPIDValues(PIDclamp controller, string inputName, int ID)
         {
             if (GUILayout.Button(inputName, GeneralUI.buttonStyle, GUILayout.ExpandWidth(true)))
             {
