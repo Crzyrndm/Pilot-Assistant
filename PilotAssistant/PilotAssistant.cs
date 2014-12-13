@@ -127,9 +127,6 @@ namespace PilotAssistant
 
         public void GUI()
         {
-            if (GeneralUI.UISkin == null)
-                GeneralUI.UISkin = UnityEngine.GUI.skin;
-
             if (!AppLauncher.AppLauncherInstance.bDisplayAssistant)
                 return;
             PAMainWindow.Draw();

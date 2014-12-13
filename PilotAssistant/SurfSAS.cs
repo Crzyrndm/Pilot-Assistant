@@ -130,6 +130,8 @@ namespace PilotAssistant
 
         public void GUI()
         {
+            if (!AppLauncher.AppLauncherInstance.bDisplaySAS)
+                return;
             SASMainWindow.Draw();
         }
 
