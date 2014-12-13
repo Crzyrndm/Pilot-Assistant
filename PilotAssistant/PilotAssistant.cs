@@ -215,7 +215,7 @@ namespace PilotAssistant
                 if (bAltitudeHold)
                 {
                     controllers[(int)PIDList.Altitude].SetPoint = FlightData.thisVessel.altitude;
-                    PAMainWindow.targetVert = controllers[(int)PIDList.Altitude].SetPoint.ToString("N1");
+                    PAMainWindow.targetAlt = controllers[(int)PIDList.Altitude].SetPoint.ToString("N1");
                 }
                 else
                 {
