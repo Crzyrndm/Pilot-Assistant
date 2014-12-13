@@ -21,6 +21,13 @@ namespace PilotAssistant.Utility
 
         internal static GUIStyle scrollview;
 
+        // New
+        internal static bool stylesInitialized;
+        internal static GUIStyle guiSectionStyle;
+        internal static GUIStyle toggleButtonStyle;
+        internal static GUIStyle buttonStyle;
+        internal static GUIStyle boldLabelStyle;
+
         internal static void InitColors()
         {
             stockBackgroundGUIColor = GUI.backgroundColor;
@@ -31,8 +38,9 @@ namespace PilotAssistant.Utility
 
         internal static void Styles()
         {
-            if (labelAlertStyle != null)
+            if (stylesInitialized)
                 return;
+            GUI.skin = HighLogic.Skin;
 
             // style for the paused message
             labelAlertStyle = new GUIStyle(GUI.skin.label);
@@ -56,6 +64,43 @@ namespace PilotAssistant.Utility
             btnStyle2.margin = new RectOffset(0, 4, 0, 2);
 
             scrollview = new GUIStyle(GUI.skin.scrollView);
+            
+            guiSectionStyle = new GUIStyle(GUI.skin.box);
+            guiSectionStyle.normal.textColor
+                = guiSectionStyle.focused.textColor
+                = Color.white;
+            guiSectionStyle.hover.textColor
+                = guiSectionStyle.active.textColor
+                = Color.yellow;
+            guiSectionStyle.onNormal.textColor
+                = guiSectionStyle.onFocused.textColor
+                = guiSectionStyle.onHover.textColor
+                = guiSectionStyle.onActive.textColor
+                = Color.green;
+            guiSectionStyle.padding = new RectOffset(4, 4, 4, 4);
+
+            buttonStyle = new GUIStyle(GUI.skin.button);
+            buttonStyle.padding = new RectOffset(4, 4, 4, 4);
+            
+            toggleButtonStyle = new GUIStyle(GUI.skin.button);
+            toggleButtonStyle.normal.textColor
+                = toggleButtonStyle.focused.textColor
+                = Color.white;
+            toggleButtonStyle.hover.textColor
+                = toggleButtonStyle.active.textColor
+                = toggleButtonStyle.onActive.textColor
+                = Color.yellow;
+            toggleButtonStyle.onNormal.textColor
+                = toggleButtonStyle.onFocused.textColor
+                = toggleButtonStyle.onHover.textColor
+                = Color.green;
+            toggleButtonStyle.padding = new RectOffset(4, 4, 4, 4);
+            
+            boldLabelStyle = new GUIStyle(GUI.skin.label);
+            boldLabelStyle.fontStyle = FontStyle.Bold;
+            // TODO: Needed?: boldLabelStyle.alignment = TextAnchor.UpperCenter;
+
+            stylesInitialized = false;
         }
 
         /// <summary>
@@ -149,6 +194,7 @@ namespace PilotAssistant.Utility
             return Functions.Clamp(val, lower, upper);
         }
 
+        // Unused?
         internal static Texture2D textureBlock(int w, int h, Color col)
         {
             Color[] pixels = new Color[w * h];
