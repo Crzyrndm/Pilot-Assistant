@@ -20,7 +20,7 @@ namespace PilotAssistant.UI
 
             if (AppLauncher.AppLauncherInstance.bDisplaySAS)
             {
-                SASwindow = GUI.Window(78934856, SASwindow, drawSASWindow, "SAS Module");
+                SASwindow = GUILayout.Window(78934856, SASwindow, drawSASWindow, "SAS Module", GUILayout.Width(0), GUILayout.Height(0));            
             }
 
             if (SurfSAS.bArmed)
@@ -37,37 +37,15 @@ namespace PilotAssistant.UI
                 }
                 GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             }
-            float height = 64;
-            if (SurfSAS.bStockSAS)
-                height += 86;
-            if (!SurfSAS.bStockSAS && SurfSAS.bArmed)
-                height += 166;
-            if (!SurfSAS.bStockSAS)
-                height += 33;
-            if ((stockPIDDisplay[0] && SurfSAS.bStockSAS) || (SurfSAS.SASControllers[(int)SASList.Pitch].bShow && !SurfSAS.bStockSAS))
-                height += 113;
-            if ((stockPIDDisplay[1] && SurfSAS.bStockSAS) || (SurfSAS.SASControllers[(int)SASList.Roll].bShow && !SurfSAS.bStockSAS))
-                height += 113;
-            if ((stockPIDDisplay[2] && SurfSAS.bStockSAS) || (SurfSAS.SASControllers[(int)SASList.Hdg].bShow && !SurfSAS.bStockSAS))
-                height += 113;
-            SASwindow.height = height;
 
             SASPresetWindow.Draw();
         }
 
         private static void drawSASWindow(int id)
         {
-            if (GUI.Button(new Rect(SASwindow.width - 16, 2, 14, 14), ""))
-            {
-                AppLauncher.AppLauncherInstance.bDisplaySAS = false;
-            }
-
-            if (GUILayout.Button("SAS Presets"))
-            {
-                SASPresetWindow.bShowPresets = !SASPresetWindow.bShowPresets;
-            }
-
-            SurfSAS.bStockSAS = GUILayout.Toggle(SurfSAS.bStockSAS, "Use Stock SAS");
+            GUILayout.BeginVertical(GUILayout.Height(0), GUILayout.Width(0), GUILayout.ExpandHeight(true));
+            SASPresetWindow.bShowPresets = GUILayout.Toggle(SASPresetWindow.bShowPresets, "Presets", GeneralUI.toggleButtonStyle);
+            SurfSAS.bStockSAS = GUILayout.Toggle(SurfSAS.bStockSAS, "Use Stock SAS", GUILayout.MinWidth(200));
             if (SurfSAS.bStockSAS != SurfSAS.bWasStockSAS)
             {
                 SurfSAS.bWasStockSAS = SurfSAS.bStockSAS;
@@ -95,40 +73,42 @@ namespace PilotAssistant.UI
 
             if (!SurfSAS.bStockSAS)
             {
-                GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-                if (GUILayout.Button(SurfSAS.bArmed ? "Disarm SAS" : "Arm SAS"))
+                bool tmpToggle1 = GUILayout.Toggle(SurfSAS.bArmed, SurfSAS.bArmed ? "Disarm SAS" : "Arm SAS", GeneralUI.toggleButtonStyle);
+                if (tmpToggle1 != SurfSAS.bArmed)
                 {
-                    ScreenMessages.PostScreenMessage("Surface SAS " + (SurfSAS.bArmed ? "Armed" : "Disarmed"));
                     SurfSAS.bArmed = !SurfSAS.bArmed;
+                    ScreenMessages.PostScreenMessage("Surface SAS " + (SurfSAS.bArmed ? "Armed" : "Disarmed"));
                     if (!SurfSAS.bArmed)
                         SurfSAS.bActive = false;
                 }
-                GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
 
                 if (SurfSAS.bArmed)
                 {
                     SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Utility.Functions.Clamp((float)GeneralUI.labPlusNumBox2("Pitch:", SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint.ToString("N2"), 80), -80, 80);
                     SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint = (float)GeneralUI.labPlusNumBox2("Heading:", SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint.ToString("N2"), 80, 60, 360, 0);
                     SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.labPlusNumBox2("Roll:", SurfSAS.SASControllers[(int)SASList.Roll].SetPoint.ToString("N2"), 80, 60, 180, -180);
-                    drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Pitch], "Pitch");
-                    drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Roll], "Roll");
-                    drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Hdg], "Yaw");
+                    drawPIDValuesNew(SASList.Pitch, "Pitch");
+                    drawPIDValuesNew(SASList.Roll, "Roll");
+                    drawPIDValuesNew(SASList.Hdg, "Yaw");
                 }
             }
             else
             {
                 VesselSAS sas = Utility.FlightData.thisVessel.VesselSAS;
 
-                drawPIDvalues(sas.pidLockedPitch, "Pitch", 0);
-                drawPIDvalues(sas.pidLockedRoll, "Roll", 1);
-                drawPIDvalues(sas.pidLockedYaw, "Yaw", 2);
+                drawPIDValuesNew(sas.pidLockedPitch, "Pitch", 0);
+                drawPIDValuesNew(sas.pidLockedRoll, "Roll", 1);
+                drawPIDValuesNew(sas.pidLockedYaw, "Yaw", 2);
             }
+ 
+            GUILayout.EndVertical();
             GUI.DragWindow();
         }
 
-        private static void drawPIDvalues(PID.PID_Controller controller, string inputName)
+        private static void drawPIDValuesNew(SASList controllerID, string inputName)
         {
-            if (GUILayout.Button(inputName))
+            PID.PID_Controller controller = SurfSAS.SASControllers[(int)controllerID];
+            if (GUILayout.Button(inputName, GeneralUI.buttonStyle, GUILayout.ExpandWidth(true)))
                 controller.bShow = !controller.bShow;
 
             if (controller.bShow)
@@ -140,9 +120,9 @@ namespace PilotAssistant.UI
             }
         }
 
-        private static void drawPIDvalues(PIDclamp controller, string inputName, int ID)
+        private static void drawPIDValuesNew(PIDclamp controller, string inputName, int ID)
         {
-            if (GUILayout.Button(inputName))
+            if (GUILayout.Button(inputName, GeneralUI.buttonStyle, GUILayout.ExpandWidth(true)))
             {
                 stockPIDDisplay[ID] = !stockPIDDisplay[ID];
             }
