@@ -66,7 +66,7 @@ namespace PilotAssistant.UI
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
-            if (GUILayout.Button("Reset to Default Tuning"))
+            if (GUILayout.Button("Reset to Defaults"))
             {
                 PresetManager.loadPAPreset(PresetManager.defaultPATuning);
                 PresetManager.activePAPreset = PresetManager.defaultPATuning;

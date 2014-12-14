@@ -33,6 +33,7 @@ namespace PilotAssistant.UI
             GUI.skin = GeneralUI.UISkin;
             GeneralUI.Styles();
 
+            // Have to put the width changes here so the close button is correctly placed
             if (showPIDLimits)
                 window.width = 370;
             else
