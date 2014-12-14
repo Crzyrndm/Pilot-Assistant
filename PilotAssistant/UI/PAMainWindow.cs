@@ -61,7 +61,7 @@ namespace PilotAssistant.UI
                 PilotAssistant.bHdgActive = !PilotAssistant.bHdgActive;
                 PilotAssistant.bPause = false;
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                SurfSAS.bActive = false;
+                SurfSAS.ActivitySwitch(false);
             }
             GUILayout.Label("Roll and Yaw Control", GeneralUI.boldLabelStyle, GUILayout.ExpandWidth(true));
             GUILayout.EndHorizontal();
@@ -120,7 +120,7 @@ namespace PilotAssistant.UI
                 if (!PilotAssistant.bVertActive)
                     PilotAssistant.bPause = false;
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                SurfSAS.bActive = false;
+                SurfSAS.ActivitySwitch(false);
             }
             GUILayout.Label("Vertical Control", GeneralUI.boldLabelStyle, GUILayout.ExpandWidth(true));
             GUILayout.EndHorizontal();

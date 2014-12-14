@@ -70,7 +70,7 @@ namespace PilotAssistant
 
             if (PresetManager.activePAPreset == null)
                 PresetManager.activePAPreset = PresetManager.defaultPATuning;
-            else
+            else if (PresetManager.activePAPreset != PresetManager.defaultPATuning)
             {
                 PresetManager.loadPAPreset(PresetManager.activePAPreset);
                 Messaging.statusMessage(5);
@@ -272,12 +272,12 @@ namespace PilotAssistant
 
             if (GameSettings.SAS_TOGGLE.GetKeyDown())
             {
-                if (!bPause && !FlightData.thisVessel.ctrlState.killRot && !SurfSAS.bActive)
+                if (!bPause && !FlightData.thisVessel.ctrlState.killRot && !SurfSAS.ActivityCheck())
                 {
                     bPause = true;
                     Messaging.statusMessage(2);
                 }
-                else if (bPause && (FlightData.thisVessel.ctrlState.killRot || SurfSAS.bActive))
+                else if (bPause && (FlightData.thisVessel.ctrlState.killRot || SurfSAS.ActivityCheck()))
                 {
                     bPause = false;
                     Messaging.statusMessage(3);
