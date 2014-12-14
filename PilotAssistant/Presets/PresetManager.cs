@@ -174,7 +174,8 @@ namespace PilotAssistant.Presets
 
         internal static void loadPAPreset(PresetPA p)
         {
-            List<PID.PID_Controller> c = PilotAssistant.controllers;
+            // TODO: Disable for now, fix later
+            List<PID.PID_Controller> c = null; // PilotAssistant.controllers;
 
             for (int i = 0; i < 7; i++)
             {

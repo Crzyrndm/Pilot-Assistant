@@ -26,7 +26,8 @@ namespace PilotAssistant.UI
                 {
                     if (GUILayout.Button("Update Preset", GeneralUI.buttonStyle))
                     {
-                        PresetManager.activePAPreset.Update(PilotAssistant.controllers);
+                        // TODO: Disable for now, fix later
+                        //PresetManager.activePAPreset.Update(PilotAssistant.controllers);
                         PresetManager.saveCFG();
                         ScreenMessages.PostScreenMessage(PresetManager.activePAPreset.name + " updated");
                     }
@@ -48,7 +49,8 @@ namespace PilotAssistant.UI
                         }
                     }
 
-                    PresetManager.PAPresetList.Add(new PresetPA(PilotAssistant.controllers, newPresetName));
+                    // TODO: Disable for now, fix later
+                    //PresetManager.PAPresetList.Add(new PresetPA(PilotAssistant.controllers, newPresetName));
                     newPresetName = "";
                     PresetManager.activePAPreset = PresetManager.PAPresetList[PresetManager.PAPresetList.Count - 1];
                     PresetManager.saveCFG();

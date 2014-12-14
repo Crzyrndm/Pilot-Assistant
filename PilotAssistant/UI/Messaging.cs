@@ -54,7 +54,7 @@ namespace PilotAssistant.UI
 
         static bool checkAssistantActive()
         {
-            return (PilotAssistant.bHdgActive || PilotAssistant.bVertActive);
+            return (PilotAssistant.IsHdgActive() || PilotAssistant.IsVertActive());
         }
     }
 }
