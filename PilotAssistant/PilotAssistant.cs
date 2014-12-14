@@ -127,9 +127,6 @@ namespace PilotAssistant
 
         public void GUI()
         {
-            if (GeneralUI.UISkin == null)
-                GeneralUI.UISkin = UnityEngine.GUI.skin;
-
             if (!AppLauncher.AppLauncherInstance.bDisplayAssistant)
                 return;
             PAMainWindow.Draw();
@@ -215,7 +212,7 @@ namespace PilotAssistant
                 if (bAltitudeHold)
                 {
                     controllers[(int)PIDList.Altitude].SetPoint = FlightData.thisVessel.altitude;
-                    PAMainWindow.targetVert = controllers[(int)PIDList.Altitude].SetPoint.ToString("N1");
+                    PAMainWindow.targetAlt = controllers[(int)PIDList.Altitude].SetPoint.ToString("N1");
                 }
                 else
                 {

@@ -5,6 +5,8 @@ using PilotAssistant.Presets;
 
 namespace PilotAssistant.UI
 {
+    using Utility;
+
     static class PAPresetWindow
     {
         internal static string newPresetName = "";
@@ -12,34 +14,28 @@ namespace PilotAssistant.UI
 
         internal static void Draw()
         {
-            presetWindow = GUILayout.Window(34245, presetWindow, displayPresetWindow, "", GUILayout.Width(200), GUILayout.MaxHeight(500));
+            presetWindow = GUILayout.Window(34245, presetWindow, drawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
         }
 
-        private static void displayPresetWindow(int id)
+        private static void drawPresetWindow(int id)
         {
-            if (GUI.Button(new Rect(presetWindow.width - 16, 2, 14, 14), ""))
-            {
-                PAMainWindow.showPresets = false;
-            }
-
             if (PresetManager.activePAPreset != null)
             {
-                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.activePAPreset.name));
+                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.activePAPreset.name), GeneralUI.boldLabelStyle);
                 if (PresetManager.activePAPreset.name != "Default")
                 {
-                    if (GUILayout.Button("Update Preset"))
+                    if (GUILayout.Button("Update Preset", GeneralUI.buttonStyle))
                     {
                         PresetManager.activePAPreset.Update(PilotAssistant.controllers);
                         PresetManager.saveCFG();
                         ScreenMessages.PostScreenMessage(PresetManager.activePAPreset.name + " updated");
                     }
                 }
-                GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
             }
 
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
-            if (GUILayout.Button("+", GUILayout.Width(25)))
+            if (GUILayout.Button("+", GeneralUI.buttonStyle, GUILayout.Width(25)))
             {
                 if (newPresetName != "")
                 {
@@ -64,26 +60,25 @@ namespace PilotAssistant.UI
             }
             GUILayout.EndHorizontal();
 
-            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
+            GUILayout.BeginVertical(GeneralUI.guiSectionStyle);
+            GUILayout.Label("Available presets: ", GeneralUI.boldLabelStyle);
 
-            if (GUILayout.Button("Reset to Default Tuning"))
+            if (GUILayout.Button("Default", GeneralUI.buttonStyle))
             {
                 PresetManager.loadPAPreset(PresetManager.defaultPATuning);
                 PresetManager.activePAPreset = PresetManager.defaultPATuning;
             }
 
-            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
-
             foreach (PresetPA p in PresetManager.PAPresetList)
             {
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button(p.name))
+                if (GUILayout.Button(p.name, GeneralUI.buttonStyle))
                 {
                     PresetManager.loadPAPreset(p);
                     PresetManager.activePAPreset = p;
                     ScreenMessages.PostScreenMessage("Loaded preset " + p.name);
                 }
-                if (GUILayout.Button("x", GUILayout.Width(25)))
+                if (GUILayout.Button("x", GeneralUI.buttonStyle, GUILayout.Width(25)))
                 {
                     ScreenMessages.PostScreenMessage("Deleted preset " + p.name);
                     if (PresetManager.activePAPreset == p)
@@ -93,6 +88,7 @@ namespace PilotAssistant.UI
                 }
                 GUILayout.EndHorizontal();
             }
+            GUILayout.EndVertical();
         }
     }
 }

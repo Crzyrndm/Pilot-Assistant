@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace PilotAssistant.AppLauncher
 {
+    using Utility;
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class AppLauncherInstance : MonoBehaviour
     {
@@ -52,6 +53,7 @@ namespace PilotAssistant.AppLauncher
 
         private void OnGUI()
         {
+            GeneralUI.Styles();
             if (bDisplayOptions)
             {
                 window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.MaxWidth(200));
@@ -60,7 +62,9 @@ namespace PilotAssistant.AppLauncher
 
         private void optionsWindow(int id)
         {
-            if (GUILayout.Button("Pilot Assistant"))
+            
+            bool tmpToggle = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", GeneralUI.toggleButtonStyle);
+            if (tmpToggle != bDisplayAssistant)
             {
                 bDisplayAssistant = !bDisplayAssistant;
                 btnLauncher.toggleButton.SetFalse();
@@ -70,7 +74,8 @@ namespace PilotAssistant.AppLauncher
                 bDisplayModerator = !bDisplayModerator;
                 btnLauncher.toggleButton.SetFalse();
             }*/
-            if (GUILayout.Button("SAS Systems"))
+            tmpToggle = GUILayout.Toggle(bDisplaySAS, "SAS Systems", GeneralUI.toggleButtonStyle);
+            if (tmpToggle != bDisplaySAS)
             {
                 bDisplaySAS = !bDisplaySAS;
                 btnLauncher.toggleButton.SetFalse();
