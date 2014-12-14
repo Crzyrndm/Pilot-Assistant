@@ -65,6 +65,11 @@ namespace PilotAssistant
 
         public void GUI()
         {
+            if (!AppLauncher.AppLauncherInstance.bDisplayModerator)
+                return;
+
+            if (GeneralUI.UISkin == null)
+                GeneralUI.UISkin = UnityEngine.GUI.skin;
             ModeratorMainWindow.Draw();
         }
 

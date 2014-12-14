@@ -13,6 +13,8 @@ namespace PilotAssistant.UI
         static ScreenMessage PAPresetMessage = new ScreenMessage("Pilot Assistant active preset loaded", 3, ScreenMessageStyle.UPPER_RIGHT);
         static ScreenMessage SSASPresetMessage = new ScreenMessage("SSAS active preset loaded", 3, ScreenMessageStyle.UPPER_RIGHT);
         static ScreenMessage StockSASPresetMessage = new ScreenMessage("Stock SAS active preset loaded", 3, ScreenMessageStyle.UPPER_RIGHT);
+        static ScreenMessage SSASArmedMessage = new ScreenMessage("Surface SAS Armed", 3, ScreenMessageStyle.UPPER_RIGHT);
+        static ScreenMessage SSASDisArmedMessage = new ScreenMessage("Surface SAS Disarmed and deactivated", 3, ScreenMessageStyle.UPPER_RIGHT);
         static ScreenMessage derpMessage = new ScreenMessage("Idiot, this isn't a valid number", 3, ScreenMessageStyle.UPPER_RIGHT);
 
         internal static void statusMessage(int messageNumber)
@@ -45,6 +47,12 @@ namespace PilotAssistant.UI
                     break;
                 case 7:
                     ScreenMessages.PostScreenMessage(StockSASPresetMessage);
+                    break;
+                case 8:
+                    ScreenMessages.PostScreenMessage(SSASArmedMessage);
+                    break;
+                case 9:
+                    ScreenMessages.PostScreenMessage(SSASDisArmedMessage);
                     break;
                 default:
                     ScreenMessages.PostScreenMessage(derpMessage); // For debugging purposes

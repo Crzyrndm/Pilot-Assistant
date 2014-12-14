@@ -11,7 +11,7 @@ namespace PilotAssistant.UI
     {
         internal static Rect SASwindow = new Rect(350, 50, 200, 30);
 
-        internal static bool[] stockPIDDisplay = { true, true, true };
+        internal static bool[] stockPIDDisplay = { true, false, false };
 
         public static void Draw()
         {
@@ -19,9 +19,7 @@ namespace PilotAssistant.UI
             GeneralUI.Styles();
 
             if (AppLauncher.AppLauncherInstance.bDisplaySAS)
-            {
-                SASwindow = GUI.Window(78934856, SASwindow, drawSASWindow, "SAS Module");
-            }
+                SASwindow = GUILayout.Window(78934856, SASwindow, drawSASWindow, "SAS Module", GUILayout.Height(0));
 
             if (SurfSAS.bArmed)
             {
@@ -34,23 +32,10 @@ namespace PilotAssistant.UI
                 {
                     SurfSAS.ActivitySwitch(!SurfSAS.ActivityCheck());
                     SurfSAS.updateTarget();
+                    PilotAssistant.bPause = !PilotAssistant.bPause;
                 }
                 GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             }
-            float height = 64;
-            if (SurfSAS.bStockSAS)
-                height += 86;
-            if (!SurfSAS.bStockSAS && SurfSAS.bArmed)
-                height += 166;
-            if (!SurfSAS.bStockSAS)
-                height += 33;
-            if ((stockPIDDisplay[0] && SurfSAS.bStockSAS) || (SurfSAS.SASControllers[(int)SASList.Pitch].bShow && !SurfSAS.bStockSAS))
-                height += 113;
-            if ((stockPIDDisplay[1] && SurfSAS.bStockSAS) || (SurfSAS.SASControllers[(int)SASList.Roll].bShow && !SurfSAS.bStockSAS))
-                height += 113;
-            if ((stockPIDDisplay[2] && SurfSAS.bStockSAS) || (SurfSAS.SASControllers[(int)SASList.Hdg].bShow && !SurfSAS.bStockSAS))
-                height += 113;
-            SASwindow.height = height;
 
             SASPresetWindow.Draw();
         }
@@ -62,12 +47,9 @@ namespace PilotAssistant.UI
                 AppLauncher.AppLauncherInstance.bDisplaySAS = false;
             }
 
-            if (GUILayout.Button("SAS Presets"))
-            {
-                SASPresetWindow.bShowPresets = !SASPresetWindow.bShowPresets;
-            }
+            SASPresetWindow.bShowPresets = GUILayout.Toggle(SASPresetWindow.bShowPresets, SASPresetWindow.bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
 
-            SurfSAS.bStockSAS = GUILayout.Toggle(SurfSAS.bStockSAS, "Use Stock SAS");
+            SurfSAS.bStockSAS = GUILayout.Toggle(SurfSAS.bStockSAS, SurfSAS.bStockSAS ? "Mode: Stock SAS" : "Mode: SSAS");
             if (SurfSAS.bStockSAS != SurfSAS.bWasStockSAS)
             {
                 SurfSAS.bWasStockSAS = SurfSAS.bStockSAS;
@@ -98,10 +80,14 @@ namespace PilotAssistant.UI
                 GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
                 if (GUILayout.Button(SurfSAS.bArmed ? "Disarm SAS" : "Arm SAS"))
                 {
-                    ScreenMessages.PostScreenMessage("Surface SAS " + (SurfSAS.bArmed ? "Armed" : "Disarmed"));
                     SurfSAS.bArmed = !SurfSAS.bArmed;
                     if (!SurfSAS.bArmed)
                         SurfSAS.ActivitySwitch(false);
+
+                    if (SurfSAS.bArmed)
+                        Messaging.statusMessage(8);
+                    else
+                        Messaging.statusMessage(9);
                 }
                 GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
 
@@ -110,27 +96,29 @@ namespace PilotAssistant.UI
                     SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Utility.Functions.Clamp((float)GeneralUI.labPlusNumBox2("Pitch:", SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint.ToString("N2"), 80), -80, 80);
                     SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint = (float)GeneralUI.labPlusNumBox2("Heading:", SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint.ToString("N2"), 80, 60, 360, 0);
                     SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.labPlusNumBox2("Roll:", SurfSAS.SASControllers[(int)SASList.Roll].SetPoint.ToString("N2"), 80, 60, 180, -180);
-                    drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Pitch], "Pitch");
-                    drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Roll], "Roll");
-                    drawPIDvalues(SurfSAS.SASControllers[(int)SASList.Hdg], "Yaw");
+                    drawPIDValues(SASList.Pitch, "Pitch");
+                    drawPIDValues(SASList.Roll, "Roll");
+                    drawPIDValues(SASList.Hdg, "Yaw");
                 }
             }
             else
             {
                 VesselSAS sas = Utility.FlightData.thisVessel.VesselSAS;
 
-                drawPIDvalues(sas.pidLockedPitch, "Pitch", 0);
-                drawPIDvalues(sas.pidLockedRoll, "Roll", 1);
-                drawPIDvalues(sas.pidLockedYaw, "Yaw", 2);
+                drawPIDValues(sas.pidLockedPitch, "Pitch", 0);
+                drawPIDValues(sas.pidLockedRoll, "Roll", 1);
+                drawPIDValues(sas.pidLockedYaw, "Yaw", 2);
             }
+
             GUI.DragWindow();
         }
 
-        private static void drawPIDvalues(PID.PID_Controller controller, string inputName)
+        private static void drawPIDValues(SASList controllerID, string inputName)
         {
-            if (GUILayout.Button(inputName))
-                controller.bShow = !controller.bShow;
-
+            PID.PID_Controller controller = SurfSAS.SASControllers[(int)controllerID];
+            Debug.Log(1);
+            controller.bShow = GUILayout.Toggle(controller.bShow, inputName, GeneralUI.toggleButton);
+            Debug.Log(2);
             if (controller.bShow)
             {
                 controller.PGain = GeneralUI.labPlusNumBox("Kp:", controller.PGain.ToString("G3"), 45);
@@ -140,12 +128,9 @@ namespace PilotAssistant.UI
             }
         }
 
-        private static void drawPIDvalues(PIDclamp controller, string inputName, int ID)
+        private static void drawPIDValues(PIDclamp controller, string inputName, int ID)
         {
-            if (GUILayout.Button(inputName))
-            {
-                stockPIDDisplay[ID] = !stockPIDDisplay[ID];
-            }
+            stockPIDDisplay[ID] = GUILayout.Toggle(stockPIDDisplay[ID], inputName, GeneralUI.toggleButton);
 
             if (stockPIDDisplay[ID])
             {

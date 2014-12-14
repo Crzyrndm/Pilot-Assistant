@@ -12,7 +12,7 @@ namespace PilotAssistant.UI
 
         internal static void Draw()
         {
-            presetWindow = GUILayout.Window(34245, presetWindow, displayPresetWindow, "", GUILayout.Width(200), GUILayout.MaxHeight(500));
+            presetWindow = GUILayout.Window(34245, presetWindow, displayPresetWindow, "Pilot Assistant Presets", GUILayout.Width(200), GUILayout.Height(0));
         }
 
         private static void displayPresetWindow(int id)

@@ -16,7 +16,7 @@ namespace PilotAssistant.UI
         {
             if (bShowPresets)
             {
-                SASPresetwindow = GUILayout.Window(78934857, SASPresetwindow, drawPresetWindow, "");
+                SASPresetwindow = GUILayout.Window(78934857, SASPresetwindow, drawPresetWindow, "SAS Presets", GUILayout.Height(0));
                 SASPresetwindow.x = SASMainWindow.SASwindow.x + SASMainWindow.SASwindow.width;
                 SASPresetwindow.y = SASMainWindow.SASwindow.y;
             }

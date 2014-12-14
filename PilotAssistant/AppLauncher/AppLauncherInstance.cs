@@ -52,27 +52,25 @@ namespace PilotAssistant.AppLauncher
 
         private void OnGUI()
         {
+            Utility.GeneralUI.Styles();
             if (bDisplayOptions)
             {
-                window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.MaxWidth(200));
+                window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
             }
         }
 
         private void optionsWindow(int id)
         {
-            if (GUILayout.Button("Pilot Assistant"))
+            bool temp = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", Utility.GeneralUI.toggleButton);
+            if (temp != bDisplayAssistant)
             {
-                bDisplayAssistant = !bDisplayAssistant;
+                bDisplayAssistant = temp;
                 btnLauncher.toggleButton.SetFalse();
             }
-            /*if (GUILayout.Button("Input Moderator"))
+            temp = GUILayout.Toggle(bDisplaySAS, "SAS Systems", Utility.GeneralUI.toggleButton);
+            if (temp != bDisplaySAS)
             {
-                bDisplayModerator = !bDisplayModerator;
-                btnLauncher.toggleButton.SetFalse();
-            }*/
-            if (GUILayout.Button("SAS Systems"))
-            {
-                bDisplaySAS = !bDisplaySAS;
+                bDisplaySAS = temp;
                 btnLauncher.toggleButton.SetFalse();
             }
         }

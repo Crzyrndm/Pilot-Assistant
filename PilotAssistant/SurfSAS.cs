@@ -130,6 +130,12 @@ namespace PilotAssistant
 
         public void GUI()
         {
+            if (!AppLauncher.AppLauncherInstance.bDisplaySAS)
+                return;
+            
+            if (GeneralUI.UISkin == null)
+                GeneralUI.UISkin = UnityEngine.GUI.skin;
+
             SASMainWindow.Draw();
         }
 

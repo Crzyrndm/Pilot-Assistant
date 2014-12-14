@@ -11,15 +11,22 @@ namespace PilotAssistant.Utility
         internal static Color InActiveBackground;
         internal static Color HeaderButtonBackground;
 
+        // save the skin so other windows can't interfere
         internal static GUISkin UISkin;
+
+        // used for the pause message
         internal static GUIStyle labelAlertStyle;
 
-        internal static GUIStyle labelStyle;
-        internal static GUIStyle textStyle;
-        internal static GUIStyle btnStyle1;
-        internal static GUIStyle btnStyle2;
+        // styles for the numbox functions
+        internal static GUIStyle numBoxLabelStyle; // label that sits before the textbox and increment/decrement buttons
+        internal static GUIStyle numBoxTextStyle; // textbox between label and increment/decrement buttons
+        internal static GUIStyle btnStylePlus; // increment button
+        internal static GUIStyle btnStyleMinus; // decrement button
 
-        internal static GUIStyle scrollview;
+        // Toggle button
+        internal static GUIStyle toggleButton;
+
+        internal static bool styleInit = false;
 
         internal static void InitColors()
         {
@@ -31,31 +38,46 @@ namespace PilotAssistant.Utility
 
         internal static void Styles()
         {
-            if (labelAlertStyle != null)
+            if (styleInit)
                 return;
-
-            // style for the paused message
-            labelAlertStyle = new GUIStyle(GUI.skin.label);
+            
+            // style for the paused message (big, bold, and red)
+            labelAlertStyle = new GUIStyle(GUI.skin.box);
             labelAlertStyle.normal.textColor = XKCDColors.Red;
             labelAlertStyle.fontSize = 21;
             labelAlertStyle.fontStyle = FontStyle.Bold;
-
+            
             // style for label to align with increment buttons
-            labelStyle = new GUIStyle(GUI.skin.label);
-            labelStyle.alignment = TextAnchor.MiddleLeft;
-            labelStyle.margin = new RectOffset(4, 4, 5, 3);
+            numBoxLabelStyle = new GUIStyle(GUI.skin.label);
+            numBoxLabelStyle.alignment = TextAnchor.MiddleLeft;
+            numBoxLabelStyle.margin = new RectOffset(4, 4, 5, 3);
+            
             // style for text box to align with increment buttons better
-            textStyle = new GUIStyle(GUI.skin.textField);
-            textStyle.alignment = TextAnchor.MiddleLeft;
-            textStyle.margin = new RectOffset(4, 0, 5, 3);
+            numBoxTextStyle = new GUIStyle(GUI.skin.textField);
+            numBoxTextStyle.alignment = TextAnchor.MiddleLeft;
+            numBoxTextStyle.margin = new RectOffset(4, 0, 5, 3);
+            
             // style for increment button
-            btnStyle1 = new GUIStyle(GUI.skin.button);
-            btnStyle1.margin = new RectOffset(0, 4, 2, 0);
-            // style for derement button
-            btnStyle2 = new GUIStyle(GUI.skin.button);
-            btnStyle2.margin = new RectOffset(0, 4, 0, 2);
+            btnStylePlus = new GUIStyle(GUI.skin.button);
+            btnStylePlus.margin = new RectOffset(0, 4, 2, 0);
+            btnStylePlus.hover.textColor = Color.yellow;
+            btnStylePlus.onActive.textColor = Color.green;
 
-            scrollview = new GUIStyle(GUI.skin.scrollView);
+            // style for derement button
+            btnStyleMinus = new GUIStyle(GUI.skin.button);
+            btnStyleMinus.margin = new RectOffset(0, 4, 0, 2);
+            btnStyleMinus.hover.textColor = Color.yellow;
+            btnStyleMinus.onActive.textColor = Color.green;
+
+            // A toggle that looks like a button
+            toggleButton = new GUIStyle(GUI.skin.button);
+            toggleButton.normal.textColor = toggleButton.focused.textColor = Color.white;
+            toggleButton.onNormal.textColor = toggleButton.onFocused.textColor = toggleButton.onHover.textColor 
+                = toggleButton.active.textColor = toggleButton.hover.textColor = toggleButton.onActive.textColor = Color.green;
+            toggleButton.onNormal.background = toggleButton.onHover.background = toggleButton.onActive.background = toggleButton.active.background = HighLogic.Skin.button.onNormal.background;
+            toggleButton.hover.background = toggleButton.normal.background;
+            
+            styleInit = true;
         }
 
         /// <summary>
@@ -71,10 +93,10 @@ namespace PilotAssistant.Utility
             double val;
             GUILayout.BeginHorizontal();
 
-            GUILayout.Label(labelText, labelStyle, GUILayout.Width(labelWidth));
+            GUILayout.Label(labelText, numBoxLabelStyle, GUILayout.Width(labelWidth));
             val = double.Parse(boxText);
             boxText = val.ToString(",0.0#####");
-            string text = GUILayout.TextField(boxText, textStyle, GUILayout.Width(boxWidth));
+            string text = GUILayout.TextField(boxText, numBoxTextStyle, GUILayout.Width(boxWidth));
             //
             try
             {
@@ -86,14 +108,14 @@ namespace PilotAssistant.Utility
             }
             //
             GUILayout.BeginVertical();
-            if (GUILayout.Button("+", btnStyle1, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("+", btnStylePlus, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 if (val != 0)
                     val *= 1.1;
                 else
                     val = 0.01;
             }
-            if (GUILayout.Button("-", btnStyle2, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("-", btnStyleMinus, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val /= 1.1;
             }
@@ -118,8 +140,8 @@ namespace PilotAssistant.Utility
             double val;
             GUILayout.BeginHorizontal();
 
-            GUILayout.Label(labelText, labelStyle, GUILayout.Width(labelWidth));
-            string text = GUILayout.TextField(boxText, textStyle, GUILayout.Width(boxWidth));
+            GUILayout.Label(labelText, numBoxLabelStyle, GUILayout.Width(labelWidth));
+            string text = GUILayout.TextField(boxText, numBoxTextStyle, GUILayout.Width(boxWidth));
             //
             try
             {
@@ -131,13 +153,13 @@ namespace PilotAssistant.Utility
             }
             //
             GUILayout.BeginVertical();
-            if (GUILayout.Button("+", btnStyle1, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("+", btnStylePlus, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val += 1;
                 if (val >= upper)
                     val = lower;
             }
-            if (GUILayout.Button("-", btnStyle2, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("-", btnStyleMinus, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val -= 1;
                 if (val < lower)

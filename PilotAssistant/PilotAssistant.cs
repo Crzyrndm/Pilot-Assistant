@@ -127,11 +127,12 @@ namespace PilotAssistant
 
         public void GUI()
         {
+            if (!AppLauncher.AppLauncherInstance.bDisplayAssistant)
+                return;
+
             if (GeneralUI.UISkin == null)
                 GeneralUI.UISkin = UnityEngine.GUI.skin;
 
-            if (!AppLauncher.AppLauncherInstance.bDisplayAssistant)
-                return;
             PAMainWindow.Draw();
         }
 
@@ -259,7 +260,7 @@ namespace PilotAssistant
 
         private void keyPressChanges()
         {
-            if (Input.GetKeyDown(KeyCode.Tab) && CameraManager.Instance.currentCameraMode != CameraManager.CameraMode.Map)
+            if (Input.GetKeyDown(KeyCode.Tab))
             {
                 bHdgWasActive = false; // reset heading/vert lock on unpausing
                 bVertWasActive = false;
