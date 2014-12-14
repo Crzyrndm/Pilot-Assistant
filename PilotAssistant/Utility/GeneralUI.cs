@@ -46,6 +46,7 @@ namespace PilotAssistant.Utility
             labelAlertStyle.normal.textColor = XKCDColors.Red;
             labelAlertStyle.fontSize = 21;
             labelAlertStyle.fontStyle = FontStyle.Bold;
+            labelAlertStyle.alignment = TextAnchor.MiddleCenter;
             
             // style for label to align with increment buttons
             numBoxLabelStyle = new GUIStyle(GUI.skin.label);

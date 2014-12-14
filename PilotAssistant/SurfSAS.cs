@@ -94,21 +94,41 @@ namespace PilotAssistant
 
             // Arm Hotkey
             if (GameSettings.MODIFIER_KEY.GetKey() && GameSettings.SAS_TOGGLE.GetKeyDown())
+            {
                 bArmed = !bArmed;
+                if (ActivityCheck())
+                {
+                    ActivitySwitch(false);
+                    if (!bStockSAS)
+                    {
+                        FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                        FlightData.thisVessel.ctrlState.killRot = false;
+                    }
+                    else
+                    {
+                        FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, true);
+                        FlightData.thisVessel.ctrlState.killRot = true;
+                    }
+                }
+
+            }
 
             // SAS activated by user
             if (bArmed && !ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown())
             {
-                ActivitySwitch(true);
-                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                FlightData.thisVessel.ctrlState.killRot = false;
-                updateTarget();
+                if (!bStockSAS)
+                {
+                    ActivitySwitch(true);
+                    FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                    FlightData.thisVessel.ctrlState.killRot = false;
+                    updateTarget();
+                }
             }
             else if (ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown())
             {
                 ActivitySwitch(false);
-                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                FlightData.thisVessel.ctrlState.killRot = false;
+                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, bStockSAS);
+                FlightData.thisVessel.ctrlState.killRot = bStockSAS;
             }
 
             // Atmospheric mode tracks horizon, don't want in space
@@ -141,6 +161,7 @@ namespace PilotAssistant
             if (GeneralUI.UISkin == null)
                 GeneralUI.UISkin = UnityEngine.GUI.skin;
 
+            // SAS toggle button
             if (SurfSAS.bArmed)
             {
                 if (SurfSAS.ActivityCheck())
@@ -150,16 +171,21 @@ namespace PilotAssistant
 
                 if (UnityEngine.GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
                 {
-                    SurfSAS.ActivitySwitch(!SurfSAS.ActivityCheck());
-                    SurfSAS.updateTarget();
+                    ActivitySwitch(!ActivityCheck());
+                    updateTarget();
+                    if (ActivityCheck())
+                    {
+                        FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                        FlightData.thisVessel.ctrlState.killRot = false;
+                    }
+
                 }
                 UnityEngine.GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             }
-
+            
+            // Main and preset window stuff
             if (!AppLauncher.AppLauncherInstance.bDisplaySAS)
                 return;
-            
-
             SASMainWindow.Draw();
         }
 

@@ -33,6 +33,11 @@ namespace PilotAssistant.UI
             GUI.skin = GeneralUI.UISkin;
             GeneralUI.Styles();
 
+            if (showPIDLimits)
+                window.width = 370;
+            else
+                window.width = 225;
+
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             window = GUILayout.Window(34244, window, displayWindow, "Pilot Assistant", GUILayout.Height(0));
 
