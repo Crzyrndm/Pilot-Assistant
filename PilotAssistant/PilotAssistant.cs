@@ -145,7 +145,7 @@ namespace PilotAssistant
 
             FlightData.updateAttitude();
 
-            if (bPause)
+            if (bPause || SASMonitor())
                 return;
             
             // Heading Control
@@ -266,7 +266,10 @@ namespace PilotAssistant
                 bVertWasActive = false;
                 bPause = !bPause;
                 if (!bPause)
+                {
                     FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                    FlightData.thisVessel.ctrlState.killRot = false;
+                }
                 
                 if (bPause)
                     Messaging.statusMessage(0);
@@ -276,14 +279,12 @@ namespace PilotAssistant
 
             if (GameSettings.SAS_TOGGLE.GetKeyDown())
             {
-                if (!bPause && !FlightData.thisVessel.ctrlState.killRot && !SurfSAS.ActivityCheck())
+                if (!bPause && FlightData.thisVessel.ctrlState.killRot && SurfSAS.ActivityCheck())
                 {
-                    bPause = true;
                     Messaging.statusMessage(2);
                 }
-                else if (bPause && (FlightData.thisVessel.ctrlState.killRot || SurfSAS.ActivityCheck()))
+                else if (bPause && (!FlightData.thisVessel.ctrlState.killRot || !SurfSAS.ActivityCheck()))
                 {
-                    bPause = false;
                     Messaging.statusMessage(3);
                 }
             }
@@ -356,6 +357,11 @@ namespace PilotAssistant
                     PAMainWindow.targetVert = vert.ToString();
                 }
             }
+        }
+
+        internal static bool SASMonitor()
+        {
+            return (FlightData.thisVessel.ctrlState.killRot || SurfSAS.ActivityCheck());
         }
     }
 }

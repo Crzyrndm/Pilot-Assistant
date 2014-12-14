@@ -21,22 +21,6 @@ namespace PilotAssistant.UI
             if (AppLauncher.AppLauncherInstance.bDisplaySAS)
                 SASwindow = GUILayout.Window(78934856, SASwindow, drawSASWindow, "SAS Module", GUILayout.Height(0));
 
-            if (SurfSAS.bArmed)
-            {
-                if (SurfSAS.ActivityCheck())
-                    GUI.backgroundColor = GeneralUI.ActiveBackground;
-                else
-                    GUI.backgroundColor = GeneralUI.InActiveBackground;
-
-                if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
-                {
-                    SurfSAS.ActivitySwitch(!SurfSAS.ActivityCheck());
-                    SurfSAS.updateTarget();
-                    PilotAssistant.bPause = !PilotAssistant.bPause;
-                }
-                GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
-            }
-
             SASPresetWindow.Draw();
         }
 
@@ -93,7 +77,7 @@ namespace PilotAssistant.UI
 
                 if (SurfSAS.bArmed)
                 {
-                    SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Utility.Functions.Clamp((float)GeneralUI.labPlusNumBox2("Pitch:", SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint.ToString("N2"), 80), -80, 80);
+                    SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Functions.Clamp((float)GeneralUI.labPlusNumBox2("Pitch:", SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint.ToString("N2"), 80), -80, 80);
                     SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint = (float)GeneralUI.labPlusNumBox2("Heading:", SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint.ToString("N2"), 80, 60, 360, 0);
                     SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.labPlusNumBox2("Roll:", SurfSAS.SASControllers[(int)SASList.Roll].SetPoint.ToString("N2"), 80, 60, 180, -180);
                     drawPIDValues(SASList.Pitch, "Pitch");
@@ -103,7 +87,7 @@ namespace PilotAssistant.UI
             }
             else
             {
-                VesselSAS sas = Utility.FlightData.thisVessel.VesselSAS;
+                VesselSAS sas = FlightData.thisVessel.VesselSAS;
 
                 drawPIDValues(sas.pidLockedPitch, "Pitch", 0);
                 drawPIDValues(sas.pidLockedRoll, "Roll", 1);
@@ -116,9 +100,8 @@ namespace PilotAssistant.UI
         private static void drawPIDValues(SASList controllerID, string inputName)
         {
             PID.PID_Controller controller = SurfSAS.SASControllers[(int)controllerID];
-            Debug.Log(1);
             controller.bShow = GUILayout.Toggle(controller.bShow, inputName, GeneralUI.toggleButton);
-            Debug.Log(2);
+
             if (controller.bShow)
             {
                 controller.PGain = GeneralUI.labPlusNumBox("Kp:", controller.PGain.ToString("G3"), 45);

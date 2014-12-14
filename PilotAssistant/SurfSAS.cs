@@ -40,7 +40,7 @@ namespace PilotAssistant
             if (FlightData.thisVessel == null)
                 FlightData.thisVessel = FlightGlobals.ActiveVessel;
 
-            // grab stock PID values
+            // grab stock PID values - needs to be done in update so that it is initialised
             if (FlightData.thisVessel.VesselSAS.pidLockedPitch != null)
             {
                 PresetManager.defaultStockSASTuning = new PresetSAS(FlightData.thisVessel.VesselSAS, "Stock");
@@ -92,17 +92,23 @@ namespace PilotAssistant
             if (!bInit)
                 Initialise();
 
+            // Arm Hotkey
+            if (GameSettings.MODIFIER_KEY.GetKey() && GameSettings.SAS_TOGGLE.GetKeyDown())
+                bArmed = !bArmed;
+
             // SAS activated by user
             if (bArmed && !ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown())
             {
                 ActivitySwitch(true);
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                FlightData.thisVessel.ctrlState.killRot = false;
                 updateTarget();
             }
             else if (ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown())
             {
                 ActivitySwitch(false);
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                FlightData.thisVessel.ctrlState.killRot = false;
             }
 
             // Atmospheric mode tracks horizon, don't want in space
@@ -113,6 +119,7 @@ namespace PilotAssistant
                 {
                     ActivitySwitch(true);
                     FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                    FlightData.thisVessel.ctrlState.killRot = false;
                 }
             }
             else if (FlightData.thisVessel.staticPressure == 0 && bAtmosphere)
@@ -122,6 +129,7 @@ namespace PilotAssistant
                 {
                     ActivitySwitch(false);
                     FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, true);
+                    FlightData.thisVessel.ctrlState.killRot = true;
                 }
             }
 
@@ -130,11 +138,27 @@ namespace PilotAssistant
 
         public void GUI()
         {
+            if (GeneralUI.UISkin == null)
+                GeneralUI.UISkin = UnityEngine.GUI.skin;
+
+            if (SurfSAS.bArmed)
+            {
+                if (SurfSAS.ActivityCheck())
+                    UnityEngine.GUI.backgroundColor = GeneralUI.ActiveBackground;
+                else
+                    UnityEngine.GUI.backgroundColor = GeneralUI.InActiveBackground;
+
+                if (UnityEngine.GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
+                {
+                    SurfSAS.ActivitySwitch(!SurfSAS.ActivityCheck());
+                    SurfSAS.updateTarget();
+                }
+                UnityEngine.GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+            }
+
             if (!AppLauncher.AppLauncherInstance.bDisplaySAS)
                 return;
             
-            if (GeneralUI.UISkin == null)
-                GeneralUI.UISkin = UnityEngine.GUI.skin;
 
             SASMainWindow.Draw();
         }
