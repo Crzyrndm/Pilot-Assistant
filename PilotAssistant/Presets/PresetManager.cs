@@ -175,7 +175,7 @@ namespace PilotAssistant.Presets
         internal static void loadPAPreset(PresetPA p)
         {
             // TODO: Disable for now, fix later
-            List<PID.PID_Controller> c = null; // PilotAssistant.controllers;
+            List<PID.PID_Controller> c = null; return; //PilotAssistant.GetAllControllers();
 
             for (int i = 0; i < 7; i++)
             {
@@ -192,7 +192,9 @@ namespace PilotAssistant.Presets
 
         internal static void loadSASPreset(PresetSAS p)
         {
-            List<PID.PID_Controller> c = SurfSAS.SASControllers;
+            // TODO: Disable for now, fix later
+            List<PID.PID_Controller> c = null; return; //SurfSAS.GetAllControllers();
+            return;
 
             for (int i = 0; i < 3; i++)
             {
