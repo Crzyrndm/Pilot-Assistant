@@ -100,15 +100,9 @@ namespace PilotAssistant
                 {
                     ActivitySwitch(false);
                     if (!bStockSAS)
-                    {
-                        FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                        FlightData.thisVessel.ctrlState.killRot = false;
-                    }
+                        setStockSAS(false);
                     else
-                    {
-                        FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, true);
-                        FlightData.thisVessel.ctrlState.killRot = true;
-                    }
+                        setStockSAS(true);
                 }
 
             }
@@ -119,16 +113,14 @@ namespace PilotAssistant
                 if (!bStockSAS)
                 {
                     ActivitySwitch(true);
-                    FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                    FlightData.thisVessel.ctrlState.killRot = false;
+                    setStockSAS(false);
                     updateTarget();
                 }
             }
             else if (ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown())
             {
                 ActivitySwitch(false);
-                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, bStockSAS);
-                FlightData.thisVessel.ctrlState.killRot = bStockSAS;
+                setStockSAS(bStockSAS);
             }
 
             // Atmospheric mode tracks horizon, don't want in space
@@ -138,8 +130,7 @@ namespace PilotAssistant
                 if (FlightData.thisVessel.ctrlState.killRot && bArmed)
                 {
                     ActivitySwitch(true);
-                    FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                    FlightData.thisVessel.ctrlState.killRot = false;
+                    setStockSAS(false);
                 }
             }
             else if (FlightData.thisVessel.staticPressure == 0 && bAtmosphere)
@@ -148,8 +139,7 @@ namespace PilotAssistant
                 if (ActivityCheck())
                 {
                     ActivitySwitch(false);
-                    FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, true);
-                    FlightData.thisVessel.ctrlState.killRot = true;
+                    setStockSAS(true);
                 }
             }
 
@@ -174,11 +164,7 @@ namespace PilotAssistant
                     ActivitySwitch(!ActivityCheck());
                     updateTarget();
                     if (ActivityCheck())
-                    {
-                        FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                        FlightData.thisVessel.ctrlState.killRot = false;
-                    }
-
+                        setStockSAS(false);
                 }
                 UnityEngine.GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             }
@@ -288,15 +274,13 @@ namespace PilotAssistant
             if (GameSettings.SAS_HOLD.GetKeyDown())
             {
                 ActivitySwitch(true);
-                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                FlightData.thisVessel.ctrlState.killRot = false;
+                setStockSAS(false);
             }
             if (GameSettings.SAS_HOLD.GetKeyUp())
             {
                 ActivitySwitch(false);
                 updateTarget();
-                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                FlightData.thisVessel.ctrlState.killRot = false;
+                setStockSAS(false);
             }
         }
 
@@ -314,6 +298,12 @@ namespace PilotAssistant
                 return true;
             else
                 return false;
+        }
+
+        internal static void setStockSAS(bool state)
+        {
+            FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, state);
+            FlightData.thisVessel.ctrlState.killRot = state;
         }
     }
 }

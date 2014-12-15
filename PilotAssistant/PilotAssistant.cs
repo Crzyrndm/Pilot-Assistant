@@ -266,10 +266,7 @@ namespace PilotAssistant
                 bVertWasActive = false;
                 bPause = !bPause;
                 if (!bPause)
-                {
-                    FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                    FlightData.thisVessel.ctrlState.killRot = false;
-                }
+                    SurfSAS.setStockSAS(false);
                 
                 if (bPause)
                     Messaging.statusMessage(0);

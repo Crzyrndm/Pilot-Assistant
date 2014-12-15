@@ -31,7 +31,7 @@ namespace PilotAssistant.UI
                     {
                         PresetManager.activePAPreset.Update(PilotAssistant.controllers);
                         PresetManager.saveCFG();
-                        ScreenMessages.PostScreenMessage(PresetManager.activePAPreset.name + " updated");
+                        Messaging.postMessage(PresetManager.activePAPreset.name + " updated");
                     }
                 }
                 GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
@@ -47,7 +47,7 @@ namespace PilotAssistant.UI
                     {
                         if (newPresetName == p.name)
                         {
-                            ScreenMessages.PostScreenMessage("Failed to add preset with duplicate name");
+                            Messaging.postMessage("Failed to add preset with duplicate name");
                             return;
                         }
                     }
@@ -59,7 +59,7 @@ namespace PilotAssistant.UI
                 }
                 else
                 {
-                    ScreenMessages.PostScreenMessage("Failed to add preset with no name");
+                    Messaging.postMessage("Failed to add preset with no name");
                 }
             }
             GUILayout.EndHorizontal();
@@ -81,11 +81,11 @@ namespace PilotAssistant.UI
                 {
                     PresetManager.loadPAPreset(p);
                     PresetManager.activePAPreset = p;
-                    ScreenMessages.PostScreenMessage("Loaded preset " + p.name);
+                    Messaging.postMessage("Loaded preset " + p.name);
                 }
                 if (GUILayout.Button("x", GUILayout.Width(25)))
                 {
-                    ScreenMessages.PostScreenMessage("Deleted preset " + p.name);
+                    Messaging.postMessage("Deleted preset " + p.name);
                     if (PresetManager.activePAPreset == p)
                         PresetManager.activePAPreset = null;
                     PresetManager.PAPresetList.Remove(p);

@@ -33,23 +33,13 @@ namespace PilotAssistant.UI
             GUI.skin = GeneralUI.UISkin;
             GeneralUI.Styles();
 
-            // Have to put the width changes here so the close button is correctly placed
+            // Window resizing (scroll views dont work nicely with GUILayout)
+            // Have to put the width changes before the draw so the close button is correctly placed
             if (showPIDLimits)
                 window.width = 370;
             else
-                window.width = 233;
+                window.width = 233; // why is this this particularly odd number?
 
-            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
-            window = GUILayout.Window(34244, window, displayWindow, "Pilot Assistant", GUILayout.Height(0), GUILayout.MinWidth(233));
-            Debug.Log(window.width);
-            PAPresetWindow.presetWindow.x = window.x + window.width;
-            PAPresetWindow.presetWindow.y = window.y;
-            if (showPresets)
-            {
-                PAPresetWindow.Draw();
-            }
-
-            // Window resizing
             if (bShowHdg)
             {
                 hdgScrollHeight = 0;
@@ -77,6 +67,16 @@ namespace PilotAssistant.UI
                     if (PilotAssistant.controllers[(int)PIDList.Elevator].bShow)
                         vertScrollHeight += 123;
                 }
+            }
+
+            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+            window = GUILayout.Window(34244, window, displayWindow, "Pilot Assistant", GUILayout.Height(0), GUILayout.MinWidth(233));
+
+            PAPresetWindow.presetWindow.x = window.x + window.width;
+            PAPresetWindow.presetWindow.y = window.y;
+            if (showPresets)
+            {
+                PAPresetWindow.Draw();
             }
         }
 
@@ -122,8 +122,7 @@ namespace PilotAssistant.UI
             {
                 PilotAssistant.bHdgActive = toggleCheck;
                 PilotAssistant.bPause = false;
-                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                FlightData.thisVessel.ctrlState.killRot = false;
+                SurfSAS.setStockSAS(false);
                 SurfSAS.ActivitySwitch(false);
             }
             // reset colour
@@ -188,8 +187,7 @@ namespace PilotAssistant.UI
                 PilotAssistant.bVertActive = toggleCheck;
                 if (!toggleCheck)
                     PilotAssistant.bPause = false;
-                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                FlightData.thisVessel.ctrlState.killRot = false;
+                SurfSAS.setStockSAS(false);
                 SurfSAS.ActivitySwitch(false);
             }
             // reset colour
