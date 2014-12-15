@@ -55,9 +55,9 @@
     <Compile Include="SurfSAS.cs" />
     <Compile Include="PID\PID_Controller.cs" />
     <Compile Include="PilotAssistant.cs" />
-    <Compile Include="Presets\PresetPA.cs" />
+    <Compile Include="Presets\PAPreset.cs" />
     <Compile Include="Presets\PresetManager.cs" />
-    <Compile Include="Presets\PresetSAS.cs" />
+    <Compile Include="Presets\SASPreset.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI\Messaging.cs" />
     <Compile Include="UI\PAMainWindow.cs" />
