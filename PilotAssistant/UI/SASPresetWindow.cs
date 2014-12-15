@@ -10,22 +10,16 @@ namespace PilotAssistant.UI
     internal static class SASPresetWindow
     {
         internal static string newPresetName = "";
-        internal static Rect SASPresetwindow = new Rect(550, 50, 50, 50);
-        internal static bool bShowPresets = false;
+        internal static Rect windowRect = new Rect(550, 50, 50, 50);
 
         internal static void Draw()
         {
-            if (bShowPresets)
-            {
-                SASPresetwindow = GUILayout.Window(78934857, SASPresetwindow, drawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
-                SASPresetwindow.x = SASMainWindow.SASwindow.x + SASMainWindow.SASwindow.width;
-                SASPresetwindow.y = SASMainWindow.SASwindow.y;
-            }
+            windowRect = GUILayout.Window(78934857, windowRect, drawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
         }
 
         private static void drawPresetWindow(int id)
         {
-            if (SurfSAS.bStockSAS)
+            if (SurfSAS.StockSASEnabled())
                 drawStockPreset();
             else
                 drawSurfPreset();
@@ -40,7 +34,8 @@ namespace PilotAssistant.UI
                 {
                     if (GUILayout.Button("Update Preset", GeneralUI.buttonStyle))
                     {
-                        PresetManager.activeSASPreset.Update(SurfSAS.SASControllers);
+                        // TODO: Disable for now, fix later
+                        //PresetManager.activeSASPreset.Update(SurfSAS.SASControllers);
                         PresetManager.saveCFG();
                     }
                 }
@@ -58,7 +53,8 @@ namespace PilotAssistant.UI
                             return;
                     }
 
-                    PresetManager.SASPresetList.Add(new PresetSAS(SurfSAS.SASControllers, newPresetName));
+                    // TODO: Disable for now, fix later
+                    //PresetManager.SASPresetList.Add(new PresetSAS(SurfSAS.SASControllers, newPresetName));
                     newPresetName = "";
                     PresetManager.activeSASPreset = PresetManager.SASPresetList[PresetManager.SASPresetList.Count - 1];
                     PresetManager.saveCFG();

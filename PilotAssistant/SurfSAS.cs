@@ -20,21 +20,20 @@ namespace PilotAssistant
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class SurfSAS : MonoBehaviour
     {
-        internal static List<PID_Controller> SASControllers = new List<PID_Controller>();
+        private static List<PID_Controller> SASControllers = new List<PID_Controller>();
 
-        internal static bool bInit = false;
-        internal static bool bArmed = false;
-        internal static bool[] bActive = new bool[3]; // activate on per axis basis
-        internal bool[] bPause = new bool[3]; // pause on a per axis basis
-        internal bool bAtmosphere = false;
-        internal static bool bStockSAS = false;
-        internal static bool bWasStockSAS = false;
+        private static bool initialized = false;
+        private static bool isArmed = false;
+        private static bool isActive = false;
+        private static bool[] isPaused = new bool[3]; // pause on a per axis basis
+        private static bool inAtmosphere = false;
+        private static bool stockSASEnabled = false;
 
-        internal static float activationFadeRoll = 1;
-        internal static float activationFadePitch = 1;
-        internal static float activationFadeYaw = 1;
+        private static float activationFadeRoll = 1;
+        private static float activationFadePitch = 1;
+        private static float activationFadeYaw = 1;
 
-        public void Initialise()
+        public void Initialize()
         {
             // register vessel if not already
             if (FlightData.thisVessel == null)
@@ -67,8 +66,8 @@ namespace PilotAssistant
                     Messaging.statusMessage(6);
                 }
 
-                bInit = true;
-                bPause[0] = bPause[1] = bPause[2] = false;
+                initialized = true;
+                isPaused[0] = isPaused[1] = isPaused[2] = false;
             }
 
             GeneralUI.InitColors();
@@ -78,8 +77,8 @@ namespace PilotAssistant
 
         public void OnDestroy()
         {
-            bInit = false;
-            bArmed = false;
+            initialized = false;
+            isArmed = false;
             ActivitySwitch(false);
 
             SASControllers.Clear();
@@ -89,11 +88,11 @@ namespace PilotAssistant
 
         public void Update()
         {
-            if (!bInit)
-                Initialise();
+            if (!initialized)
+                Initialize();
 
             // SAS activated by user
-            if (bArmed && !ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown())
+            if (isArmed && !ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown())
             {
                 ActivitySwitch(true);
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
@@ -106,18 +105,18 @@ namespace PilotAssistant
             }
 
             // Atmospheric mode tracks horizon, don't want in space
-            if (FlightData.thisVessel.staticPressure > 0 && !bAtmosphere)
+            if (FlightData.thisVessel.staticPressure > 0 && !inAtmosphere)
             {
-                bAtmosphere = true;
-                if (FlightData.thisVessel.ctrlState.killRot && bArmed)
+                inAtmosphere = true;
+                if (FlightData.thisVessel.ctrlState.killRot && isArmed)
                 {
                     ActivitySwitch(true);
                     FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
                 }
             }
-            else if (FlightData.thisVessel.staticPressure == 0 && bAtmosphere)
+            else if (FlightData.thisVessel.staticPressure == 0 && inAtmosphere)
             {
-                bAtmosphere = false;
+                inAtmosphere = false;
                 if (ActivityCheck())
                 {
                     ActivitySwitch(false);
@@ -125,7 +124,7 @@ namespace PilotAssistant
                 }
             }
 
-            pauseManager(); // manage activation of SAS axes depending on user input
+            PauseManager(); // manage activation of SAS axes depending on user input
         }
 
         public void GUI()
@@ -137,23 +136,23 @@ namespace PilotAssistant
 
         public void FixedUpdate()
         {
-            if (bArmed)
+            if (isArmed)
             {
                 FlightData.updateAttitude();
 
-                float pitchResponse = -1 * (float)SASControllers[(int)SASList.Pitch].Response(FlightData.pitch);
+                float pitchResponse = -1 * (float)GetController(SASList.Pitch).Response(FlightData.pitch);
 
                 float yawResponse = 0;
-                if (SASControllers[(int)SASList.Hdg].SetPoint - FlightData.heading >= -180 && SASControllers[(int)SASList.Hdg].SetPoint - FlightData.heading <= 180)
-                    yawResponse = -1 * (float)SASControllers[(int)SASList.Hdg].Response(FlightData.heading);
-                else if (SASControllers[(int)SASList.Hdg].SetPoint - FlightData.heading < -180)
-                    yawResponse = -1 * (float)SASControllers[(int)SASList.Hdg].Response(FlightData.heading - 360);
-                else if (SASControllers[(int)SASList.Hdg].SetPoint - FlightData.heading > 180)
-                    yawResponse = -1 * (float)SASControllers[(int)SASList.Hdg].Response(FlightData.heading + 360);
+                if (GetController(SASList.Hdg).SetPoint - FlightData.heading >= -180 && GetController(SASList.Hdg).SetPoint - FlightData.heading <= 180)
+                    yawResponse = -1 * (float)GetController(SASList.Hdg).Response(FlightData.heading);
+                else if (GetController(SASList.Hdg).SetPoint - FlightData.heading < -180)
+                    yawResponse = -1 * (float)GetController(SASList.Hdg).Response(FlightData.heading - 360);
+                else if (GetController(SASList.Hdg).SetPoint - FlightData.heading > 180)
+                    yawResponse = -1 * (float)GetController(SASList.Hdg).Response(FlightData.heading + 360);
 
                 double rollRad = Math.PI / 180 * FlightData.roll;
 
-                if (!bPause[(int)SASList.Pitch] && bActive[(int)SASList.Pitch])
+                if (!IsPaused(SASList.Pitch) && ActivityCheck()) // && IsActive(SASList.Pitch))
                 {
                     FlightData.thisVessel.ctrlState.pitch = (pitchResponse * (float)Math.Cos(rollRad) - yawResponse * (float)Math.Sin(rollRad)) / activationFadePitch;
                     if (activationFadePitch > 1)
@@ -162,7 +161,7 @@ namespace PilotAssistant
                         activationFadePitch = 1;
                 }
 
-                if (!bPause[(int)SASList.Hdg] && bActive[(int)SASList.Hdg])
+                if (!IsPaused(SASList.Hdg) && ActivityCheck()) // && IsActive(SASList.Hdg))
                 {
                     FlightData.thisVessel.ctrlState.yaw = (pitchResponse * (float)Math.Sin(rollRad) + yawResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
                     if (activationFadeYaw > 1)
@@ -171,14 +170,14 @@ namespace PilotAssistant
                         activationFadeYaw = 1;
                 }
 
-                if (!bPause[(int)SASList.Roll] && bActive[(int)SASList.Roll])
+                if (!IsPaused(SASList.Roll) && ActivityCheck()) // && IsActive(SASList.Roll))
                 {
-                    if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll >= -180 && SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll <= 180)
-                        FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll) / activationFadeRoll;
-                    else if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll > 180)
-                        FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll + 360) / activationFadeRoll;
-                    else if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll < -180)
-                        FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll - 360) / activationFadeRoll;
+                    if (GetController(SASList.Roll).SetPoint - FlightData.roll >= -180 && GetController(SASList.Roll).SetPoint - FlightData.roll <= 180)
+                        FlightData.thisVessel.ctrlState.roll = (float)GetController(SASList.Roll).Response(FlightData.roll) / activationFadeRoll;
+                    else if (GetController(SASList.Roll).SetPoint - FlightData.roll > 180)
+                        FlightData.thisVessel.ctrlState.roll = (float)GetController(SASList.Roll).Response(FlightData.roll + 360) / activationFadeRoll;
+                    else if (GetController(SASList.Roll).SetPoint - FlightData.roll < -180)
+                        FlightData.thisVessel.ctrlState.roll = (float)GetController(SASList.Roll).Response(FlightData.roll - 360) / activationFadeRoll;
 
                     if (activationFadeRoll > 1)
                         activationFadeRoll *= 0.98f; // ~100 physics frames
@@ -188,32 +187,94 @@ namespace PilotAssistant
             }
         }
 
-        internal static void updateTarget()
+        public static PID_Controller GetController(SASList id)
         {
-            SASControllers[(int)SASList.Pitch].SetPoint = FlightData.pitch;
-            SASControllers[(int)SASList.Hdg].SetPoint = FlightData.heading;
-            SASControllers[(int)SASList.Roll].SetPoint = FlightData.roll;
+            return SASControllers[(int)id];
+        }
+
+        public static void ToggleStockSAS()
+        {
+            stockSASEnabled = !stockSASEnabled;
+            if (stockSASEnabled)
+            {
+                if (PresetManager.activeStockSASPreset == null)
+                {
+                    PresetManager.loadStockSASPreset(PresetManager.defaultStockSASTuning);
+                    PresetManager.activeStockSASPreset = PresetManager.defaultStockSASTuning;
+                }
+                else
+                    PresetManager.loadStockSASPreset(PresetManager.activeStockSASPreset);
+            }
+            else
+            {
+                if (PresetManager.activeSASPreset == null)
+                {
+                    PresetManager.loadSASPreset(PresetManager.defaultSASTuning);
+                    PresetManager.activeSASPreset = PresetManager.defaultSASTuning;
+                }
+                else
+                    PresetManager.loadSASPreset(PresetManager.activeSASPreset);
+            }
+        }
+
+        public static void ToggleArmed()
+        {
+            isArmed = !isArmed;
+            if (!isArmed)
+                SurfSAS.ActivitySwitch(false);
+        }
+
+        public static bool StockSASEnabled() { return stockSASEnabled; }
+
+        public static bool IsArmed() { return isArmed; }
+
+        public static bool IsPaused(SASList id)
+        {
+            return isPaused[(int)id];
+        }
+
+        private static void SetPaused(SASList id, bool val)
+        {
+            isPaused[(int)id] = val;
+        }
+
+        /*
+        public static bool IsActive(SASList id)
+        {
+            return isActive[(int)id];
+        }
+
+        private static void SetActive(SASList id, bool val)
+        {
+            isActive[(int)id] = val;
+        }*/
+
+        public static void updateTarget()
+        {
+            GetController(SASList.Pitch).SetPoint = FlightData.pitch;
+            GetController(SASList.Hdg).SetPoint = FlightData.heading;
+            GetController(SASList.Roll).SetPoint = FlightData.roll;
 
             activationFadeRoll = 10;
             activationFadePitch = 10;
             activationFadeYaw = 10;
         }
 
-        private void pauseManager()
+        private static void PauseManager()
         {
             if (GameSettings.PITCH_DOWN.GetKeyDown() || GameSettings.PITCH_UP.GetKeyDown() || GameSettings.YAW_LEFT.GetKeyDown() || GameSettings.YAW_RIGHT.GetKeyDown())
             {
-                bPause[(int)SASList.Pitch] = true;
-                bPause[(int)SASList.Hdg] = true;
+                SetPaused(SASList.Pitch, true);
+                SetPaused(SASList.Hdg, true);
             }
             if (GameSettings.PITCH_DOWN.GetKeyUp() || GameSettings.PITCH_UP.GetKeyUp() || GameSettings.YAW_LEFT.GetKeyUp() || GameSettings.YAW_RIGHT.GetKeyUp())
             {
-                bPause[(int)SASList.Pitch] = false;
-                bPause[(int)SASList.Hdg] = false;
-                if (bActive[(int)SASList.Pitch])
+                SetPaused(SASList.Pitch, false);
+                SetPaused(SASList.Hdg, false);
+                if (ActivityCheck()) // IsActive(SASList.Pitch))
                 {
-                    SASControllers[(int)SASList.Pitch].SetPoint = FlightData.pitch;
-                    SASControllers[(int)SASList.Hdg].SetPoint = FlightData.heading;
+                    GetController(SASList.Pitch).SetPoint = FlightData.pitch;
+                    GetController(SASList.Hdg).SetPoint = FlightData.heading;
                 }
 
                 activationFadePitch = 10;
@@ -221,12 +282,12 @@ namespace PilotAssistant
             }
 
             if (GameSettings.ROLL_LEFT.GetKeyDown() || GameSettings.ROLL_RIGHT.GetKeyDown())
-                bPause[(int)SASList.Roll] = true;
+                SetPaused(SASList.Roll, true);
             if (GameSettings.ROLL_LEFT.GetKeyUp() || GameSettings.ROLL_RIGHT.GetKeyUp())
             {
-                bPause[(int)SASList.Roll] = false;
-                if (bActive[(int)SASList.Roll])
-                    SASControllers[(int)SASList.Roll].SetPoint = FlightData.roll;
+                SetPaused(SASList.Roll, false);
+                if (ActivityCheck()) // IsActive(SASList.Roll))
+                    GetController(SASList.Roll).SetPoint = FlightData.roll;
 
                 activationFadeRoll = 10;
             }
@@ -244,20 +305,24 @@ namespace PilotAssistant
             }
         }
 
-        internal static void ActivitySwitch(bool enable)
+        public static void ActivitySwitch(bool enable)
         {
+            isActive = enable;
+            /*
             if (enable)
-                bActive[(int)SASList.Pitch] = bActive[(int)SASList.Roll] = bActive[(int)SASList.Hdg] = true;
+                isActive[(int)SASList.Pitch] = isActive[(int)SASList.Roll] = isActive[(int)SASList.Hdg] = true;
             else
-                bActive[(int)SASList.Pitch] = bActive[(int)SASList.Roll] = bActive[(int)SASList.Hdg] = false;
+                isActive[(int)SASList.Pitch] = isActive[(int)SASList.Roll] = isActive[(int)SASList.Hdg] = false;
+            */
         }
 
-        internal static bool ActivityCheck()
+        public static bool ActivityCheck()
         {
-            if (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Roll] || bActive[(int)SASList.Hdg])
+            return isActive;
+            /*if (IsActive(SASList.Pitch) || IsActive(SASList.Roll) || IsActive(SASList.Hdg))
                 return true;
             else
-                return false;
+                return false;*/
         }
     }
 }
