@@ -10,17 +10,17 @@ namespace PilotAssistant.AppLauncher
         private static ApplicationLauncherButton btnLauncher;
         private static Rect window = new Rect(Screen.width - 180, 40, 30, 30);
 
-        public static bool bDisplayOptions = false;
-        public static bool bDisplayAssistant = false;
-        public static bool bDisplaySAS = false;
-        public static bool bDisplayModerator = false;
+        internal static bool bDisplayOptions = false;
+        internal static bool bDisplayAssistant = false;
+        internal static bool bDisplaySAS = false;
+        internal static bool bDisplayModerator = false;
 
-        private void Awake()
+        void Awake()
         {
             GameEvents.onGUIApplicationLauncherReady.Add(this.OnAppLauncherReady);
         }
 
-        private void OnDestroy()
+        void OnDestroy()
         {
             GameEvents.onGUIApplicationLauncherReady.Remove(this.OnAppLauncherReady);
             if (btnLauncher != null)
@@ -35,7 +35,7 @@ namespace PilotAssistant.AppLauncher
                                                                         GameDatabase.Instance.GetTexture("Pilot Assistant/Icons/AppLauncherIcon", false));
         }
 
-        private void OnGameSceneChange(GameScenes scene)
+        void OnGameSceneChange(GameScenes scene)
         {
             ApplicationLauncher.Instance.RemoveModApplication(btnLauncher);
         }

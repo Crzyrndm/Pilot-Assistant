@@ -123,6 +123,7 @@ namespace PilotAssistant.UI
                 PilotAssistant.bHdgActive = toggleCheck;
                 PilotAssistant.bPause = false;
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                FlightData.thisVessel.ctrlState.killRot = false;
                 SurfSAS.ActivitySwitch(false);
             }
             // reset colour
@@ -188,6 +189,7 @@ namespace PilotAssistant.UI
                 if (!toggleCheck)
                     PilotAssistant.bPause = false;
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                FlightData.thisVessel.ctrlState.killRot = false;
                 SurfSAS.ActivitySwitch(false);
             }
             // reset colour

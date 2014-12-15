@@ -289,12 +289,14 @@ namespace PilotAssistant
             {
                 ActivitySwitch(true);
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                FlightData.thisVessel.ctrlState.killRot = false;
             }
             if (GameSettings.SAS_HOLD.GetKeyUp())
             {
                 ActivitySwitch(false);
                 updateTarget();
                 FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                FlightData.thisVessel.ctrlState.killRot = false;
             }
         }
 
