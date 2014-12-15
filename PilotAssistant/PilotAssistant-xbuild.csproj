@@ -31,18 +31,20 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\games\steam\steamapps\common\Kerbal Space Program\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
+    <Reference Include="mscorlib, Version=2.0.0.0">
+      <HintPath>$(Home)/.local/share/Steam/SteamApps/common/Kerbal Space Program/KSP_Data/Managed/mscorlib.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <Reference Include="Assembly-CSharp, Version=1.0.0.0">
+      <HintPath>$(Home)/.local/share/Steam/SteamApps/common/Kerbal Space Program/KSP_Data/Managed/Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System, Version=2.0.0.0">
+      <HintPath>$(Home)/.local/share/Steam/SteamApps/common/Kerbal Space Program/KSP_Data/Managed/System.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\games\steam\steamapps\common\Kerbal Space Program\KSP_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>$(Home)/.local/share/Steam/SteamApps/common/Kerbal Space Program/KSP_Data/Managed/UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -69,9 +71,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>set SOURCE="D:\Users\Joshua\GitHub\Pilot-Assistant\GameData"
-set DESTINATION="D:\Users\Joshua\Desktop\Kerbal Space Program Dev\GameData"
-xcopy %25SOURCE%25 %25DESTINATION%25 /E /C /R /I /K /Y</PostBuildEvent>
+    <PostBuildEvent>
+      cp -rf ../* "$(Home)/.local/share/Steam/SteamApps/common/Kerbal Space Program/GameData"
+    </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
