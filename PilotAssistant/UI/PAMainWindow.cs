@@ -37,11 +37,11 @@ namespace PilotAssistant.UI
             if (showPIDLimits)
                 window.width = 370;
             else
-                window.width = 225;
+                window.width = 233;
 
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
-            window = GUILayout.Window(34244, window, displayWindow, "Pilot Assistant", GUILayout.Height(0));
-
+            window = GUILayout.Window(34244, window, displayWindow, "Pilot Assistant", GUILayout.Height(0), GUILayout.MinWidth(233));
+            Debug.Log(window.width);
             PAPresetWindow.presetWindow.x = window.x + window.width;
             PAPresetWindow.presetWindow.y = window.y;
             if (showPresets)
