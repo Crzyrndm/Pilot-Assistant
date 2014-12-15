@@ -10,11 +10,11 @@ namespace PilotAssistant.UI
     static class PAPresetWindow
     {
         internal static string newPresetName = "";
-        internal static Rect presetWindow = new Rect(0, 0, 200, 10);
+        internal static Rect windowRect = new Rect(0, 0, 200, 10);
 
         internal static void Draw()
         {
-            presetWindow = GUILayout.Window(34245, presetWindow, drawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
+            windowRect = GUILayout.Window(34245, windowRect, drawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
         }
 
         private static void drawPresetWindow(int id)

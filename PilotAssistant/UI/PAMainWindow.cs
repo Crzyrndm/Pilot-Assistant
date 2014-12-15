@@ -32,8 +32,8 @@ namespace PilotAssistant.UI
             // GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             windowRect = GUILayout.Window(WINDOW_ID, windowRect, DrawWindow, "Pilot Assistant", GUILayout.Width(0), GUILayout.Height(0));
 
-            PAPresetWindow.presetWindow.x = windowRect.x + windowRect.width;
-            PAPresetWindow.presetWindow.y = windowRect.y;
+            PAPresetWindow.windowRect.x = windowRect.x + windowRect.width;
+            PAPresetWindow.windowRect.y = windowRect.y;
             if (showPresets)
             {
                 PAPresetWindow.Draw();
