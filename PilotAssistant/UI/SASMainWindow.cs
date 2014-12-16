@@ -34,7 +34,7 @@ namespace PilotAssistant.UI
             SASPresetWindow.bShowPresets = GUILayout.Toggle(SASPresetWindow.bShowPresets, SASPresetWindow.bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
 
             SurfSAS.bStockSAS = GUILayout.Toggle(SurfSAS.bStockSAS, SurfSAS.bStockSAS ? "Mode: Stock SAS" : "Mode: SSAS");
-            if (SurfSAS.bStockSAS != SurfSAS.bWasStockSAS)
+            /*if (SurfSAS.bStockSAS != SurfSAS.bWasStockSAS)
             {
                 SurfSAS.bWasStockSAS = SurfSAS.bStockSAS;
                 if (SurfSAS.bStockSAS)
@@ -57,7 +57,7 @@ namespace PilotAssistant.UI
                     else
                         PresetManager.loadSASPreset(PresetManager.activeSASPreset);
                 }
-            }
+            }*/
 
             if (!SurfSAS.bStockSAS)
             {
