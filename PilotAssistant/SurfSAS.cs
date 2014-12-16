@@ -13,8 +13,8 @@ namespace PilotAssistant
     internal enum SASList
     {
         Pitch,
-        Hdg,
-        Roll
+        Roll,
+        Yaw
     }
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
@@ -187,12 +187,12 @@ namespace PilotAssistant
                 float pitchResponse = -1 * (float)SASControllers[(int)SASList.Pitch].Response(FlightData.pitch);
 
                 float yawResponse = 0;
-                if (SASControllers[(int)SASList.Hdg].SetPoint - FlightData.heading >= -180 && SASControllers[(int)SASList.Hdg].SetPoint - FlightData.heading <= 180)
-                    yawResponse = -1 * (float)SASControllers[(int)SASList.Hdg].Response(FlightData.heading);
-                else if (SASControllers[(int)SASList.Hdg].SetPoint - FlightData.heading < -180)
-                    yawResponse = -1 * (float)SASControllers[(int)SASList.Hdg].Response(FlightData.heading - 360);
-                else if (SASControllers[(int)SASList.Hdg].SetPoint - FlightData.heading > 180)
-                    yawResponse = -1 * (float)SASControllers[(int)SASList.Hdg].Response(FlightData.heading + 360);
+                if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading >= -180 && SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading <= 180)
+                    yawResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading);
+                else if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading < -180)
+                    yawResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading - 360);
+                else if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading > 180)
+                    yawResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading + 360);
 
                 double rollRad = Math.PI / 180 * FlightData.roll;
 
@@ -205,7 +205,7 @@ namespace PilotAssistant
                         activationFadePitch = 1;
                 }
 
-                if (!bPause[(int)SASList.Hdg] && bActive[(int)SASList.Hdg])
+                if (!bPause[(int)SASList.Yaw] && bActive[(int)SASList.Yaw])
                 {
                     FlightData.thisVessel.ctrlState.yaw = (pitchResponse * (float)Math.Sin(rollRad) + yawResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
                     if (activationFadeYaw > 1)
@@ -221,7 +221,7 @@ namespace PilotAssistant
         internal static void updateTarget()
         {
             SASControllers[(int)SASList.Pitch].SetPoint = FlightData.pitch;
-            SASControllers[(int)SASList.Hdg].SetPoint = FlightData.heading;
+            SASControllers[(int)SASList.Yaw].SetPoint = FlightData.heading;
             SASControllers[(int)SASList.Roll].SetPoint = FlightData.roll;
 
             activationFadeRoll = 10;
@@ -239,16 +239,16 @@ namespace PilotAssistant
             if (GameSettings.PITCH_DOWN.GetKeyDown() || GameSettings.PITCH_UP.GetKeyDown() || GameSettings.YAW_LEFT.GetKeyDown() || GameSettings.YAW_RIGHT.GetKeyDown())
             {
                 bPause[(int)SASList.Pitch] = true;
-                bPause[(int)SASList.Hdg] = true;
+                bPause[(int)SASList.Yaw] = true;
             }
             else if (GameSettings.PITCH_DOWN.GetKeyUp() || GameSettings.PITCH_UP.GetKeyUp() || GameSettings.YAW_LEFT.GetKeyUp() || GameSettings.YAW_RIGHT.GetKeyUp())
             {
                 bPause[(int)SASList.Pitch] = false;
-                bPause[(int)SASList.Hdg] = false;
+                bPause[(int)SASList.Yaw] = false;
                 if (bActive[(int)SASList.Pitch])
                 {
                     SASControllers[(int)SASList.Pitch].SetPoint = FlightData.pitch;
-                    SASControllers[(int)SASList.Hdg].SetPoint = FlightData.heading;
+                    SASControllers[(int)SASList.Yaw].SetPoint = FlightData.heading;
                 }
 
                 activationFadePitch = 10;
@@ -283,14 +283,14 @@ namespace PilotAssistant
         internal static void ActivitySwitch(bool enable)
         {
             if (enable)
-                bActive[(int)SASList.Pitch] = bActive[(int)SASList.Roll] = bActive[(int)SASList.Hdg] = true;
+                bActive[(int)SASList.Pitch] = bActive[(int)SASList.Roll] = bActive[(int)SASList.Yaw] = true;
             else
-                bActive[(int)SASList.Pitch] = bActive[(int)SASList.Roll] = bActive[(int)SASList.Hdg] = false;
+                bActive[(int)SASList.Pitch] = bActive[(int)SASList.Roll] = bActive[(int)SASList.Yaw] = false;
         }
 
         internal static bool ActivityCheck()
         {
-            if (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Roll] || bActive[(int)SASList.Hdg])
+            if (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Roll] || bActive[(int)SASList.Yaw])
                 return true;
             else
                 return false;

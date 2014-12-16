@@ -84,23 +84,14 @@ namespace PilotAssistant.Presets
         private static double[] controllerGains(ConfigNode node)
         {
             double[] gains = new double[8];
-            double val;
-            double.TryParse(node.GetValue("PGain"), out val);
-            gains[0] = val;
-            double.TryParse(node.GetValue("IGain"), out val);
-            gains[1] = val;
-            double.TryParse(node.GetValue("DGain"), out val);
-            gains[2] = val;
-            double.TryParse(node.GetValue("MinOut"), out val);
-            gains[3] = val;
-            double.TryParse(node.GetValue("MaxOut"), out val);
-            gains[4] = val;
-            double.TryParse(node.GetValue("ClampLower"), out val);
-            gains[5] = val;
-            double.TryParse(node.GetValue("ClampUpper"), out val);
-            gains[6] = val;
-            double.TryParse(node.GetValue("Scalar"), out val);
-            gains[7] = val;
+            double.TryParse(node.GetValue("PGain"), out gains[0]);
+            double.TryParse(node.GetValue("IGain"), out gains[1]);
+            double.TryParse(node.GetValue("DGain"), out gains[2]);
+            double.TryParse(node.GetValue("MinOut"), out gains[3]);
+            double.TryParse(node.GetValue("MaxOut"), out gains[4]);
+            double.TryParse(node.GetValue("ClampLower"), out gains[5]);
+            double.TryParse(node.GetValue("ClampUpper"), out gains[6]);
+            double.TryParse(node.GetValue("Scalar"), out gains[7]);
 
             return gains;
         }
@@ -108,15 +99,10 @@ namespace PilotAssistant.Presets
         private static double[] controllerSASGains(ConfigNode node)
         {
             double[] gains = new double[4];
-            double val;
-            double.TryParse(node.GetValue("PGain"), out val);
-            gains[0] = val;
-            double.TryParse(node.GetValue("IGain"), out val);
-            gains[1] = val;
-            double.TryParse(node.GetValue("DGain"), out val);
-            gains[2] = val;
-            double.TryParse(node.GetValue("Scalar"), out val);
-            gains[3] = val;
+            double.TryParse(node.GetValue("PGain"), out gains[0]);
+            double.TryParse(node.GetValue("IGain"), out gains[1]);
+            double.TryParse(node.GetValue("DGain"), out gains[2]);
+            double.TryParse(node.GetValue("Scalar"), out gains[3]);
 
             return gains;
         }
@@ -125,13 +111,13 @@ namespace PilotAssistant.Presets
         {
             ConfigNode node = new ConfigNode("PIDPreset");
             node.AddValue("name", preset.name);
-            node.AddNode(PIDnode("HdgBankController", 0, preset));
-            node.AddNode(PIDnode("HdgYawController", 1, preset));
-            node.AddNode(PIDnode("AileronController", 2, preset));
-            node.AddNode(PIDnode("RudderController", 3, preset));
-            node.AddNode(PIDnode("AltitudeController", 4, preset));
-            node.AddNode(PIDnode("AoAController", 5, preset));
-            node.AddNode(PIDnode("ElevatorController", 6, preset));
+            node.AddNode(PIDnode("HdgBankController", (int)PIDList.HdgBank, preset));
+            node.AddNode(PIDnode("HdgYawController", (int)PIDList.HdgYaw, preset));
+            node.AddNode(PIDnode("AileronController", (int)PIDList.Aileron, preset));
+            node.AddNode(PIDnode("RudderController", (int)PIDList.Rudder, preset));
+            node.AddNode(PIDnode("AltitudeController", (int)PIDList.Altitude, preset));
+            node.AddNode(PIDnode("AoAController", (int)PIDList.VertSpeed, preset));
+            node.AddNode(PIDnode("ElevatorController", (int)PIDList.Elevator, preset));
 
             return node;
         }
@@ -141,9 +127,9 @@ namespace PilotAssistant.Presets
             ConfigNode node = new ConfigNode("SASPreset");
             node.AddValue("name", preset.name);
             node.AddValue("stock", preset.bStockSAS);
-            node.AddNode(PIDnode("AileronController", 0, preset));
-            node.AddNode(PIDnode("RudderController", 1, preset));
-            node.AddNode(PIDnode("ElevatorController", 2, preset));
+            node.AddNode(PIDnode("AileronController", (int)SASList.Roll, preset));
+            node.AddNode(PIDnode("RudderController", (int)SASList.Yaw, preset));
+            node.AddNode(PIDnode("ElevatorController", (int)SASList.Pitch, preset));
 
             return node;
         }
@@ -204,20 +190,20 @@ namespace PilotAssistant.Presets
 
         internal static void loadStockSASPreset(PresetSAS p)
         {
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[0][0];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[0][1];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[0][2];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[0][3];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[(int)SASList.Pitch][0];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[(int)SASList.Pitch][1];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[(int)SASList.Pitch][2];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[(int)SASList.Pitch][3];
 
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[2][0];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[2][1];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[2][2];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[2][3];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[(int)SASList.Roll][0];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[(int)SASList.Roll][1];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[(int)SASList.Roll][2];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[(int)SASList.Roll][3];
 
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[1][0];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[1][1];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[1][2];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[1][3];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[(int)SASList.Yaw][0];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[(int)SASList.Yaw][1];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[(int)SASList.Yaw][2];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)SASList.Yaw][3];
         }
     }
 }
