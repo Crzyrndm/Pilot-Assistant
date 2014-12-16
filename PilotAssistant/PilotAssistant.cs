@@ -260,13 +260,18 @@ namespace PilotAssistant
 
         private void keyPressChanges()
         {
+            bool mod = GameSettings.MODIFIER_KEY.GetKey();
+
             if (Input.GetKeyDown(KeyCode.Tab))
             {
                 bHdgWasActive = false; // reset heading/vert lock on unpausing
                 bVertWasActive = false;
                 bPause = !bPause;
                 if (!bPause)
+                {
                     SurfSAS.setStockSAS(false);
+                    SurfSAS.ActivitySwitch(false);
+                }
                 
                 if (bPause)
                     Messaging.statusMessage(0);
@@ -286,7 +291,7 @@ namespace PilotAssistant
                 }
             }
 
-            if (GameSettings.MODIFIER_KEY.GetKey() && Input.GetKeyDown(KeyCode.X))
+            if (mod && Input.GetKeyDown(KeyCode.X))
             {
                 controllers[(int)PIDList.VertSpeed].SetPoint = 0;
                 bAltitudeHold = false;
@@ -298,60 +303,66 @@ namespace PilotAssistant
 
             if (!bPause)
             {
-                double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1;
+                double scale = mod ? 10 : 1;
                 bool bFineControl = FlightInputHandler.fetch.precisionMode;
-                if (GameSettings.YAW_LEFT.GetKey() && bHdgActive)
+                if (bHdgActive)
                 {
-                    double hdg = double.Parse(PAMainWindow.targetHeading);
-                    hdg -= bFineControl ? 0.04 / scale : 0.4 * scale;
-                    if (hdg < 0)
-                        hdg += 360;
-                    controllers[(int)PIDList.HdgBank].SetPoint = hdg;
-                    controllers[(int)PIDList.HdgYaw].SetPoint = hdg;
-                    PAMainWindow.targetHeading = hdg.ToString();
-                }
-                else if (GameSettings.YAW_RIGHT.GetKey() && bHdgActive)
-                {
-                    double hdg = double.Parse(PAMainWindow.targetHeading);
-                    hdg += bFineControl ? 0.04 / scale : 0.4 * scale;
-                    if (hdg > 360)
-                        hdg -= 360;
-                    controllers[(int)PIDList.HdgBank].SetPoint = hdg;
-                    controllers[(int)PIDList.HdgYaw].SetPoint = hdg;
-                    PAMainWindow.targetHeading = hdg.ToString();
+                    if (GameSettings.YAW_LEFT.GetKey())
+                    {
+                        double hdg = double.Parse(PAMainWindow.targetHeading);
+                        hdg -= bFineControl ? 0.04 / scale : 0.4 * scale;
+                        if (hdg < 0)
+                            hdg += 360;
+                        controllers[(int)PIDList.HdgBank].SetPoint = hdg;
+                        controllers[(int)PIDList.HdgYaw].SetPoint = hdg;
+                        PAMainWindow.targetHeading = hdg.ToString();
+                    }
+                    else if (GameSettings.YAW_RIGHT.GetKey())
+                    {
+                        double hdg = double.Parse(PAMainWindow.targetHeading);
+                        hdg += bFineControl ? 0.04 / scale : 0.4 * scale;
+                        if (hdg > 360)
+                            hdg -= 360;
+                        controllers[(int)PIDList.HdgBank].SetPoint = hdg;
+                        controllers[(int)PIDList.HdgYaw].SetPoint = hdg;
+                        PAMainWindow.targetHeading = hdg.ToString();
+                    }
                 }
 
-                if (GameSettings.PITCH_DOWN.GetKey() && bVertActive)
+                if (bVertActive)
                 {
-                    double vert = double.Parse(PAMainWindow.targetVert);
-                    if (bAltitudeHold)
+                    if (GameSettings.PITCH_DOWN.GetKey())
                     {
-                        vert -= bFineControl ? 0.4 / scale : 4 * scale;
-                        if (vert < 0)
-                            vert = 0;
-                        controllers[(int)PIDList.Altitude].SetPoint = vert;
+                        double vert = double.Parse(PAMainWindow.targetVert);
+                        if (bAltitudeHold)
+                        {
+                            vert -= bFineControl ? 0.4 / scale : 4 * scale;
+                            if (vert < 0)
+                                vert = 0;
+                            controllers[(int)PIDList.Altitude].SetPoint = vert;
+                        }
+                        else
+                        {
+                            vert -= bFineControl ? 0.04 / scale : 0.4 * scale;
+                            controllers[(int)PIDList.VertSpeed].SetPoint = vert;
+                        }
+                        PAMainWindow.targetVert = vert.ToString();
                     }
-                    else
+                    else if (GameSettings.PITCH_UP.GetKey())
                     {
-                        vert -= bFineControl ? 0.04 / scale : 0.4 * scale;
-                        controllers[(int)PIDList.VertSpeed].SetPoint = vert;
+                        double vert = double.Parse(PAMainWindow.targetVert);
+                        if (bAltitudeHold)
+                        {
+                            vert += bFineControl ? 0.4 / scale : 4 * scale;
+                            controllers[(int)PIDList.Altitude].SetPoint = vert;
+                        }
+                        else
+                        {
+                            vert += bFineControl ? 0.04 / scale : 0.4 * scale;
+                            controllers[(int)PIDList.VertSpeed].SetPoint = vert;
+                        }
+                        PAMainWindow.targetVert = vert.ToString();
                     }
-                    PAMainWindow.targetVert = vert.ToString();
-                }
-                if (GameSettings.PITCH_UP.GetKey() && bVertActive)
-                {
-                    double vert = double.Parse(PAMainWindow.targetVert);
-                    if (bAltitudeHold)
-                    {
-                        vert += bFineControl ? 0.4 / scale : 4 * scale;
-                        controllers[(int)PIDList.Altitude].SetPoint = vert;
-                    }
-                    else
-                    {
-                        vert += bFineControl ? 0.04 / scale : 0.4 * scale;
-                        controllers[(int)PIDList.VertSpeed].SetPoint = vert;
-                    }
-                    PAMainWindow.targetVert = vert.ToString();
                 }
             }
         }

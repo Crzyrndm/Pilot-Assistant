@@ -87,7 +87,7 @@ namespace PilotAssistant.UI
             }
             else
             {
-                VesselSAS sas = FlightData.thisVessel.VesselSAS;
+                VesselAutopilot.VesselSAS sas = FlightData.thisVessel.Autopilot.SAS;
 
                 drawPIDValues(sas.pidLockedPitch, "Pitch", 0);
                 drawPIDValues(sas.pidLockedRoll, "Roll", 1);

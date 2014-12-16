@@ -112,7 +112,7 @@ namespace PilotAssistant.UI
                 {
                     if (GUILayout.Button("Update Preset"))
                     {
-                        PresetManager.activeStockSASPreset.Update(Utility.FlightData.thisVessel.VesselSAS);
+                        PresetManager.activeStockSASPreset.Update(Utility.FlightData.thisVessel.Autopilot.SAS);
                         PresetManager.saveCFG();
                     }
                 }
@@ -131,7 +131,7 @@ namespace PilotAssistant.UI
                             return;
                     }
 
-                    PresetManager.SASPresetList.Add(new PresetSAS(Utility.FlightData.thisVessel.VesselSAS, newPresetName));
+                    PresetManager.SASPresetList.Add(new PresetSAS(Utility.FlightData.thisVessel.Autopilot.SAS, newPresetName));
                     newPresetName = "";
                     PresetManager.activeStockSASPreset = PresetManager.SASPresetList[PresetManager.SASPresetList.Count - 1];
                     PresetManager.saveCFG();

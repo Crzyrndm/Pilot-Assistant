@@ -41,9 +41,9 @@ namespace PilotAssistant
                 FlightData.thisVessel = FlightGlobals.ActiveVessel;
 
             // grab stock PID values - needs to be done in update so that it is initialised
-            if (FlightData.thisVessel.VesselSAS.pidLockedPitch != null)
+            if (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch != null)
             {
-                PresetManager.defaultStockSASTuning = new PresetSAS(FlightData.thisVessel.VesselSAS, "Stock");
+                PresetManager.defaultStockSASTuning = new PresetSAS(FlightData.thisVessel.Autopilot.SAS, "Stock");
                 if (PresetManager.activeStockSASPreset == null)
                     PresetManager.activeStockSASPreset = PresetManager.defaultStockSASTuning;
                 else
@@ -59,6 +59,7 @@ namespace PilotAssistant
                 PID_Controller roll = new PID.PID_Controller(0.1, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
                 SASControllers.Add(roll);
                 PresetManager.defaultSASTuning = new PresetSAS(SASControllers, "Default");
+
                 if (PresetManager.activeSASPreset == null)
                     PresetManager.activeSASPreset = PresetManager.defaultSASTuning;
                 else
@@ -69,11 +70,12 @@ namespace PilotAssistant
 
                 bInit = true;
                 bPause[0] = bPause[1] = bPause[2] = false;
+                ActivitySwitch(false);
+
+                GeneralUI.InitColors();
+
+                RenderingManager.AddToPostDrawQueue(5, GUI);
             }
-
-            GeneralUI.InitColors();
-
-            RenderingManager.AddToPostDrawQueue(5, GUI);
         }
 
         public void OnDestroy()
@@ -92,8 +94,9 @@ namespace PilotAssistant
             if (!bInit)
                 Initialise();
 
+            bool mod = GameSettings.MODIFIER_KEY.GetKey();
             // Arm Hotkey
-            if (GameSettings.MODIFIER_KEY.GetKey() && GameSettings.SAS_TOGGLE.GetKeyDown())
+            if (mod && GameSettings.SAS_TOGGLE.GetKeyDown())
             {
                 bArmed = !bArmed;
                 if (ActivityCheck())
@@ -211,20 +214,7 @@ namespace PilotAssistant
                         activationFadeYaw = 1;
                 }
 
-                if (!bPause[(int)SASList.Roll] && bActive[(int)SASList.Roll])
-                {
-                    if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll >= -180 && SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll <= 180)
-                        FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll) / activationFadeRoll;
-                    else if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll > 180)
-                        FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll + 360) / activationFadeRoll;
-                    else if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll < -180)
-                        FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll - 360) / activationFadeRoll;
-
-                    if (activationFadeRoll > 1)
-                        activationFadeRoll *= 0.98f; // ~100 physics frames
-                    else
-                        activationFadeRoll = 1;
-                }
+                rollResponse();
             }
         }
 
@@ -239,6 +229,11 @@ namespace PilotAssistant
             activationFadeYaw = 10;
         }
 
+        internal static void updateVectorTarget()
+        {
+            rollTarget = FlightData.thisVessel.ReferenceTransform.right;
+        }
+
         private void pauseManager()
         {
             if (GameSettings.PITCH_DOWN.GetKeyDown() || GameSettings.PITCH_UP.GetKeyDown() || GameSettings.YAW_LEFT.GetKeyDown() || GameSettings.YAW_RIGHT.GetKeyDown())
@@ -246,7 +241,7 @@ namespace PilotAssistant
                 bPause[(int)SASList.Pitch] = true;
                 bPause[(int)SASList.Hdg] = true;
             }
-            if (GameSettings.PITCH_DOWN.GetKeyUp() || GameSettings.PITCH_UP.GetKeyUp() || GameSettings.YAW_LEFT.GetKeyUp() || GameSettings.YAW_RIGHT.GetKeyUp())
+            else if (GameSettings.PITCH_DOWN.GetKeyUp() || GameSettings.PITCH_UP.GetKeyUp() || GameSettings.YAW_LEFT.GetKeyUp() || GameSettings.YAW_RIGHT.GetKeyUp())
             {
                 bPause[(int)SASList.Pitch] = false;
                 bPause[(int)SASList.Hdg] = false;
@@ -262,8 +257,9 @@ namespace PilotAssistant
 
             if (GameSettings.ROLL_LEFT.GetKeyDown() || GameSettings.ROLL_RIGHT.GetKeyDown())
                 bPause[(int)SASList.Roll] = true;
-            if (GameSettings.ROLL_LEFT.GetKeyUp() || GameSettings.ROLL_RIGHT.GetKeyUp())
+            else if (GameSettings.ROLL_LEFT.GetKeyUp() || GameSettings.ROLL_RIGHT.GetKeyUp())
             {
+                rollTarget = FlightData.thisVessel.ReferenceTransform.right;
                 bPause[(int)SASList.Roll] = false;
                 if (bActive[(int)SASList.Roll])
                     SASControllers[(int)SASList.Roll].SetPoint = FlightData.roll;
@@ -276,11 +272,11 @@ namespace PilotAssistant
                 ActivitySwitch(true);
                 setStockSAS(false);
             }
-            if (GameSettings.SAS_HOLD.GetKeyUp())
+            else if (GameSettings.SAS_HOLD.GetKeyUp())
             {
                 ActivitySwitch(false);
-                updateTarget();
                 setStockSAS(false);
+                updateTarget();
             }
         }
 
@@ -304,6 +300,42 @@ namespace PilotAssistant
         {
             FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, state);
             FlightData.thisVessel.ctrlState.killRot = state;
+        }
+
+
+        static Vector3d rollTarget = Vector3d.zero;
+        private void rollResponse()
+        {
+
+            if (!bPause[(int)SASList.Roll] && bActive[(int)SASList.Roll])
+            {
+                // Above 30 degrees, rollTarget should always lie on the horizontal plane of the vessel
+                // Below 30 degrees, use the existing roll logic
+                // need to have a hysteresis on the switch to ensure it doesn't bounce back and forth
+                if (FlightData.pitch > 30 || FlightData.pitch < -30)
+                {
+                    Vector3 proj = FlightData.thisVessel.ReferenceTransform.up * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.up, rollTarget)
+                        + FlightData.thisVessel.ReferenceTransform.right * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.right, rollTarget);
+                    double roll = Vector3.Angle(proj, rollTarget) * Math.Sign(Vector3.Dot(FlightData.thisVessel.ReferenceTransform.forward, rollTarget));
+
+                    SASControllers[(int)SASList.Roll].SetPoint = 0;
+                    FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(roll) / activationFadeRoll;
+                }
+                else
+                {
+                    if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll >= -180 && SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll <= 180)
+                        FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll) / activationFadeRoll;
+                    else if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll > 180)
+                        FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll + 360) / activationFadeRoll;
+                    else if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll < -180)
+                        FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll - 360) / activationFadeRoll;
+                }
+
+                if (activationFadeRoll > 1)
+                    activationFadeRoll *= 0.98f; // ~100 physics frames
+                else
+                    activationFadeRoll = 1;
+            }
         }
     }
 }

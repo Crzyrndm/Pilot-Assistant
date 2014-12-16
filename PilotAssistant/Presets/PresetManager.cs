@@ -204,20 +204,20 @@ namespace PilotAssistant.Presets
 
         internal static void loadStockSASPreset(PresetSAS p)
         {
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.kp = p.PIDGains[0][0];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.ki = p.PIDGains[0][1];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.kd = p.PIDGains[0][2];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.clamp = p.PIDGains[0][3];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[0][0];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[0][1];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[0][2];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[0][3];
 
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.kp = p.PIDGains[2][0];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.ki = p.PIDGains[2][1];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.kd = p.PIDGains[2][2];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.clamp = p.PIDGains[2][3];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[2][0];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[2][1];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[2][2];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[2][3];
 
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.kp = p.PIDGains[1][0];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.ki = p.PIDGains[1][1];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.kd = p.PIDGains[1][2];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.clamp = p.PIDGains[1][3];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[1][0];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[1][1];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[1][2];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[1][3];
         }
     }
 }

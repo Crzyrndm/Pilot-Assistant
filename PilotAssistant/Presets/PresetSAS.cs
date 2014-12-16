@@ -28,7 +28,7 @@ namespace PilotAssistant.Presets
             }
         }
 
-        public PresetSAS(VesselSAS sas, string Name) // used for adding a new stock preset
+        public PresetSAS(VesselAutopilot.VesselSAS sas, string Name) // used for adding a new stock preset
         {
             name = Name;
             bStockSAS = true;
@@ -63,10 +63,10 @@ namespace PilotAssistant.Presets
             PIDGains = newPIDGains;
         }
 
-        public void Update(VesselSAS sas)
+        public void Update(VesselAutopilot.VesselSAS sas)
         {
             List<double[]> newPIDGains = new List<double[]>();
-            double[] pitchGains = { sas.pidLockedPitch.kp, sas.pidLockedPitch.ki, sas.pidLockedPitch.kd, sas.pidLockedPitch.clamp };
+            double[] pitchGains = { sas.pidLockedPitch.kp, sas.pidLockedPitch.ki, sas.pidLockedPitch.kd, sas.pidLockedPitch.clamp};
             newPIDGains.Add(pitchGains);
             double[] rollGains = { sas.pidLockedRoll.kp, sas.pidLockedRoll.ki, sas.pidLockedRoll.kd, sas.pidLockedRoll.clamp };
             newPIDGains.Add(rollGains);
