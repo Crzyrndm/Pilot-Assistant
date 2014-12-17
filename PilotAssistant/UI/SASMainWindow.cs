@@ -91,19 +91,19 @@ namespace PilotAssistant.UI
                 if (SurfSAS.IsArmed())
                 {
                     double pitch = SurfSAS.GetController(SASList.Pitch).SetPoint;
-                    double hdg = SurfSAS.GetController(SASList.Hdg).SetPoint;
                     double roll = SurfSAS.GetController(SASList.Roll).SetPoint;
+                    double hdg = SurfSAS.GetController(SASList.Yaw).SetPoint;
         
                     SurfSAS.GetController(SASList.Pitch).SetPoint = GeneralUI.labPlusNumBox2("Pitch:", pitch.ToString("N2"), 80, 60, 80, -80);
-                    SurfSAS.GetController(SASList.Hdg).SetPoint = GeneralUI.labPlusNumBox2("Heading:", hdg.ToString("N2"), 80, 60, 360, 0);
                     SurfSAS.GetController(SASList.Roll).SetPoint = GeneralUI.labPlusNumBox2("Roll:", roll.ToString("N2"), 80, 60, 180, -180);
+                    SurfSAS.GetController(SASList.Yaw).SetPoint = GeneralUI.labPlusNumBox2("Heading:", hdg.ToString("N2"), 80, 60, 360, 0);
                     
                     //SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Utility.Functions.Clamp((float)GeneralUI.labPlusNumBox2("Pitch:", SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint.ToString("N2"), 80), -80, 80);
-                    //SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint = (float)GeneralUI.labPlusNumBox2("Heading:", SurfSAS.SASControllers[(int)SASList.Hdg].SetPoint.ToString("N2"), 80, 60, 360, 0);
+                    //SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint = (float)GeneralUI.labPlusNumBox2("Heading:", SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint.ToString("N2"), 80, 60, 360, 0);
                     //SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.labPlusNumBox2("Roll:", SurfSAS.SASControllers[(int)SASList.Roll].SetPoint.ToString("N2"), 80, 60, 180, -180);
                     drawPIDValues(SASList.Pitch, "Pitch");
                     drawPIDValues(SASList.Roll, "Roll");
-                    drawPIDValues(SASList.Hdg, "Yaw");
+                    drawPIDValues(SASList.Yaw, "Yaw");
                 }
             }
             else

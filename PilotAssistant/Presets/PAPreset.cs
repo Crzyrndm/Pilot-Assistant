@@ -15,7 +15,7 @@ namespace PilotAssistant.Presets
 
         private const int NUM_CONTROLLERS = 7;
 
-        public PAPreset(List<PID.PID_Controller> controllers, string name) // used for adding a new preset, can clone the current values
+        public PAPreset(PID.PID_Controller[] controllers, string name) // used for adding a new preset, can clone the current values
         {
             this.name = name;
             for (int i = 0; i < NUM_CONTROLLERS; i++) // currently 7 PID controlers to save
@@ -49,25 +49,15 @@ namespace PilotAssistant.Presets
 
         private double[] LoadControllerGains(ConfigNode node)
         {
-            // TODO: out val ---> out gains[i]
             double[] gains = new double[8];
-            double val;
-            double.TryParse(node.GetValue("PGain"), out val);
-            gains[0] = val;
-            double.TryParse(node.GetValue("IGain"), out val);
-            gains[1] = val;
-            double.TryParse(node.GetValue("DGain"), out val);
-            gains[2] = val;
-            double.TryParse(node.GetValue("MinOut"), out val);
-            gains[3] = val;
-            double.TryParse(node.GetValue("MaxOut"), out val);
-            gains[4] = val;
-            double.TryParse(node.GetValue("ClampLower"), out val);
-            gains[5] = val;
-            double.TryParse(node.GetValue("ClampUpper"), out val);
-            gains[6] = val;
-            double.TryParse(node.GetValue("Scalar"), out val);
-            gains[7] = val;
+            double.TryParse(node.GetValue("PGain"), out gains[0]);
+            double.TryParse(node.GetValue("IGain"), out gains[1]);
+            double.TryParse(node.GetValue("DGain"), out gains[2]);
+            double.TryParse(node.GetValue("MinOut"), out gains[3]);
+            double.TryParse(node.GetValue("MaxOut"), out gains[4]);
+            double.TryParse(node.GetValue("ClampLower"), out gains[5]);
+            double.TryParse(node.GetValue("ClampUpper"), out gains[6]);
+            double.TryParse(node.GetValue("Scalar"), out gains[7]);
 
             return gains;
         }
@@ -92,18 +82,18 @@ namespace PilotAssistant.Presets
         {
             ConfigNode node = new ConfigNode("PAPreset");
             node.AddValue("name", name);
-            node.AddNode(GainsToConfigNode("HdgBankController", PIDGains[0]));
-            node.AddNode(GainsToConfigNode("HdgYawController", PIDGains[1]));
-            node.AddNode(GainsToConfigNode("AileronController", PIDGains[2]));
-            node.AddNode(GainsToConfigNode("RudderController", PIDGains[3]));
-            node.AddNode(GainsToConfigNode("AltitudeController", PIDGains[4]));
-            node.AddNode(GainsToConfigNode("AoAController", PIDGains[5]));
-            node.AddNode(GainsToConfigNode("ElevatorController", PIDGains[6]));
+            node.AddNode(GainsToConfigNode("HdgBankController",  PIDGains[(int)PIDList.HdgBank]));
+            node.AddNode(GainsToConfigNode("HdgYawController",   PIDGains[(int)PIDList.HdgYaw]));
+            node.AddNode(GainsToConfigNode("AileronController",  PIDGains[(int)PIDList.Aileron]));
+            node.AddNode(GainsToConfigNode("RudderController",   PIDGains[(int)PIDList.Rudder]));
+            node.AddNode(GainsToConfigNode("AltitudeController", PIDGains[(int)PIDList.Altitude]));
+            node.AddNode(GainsToConfigNode("AoAController",      PIDGains[(int)PIDList.VertSpeed]));
+            node.AddNode(GainsToConfigNode("ElevatorController", PIDGains[(int)PIDList.Elevator]));
 
             return node;
         }
 
-        public void LoadPreset(List<PID.PID_Controller> controllers)
+        public void LoadPreset(PID.PID_Controller[] controllers)
         {
             for (int i = 0; i < NUM_CONTROLLERS; i++)
             {
@@ -118,7 +108,7 @@ namespace PilotAssistant.Presets
             }
         }
 
-        public void Update(List<PID.PID_Controller> controllers)
+        public void Update(PID.PID_Controller[] controllers)
         {
             List<double[]> newPIDGains = new List<double[]>();
             for (int i = 0; i < NUM_CONTROLLERS; i++) // currently 7 PID controlers to save

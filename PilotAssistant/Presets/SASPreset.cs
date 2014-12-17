@@ -13,7 +13,7 @@ namespace PilotAssistant.Presets
 
         private const int NUM_CONTROLLERS = 3;
 
-        public SASPreset(List<PID.PID_Controller> controllers, string name) // used for adding a new preset, can clone the current values
+        public SASPreset(PID.PID_Controller[] controllers, string name) // used for adding a new preset, can clone the current values
         {
             this.name = name;
             useStockSAS = false;
@@ -55,17 +55,11 @@ namespace PilotAssistant.Presets
 
         private double[] LoadControllerGains(ConfigNode node)
         {
-            // TODO: out val ---> out gains[i]
             double[] gains = new double[4];
-            double val;
-            double.TryParse(node.GetValue("PGain"), out val);
-            gains[0] = val;
-            double.TryParse(node.GetValue("IGain"), out val);
-            gains[1] = val;
-            double.TryParse(node.GetValue("DGain"), out val);
-            gains[2] = val;
-            double.TryParse(node.GetValue("Scalar"), out val);
-            gains[3] = val;
+            double.TryParse(node.GetValue("PGain"), out gains[0]);
+            double.TryParse(node.GetValue("IGain"), out gains[1]);
+            double.TryParse(node.GetValue("DGain"), out gains[2]);
+            double.TryParse(node.GetValue("Scalar"), out gains[3]);
 
             return gains;
         }
@@ -85,14 +79,14 @@ namespace PilotAssistant.Presets
             ConfigNode node = new ConfigNode("SASPreset");
             node.AddValue("name", name);
             node.AddValue("stock", useStockSAS);
-            node.AddNode(GainsToConfigNode("AileronController", PIDGains[0]));
-            node.AddNode(GainsToConfigNode("RudderController", PIDGains[1]));
-            node.AddNode(GainsToConfigNode("ElevatorController", PIDGains[2]));
+            node.AddNode(GainsToConfigNode("ElevatorController", PIDGains[(int)SASList.Pitch]));
+            node.AddNode(GainsToConfigNode("AileronController", PIDGains[(int)SASList.Roll]));
+            node.AddNode(GainsToConfigNode("RudderController", PIDGains[(int)SASList.Yaw]));
 
             return node;
         }
 
-        public void LoadPreset(List<PID.PID_Controller> controllers)
+        public void LoadPreset(PID.PID_Controller[] controllers)
         {
             for (int i = 0; i < NUM_CONTROLLERS; i++)
             {
@@ -105,23 +99,23 @@ namespace PilotAssistant.Presets
 
         public void LoadStockPreset()
         {
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.kp = PIDGains[0][0];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.ki = PIDGains[0][1];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.kd = PIDGains[0][2];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.clamp = PIDGains[0][3];
+            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.kp = PIDGains[(int)SASList.Pitch][0];
+            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.ki = PIDGains[(int)SASList.Pitch][1];
+            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.kd = PIDGains[(int)SASList.Pitch][2];
+            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.clamp = PIDGains[(int)SASList.Pitch][3];
 
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.kp = PIDGains[2][0];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.ki = PIDGains[2][1];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.kd = PIDGains[2][2];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.clamp = PIDGains[2][3];
+            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.kp = PIDGains[(int)SASList.Roll][0];
+            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.ki = PIDGains[(int)SASList.Roll][1];
+            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.kd = PIDGains[(int)SASList.Roll][2];
+            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.clamp = PIDGains[(int)SASList.Roll][3];
 
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.kp = PIDGains[1][0];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.ki = PIDGains[1][1];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.kd = PIDGains[1][2];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.clamp = PIDGains[1][3];
+            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.kp = PIDGains[(int)SASList.Yaw][0];
+            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.ki = PIDGains[(int)SASList.Yaw][1];
+            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.kd = PIDGains[(int)SASList.Yaw][2];
+            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.clamp = PIDGains[(int)SASList.Yaw][3];
         }
 
-        public void Update(List<PID.PID_Controller> controllers)
+        public void Update(PID.PID_Controller[] controllers)
         {
             List<double[]> newPIDGains = new List<double[]>();
             for (int i = 0; i < NUM_CONTROLLERS; i++) // 3 PID controlers to save

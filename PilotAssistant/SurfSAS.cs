@@ -13,14 +13,14 @@ namespace PilotAssistant
     internal enum SASList
     {
         Pitch,
-        Hdg,
-        Roll
+        Roll,
+        Yaw
     }
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class SurfSAS : MonoBehaviour
     {
-        private static List<PID_Controller> controllers = new List<PID_Controller>();
+        private static PID_Controller[] controllers = new PID_Controller[3]; 
 
         private static bool initialized = false;
         private static bool isArmed = false;
@@ -45,11 +45,11 @@ namespace PilotAssistant
                 PresetManager.InitDefaultStockSASTuning();
 
                 PID_Controller pitch = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
-                controllers.Add(pitch);
-                PID_Controller yaw = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
-                controllers.Add(yaw);
                 PID_Controller roll = new PID.PID_Controller(0.1, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
-                controllers.Add(roll);
+                PID_Controller yaw = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
+                controllers[(int)SASList.Pitch] = pitch;
+                controllers[(int)SASList.Roll] = roll;
+                controllers[(int)SASList.Yaw] = yaw;
 
                 PresetManager.InitDefaultSASTuning(controllers);
                 
@@ -68,7 +68,9 @@ namespace PilotAssistant
             isArmed = false;
             ActivitySwitch(false);
 
-            controllers.Clear();
+            // controllers.Clear();
+            for (int i = 0; i < controllers.Length; i++)
+                controllers = null;
 
             RenderingManager.RemoveFromPostDrawQueue(5, GUI);
         }
@@ -130,12 +132,12 @@ namespace PilotAssistant
                 float pitchResponse = -1 * (float)GetController(SASList.Pitch).Response(FlightData.pitch);
 
                 float yawResponse = 0;
-                if (GetController(SASList.Hdg).SetPoint - FlightData.heading >= -180 && GetController(SASList.Hdg).SetPoint - FlightData.heading <= 180)
-                    yawResponse = -1 * (float)GetController(SASList.Hdg).Response(FlightData.heading);
-                else if (GetController(SASList.Hdg).SetPoint - FlightData.heading < -180)
-                    yawResponse = -1 * (float)GetController(SASList.Hdg).Response(FlightData.heading - 360);
-                else if (GetController(SASList.Hdg).SetPoint - FlightData.heading > 180)
-                    yawResponse = -1 * (float)GetController(SASList.Hdg).Response(FlightData.heading + 360);
+                if (GetController(SASList.Yaw).SetPoint - FlightData.heading >= -180 && GetController(SASList.Yaw).SetPoint - FlightData.heading <= 180)
+                    yawResponse = -1 * (float)GetController(SASList.Yaw).Response(FlightData.heading);
+                else if (GetController(SASList.Yaw).SetPoint - FlightData.heading < -180)
+                    yawResponse = -1 * (float)GetController(SASList.Yaw).Response(FlightData.heading - 360);
+                else if (GetController(SASList.Yaw).SetPoint - FlightData.heading > 180)
+                    yawResponse = -1 * (float)GetController(SASList.Yaw).Response(FlightData.heading + 360);
 
                 double rollRad = Math.PI / 180 * FlightData.roll;
 
@@ -148,7 +150,7 @@ namespace PilotAssistant
                         activationFadePitch = 1;
                 }
 
-                if (!IsPaused(SASList.Hdg) && ActivityCheck()) // && IsActive(SASList.Hdg))
+                if (!IsPaused(SASList.Yaw) && ActivityCheck()) // && IsActive(SASList.Yaw))
                 {
                     FlightData.thisVessel.ctrlState.yaw = (pitchResponse * (float)Math.Sin(rollRad) + yawResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
                     if (activationFadeYaw > 1)
@@ -265,7 +267,7 @@ namespace PilotAssistant
         public static void updateTarget()
         {
             GetController(SASList.Pitch).SetPoint = FlightData.pitch;
-            GetController(SASList.Hdg).SetPoint = FlightData.heading;
+            GetController(SASList.Yaw).SetPoint = FlightData.heading;
             GetController(SASList.Roll).SetPoint = FlightData.roll;
 
             activationFadeRoll = 10;
@@ -278,16 +280,16 @@ namespace PilotAssistant
             if (GameSettings.PITCH_DOWN.GetKeyDown() || GameSettings.PITCH_UP.GetKeyDown() || GameSettings.YAW_LEFT.GetKeyDown() || GameSettings.YAW_RIGHT.GetKeyDown())
             {
                 SetPaused(SASList.Pitch, true);
-                SetPaused(SASList.Hdg, true);
+                SetPaused(SASList.Yaw, true);
             }
             if (GameSettings.PITCH_DOWN.GetKeyUp() || GameSettings.PITCH_UP.GetKeyUp() || GameSettings.YAW_LEFT.GetKeyUp() || GameSettings.YAW_RIGHT.GetKeyUp())
             {
                 SetPaused(SASList.Pitch, false);
-                SetPaused(SASList.Hdg, false);
+                SetPaused(SASList.Yaw, false);
                 if (ActivityCheck()) // IsActive(SASList.Pitch))
                 {
                     GetController(SASList.Pitch).SetPoint = FlightData.pitch;
-                    GetController(SASList.Hdg).SetPoint = FlightData.heading;
+                    GetController(SASList.Yaw).SetPoint = FlightData.heading;
                 }
 
                 activationFadePitch = 10;

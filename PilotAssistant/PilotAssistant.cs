@@ -26,7 +26,7 @@ namespace PilotAssistant
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class PilotAssistant : MonoBehaviour
     {
-        private static List<PID_Controller> controllers = new List<PID_Controller>();
+        private static PID_Controller[] controllers = new PID_Controller[7];
 
         private static bool isPaused = false;
 
@@ -41,25 +41,25 @@ namespace PilotAssistant
 
         public void Start()
         {
-            PID_Controller HeadingBankController = new PID.PID_Controller(2, 0.1, 0, -30, 30, -0.5, 0.5);
-            controllers.Add(HeadingBankController);
-            PID_Controller HeadingYawController = new PID.PID_Controller(0, 0, 0.01, -2, 2, -0.5, 0.5);
-            controllers.Add(HeadingYawController);
-            PID_Controller AileronController = new PID.PID_Controller(0.02, 0.005, 0.01, -1, 1, -0.4, 0.4);
-            controllers.Add(AileronController);
-            PID_Controller RudderController = new PID.PID_Controller(0.1, 0.08, 0.05, -1, 1, -0.4, 0.4);
-            controllers.Add(RudderController);
-            PID_Controller AltitudeToClimbRate = new PID.PID_Controller(0.15, 0.01, 0, -50, 50, -0.01, 0.01);
-            controllers.Add(AltitudeToClimbRate);
-            PID_Controller AoAController = new PID.PID_Controller(2, 0.8, 2, -10, 10, -5, 5);
-            controllers.Add(AoAController);
-            PID_Controller ElevatorController = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 1, -0.4, 0.4);
-            controllers.Add(ElevatorController);
+            PID_Controller headingBankController = new PID.PID_Controller(2, 0.1, 0, -30, 30, -0.5, 0.5);
+            PID_Controller headingYawController = new PID.PID_Controller(0, 0, 0.01, -2, 2, -0.5, 0.5);
+            PID_Controller aileronController = new PID.PID_Controller(0.02, 0.005, 0.01, -1, 1, -0.4, 0.4);
+            PID_Controller rudderController = new PID.PID_Controller(0.1, 0.08, 0.05, -1, 1, -0.4, 0.4);
+            PID_Controller altitudeToClimbRate = new PID.PID_Controller(0.15, 0.01, 0, -50, 50, -0.01, 0.01);
+            PID_Controller aoaController = new PID.PID_Controller(2, 0.8, 2, -10, 10, -5, 5);
+            PID_Controller elevatorController = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 1, -0.4, 0.4);
+            controllers[(int)PIDList.HdgBank] = headingBankController;
+            controllers[(int)PIDList.HdgYaw] = headingYawController;
+            controllers[(int)PIDList.Aileron] = aileronController;
+            controllers[(int)PIDList.Rudder] = rudderController;
+            controllers[(int)PIDList.Altitude] = altitudeToClimbRate;
+            controllers[(int)PIDList.VertSpeed] = aoaController;
+            controllers[(int)PIDList.Elevator] = elevatorController;
 
             // PID inits
-            AileronController.InMax = 180;
-            AileronController.InMin = -180;
-            AltitudeToClimbRate.InMin = 0;
+            aileronController.InMax = 180;
+            aileronController.InMin = -180;
+            altitudeToClimbRate.InMin = 0;
 
             // Set up a default preset that can be easily returned to
             PresetManager.InitDefaultPATuning(controllers);
@@ -95,7 +95,9 @@ namespace PilotAssistant
             PresetManager.SavePresetsToFile();
             isHdgActive = false;
             isVertActive = false;
-            controllers.Clear();
+            //controllers.Clear();
+            for (int i = 0; i < controllers.Length; i++)
+                controllers = null;
         }
 
         public void Update()

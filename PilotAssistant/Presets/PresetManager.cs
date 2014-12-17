@@ -81,7 +81,7 @@ namespace PilotAssistant.Presets
             }
         }
         
-        public static void InitDefaultSASTuning(List<PID.PID_Controller> controllers)
+        public static void InitDefaultSASTuning(PID.PID_Controller[] controllers)
         {
             defaultSASTuning = new SASPreset(controllers, "Default");
             if (activeSASPreset == null)
@@ -93,7 +93,7 @@ namespace PilotAssistant.Presets
             }
         }
         
-        public static void InitDefaultPATuning(List<PID.PID_Controller> controllers)
+        public static void InitDefaultPATuning(PID.PID_Controller[] controllers)
         {
             defaultPATuning = new PAPreset(controllers, "Default");
             if (activePAPreset == null)
@@ -151,7 +151,7 @@ namespace PilotAssistant.Presets
             SavePresetsToFile();
         }
         
-        public static void RegisterSASPreset(List<PID.PID_Controller> controllers, string name)
+        public static void RegisterSASPreset(PID.PID_Controller[] controllers, string name)
         {
             if (name == "")
                 return;   
@@ -167,7 +167,7 @@ namespace PilotAssistant.Presets
             SavePresetsToFile();
         }
         
-        public static void RegisterPAPreset(List<PID.PID_Controller> controllers, string name)
+        public static void RegisterPAPreset(PID.PID_Controller[] controllers, string name)
         {
             if (name == "")
                 return; // ScreenMessages.PostScreenMessage("Failed to add preset with no name");
@@ -188,13 +188,13 @@ namespace PilotAssistant.Presets
             p.LoadStockPreset();
         }
         
-        public static void LoadSASPreset(List<PID.PID_Controller> controllers, SASPreset p)
+        public static void LoadSASPreset(PID.PID_Controller[] controllers, SASPreset p)
         {
             activeSASPreset = p;
             p.LoadPreset(controllers);
         }
         
-        public static void LoadPAPreset(List<PID.PID_Controller> controllers, PAPreset p)
+        public static void LoadPAPreset(PID.PID_Controller[] controllers, PAPreset p)
         {
             activePAPreset = p;
             p.LoadPreset(controllers);
