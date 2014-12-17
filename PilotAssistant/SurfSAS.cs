@@ -20,7 +20,7 @@ namespace PilotAssistant
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class SurfSAS : MonoBehaviour
     {
-        private static List<PID_Controller> SASControllers = new List<PID_Controller>();
+        private static List<PID_Controller> controllers = new List<PID_Controller>();
 
         private static bool initialized = false;
         private static bool isArmed = false;
@@ -42,30 +42,17 @@ namespace PilotAssistant
             // grab stock PID values
             if (FlightData.thisVessel.VesselSAS.pidLockedPitch != null)
             {
-                PresetManager.defaultStockSASTuning = new PresetSAS(FlightData.thisVessel.VesselSAS, "Stock");
-                if (PresetManager.activeStockSASPreset == null)
-                    PresetManager.activeStockSASPreset = PresetManager.defaultStockSASTuning;
-                else
-                {
-                    PresetManager.loadStockSASPreset(PresetManager.activeStockSASPreset);
-                    Messaging.statusMessage(7);
-                }
+                PresetManager.InitDefaultStockSASTuning();
 
                 PID_Controller pitch = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
-                SASControllers.Add(pitch);
+                controllers.Add(pitch);
                 PID_Controller yaw = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
-                SASControllers.Add(yaw);
+                controllers.Add(yaw);
                 PID_Controller roll = new PID.PID_Controller(0.1, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
-                SASControllers.Add(roll);
-                PresetManager.defaultSASTuning = new PresetSAS(SASControllers, "Default");
-                if (PresetManager.activeSASPreset == null)
-                    PresetManager.activeSASPreset = PresetManager.defaultSASTuning;
-                else
-                {
-                    PresetManager.loadSASPreset(PresetManager.activeSASPreset);
-                    Messaging.statusMessage(6);
-                }
+                controllers.Add(roll);
 
+                PresetManager.InitDefaultSASTuning(controllers);
+                
                 initialized = true;
                 isPaused[0] = isPaused[1] = isPaused[2] = false;
             }
@@ -81,7 +68,7 @@ namespace PilotAssistant
             isArmed = false;
             ActivitySwitch(false);
 
-            SASControllers.Clear();
+            controllers.Clear();
 
             RenderingManager.RemoveFromPostDrawQueue(5, GUI);
         }
@@ -189,13 +176,14 @@ namespace PilotAssistant
 
         public static PID_Controller GetController(SASList id)
         {
-            return SASControllers[(int)id];
+            return controllers[(int)id];
         }
 
         public static void ToggleStockSAS()
         {
             stockSASEnabled = !stockSASEnabled;
-            if (stockSASEnabled)
+            // This was binned in 5cd3773
+            /*if (stockSASEnabled)
             {
                 if (PresetManager.activeStockSASPreset == null)
                 {
@@ -214,7 +202,7 @@ namespace PilotAssistant
                 }
                 else
                     PresetManager.loadSASPreset(PresetManager.activeSASPreset);
-            }
+            }*/
         }
 
         public static void ToggleArmed()
@@ -238,16 +226,41 @@ namespace PilotAssistant
             isPaused[(int)id] = val;
         }
 
-        /*
-        public static bool IsActive(SASList id)
+        public static void UpdatePreset()
         {
-            return isActive[(int)id];
+            SASPreset p = PresetManager.GetActiveSASPreset();
+            if (p != null)
+                p.Update(controllers);
+            PresetManager.SavePresetsToFile();
         }
-
-        private static void SetActive(SASList id, bool val)
+        
+        public static void RegisterNewPreset(string name)
         {
-            isActive[(int)id] = val;
-        }*/
+            PresetManager.RegisterSASPreset(controllers, name);
+        }
+        
+        public static void LoadPreset(SASPreset p)
+        {
+            PresetManager.LoadSASPreset(controllers, p);
+        }
+        
+        public static void UpdateStockPreset()
+        {
+            SASPreset p = PresetManager.GetActiveStockSASPreset();
+            if (p != null)
+                p.UpdateStock(Utility.FlightData.thisVessel.VesselSAS);
+            PresetManager.SavePresetsToFile();
+        }
+        
+        public static void RegisterNewStockPreset(string name)
+        {
+            PresetManager.RegisterStockSASPreset(name);
+        }
+        
+        public static void LoadStockPreset(SASPreset p)
+        {
+            PresetManager.LoadStockSASPreset(p);
+        }
 
         public static void updateTarget()
         {
@@ -308,21 +321,11 @@ namespace PilotAssistant
         public static void ActivitySwitch(bool enable)
         {
             isActive = enable;
-            /*
-            if (enable)
-                isActive[(int)SASList.Pitch] = isActive[(int)SASList.Roll] = isActive[(int)SASList.Hdg] = true;
-            else
-                isActive[(int)SASList.Pitch] = isActive[(int)SASList.Roll] = isActive[(int)SASList.Hdg] = false;
-            */
         }
 
         public static bool ActivityCheck()
         {
             return isActive;
-            /*if (IsActive(SASList.Pitch) || IsActive(SASList.Roll) || IsActive(SASList.Hdg))
-                return true;
-            else
-                return false;*/
         }
     }
 }

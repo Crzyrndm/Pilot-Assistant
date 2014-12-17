@@ -69,7 +69,7 @@ namespace PilotAssistant.Presets
             node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/Pilot Assistant/Presets.cfg");
         }
 
-        public static void InitDefaultStockSASPreset()
+        public static void InitDefaultStockSASTuning()
         {
             defaultStockSASTuning = new SASPreset(Utility.FlightData.thisVessel.VesselSAS, "Stock");
             if (activeStockSASPreset == null)
@@ -81,7 +81,7 @@ namespace PilotAssistant.Presets
             }
         }
         
-        public static void InitDefaultSASPreset(List<PID.PID_Controller> controllers)
+        public static void InitDefaultSASTuning(List<PID.PID_Controller> controllers)
         {
             defaultSASTuning = new SASPreset(controllers, "Default");
             if (activeSASPreset == null)
@@ -93,7 +93,7 @@ namespace PilotAssistant.Presets
             }
         }
         
-        public static void InitDefaultPAPreset(List<PID.PID_Controller> controllers)
+        public static void InitDefaultPATuning(List<PID.PID_Controller> controllers)
         {
             defaultPATuning = new PAPreset(controllers, "Default");
             if (activePAPreset == null)
@@ -118,6 +118,21 @@ namespace PilotAssistant.Presets
         public static PAPreset GetActivePAPreset()
         {
             return activePAPreset;
+        }
+
+        public static SASPreset GetDefaultStockSASTuning()
+        {
+            return defaultStockSASTuning;
+        }
+
+        public static SASPreset GetDefaultSASTuning()
+        {
+            return defaultSASTuning;
+        }
+
+        public static PAPreset GetDefaultPATuning()
+        {
+            return defaultPATuning;
         }
 
         public static void RegisterStockSASPreset(string name)
@@ -188,7 +203,24 @@ namespace PilotAssistant.Presets
         public static List<SASPreset> GetAllSASPresets()
         {
             // return a shallow copy of the list
-            return new List<SASPreset>(SASPresetList);
+            List<SASPreset> l = new List<SASPreset>();
+            foreach (SASPreset p in SASPresetList)
+            {
+                if (!p.IsStockSAS())
+                    l.Add(p);
+            }
+            return l;
+        }
+
+        public static List<SASPreset> GetAllStockSASPresets()
+        {
+            List<SASPreset> l = new List<SASPreset>();
+            foreach (SASPreset p in SASPresetList)
+            {
+                if (p.IsStockSAS())
+                    l.Add(p);
+            }
+            return l;
         }
         
         public static List<PAPreset> GetAllPAPresets()

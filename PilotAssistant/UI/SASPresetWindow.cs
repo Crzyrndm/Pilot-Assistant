@@ -9,7 +9,7 @@ namespace PilotAssistant.UI
 
     internal static class SASPresetWindow
     {
-        internal static string newPresetName = "";
+        private static string newPresetName = "";
         internal static Rect windowRect = new Rect(550, 50, 50, 50);
 
         internal static void Draw()
@@ -20,23 +20,22 @@ namespace PilotAssistant.UI
         private static void drawPresetWindow(int id)
         {
             if (SurfSAS.StockSASEnabled())
-                drawStockPreset();
+                DrawStockPreset();
             else
-                drawSurfPreset();
+                DrawSurfPreset();
         }
 
-        private static void drawSurfPreset()
+        private static void DrawSurfPreset()
         {
-            if (PresetManager.activeSASPreset != null)
+            if (PresetManager.GetActiveSASPreset() != null)
             {
-                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.activeSASPreset.name), GeneralUI.boldLabelStyle);
-                if (PresetManager.activeSASPreset.name != "Default")
+                SASPreset p = PresetManager.GetActiveSASPreset();
+                GUILayout.Label(string.Format("Active Preset: {0}", p.GetName()), GeneralUI.boldLabelStyle);
+                if (p != PresetManager.GetDefaultSASTuning())
                 {
                     if (GUILayout.Button("Update Preset", GeneralUI.buttonStyle))
                     {
-                        // TODO: Disable for now, fix later
-                        //PresetManager.activeSASPreset.Update(SurfSAS.SASControllers);
-                        PresetManager.saveCFG();
+                        SurfSAS.UpdatePreset();
                     }
                 }
             }
@@ -45,20 +44,8 @@ namespace PilotAssistant.UI
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GeneralUI.buttonStyle, GUILayout.Width(25)))
             {
-                if (newPresetName != "")
-                {
-                    foreach (PresetSAS p in PresetManager.SASPresetList)
-                    {
-                        if (newPresetName == p.name)
-                            return;
-                    }
-
-                    // TODO: Disable for now, fix later
-                    //PresetManager.SASPresetList.Add(new PresetSAS(SurfSAS.SASControllers, newPresetName));
-                    newPresetName = "";
-                    PresetManager.activeSASPreset = PresetManager.SASPresetList[PresetManager.SASPresetList.Count - 1];
-                    PresetManager.saveCFG();
-                }
+                SurfSAS.RegisterNewPreset(newPresetName);
+                newPresetName = "";
             }
             GUILayout.EndHorizontal();
 
@@ -67,44 +54,38 @@ namespace PilotAssistant.UI
 
             if (GUILayout.Button("Default", GeneralUI.buttonStyle))
             {
-                PresetManager.loadSASPreset(PresetManager.defaultSASTuning);
-                PresetManager.activeSASPreset = PresetManager.defaultSASTuning;
+                SurfSAS.LoadPreset(PresetManager.GetDefaultSASTuning());
             }
 
-            foreach (PresetSAS p in PresetManager.SASPresetList)
+            List<SASPreset> allPresets = PresetManager.GetAllSASPresets();
+            foreach (SASPreset p in allPresets)
             {
-                if (p.bStockSAS)
-                    continue;
-
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button(p.name, GeneralUI.buttonStyle))
+                if (GUILayout.Button(p.GetName(), GeneralUI.buttonStyle))
                 {
-                    PresetManager.loadSASPreset(p);
-                    PresetManager.activeSASPreset = p;
+                    SurfSAS.LoadPreset(p);
+                    //ScreenMessages.PostScreenMessage("Loaded preset " + p.name);
                 }
                 if (GUILayout.Button("x", GeneralUI.buttonStyle, GUILayout.Width(25)))
                 {
-                    if (PresetManager.activeSASPreset == p)
-                        PresetManager.activeSASPreset = null;
-                    PresetManager.SASPresetList.Remove(p);
-                    PresetManager.saveCFG();
+                    PresetManager.RemovePreset(p);
                 }
                 GUILayout.EndHorizontal();
             }
             GUILayout.EndVertical();
         }
 
-        private static void drawStockPreset()
+        private static void DrawStockPreset()
         {
-            if (PresetManager.activeStockSASPreset != null)
+            if (PresetManager.GetActiveStockSASPreset() != null)
             {
-                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.activeStockSASPreset.name), GeneralUI.boldLabelStyle);
-                if (PresetManager.activeStockSASPreset.name != "Stock")
+                SASPreset p = PresetManager.GetActiveStockSASPreset();
+                GUILayout.Label(string.Format("Active Preset: {0}", p.GetName()), GeneralUI.boldLabelStyle);
+                if (p != PresetManager.GetDefaultSASTuning())
                 {
                     if (GUILayout.Button("Update Preset", GeneralUI.buttonStyle))
                     {
-                        PresetManager.activeStockSASPreset.Update(Utility.FlightData.thisVessel.VesselSAS);
-                        PresetManager.saveCFG();
+                        SurfSAS.UpdateStockPreset();
                     }
                 }
             }
@@ -113,52 +94,34 @@ namespace PilotAssistant.UI
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GeneralUI.buttonStyle, GUILayout.Width(25)))
             {
-                if (newPresetName != "")
-                {
-                    foreach (PresetSAS p in PresetManager.SASPresetList)
-                    {
-                        if (newPresetName == p.name)
-                            return;
-                    }
-
-                    PresetManager.SASPresetList.Add(new PresetSAS(Utility.FlightData.thisVessel.VesselSAS, newPresetName));
-                    newPresetName = "";
-                    PresetManager.activeStockSASPreset = PresetManager.SASPresetList[PresetManager.SASPresetList.Count - 1];
-                    PresetManager.saveCFG();
-                }
+                SurfSAS.RegisterNewStockPreset(newPresetName);
+                newPresetName = "";
             }
             GUILayout.EndHorizontal();
 
             GUILayout.BeginVertical(GeneralUI.guiSectionStyle);
             GUILayout.Label("Available presets: ", GeneralUI.boldLabelStyle);
-            
-            if (GUILayout.Button("Stock", GeneralUI.buttonStyle))
+
+            if (GUILayout.Button("Default", GeneralUI.buttonStyle))
             {
-                PresetManager.loadStockSASPreset(PresetManager.defaultStockSASTuning);
-                PresetManager.activeStockSASPreset = PresetManager.defaultStockSASTuning;
+                SurfSAS.LoadStockPreset(PresetManager.GetDefaultStockSASTuning());
             }
 
-            foreach (PresetSAS p in PresetManager.SASPresetList)
+            List<SASPreset> allStockPresets = PresetManager.GetAllStockSASPresets();
+            foreach (SASPreset p in allStockPresets)
             {
-                if (!p.bStockSAS)
-                    continue;
-
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button(p.name, GeneralUI.buttonStyle))
+                if (GUILayout.Button(p.GetName(), GeneralUI.buttonStyle))
                 {
-                    PresetManager.loadStockSASPreset(p);
-                    PresetManager.activeStockSASPreset = p;
+                    SurfSAS.LoadStockPreset(p);
+                    //ScreenMessages.PostScreenMessage("Loaded preset " + p.name);
                 }
                 if (GUILayout.Button("x", GeneralUI.buttonStyle, GUILayout.Width(25)))
                 {
-                    if (PresetManager.activeStockSASPreset == p)
-                        PresetManager.activeStockSASPreset = null;
-                    PresetManager.SASPresetList.Remove(p);
-                    PresetManager.saveCFG();
+                    PresetManager.RemovePreset(p);
                 }
                 GUILayout.EndHorizontal();
             }
-
             GUILayout.EndVertical();
         }
     }

@@ -9,7 +9,7 @@ namespace PilotAssistant.UI
 
     static class PAPresetWindow
     {
-        internal static string newPresetName = "";
+        private static string newPresetName = "";
         internal static Rect windowRect = new Rect(0, 0, 200, 10);
 
         internal static void Draw()
@@ -19,17 +19,15 @@ namespace PilotAssistant.UI
 
         private static void drawPresetWindow(int id)
         {
-            if (PresetManager.activePAPreset != null)
+            if (PresetManager.GetActivePAPreset() != null)
             {
-                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.activePAPreset.name), GeneralUI.boldLabelStyle);
-                if (PresetManager.activePAPreset.name != "Default")
+                PAPreset p = PresetManager.GetActivePAPreset();
+                GUILayout.Label(string.Format("Active Preset: {0}", p.GetName()), GeneralUI.boldLabelStyle);
+                if (p != PresetManager.GetDefaultPATuning())
                 {
                     if (GUILayout.Button("Update Preset", GeneralUI.buttonStyle))
                     {
-                        // TODO: Disable for now, fix later
-                        //PresetManager.activePAPreset.Update(PilotAssistant.controllers);
-                        PresetManager.saveCFG();
-                        ScreenMessages.PostScreenMessage(PresetManager.activePAPreset.name + " updated");
+                        PilotAssistant.UpdatePreset();
                     }
                 }
             }
@@ -38,27 +36,8 @@ namespace PilotAssistant.UI
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GeneralUI.buttonStyle, GUILayout.Width(25)))
             {
-                if (newPresetName != "")
-                {
-                    foreach (PresetPA p in PresetManager.PAPresetList)
-                    {
-                        if (newPresetName == p.name)
-                        {
-                            ScreenMessages.PostScreenMessage("Failed to add preset with duplicate name");
-                            return;
-                        }
-                    }
-
-                    // TODO: Disable for now, fix later
-                    //PresetManager.PAPresetList.Add(new PresetPA(PilotAssistant.controllers, newPresetName));
-                    newPresetName = "";
-                    PresetManager.activePAPreset = PresetManager.PAPresetList[PresetManager.PAPresetList.Count - 1];
-                    PresetManager.saveCFG();
-                }
-                else
-                {
-                    ScreenMessages.PostScreenMessage("Failed to add preset with no name");
-                }
+                PilotAssistant.RegisterNewPreset(newPresetName);
+                newPresetName = "";
             }
             GUILayout.EndHorizontal();
 
@@ -67,26 +46,21 @@ namespace PilotAssistant.UI
 
             if (GUILayout.Button("Default", GeneralUI.buttonStyle))
             {
-                PresetManager.loadPAPreset(PresetManager.defaultPATuning);
-                PresetManager.activePAPreset = PresetManager.defaultPATuning;
+                PilotAssistant.LoadPreset(PresetManager.GetDefaultPATuning());
             }
 
-            foreach (PresetPA p in PresetManager.PAPresetList)
+            List<PAPreset> allPresets = PresetManager.GetAllPAPresets();
+            foreach (PAPreset p in allPresets)
             {
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button(p.name, GeneralUI.buttonStyle))
+                if (GUILayout.Button(p.GetName(), GeneralUI.buttonStyle))
                 {
-                    PresetManager.loadPAPreset(p);
-                    PresetManager.activePAPreset = p;
-                    ScreenMessages.PostScreenMessage("Loaded preset " + p.name);
+                    PilotAssistant.LoadPreset(p);
+                    //ScreenMessages.PostScreenMessage("Loaded preset " + p.name);
                 }
                 if (GUILayout.Button("x", GeneralUI.buttonStyle, GUILayout.Width(25)))
                 {
-                    ScreenMessages.PostScreenMessage("Deleted preset " + p.name);
-                    if (PresetManager.activePAPreset == p)
-                        PresetManager.activePAPreset = null;
-                    PresetManager.PAPresetList.Remove(p);
-                    PresetManager.saveCFG();
+                    PresetManager.RemovePreset(p);
                 }
                 GUILayout.EndHorizontal();
             }
