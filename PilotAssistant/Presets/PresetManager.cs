@@ -68,5 +68,159 @@ namespace PilotAssistant.Presets
             }
             node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/Pilot Assistant/Presets.cfg");
         }
+
+        public static void InitDefaultStockSASPreset()
+        {
+            defaultStockSASTuning = new SASPreset(Utility.FlightData.thisVessel.VesselSAS, "Stock");
+            if (activeStockSASPreset == null)
+                activeStockSASPreset = defaultStockSASTuning;
+            else if (activeStockSASPreset != defaultStockSASTuning)
+            {
+                LoadStockSASPreset(activeStockSASPreset);
+                // TODO: Messaging.statusMessage(7);
+            }
+        }
+        
+        public static void InitDefaultSASPreset(List<PID.PID_Controller> controllers)
+        {
+            defaultSASTuning = new SASPreset(controllers, "Default");
+            if (activeSASPreset == null)
+                activeSASPreset = PresetManager.defaultSASTuning;
+            else if (activeSASPreset != defaultSASTuning)
+            {
+                LoadSASPreset(controllers, activeSASPreset);
+                // TODO: Messaging.statusMessage(6);
+            }
+        }
+        
+        public static void InitDefaultPAPreset(List<PID.PID_Controller> controllers)
+        {
+            defaultPATuning = new PAPreset(controllers, "Default");
+            if (activePAPreset == null)
+                activePAPreset = defaultPATuning;
+            else if (activePAPreset != defaultPATuning)
+            {
+                LoadPAPreset(controllers, activePAPreset);
+                // TODO: Messaging.statusMessage(5);
+            }
+        }
+
+        public static SASPreset GetActiveStockSASPreset()
+        {
+            return activeStockSASPreset;
+        }
+        
+        public static SASPreset GetActiveSASPreset()
+        {
+            return activeSASPreset;
+        }
+        
+        public static PAPreset GetActivePAPreset()
+        {
+            return activePAPreset;
+        }
+
+        public static void RegisterStockSASPreset(string name)
+        {
+            if (name == "")
+                return;
+            foreach (SASPreset p in SASPresetList)
+            {
+                if (name == p.GetName())
+                    return;
+            }
+
+            SASPreset p2 = new SASPreset(Utility.FlightData.thisVessel.VesselSAS, name);
+            SASPresetList.Add(p2);
+            LoadStockSASPreset(p2);
+            SavePresetsToFile();
+        }
+        
+        public static void RegisterSASPreset(List<PID.PID_Controller> controllers, string name)
+        {
+            if (name == "")
+                return;   
+            foreach (SASPreset p in SASPresetList)
+            {
+                if (name == p.GetName())
+                    return;
+            }
+
+            SASPreset p2 = new SASPreset(controllers, name);
+            SASPresetList.Add(p2);
+            LoadSASPreset(controllers, p2);
+            SavePresetsToFile();
+        }
+        
+        public static void RegisterPAPreset(List<PID.PID_Controller> controllers, string name)
+        {
+            if (name == "")
+                return; // ScreenMessages.PostScreenMessage("Failed to add preset with no name");
+            foreach (PAPreset p in PresetManager.PAPresetList)
+            {
+                if (name == p.GetName())
+                    return; // ScreenMessages.PostScreenMessage("Failed to add preset with duplicate name");
+            }
+                
+            PAPreset p2 = new PAPreset(controllers, name);
+            LoadPAPreset(controllers, p2);
+            SavePresetsToFile();
+        }
+
+        public static void LoadStockSASPreset(SASPreset p)
+        {
+            activeStockSASPreset = p;
+            p.LoadStockPreset();
+        }
+        
+        public static void LoadSASPreset(List<PID.PID_Controller> controllers, SASPreset p)
+        {
+            activeSASPreset = p;
+            p.LoadPreset(controllers);
+        }
+        
+        public static void LoadPAPreset(List<PID.PID_Controller> controllers, PAPreset p)
+        {
+            activePAPreset = p;
+            p.LoadPreset(controllers);
+        }
+
+        public static List<SASPreset> GetAllSASPresets()
+        {
+            // return a shallow copy of the list
+            return new List<SASPreset>(SASPresetList);
+        }
+        
+        public static List<PAPreset> GetAllPAPresets()
+        {
+            // return a shallow copy of the list
+            return new List<PAPreset>(PAPresetList);
+        }
+
+        public static void RemovePreset(SASPreset p)
+        {
+            if (p.IsStockSAS())
+            {
+                if (activeStockSASPreset == p)
+                    activeStockSASPreset = null;
+                SASPresetList.Remove(p);
+                SavePresetsToFile();
+            }
+            else
+            {
+                if (activeSASPreset == p)
+                    activeSASPreset = null;
+                SASPresetList.Remove(p);
+                SavePresetsToFile();
+            }
+        }
+        
+        public static void RemovePreset(PAPreset p)
+        {
+            if (activePAPreset == p)
+                activePAPreset = null;
+            PAPresetList.Remove(p);
+            SavePresetsToFile();
+        }
     }
 }

@@ -50,7 +50,10 @@ namespace PilotAssistant.Presets
             PIDGains.Add(LoadControllerGains(node.GetNode("ElevatorController")));
         }
 
-        private static double[] LoadControllerGains(ConfigNode node)
+        public string GetName() { return name; }
+        public bool IsStockSAS() { return useStockSAS; }
+
+        private double[] LoadControllerGains(ConfigNode node)
         {
             // TODO: out val ---> out gains[i]
             double[] gains = new double[4];
