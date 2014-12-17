@@ -70,7 +70,7 @@ namespace PilotAssistant
 
             // controllers.Clear();
             for (int i = 0; i < controllers.Length; i++)
-                controllers = null;
+                controllers[i] = null;
 
             RenderingManager.RemoveFromPostDrawQueue(5, GUI);
         }

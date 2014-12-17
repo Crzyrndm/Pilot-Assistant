@@ -171,13 +171,14 @@ namespace PilotAssistant.Presets
         {
             if (name == "")
                 return; // ScreenMessages.PostScreenMessage("Failed to add preset with no name");
-            foreach (PAPreset p in PresetManager.PAPresetList)
+            foreach (PAPreset p in PAPresetList)
             {
                 if (name == p.GetName())
                     return; // ScreenMessages.PostScreenMessage("Failed to add preset with duplicate name");
             }
                 
             PAPreset p2 = new PAPreset(controllers, name);
+            PAPresetList.Add(p2);
             LoadPAPreset(controllers, p2);
             SavePresetsToFile();
         }

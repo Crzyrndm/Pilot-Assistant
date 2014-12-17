@@ -97,7 +97,7 @@ namespace PilotAssistant
             isVertActive = false;
             //controllers.Clear();
             for (int i = 0; i < controllers.Length; i++)
-                controllers = null;
+                controllers[i] = null; 
         }
 
         public void Update()
