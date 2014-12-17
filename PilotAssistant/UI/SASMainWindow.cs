@@ -15,9 +15,6 @@ namespace PilotAssistant.UI
 
         public static void Draw()
         {
-            GUI.skin = GeneralUI.UISkin;
-            GeneralUI.Styles();
-
             if (AppLauncher.AppLauncherInstance.bDisplaySAS)
                 SASwindow = GUILayout.Window(78934856, SASwindow, drawSASWindow, "SAS Module", GUILayout.Height(0));
 
@@ -34,30 +31,6 @@ namespace PilotAssistant.UI
             SASPresetWindow.bShowPresets = GUILayout.Toggle(SASPresetWindow.bShowPresets, SASPresetWindow.bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
 
             SurfSAS.bStockSAS = GUILayout.Toggle(SurfSAS.bStockSAS, SurfSAS.bStockSAS ? "Mode: Stock SAS" : "Mode: SSAS");
-            /*if (SurfSAS.bStockSAS != SurfSAS.bWasStockSAS)
-            {
-                SurfSAS.bWasStockSAS = SurfSAS.bStockSAS;
-                if (SurfSAS.bStockSAS)
-                {
-                    if (PresetManager.activeStockSASPreset == null)
-                    {
-                        PresetManager.loadStockSASPreset(PresetManager.defaultStockSASTuning);
-                        PresetManager.activeStockSASPreset = PresetManager.defaultStockSASTuning;
-                    }
-                    else
-                        PresetManager.loadStockSASPreset(PresetManager.activeStockSASPreset);
-                }
-                else
-                {
-                    if (PresetManager.activeSASPreset == null)
-                    {
-                        PresetManager.loadSASPreset(PresetManager.defaultSASTuning);
-                        PresetManager.activeSASPreset = PresetManager.defaultSASTuning;
-                    }
-                    else
-                        PresetManager.loadSASPreset(PresetManager.activeSASPreset);
-                }
-            }*/
 
             if (!SurfSAS.bStockSAS)
             {
@@ -89,9 +62,11 @@ namespace PilotAssistant.UI
             {
                 VesselAutopilot.VesselSAS sas = FlightData.thisVessel.Autopilot.SAS;
 
-                drawPIDValues(sas.pidLockedPitch, "Pitch", 0);
-                drawPIDValues(sas.pidLockedRoll, "Roll", 1);
-                drawPIDValues(sas.pidLockedYaw, "Yaw", 2);
+                drawPIDValues(sas.pidLockedPitch, "Pitch", (int)SASList.Pitch);
+                drawPIDValues(sas.pidLockedRoll, "Roll", (int)SASList.Roll);
+                drawPIDValues(sas.pidLockedYaw, "Yaw", (int)SASList.Yaw);
+
+                
             }
 
             GUI.DragWindow();
@@ -115,13 +90,14 @@ namespace PilotAssistant.UI
         {
             stockPIDDisplay[ID] = GUILayout.Toggle(stockPIDDisplay[ID], inputName, GeneralUI.toggleButton);
             
+            
 
             if (stockPIDDisplay[ID])
             {
                 controller.kp = GeneralUI.labPlusNumBox("Kp:", controller.kp.ToString("G3"), 45);
                 controller.ki = GeneralUI.labPlusNumBox("Ki:", controller.ki.ToString("G3"), 45);
                 controller.kd = GeneralUI.labPlusNumBox("Kd:", controller.kd.ToString("G3"), 45);
-                controller.clamp = GeneralUI.labPlusNumBox("Scalar:", controller.clamp.ToString("G3"), 45);
+                controller.clamp = Math.Max(GeneralUI.labPlusNumBox("Scalar:", controller.clamp.ToString("G3"), 45), 0.01);
             }
         }
     }

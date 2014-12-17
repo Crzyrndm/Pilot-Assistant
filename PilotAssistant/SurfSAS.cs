@@ -28,11 +28,12 @@ namespace PilotAssistant
         internal bool[] bPause = new bool[3]; // pause on a per axis basis
         internal bool bAtmosphere = false;
         internal static bool bStockSAS = false;
-        internal static bool bWasStockSAS = false;
 
         internal static float activationFadeRoll = 1;
         internal static float activationFadePitch = 1;
         internal static float activationFadeYaw = 1;
+
+        internal bool rollState = false; // false = surface mode, true = vector mode
 
         public void Initialise()
         {
@@ -130,7 +131,7 @@ namespace PilotAssistant
             if (FlightData.thisVessel.staticPressure > 0 && !bAtmosphere)
             {
                 bAtmosphere = true;
-                if (FlightData.thisVessel.ctrlState.killRot && bArmed)
+                if (FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] && bArmed)
                 {
                     ActivitySwitch(true);
                     setStockSAS(false);
@@ -153,6 +154,9 @@ namespace PilotAssistant
         {
             if (GeneralUI.UISkin == null)
                 GeneralUI.UISkin = UnityEngine.GUI.skin;
+
+            GUI.skin = GeneralUI.UISkin;
+            GeneralUI.Styles();
 
             // SAS toggle button
             if (SurfSAS.bArmed)
@@ -227,6 +231,8 @@ namespace PilotAssistant
             activationFadeRoll = 10;
             activationFadePitch = 10;
             activationFadeYaw = 10;
+
+            updateVectorTarget();
         }
 
         internal static void updateVectorTarget()
@@ -259,12 +265,13 @@ namespace PilotAssistant
                 bPause[(int)SASList.Roll] = true;
             else if (GameSettings.ROLL_LEFT.GetKeyUp() || GameSettings.ROLL_RIGHT.GetKeyUp())
             {
-                rollTarget = FlightData.thisVessel.ReferenceTransform.right;
                 bPause[(int)SASList.Roll] = false;
                 if (bActive[(int)SASList.Roll])
+                {
                     SASControllers[(int)SASList.Roll].SetPoint = FlightData.roll;
-
-                activationFadeRoll = 10;
+                    rollTarget = FlightData.thisVessel.ReferenceTransform.right;
+                    activationFadeRoll = 10;
+                }
             }
 
             if (GameSettings.SAS_HOLD.GetKeyDown())
@@ -299,30 +306,50 @@ namespace PilotAssistant
         internal static void setStockSAS(bool state)
         {
             FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, state);
-            FlightData.thisVessel.ctrlState.killRot = state;
+            FlightData.thisVessel.ctrlState.killRot = state; // incase anyone checks the ctrl state
         }
 
 
         static Vector3d rollTarget = Vector3d.zero;
         private void rollResponse()
         {
-
             if (!bPause[(int)SASList.Roll] && bActive[(int)SASList.Roll])
             {
-                // Above 30 degrees, rollTarget should always lie on the horizontal plane of the vessel
-                // Below 30 degrees, use the existing roll logic
-                // need to have a hysteresis on the switch to ensure it doesn't bounce back and forth
-                if (FlightData.pitch > 30 || FlightData.pitch < -30)
+                bool rollStateWas = rollState;
+                // switch tracking modes
+                if (rollState) // currently in vector mode
                 {
+                    if (FlightData.pitch < 25 && FlightData.pitch > -25)
+                        rollState = false; // fall back to surface mode
+                }
+                else // surface mode
+                {
+                    if (FlightData.pitch > 30 || FlightData.pitch < -30)
+                        rollState = true; // go to vector mode
+                }
+
+                // Above 30 degrees, rollTarget should always lie on the horizontal plane of the vessel
+                // Below 30 degrees, use the surf roll logic
+                // hysteresis on the switch ensures it doesn't bounce back and forth and lose the lock
+                if (rollState)
+                {
+                    if (!rollStateWas)
+                    {
+                        SASControllers[(int)SASList.Roll].SetPoint = 0;
+                        rollTarget = FlightData.thisVessel.ReferenceTransform.right;
+                    }
+
                     Vector3 proj = FlightData.thisVessel.ReferenceTransform.up * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.up, rollTarget)
                         + FlightData.thisVessel.ReferenceTransform.right * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.right, rollTarget);
                     double roll = Vector3.Angle(proj, rollTarget) * Math.Sign(Vector3.Dot(FlightData.thisVessel.ReferenceTransform.forward, rollTarget));
 
-                    SASControllers[(int)SASList.Roll].SetPoint = 0;
                     FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(roll) / activationFadeRoll;
                 }
                 else
                 {
+                    if (rollStateWas)
+                        SASControllers[(int)SASList.Roll].SetPoint = FlightData.roll;
+
                     if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll >= -180 && SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll <= 180)
                         FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll) / activationFadeRoll;
                     else if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll > 180)

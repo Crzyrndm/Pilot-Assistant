@@ -281,11 +281,11 @@ namespace PilotAssistant
 
             if (GameSettings.SAS_TOGGLE.GetKeyDown())
             {
-                if (!bPause && FlightData.thisVessel.ctrlState.killRot && SurfSAS.ActivityCheck())
+                if (!bPause && FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] && SurfSAS.ActivityCheck())
                 {
                     Messaging.statusMessage(2);
                 }
-                else if (bPause && (!FlightData.thisVessel.ctrlState.killRot || !SurfSAS.ActivityCheck()))
+                else if (bPause && (!FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] || !SurfSAS.ActivityCheck()))
                 {
                     Messaging.statusMessage(3);
                 }
@@ -369,7 +369,7 @@ namespace PilotAssistant
 
         internal static bool SASMonitor()
         {
-            return (FlightData.thisVessel.ctrlState.killRot || SurfSAS.ActivityCheck());
+            return (FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] || SurfSAS.ActivityCheck());
         }
     }
 }
