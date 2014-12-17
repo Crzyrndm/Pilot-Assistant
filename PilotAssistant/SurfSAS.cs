@@ -33,7 +33,7 @@ namespace PilotAssistant
         internal static float activationFadePitch = 1;
         internal static float activationFadeYaw = 1;
 
-        internal bool rollState = false; // false = surface mode, true = vector mode
+        internal static bool rollState = false; // false = surface mode, true = vector mode
 
         public void Initialise()
         {
@@ -155,7 +155,7 @@ namespace PilotAssistant
             if (GeneralUI.UISkin == null)
                 GeneralUI.UISkin = UnityEngine.GUI.skin;
 
-            GUI.skin = GeneralUI.UISkin;
+            UnityEngine.GUI.skin = GeneralUI.UISkin;
             GeneralUI.Styles();
 
             // SAS toggle button
@@ -188,77 +188,40 @@ namespace PilotAssistant
             {
                 FlightData.updateAttitude();
 
-                float pitchResponse = -1 * (float)SASControllers[(int)SASList.Pitch].Response(FlightData.pitch);
-
-                float yawResponse = 0;
-                if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading >= -180 && SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading <= 180)
-                    yawResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading);
-                else if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading < -180)
-                    yawResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading - 360);
-                else if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading > 180)
-                    yawResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading + 360);
-
-                double rollRad = Math.PI / 180 * FlightData.roll;
-
-                if (!bPause[(int)SASList.Pitch] && bActive[(int)SASList.Pitch])
-                {
-                    FlightData.thisVessel.ctrlState.pitch = (pitchResponse * (float)Math.Cos(rollRad) - yawResponse * (float)Math.Sin(rollRad)) / activationFadePitch;
-                    if (activationFadePitch > 1)
-                        activationFadePitch *= 0.98f; // ~100 physics frames
-                    else
-                        activationFadePitch = 1;
-                }
-
-                if (!bPause[(int)SASList.Yaw] && bActive[(int)SASList.Yaw])
-                {
-                    FlightData.thisVessel.ctrlState.yaw = (pitchResponse * (float)Math.Sin(rollRad) + yawResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
-                    if (activationFadeYaw > 1)
-                        activationFadeYaw *= 0.98f; // ~100 physics frames
-                    else
-                        activationFadeYaw = 1;
-                }
-
+                pitchResponse();
                 rollResponse();
+                yawResponse();
             }
         }
 
         internal static void updateTarget()
         {
-            SASControllers[(int)SASList.Pitch].SetPoint = FlightData.pitch;
-            SASControllers[(int)SASList.Yaw].SetPoint = FlightData.heading;
-            SASControllers[(int)SASList.Roll].SetPoint = FlightData.roll;
+            if (rollState)
+                SASControllers[(int)SASList.Roll].SetPoint = 0;
+            else
+                SASControllers[(int)SASList.Roll].SetPoint = FlightData.roll;
 
             activationFadeRoll = 10;
             activationFadePitch = 10;
             activationFadeYaw = 10;
 
-            updateVectorTarget();
-        }
-
-        internal static void updateVectorTarget()
-        {
             rollTarget = FlightData.thisVessel.ReferenceTransform.right;
+            pitchTarget = FlightData.thisVessel.ReferenceTransform.forward;
+            yawTarget = FlightData.thisVessel.ReferenceTransform.up;
         }
 
         private void pauseManager()
         {
-            if (GameSettings.PITCH_DOWN.GetKeyDown() || GameSettings.PITCH_UP.GetKeyDown() || GameSettings.YAW_LEFT.GetKeyDown() || GameSettings.YAW_RIGHT.GetKeyDown())
-            {
+            if (GameSettings.PITCH_DOWN.GetKeyDown() || GameSettings.PITCH_UP.GetKeyDown())
                 bPause[(int)SASList.Pitch] = true;
-                bPause[(int)SASList.Yaw] = true;
-            }
-            else if (GameSettings.PITCH_DOWN.GetKeyUp() || GameSettings.PITCH_UP.GetKeyUp() || GameSettings.YAW_LEFT.GetKeyUp() || GameSettings.YAW_RIGHT.GetKeyUp())
+            else if (GameSettings.PITCH_DOWN.GetKeyUp() || GameSettings.PITCH_UP.GetKeyUp())
             {
                 bPause[(int)SASList.Pitch] = false;
-                bPause[(int)SASList.Yaw] = false;
                 if (bActive[(int)SASList.Pitch])
                 {
-                    SASControllers[(int)SASList.Pitch].SetPoint = FlightData.pitch;
-                    SASControllers[(int)SASList.Yaw].SetPoint = FlightData.heading;
+                    pitchTarget = FlightData.thisVessel.ReferenceTransform.forward;
+                    activationFadePitch = 10;
                 }
-
-                activationFadePitch = 10;
-                activationFadeYaw = 10;
             }
 
             if (GameSettings.ROLL_LEFT.GetKeyDown() || GameSettings.ROLL_RIGHT.GetKeyDown())
@@ -268,9 +231,23 @@ namespace PilotAssistant
                 bPause[(int)SASList.Roll] = false;
                 if (bActive[(int)SASList.Roll])
                 {
-                    SASControllers[(int)SASList.Roll].SetPoint = FlightData.roll;
-                    rollTarget = FlightData.thisVessel.ReferenceTransform.right;
+                    if (rollState)
+                        rollTarget = FlightData.thisVessel.ReferenceTransform.right;
+                    else
+                        SASControllers[(int)SASList.Roll].SetPoint = FlightData.roll;
                     activationFadeRoll = 10;
+                }
+            }
+
+            if (GameSettings.YAW_LEFT.GetKeyDown() || GameSettings.YAW_RIGHT.GetKeyDown())
+                bPause[(int)SASList.Yaw] = true;
+            else if (GameSettings.YAW_LEFT.GetKeyUp() || GameSettings.YAW_RIGHT.GetKeyUp())
+            {
+                bPause[(int)SASList.Yaw] = false;
+                if (bActive[(int)SASList.Yaw])
+                {
+                    yawTarget = FlightData.thisVessel.ReferenceTransform.up;
+                    activationFadeYaw = 10;
                 }
             }
 
@@ -328,8 +305,8 @@ namespace PilotAssistant
                         rollState = true; // go to vector mode
                 }
 
-                // Above 30 degrees, rollTarget should always lie on the horizontal plane of the vessel
-                // Below 30 degrees, use the surf roll logic
+                // Above 30 degrees pitch, rollTarget should always lie on the horizontal plane of the vessel
+                // Below 30 degrees pitch, use the surf roll logic
                 // hysteresis on the switch ensures it doesn't bounce back and forth and lose the lock
                 if (rollState)
                 {
@@ -362,6 +339,42 @@ namespace PilotAssistant
                     activationFadeRoll *= 0.98f; // ~100 physics frames
                 else
                     activationFadeRoll = 1;
+            }
+        }
+
+        static Vector3d pitchTarget = Vector3d.zero; // pitch is worked on vessel forward(up) vector
+        private void pitchResponse()
+        {
+            if (!bPause[(int)SASList.Pitch] && bActive[(int)SASList.Pitch])
+            {
+                Vector3 proj = FlightData.thisVessel.ReferenceTransform.forward * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.forward, pitchTarget)
+                        + FlightData.thisVessel.ReferenceTransform.right * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.right, pitchTarget);
+                double pitch = Vector3.Angle(proj, pitchTarget) * Math.Sign(Vector3.Dot(FlightData.thisVessel.ReferenceTransform.up, pitchTarget));
+
+                FlightData.thisVessel.ctrlState.pitch = (float)SASControllers[(int)SASList.Pitch].Response(pitch) / activationFadePitch;
+
+                if (activationFadePitch > 1)
+                    activationFadePitch *= 0.98f; // ~100 physics frames
+                else
+                    activationFadePitch = 1;
+            }
+        }
+
+        static Vector3d yawTarget = Vector3d.zero; // yaw is worked on vessel up(forward) vector
+        private void yawResponse()
+        {
+            if (!bPause[(int)SASList.Yaw] && bActive[(int)SASList.Yaw])
+            {
+                Vector3 proj = FlightData.thisVessel.ReferenceTransform.forward * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.forward, yawTarget)
+                        + FlightData.thisVessel.ReferenceTransform.up * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.up, yawTarget);
+                double yaw = Vector3.Angle(proj, yawTarget) * Math.Sign(Vector3.Dot(FlightData.thisVessel.ReferenceTransform.up, pitchTarget));
+
+                FlightData.thisVessel.ctrlState.yaw = (float)SASControllers[(int)SASList.Yaw].Response(yaw) / activationFadeYaw;
+
+                if (activationFadeYaw > 1)
+                    activationFadeYaw *= 0.98f; // ~100 physics frames
+                else
+                    activationFadeYaw = 1;
             }
         }
     }
