@@ -103,16 +103,12 @@ namespace PilotAssistant
                 if (ActivityCheck())
                 {
                     ActivitySwitch(false);
-                    if (!bStockSAS)
-                        setStockSAS(false);
-                    else
-                        setStockSAS(true);
+                    setStockSAS(false);
                 }
-
             }
 
             // SAS activated by user
-            if (bArmed && !ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown())
+            if (bArmed && !ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown() && !mod)
             {
                 if (!bStockSAS)
                 {
@@ -121,7 +117,7 @@ namespace PilotAssistant
                     updateTarget();
                 }
             }
-            else if (ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown())
+            else if (ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown() && !mod)
             {
                 ActivitySwitch(false);
                 setStockSAS(bStockSAS);
@@ -190,7 +186,7 @@ namespace PilotAssistant
 
                 pitchResponse();
                 rollResponse();
-                yawResponse();
+                //yawResponse();
             }
         }
 
@@ -250,15 +246,15 @@ namespace PilotAssistant
                     activationFadeYaw = 10;
                 }
             }
-
-            if (GameSettings.SAS_HOLD.GetKeyDown())
+            // buggy-----------------------------------------------------------------------------------------------------------------------------------
+            if (GameSettings.SAS_HOLD.GetKeyDown() && !bStockSAS)
             {
-                ActivitySwitch(true);
+                bPause[(int)SASList.Pitch] = bPause[(int)SASList.Roll] = bPause[(int)SASList.Yaw] = true;
                 setStockSAS(false);
             }
-            else if (GameSettings.SAS_HOLD.GetKeyUp())
+            else if (GameSettings.SAS_HOLD.GetKeyUp() && !bStockSAS)
             {
-                ActivitySwitch(false);
+                bPause[(int)SASList.Pitch] = bPause[(int)SASList.Roll] = bPause[(int)SASList.Yaw] = false;
                 setStockSAS(false);
                 updateTarget();
             }
@@ -283,7 +279,7 @@ namespace PilotAssistant
         internal static void setStockSAS(bool state)
         {
             FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, state);
-            FlightData.thisVessel.ctrlState.killRot = state; // incase anyone checks the ctrl state
+            FlightData.thisVessel.ctrlState.killRot = state; // incase anyone checks the ctrl state (should be using checking vessel.ActionGroup[KSPActionGroup.SAS])
         }
 
 
@@ -306,13 +302,14 @@ namespace PilotAssistant
                 }
 
                 // Above 30 degrees pitch, rollTarget should always lie on the horizontal plane of the vessel
-                // Below 30 degrees pitch, use the surf roll logic
+                // Below 25 degrees pitch, use the surf roll logic
                 // hysteresis on the switch ensures it doesn't bounce back and forth and lose the lock
                 if (rollState)
                 {
                     if (!rollStateWas)
                     {
                         SASControllers[(int)SASList.Roll].SetPoint = 0;
+                        SASControllers[(int)SASList.Roll].skipDerivative = true;
                         rollTarget = FlightData.thisVessel.ReferenceTransform.right;
                     }
 
@@ -325,7 +322,10 @@ namespace PilotAssistant
                 else
                 {
                     if (rollStateWas)
+                    {
                         SASControllers[(int)SASList.Roll].SetPoint = FlightData.roll;
+                        SASControllers[(int)SASList.Roll].skipDerivative = true;
+                    }
 
                     if (SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll >= -180 && SASControllers[(int)SASList.Roll].SetPoint - FlightData.roll <= 180)
                         FlightData.thisVessel.ctrlState.roll = (float)SASControllers[(int)SASList.Roll].Response(FlightData.roll) / activationFadeRoll;
@@ -351,6 +351,10 @@ namespace PilotAssistant
                         + FlightData.thisVessel.ReferenceTransform.right * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.right, pitchTarget);
                 double pitch = Vector3.Angle(proj, pitchTarget) * Math.Sign(Vector3.Dot(FlightData.thisVessel.ReferenceTransform.up, pitchTarget));
 
+                print("foo");
+                print(Vector3.Angle(pitchTarget, FlightData.surfVesForward));
+                print(pitch);
+
                 FlightData.thisVessel.ctrlState.pitch = (float)SASControllers[(int)SASList.Pitch].Response(pitch) / activationFadePitch;
 
                 if (activationFadePitch > 1)
@@ -367,7 +371,7 @@ namespace PilotAssistant
             {
                 Vector3 proj = FlightData.thisVessel.ReferenceTransform.forward * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.forward, yawTarget)
                         + FlightData.thisVessel.ReferenceTransform.up * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.up, yawTarget);
-                double yaw = Vector3.Angle(proj, yawTarget) * Math.Sign(Vector3.Dot(FlightData.thisVessel.ReferenceTransform.up, pitchTarget));
+                double yaw = Vector3.Angle(proj, yawTarget) * Math.Sign(Vector3.Dot(FlightData.thisVessel.ReferenceTransform.up, yawTarget));
 
                 FlightData.thisVessel.ctrlState.yaw = (float)SASControllers[(int)SASList.Yaw].Response(yaw) / activationFadeYaw;
 
