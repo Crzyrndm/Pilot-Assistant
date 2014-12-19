@@ -52,8 +52,16 @@ namespace PilotAssistant.UI
                 {
                     SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Functions.Clamp((float)GeneralUI.TogPlusNumBox("Pitch:", ref SurfSAS.bActive[(int)SASList.Pitch], SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint, 80), -80, 80);
                     SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint = (float)GeneralUI.TogPlusNumBox("Heading:", ref SurfSAS.bActive[(int)SASList.Yaw], SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint, 80, 60, 360, 0);
-                    if (!SurfSAS.rollState)
+                    if (!SurfSAS.rollState) // editable
                         SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.TogPlusNumBox("Roll:", ref SurfSAS.bActive[(int)SASList.Roll], SurfSAS.SASControllers[(int)SASList.Roll].SetPoint, 80, 60, 180, -180);
+                    else // not editable b/c vector mode
+                    {
+                        GUILayout.BeginHorizontal();
+                        SurfSAS.bActive[(int)SASList.Roll] = GUILayout.Toggle(SurfSAS.bActive[(int)SASList.Roll], "Roll:", GeneralUI.toggleButton, GUILayout.Width(80));
+                        GUILayout.TextField(FlightData.roll.ToString("N2"), GUILayout.Width(60));
+                        GUILayout.EndHorizontal();
+                    }
+                    GUILayout.Box("", GUILayout.Height(10));
                     drawPIDValues(SASList.Pitch, "Pitch");
                     drawPIDValues(SASList.Roll, "Roll");
                     drawPIDValues(SASList.Yaw, "Yaw");

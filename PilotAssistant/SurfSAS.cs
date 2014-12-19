@@ -188,30 +188,32 @@ namespace PilotAssistant
             {
                 FlightData.updateAttitude();
 
-                float pitchResponse = -1 * (float)SASControllers[(int)SASList.Pitch].Response(FlightData.pitch);
+                float vertResponse = 0;
+                if (bActive[(int)SASList.Pitch])
+                    vertResponse = -1 * (float)SASControllers[(int)SASList.Pitch].Response(FlightData.pitch);
 
-                float yawResponse = 0;
-                if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading >= -180 && SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading <= 180)
-                    yawResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading);
-                else if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading < -180)
-                    yawResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading - 360);
-                else if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading > 180)
-                    yawResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading + 360);
+                float hrztResponse = 0;
+                if (bActive[(int)SASList.Yaw])
+                {
+                    if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading >= -180 && SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading <= 180)
+                        hrztResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading);
+                    else if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading < -180)
+                        hrztResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading - 360);
+                    else if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading > 180)
+                        hrztResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading + 360);
+                }
 
                 double rollRad = Math.PI / 180 * FlightData.roll;
 
-                if (!bPause[(int)SASList.Pitch] && bActive[(int)SASList.Pitch])
+                if ((!bPause[(int)SASList.Pitch] && bActive[(int)SASList.Pitch]) || (!bPause[(int)SASList.Yaw] && bActive[(int)SASList.Yaw]))
                 {
-                    FlightData.thisVessel.ctrlState.pitch = (pitchResponse * (float)Math.Cos(rollRad) - yawResponse * (float)Math.Sin(rollRad)) / activationFadePitch;
+                    FlightData.thisVessel.ctrlState.pitch = (vertResponse * (float)Math.Cos(rollRad) - hrztResponse * (float)Math.Sin(rollRad)) / activationFadePitch;
                     if (activationFadePitch > 1)
                         activationFadePitch *= 0.98f; // ~100 physics frames
                     else
                         activationFadePitch = 1;
-                }
-
-                if (!bPause[(int)SASList.Yaw] && bActive[(int)SASList.Yaw])
-                {
-                    FlightData.thisVessel.ctrlState.yaw = (pitchResponse * (float)Math.Sin(rollRad) + yawResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
+                
+                    FlightData.thisVessel.ctrlState.yaw = (vertResponse * (float)Math.Sin(rollRad) + hrztResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
                     if (activationFadeYaw > 1)
                         activationFadeYaw *= 0.98f; // ~100 physics frames
                     else
