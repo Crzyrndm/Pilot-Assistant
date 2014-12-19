@@ -78,7 +78,7 @@ namespace PilotAssistant
             
             // register vessel
             FlightData.thisVessel = FlightGlobals.ActiveVessel;
-            FlightData.thisVessel.OnFlyByWire += new FlightInputCallback(vesselController);
+            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
 
             // Init UI
@@ -89,9 +89,9 @@ namespace PilotAssistant
 
         private void vesselSwitch(Vessel v)
         {
-            FlightData.thisVessel.OnFlyByWire -= new FlightInputCallback(vesselController);
+            FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(vesselController);
             FlightData.thisVessel = v;
-            FlightData.thisVessel.OnFlyByWire += new FlightInputCallback(vesselController);
+            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(vesselController);
         }
 
         public void OnDestroy()
