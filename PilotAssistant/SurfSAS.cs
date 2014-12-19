@@ -10,6 +10,7 @@ namespace PilotAssistant
     using UI;
     using Presets;
 
+    [Flags]
     internal enum SASList
     {
         Pitch,
@@ -75,7 +76,7 @@ namespace PilotAssistant
 
                 GeneralUI.InitColors();
 
-                RenderingManager.AddToPostDrawQueue(5, GUI);
+                RenderingManager.AddToPostDrawQueue(5, drawGUI);
 
                 FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
             }
@@ -89,7 +90,7 @@ namespace PilotAssistant
 
             SASControllers.Clear();
 
-            RenderingManager.RemoveFromPostDrawQueue(5, GUI);
+            RenderingManager.RemoveFromPostDrawQueue(5, drawGUI);
             FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(SurfaceSAS);
         }
 
@@ -149,7 +150,7 @@ namespace PilotAssistant
             pauseManager(); // manage activation of SAS axes depending on user input
         }
 
-        public void GUI()
+        public void drawGUI()
         {
             if (GeneralUI.UISkin == null)
                 GeneralUI.UISkin = UnityEngine.GUI.skin;
@@ -287,17 +288,23 @@ namespace PilotAssistant
                     activationFadeYaw = 10;
                 }
             }
-            // buggy-----------------------------------------------------------------------------------------------------------------------------------
-            if (GameSettings.SAS_HOLD.GetKeyDown() && !bStockSAS)
+            if (!bStockSAS)
             {
-                bPause[(int)SASList.Pitch] = bPause[(int)SASList.Roll] = bPause[(int)SASList.Yaw] = true;
-                setStockSAS(false);
-            }
-            else if (GameSettings.SAS_HOLD.GetKeyUp() && !bStockSAS)
-            {
-                bPause[(int)SASList.Pitch] = bPause[(int)SASList.Roll] = bPause[(int)SASList.Yaw] = false;
-                setStockSAS(false);
-                updateTarget();
+                if (GameSettings.SAS_HOLD.GetKeyDown())
+                {
+                    bPause[(int)SASList.Pitch] = !bPause[(int)SASList.Pitch];
+                    bPause[(int)SASList.Roll] = !bPause[(int)SASList.Roll];
+                    bPause[(int)SASList.Yaw] = !bPause[(int)SASList.Yaw];
+                    setStockSAS(false);
+                }
+                else if (GameSettings.SAS_HOLD.GetKeyUp())
+                {
+                    bPause[(int)SASList.Pitch] = !bPause[(int)SASList.Pitch];
+                    bPause[(int)SASList.Roll] = !bPause[(int)SASList.Roll];
+                    bPause[(int)SASList.Yaw] = !bPause[(int)SASList.Yaw];
+                    setStockSAS(false);
+                    updateTarget();
+                }
             }
         }
 

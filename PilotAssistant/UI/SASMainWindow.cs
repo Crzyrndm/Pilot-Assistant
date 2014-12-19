@@ -50,9 +50,10 @@ namespace PilotAssistant.UI
 
                 if (SurfSAS.bArmed)
                 {
-                    SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Functions.Clamp((float)GeneralUI.labPlusNumBox2("Pitch:", SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint.ToString("N2"), 80), -80, 80);
-                    SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint = (float)GeneralUI.labPlusNumBox2("Heading:", SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint.ToString("N2"), 80, 60, 360, 0);
-                    SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.labPlusNumBox2("Roll:", SurfSAS.SASControllers[(int)SASList.Roll].SetPoint.ToString("N2"), 80, 60, 180, -180);
+                    SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Functions.Clamp((float)GeneralUI.TogPlusNumBox("Pitch:", ref SurfSAS.bActive[(int)SASList.Pitch], SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint, 80), -80, 80);
+                    SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint = (float)GeneralUI.TogPlusNumBox("Heading:", ref SurfSAS.bActive[(int)SASList.Yaw], SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint, 80, 60, 360, 0);
+                    if (!SurfSAS.rollState)
+                        SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.TogPlusNumBox("Roll:", ref SurfSAS.bActive[(int)SASList.Roll], SurfSAS.SASControllers[(int)SASList.Roll].SetPoint, 80, 60, 180, -180);
                     drawPIDValues(SASList.Pitch, "Pitch");
                     drawPIDValues(SASList.Roll, "Roll");
                     drawPIDValues(SASList.Yaw, "Yaw");

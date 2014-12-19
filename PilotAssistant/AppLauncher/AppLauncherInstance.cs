@@ -8,7 +8,7 @@ namespace PilotAssistant.AppLauncher
     public class AppLauncherInstance : MonoBehaviour
     {
         private static ApplicationLauncherButton btnLauncher;
-        private static Rect window = new Rect(Screen.width - 180, 40, 30, 30);
+        private static Rect window;
 
         internal static bool bDisplayOptions = false;
         internal static bool bDisplayAssistant = false;
@@ -18,17 +18,19 @@ namespace PilotAssistant.AppLauncher
         void Awake()
         {
             GameEvents.onGUIApplicationLauncherReady.Add(this.OnAppLauncherReady);
+            window = new Rect(Screen.width - 180, 40, 30, 30);
         }
 
         void OnDestroy()
         {
-            GameEvents.onGUIApplicationLauncherReady.Remove(this.OnAppLauncherReady);
             if (btnLauncher != null)
                 ApplicationLauncher.Instance.RemoveModApplication(btnLauncher);
+            btnLauncher = null;
         }
 
         private void OnAppLauncherReady()
         {
+            GameEvents.onGUIApplicationLauncherReady.Remove(this.OnAppLauncherReady);
             btnLauncher = ApplicationLauncher.Instance.AddModApplication(OnToggleTrue, OnToggleFalse,
                                                                         null, null, null, null,
                                                                         ApplicationLauncher.AppScenes.ALWAYS,

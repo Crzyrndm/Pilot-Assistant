@@ -129,47 +129,45 @@ namespace PilotAssistant.Utility
         /// <summary>
         /// Draws a label and text box of specified widths with +/- 1 increment buttons. Returns the numeric value of the text box
         /// </summary>
-        /// <param name="labelText"></param>
-        /// <param name="boxText"></param>
-        /// <param name="labelWidth"></param>
+        /// <param name="toggleText"></param>
+        /// <param name="boxVal"></param>
+        /// <param name="toggleWidth"></param>
         /// <param name="boxWidth"></param>
         /// <param name="upper">upper value to which input will be clamped, attempting to increase will roll value down to lower</param>
         /// <param name="lower">lower value to which input will be clamped, attempting to decrease will roll value up to upper</param>
         /// <returns></returns>
-        internal static double labPlusNumBox2(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60, float upper = 360, float lower = -360)
+        internal static double TogPlusNumBox(string toggleText, ref bool toggleState, double boxVal, float toggleWidth = 100, float boxWidth = 60, float upper = 360, float lower = -360)
         {
-            double val;
             GUILayout.BeginHorizontal();
 
-            GUILayout.Label(labelText, numBoxLabelStyle, GUILayout.Width(labelWidth));
-            string text = GUILayout.TextField(boxText, numBoxTextStyle, GUILayout.Width(boxWidth));
+            // state is returned by reference
+            toggleState = GUILayout.Toggle(toggleState, toggleText, toggleButton, GUILayout.Width(toggleWidth));
+
+            string text = GUILayout.TextField(boxVal.ToString("N2"), numBoxTextStyle, GUILayout.Width(boxWidth));
             //
             try
             {
-                val = double.Parse(text);
+                boxVal = double.Parse(text);
             }
-            catch
-            {
-                val = double.Parse(boxText);
-            }
+            catch {}
             //
             GUILayout.BeginVertical();
             if (GUILayout.Button("+", btnStylePlus, GUILayout.Width(20), GUILayout.Height(13)))
             {
-                val += 1;
-                if (val >= upper)
-                    val = lower;
+                boxVal += 1;
+                if (boxVal >= upper)
+                    boxVal = lower;
             }
             if (GUILayout.Button("-", btnStyleMinus, GUILayout.Width(20), GUILayout.Height(13)))
             {
-                val -= 1;
-                if (val < lower)
-                    val = upper - 1;
+                boxVal -= 1;
+                if (boxVal < lower)
+                    boxVal = upper - 1;
             }
             GUILayout.EndVertical();
             //
             GUILayout.EndHorizontal();
-            return Functions.Clamp(val, lower, upper);
+            return Functions.Clamp(boxVal, lower, upper);
         }
 
         internal static Texture2D textureBlock(int w, int h, Color col)

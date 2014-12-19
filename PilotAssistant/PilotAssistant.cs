@@ -12,6 +12,7 @@ namespace PilotAssistant
     using PID;
     using UI;
 
+    [Flags]
     internal enum PIDList
     {
         HdgBank,
@@ -84,7 +85,7 @@ namespace PilotAssistant
             // Init UI
             GeneralUI.InitColors();
 
-            RenderingManager.AddToPostDrawQueue(5, GUI);
+            RenderingManager.AddToPostDrawQueue(5, drawGUI);
         }
 
         private void vesselSwitch(Vessel v)
@@ -96,7 +97,7 @@ namespace PilotAssistant
 
         public void OnDestroy()
         {
-            RenderingManager.RemoveFromPostDrawQueue(5, GUI);
+            RenderingManager.RemoveFromPostDrawQueue(5, drawGUI);
             GameEvents.onVesselChange.Remove(vesselSwitch);
             PresetManager.saveCFG();
             bHdgActive = false;
@@ -125,7 +126,7 @@ namespace PilotAssistant
         {
         }
 
-        public void GUI()
+        public void drawGUI()
         {
             if (!AppLauncher.AppLauncherInstance.bDisplayAssistant)
                 return;
