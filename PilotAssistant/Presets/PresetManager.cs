@@ -37,7 +37,7 @@ namespace PilotAssistant.Presets
             {
                 if (node == null)
                     continue;
-
+                
                 List<double[]> gains = new List<double[]>();
                 gains.Add(controllerGains(node.GetNode("HdgBankController")));
                 gains.Add(controllerGains(node.GetNode("HdgYawController")));
