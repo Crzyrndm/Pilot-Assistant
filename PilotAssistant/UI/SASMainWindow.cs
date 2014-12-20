@@ -87,9 +87,9 @@ namespace PilotAssistant.UI
             {
                 VesselAutopilot.VesselSAS sas = Utility.FlightData.thisVessel.Autopilot.SAS;
 
-                drawPIDValues(sas.pidLockedPitch, "Pitch", 0);
-                drawPIDValues(sas.pidLockedRoll, "Roll", 1);
-                drawPIDValues(sas.pidLockedYaw, "Yaw", 2);
+                drawPIDValues(sas.pidLockedPitch, "Pitch", SASList.Pitch);
+                drawPIDValues(sas.pidLockedRoll, "Roll", SASList.Roll);
+                drawPIDValues(sas.pidLockedYaw, "Yaw", SASList.Yaw);
             }
 
             GUILayout.EndVertical();
@@ -111,14 +111,14 @@ namespace PilotAssistant.UI
             }
         }
 
-        private static void drawPIDValues(PIDclamp controller, string inputName, int ID)
+        private static void drawPIDValues(PIDclamp controller, string inputName, SASList id)
         {
             if (GUILayout.Button(inputName, GeneralUI.buttonStyle, GUILayout.ExpandWidth(true)))
             {
-                stockPIDDisplay[ID] = !stockPIDDisplay[ID];
+                stockPIDDisplay[(int)id] = !stockPIDDisplay[(int)id];
             }
 
-            if (stockPIDDisplay[ID])
+            if (stockPIDDisplay[(int)id])
             {
                 controller.kp = GeneralUI.labPlusNumBox("Kp:", controller.kp.ToString("G3"), 45);
                 controller.ki = GeneralUI.labPlusNumBox("Ki:", controller.ki.ToString("G3"), 45);
