@@ -58,11 +58,11 @@ namespace PilotAssistant
                 
                 initialized = true;
                 isPaused[0] = isPaused[1] = isPaused[2] = false;
+
+                GeneralUI.InitColors();
+                RenderingManager.AddToPostDrawQueue(5, GUI);
+                FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(DoSSAS);
             }
-
-            GeneralUI.InitColors();
-
-            RenderingManager.AddToPostDrawQueue(5, GUI);
         }
 
         public void OnDestroy()
@@ -75,6 +75,7 @@ namespace PilotAssistant
                 controllers[i] = null;
 
             RenderingManager.RemoveFromPostDrawQueue(5, GUI);
+            FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(DoSSAS);
         }
 
         public void Update()
@@ -127,7 +128,7 @@ namespace PilotAssistant
             SASMainWindow.Draw();
         }
 
-        public void FixedUpdate()
+        public void DoSSAS(FlightCtrlState state)
         {
             if (IsSSASOperational())
             {
