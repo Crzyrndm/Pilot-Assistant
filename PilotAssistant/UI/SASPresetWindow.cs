@@ -81,7 +81,7 @@ namespace PilotAssistant.UI
             {
                 SASPreset p = PresetManager.GetActiveStockSASPreset();
                 GUILayout.Label(string.Format("Active Preset: {0}", p.GetName()), GeneralUI.boldLabelStyle);
-                if (p != PresetManager.GetDefaultSASTuning())
+                if (p != PresetManager.GetDefaultStockSASTuning())
                 {
                     if (GUILayout.Button("Update Preset", GeneralUI.buttonStyle))
                     {

@@ -184,15 +184,19 @@ namespace PilotAssistant
             GetController(PIDList.HdgBank).SetPoint = newHdg;
             GetController(PIDList.HdgYaw).SetPoint = newHdg;
             isHdgActive = true;
+            SurfSAS.SetActive(false);
+            isPaused = false;
         }
         
-        public static void SetVertActive()
+        public static void SetVertSpeedActive()
         {
             // Set vertical control on, use vertical speed value in GUI
             double newSpd = PAMainWindow.GetTargetVerticalSpeed();
             GetController(PIDList.VertSpeed).SetPoint = newSpd;
             isVertActive = true;
-            isWingLvlActive = false;
+            isAltitudeHoldActive = false;
+            SurfSAS.SetActive(false);
+            isPaused = false;
         }
         
         public static void SetAltitudeHoldActive()
@@ -202,6 +206,8 @@ namespace PilotAssistant
             GetController(PIDList.Altitude).SetPoint = newAlt;
             isVertActive = true;
             isAltitudeHoldActive = true;
+            SurfSAS.SetActive(false);
+            isPaused = false;
         }
         
         public static void ToggleHdg()
@@ -213,6 +219,8 @@ namespace PilotAssistant
                 GetController(PIDList.HdgBank).SetPoint = FlightData.heading;
                 GetController(PIDList.HdgYaw).SetPoint = FlightData.heading; // added
                 PAMainWindow.SetTargetHeading(FlightData.heading);
+                SurfSAS.SetActive(false);
+                isPaused = false;
                 //FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
                 //SurfSAS.ActivitySwitch(false);
             }
@@ -251,6 +259,8 @@ namespace PilotAssistant
                     GetController(PIDList.VertSpeed).SetPoint = FlightData.thisVessel.verticalSpeed;
                     PAMainWindow.SetTargetVerticalSpeed(FlightData.thisVessel.verticalSpeed);
                 }
+                SurfSAS.SetActive(false);
+                isPaused = false;
             }
             else
             {

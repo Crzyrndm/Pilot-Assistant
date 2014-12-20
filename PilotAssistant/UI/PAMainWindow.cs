@@ -130,8 +130,8 @@ namespace PilotAssistant.UI
             }
             if (showControlSurfaces)
             {
-                drawPIDValues(PIDList.Aileron, "Bank", "\u00B0", FlightData.roll, 3, "Deflection", "\u00B0", false, true, false);
-                drawPIDValues(PIDList.Rudder, "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0", false, true, false);
+                drawPIDValues(PIDList.Aileron, "Bank", "\u00B0", FlightData.roll, 3, "Deflect", "\u00B0", false, true, false);
+                drawPIDValues(PIDList.Rudder, "Yaw", "\u00B0", FlightData.yaw, 3, "Deflect", "\u00B0", false, true, false);
             }
             GUILayout.EndVertical();            
         }
@@ -200,7 +200,7 @@ namespace PilotAssistant.UI
                     double newVal;
                     if (double.TryParse(targetVert, out newVal))
                     {
-                        PilotAssistant.SetVertActive();
+                        PilotAssistant.SetVertSpeedActive();
                         //PilotAssistant.controllers[(int)PIDList.Altitude].SetPoint = newVal;
                         //PilotAssistant.bVertActive = PilotAssistant.bVertWasActive = true; // skip the toggle check so value isn't overwritten
                     }
@@ -215,14 +215,14 @@ namespace PilotAssistant.UI
                 drawPIDValues(PIDList.Altitude, "Altitude", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true, true, false);
             drawPIDValues(PIDList.VertSpeed, "Vertical Speed", "m/s", FlightData.thisVessel.verticalSpeed, 2, "AoA", "\u00B0", true);
             if (showControlSurfaces)
-                drawPIDValues(PIDList.Elevator, "Angle of Attack", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0", true, true, false);
+                drawPIDValues(PIDList.Elevator, "Angle of Attack", "\u00B0", FlightData.AoA, 3, "Deflect", "\u00B0", true, true, false);
             GUILayout.EndVertical();
         }
 
         private static void DrawWindow(int id)
         {
             GUILayout.BeginVertical(GUILayout.Height(0), GUILayout.Width(0), GUILayout.ExpandHeight(true));
-            if (PilotAssistant.IsPaused())
+            if (PilotAssistant.IsPaused() && (PilotAssistant.IsHdgActive() || PilotAssistant.IsVertActive()))
             {
                 GUILayout.Label("CONTROL PAUSED", GeneralUI.labelAlertStyle, GUILayout.ExpandWidth(true));
             }

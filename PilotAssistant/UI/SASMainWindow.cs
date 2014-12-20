@@ -13,7 +13,7 @@ namespace PilotAssistant.UI
 
         private static bool showPresets = false;
 
-        private static bool[] stockPIDDisplay = { true, true, true };
+        private static bool[] stockPIDDisplay = { false, false, false };
 
         public static void Draw()
         {
@@ -46,6 +46,10 @@ namespace PilotAssistant.UI
         {
             bool isActive = SurfSAS.IsSSASOperational() || SurfSAS.IsStockSASOperational();
             bool isSSASMode = SurfSAS.IsSSASMode();
+            GUILayout.BeginHorizontal();
+            showPresets = GUILayout.Toggle(showPresets, "Presets", GeneralUI.toggleButtonStyle);
+            GUILayout.EndHorizontal();
+            
             // SSAS/SAS
             GUILayout.BeginVertical(GeneralUI.guiSectionStyle, GUILayout.ExpandWidth(true));
             GUILayout.BeginHorizontal();
@@ -74,6 +78,10 @@ namespace PilotAssistant.UI
                 SurfSAS.GetController(SASList.Pitch).SetPoint = GeneralUI.labPlusNumBox2("Pitch:", pitch.ToString("N2"), 80, 60, 80, -80);
                 SurfSAS.GetController(SASList.Roll).SetPoint = GeneralUI.labPlusNumBox2("Roll:", roll.ToString("N2"), 80, 60, 180, -180);
                 SurfSAS.GetController(SASList.Yaw).SetPoint = GeneralUI.labPlusNumBox2("Heading:", hdg.ToString("N2"), 80, 60, 360, 0);
+
+                drawPIDValues(SASList.Pitch, "Pitch");
+                drawPIDValues(SASList.Roll, "Roll");
+                drawPIDValues(SASList.Yaw, "Yaw");
             }
             else
             {

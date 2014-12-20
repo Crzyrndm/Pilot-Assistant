@@ -84,22 +84,29 @@ namespace PilotAssistant
 
             if (ssasMode)
                 FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] = false;
-
             
             if (ssasMode && GameSettings.SAS_TOGGLE.GetKeyDown())
             {
                 isSSASActive = !isSSASActive;
+                // If the change made SSAS operational, update target
+                if (IsSSASOperational())
+                    updateTarget();
             }
 
             // Allow for temporarily enabling/disabling SAS
             if (GameSettings.SAS_HOLD.GetKeyDown())
             {
                 ssasHoldKey = true;
+                // If the change made SSAS operational, update target
+                if (IsSSASOperational())
+                    updateTarget();
             }
             if (GameSettings.SAS_HOLD.GetKeyUp())
             {
                 ssasHoldKey = false;
-                updateTarget(); // TODO: fix this
+                // If the change made SSAS operational, update target
+                if (IsSSASOperational())
+                    updateTarget();
             }
 
             if (ssasMode && FlightData.thisVessel.staticPressure == 0)
@@ -181,21 +188,34 @@ namespace PilotAssistant
         public static void ToggleSSASMode()
         {
             ssasMode = !ssasMode;
-            if (!ssasMode)
+            if (ssasMode)
+            {
+                // If SAS is active, make SSAS active
+                isSSASActive = FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS];
+                FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS]
+                    = false;
+                if (isSSASActive)
+                    updateTarget();
+            }
+            else
+            {
+                // If SSAS is active, make SAS active
+                FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS]
+                    = isSSASActive;
                 isSSASActive = false;
+            }
+                
         }
 
         public static void ToggleActive()
         {
             if (ssasMode)
             {
-                isSSASActive = !isSSASActive;
-                updateTarget();
+                SetActive(!isSSASActive);
             }
             else
             {
-                FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS]
-                    = !FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS];
+                SetActive(!FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS]);
             }
         }
 
