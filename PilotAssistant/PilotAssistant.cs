@@ -125,7 +125,7 @@ namespace PilotAssistant
 
             FlightData.updateAttitude();
 
-            if (isPaused)
+            if (isPaused || SASCheck())
                 return;
             
             // Heading Control
@@ -171,7 +171,7 @@ namespace PilotAssistant
             }
         }
 
-        public static bool IsPaused() { return isPaused; }
+        public static bool IsPaused() { return isPaused || SASCheck(); }
         public static bool IsHdgActive() { return isHdgActive; }
         public static bool IsWingLvlActive() { return isWingLvlActive; }
         public static bool IsVertActive() { return isVertActive; }
@@ -294,15 +294,27 @@ namespace PilotAssistant
             PresetManager.LoadPAPreset(controllers, p);
         }
 
-        private void keyPressChanges()
+        private static bool SASCheck()
         {
-            if (Input.GetKeyDown(KeyCode.Tab) && CameraManager.Instance.currentCameraMode != CameraManager.CameraMode.Map)
+            return SurfSAS.IsSSASOperational() || SurfSAS.IsStockSASOperational();
+        }
+
+        private static void keyPressChanges()
+        {
+            bool mod = GameSettings.MODIFIER_KEY.GetKey();
+
+            // Pause key
+            if (Input.GetKeyDown(KeyCode.Tab))
             {
-                //bHdgWasActive = false; // reset heading/vert lock on unpausing
-                //bVertWasActive = false;
-                isPaused = !isPaused;
-                if (!isPaused)
-                    FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                if (isPaused || SASCheck())
+                {
+                    isPaused = false;
+                    SurfSAS.SetActive(false);
+                }
+                else
+                {
+                    isPaused = true;
+                }
                 
                 if (isPaused)
                     Messaging.statusMessage(0);
@@ -310,62 +322,57 @@ namespace PilotAssistant
                     Messaging.statusMessage(1);
             }
 
-            if (GameSettings.SAS_TOGGLE.GetKeyDown())
+            // SAS activation change, only show messages when active and not paused.
+            if ((GameSettings.SAS_TOGGLE.GetKeyDown() || GameSettings.SAS_HOLD.GetKeyDown() || GameSettings.SAS_HOLD.GetKeyUp())
+                && !isPaused && (IsHdgActive() || IsVertActive()))
             {
-                if (!isPaused && !FlightData.thisVessel.ctrlState.killRot && !SurfSAS.ActivityCheck())
+                if (SASCheck())
                 {
-                    isPaused = true;
                     Messaging.statusMessage(2);
                 }
-                else if (isPaused && (FlightData.thisVessel.ctrlState.killRot || SurfSAS.ActivityCheck()))
+                else
                 {
-                    isPaused = false;
                     Messaging.statusMessage(3);
                 }
             }
 
-            if (GameSettings.MODIFIER_KEY.GetKey() && Input.GetKeyDown(KeyCode.X))
+            if (mod && Input.GetKeyDown(KeyCode.X))
             {
                 GetController(PIDList.VertSpeed).SetPoint = 0;
                 isAltitudeHoldActive = false;
-                //bWasAltitudeHold = false;
                 isWingLvlActive = true;
                 PAMainWindow.SetTargetVerticalSpeed(0.0);
                 Messaging.statusMessage(4);
             }
 
-            if (!isPaused)
+            // Only update target when not paused, MAYBE: Also use !SASCheck()?
+            if (!isPaused && !SASCheck())
             {
                 double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1;
                 bool bFineControl = FlightInputHandler.fetch.precisionMode;
                 if (GameSettings.YAW_LEFT.GetKey() && isHdgActive)
                 {
-                    //double hdg = double.Parse(PAMainWindow.targetHeading);
                     double hdg = PAMainWindow.GetTargetHeading();
                     hdg -= bFineControl ? 0.04 / scale : 0.4 * scale;
                     if (hdg < 0)
                         hdg += 360;
                     GetController(PIDList.HdgBank).SetPoint = hdg;
                     GetController(PIDList.HdgYaw).SetPoint = hdg;
-                    //PAMainWindow.targetHeading = hdg.ToString();
                     PAMainWindow.SetTargetHeading(hdg);
                 }
                 else if (GameSettings.YAW_RIGHT.GetKey() && isHdgActive)
                 {
-                    //double hdg = double.Parse(PAMainWindow.targetHeading);
                     double hdg = PAMainWindow.GetTargetHeading();
                     hdg += bFineControl ? 0.04 / scale : 0.4 * scale;
                     if (hdg > 360)
                         hdg -= 360;
                     GetController(PIDList.HdgBank).SetPoint = hdg;
                     GetController(PIDList.HdgYaw).SetPoint = hdg;
-                    //PAMainWindow.targetHeading = hdg.ToString();
                     PAMainWindow.SetTargetHeading(hdg);
                 }
 
                 if (GameSettings.PITCH_DOWN.GetKey() && isVertActive)
                 {
-                    //double vert = double.Parse(PAMainWindow.targetVert);
                     double vert = PAMainWindow.GetTargetVerticalSpeed();
                     if (isAltitudeHoldActive)
                     {
@@ -379,12 +386,10 @@ namespace PilotAssistant
                         vert -= bFineControl ? 0.04 / scale : 0.4 * scale;
                         GetController(PIDList.VertSpeed).SetPoint = vert;
                     }
-                    //PAMainWindow.targetVert = vert.ToString();
                     PAMainWindow.SetTargetVerticalSpeed(vert);
                 }
                 if (GameSettings.PITCH_UP.GetKey() && isVertActive)
                 {
-                    //double vert = double.Parse(PAMainWindow.targetVert);
                     double vert = PAMainWindow.GetTargetVerticalSpeed();
                     if (isAltitudeHoldActive)
                     {
@@ -396,7 +401,6 @@ namespace PilotAssistant
                         vert += bFineControl ? 0.04 / scale : 0.4 * scale;
                         GetController(PIDList.VertSpeed).SetPoint = vert;
                     }
-                    //PAMainWindow.targetVert = vert.ToString();
                     PAMainWindow.SetTargetVerticalSpeed(vert);
                 }
             }

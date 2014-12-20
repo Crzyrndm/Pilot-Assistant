@@ -24,17 +24,16 @@ namespace PilotAssistant.UI
             SASPresetWindow.windowRect.x = windowRect.x + windowRect.width;
             SASPresetWindow.windowRect.y = windowRect.y;
 
-            if (SurfSAS.IsArmed())
+            if (SurfSAS.IsSSASMode())
             {
-                if (SurfSAS.ActivityCheck())
+                if (SurfSAS.IsSSASOperational())
                     GUI.backgroundColor = GeneralUI.ActiveBackground;
                 else
                     GUI.backgroundColor = GeneralUI.InActiveBackground;
 
                 if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
                 {
-                    SurfSAS.ActivitySwitch(!SurfSAS.ActivityCheck());
-                    SurfSAS.updateTarget();
+                    SurfSAS.ToggleActive();
                 }
                 GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             }
@@ -45,76 +44,46 @@ namespace PilotAssistant.UI
 
         private static void DrawSASWindow(int id)
         {
-            bool useStockSAS = SurfSAS.StockSASEnabled();
-            GUILayout.BeginVertical(GUILayout.Height(0), GUILayout.Width(0), GUILayout.ExpandHeight(true));
-            showPresets = GUILayout.Toggle(showPresets, "Presets", GeneralUI.toggleButtonStyle);
-            bool tmpToggle = GUILayout.Toggle(useStockSAS, "Use Stock SAS", GUILayout.MinWidth(200));
-            if (tmpToggle != useStockSAS)
+            bool isActive = SurfSAS.IsSSASOperational() || SurfSAS.IsStockSASOperational();
+            bool isSSASMode = SurfSAS.IsSSASMode();
+            // SSAS/SAS
+            GUILayout.BeginVertical(GeneralUI.guiSectionStyle, GUILayout.ExpandWidth(true));
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Toggle(isActive, isActive ? "On" : "Off", GeneralUI.toggleButtonStyle, GUILayout.ExpandWidth(false)) != isActive)
             {
-                SurfSAS.ToggleStockSAS();
+                SurfSAS.ToggleActive();
             }
-            /*
-            if (SurfSAS.bStockSAS != SurfSAS.bWasStockSAS)
-            {
-                SurfSAS.bWasStockSAS = SurfSAS.bStockSAS;
-                if (SurfSAS.bStockSAS)
-                {
-                    if (PresetManager.activeStockSASPreset == null)
-                    {
-                        PresetManager.loadStockSASPreset(PresetManager.defaultStockSASTuning);
-                        PresetManager.activeStockSASPreset = PresetManager.defaultStockSASTuning;
-                    }
-                    else
-                        PresetManager.loadStockSASPreset(PresetManager.activeStockSASPreset);
-                }
-                else
-                {
-                    if (PresetManager.activeSASPreset == null)
-                    {
-                        PresetManager.loadSASPreset(PresetManager.defaultSASTuning);
-                        PresetManager.activeSASPreset = PresetManager.defaultSASTuning;
-                    }
-                    else
-                        PresetManager.loadSASPreset(PresetManager.activeSASPreset);
-                }
-            }*/
+            GUILayout.Label("SAS", GeneralUI.boldLabelStyle, GUILayout.ExpandWidth(true));
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Mode:");
+            bool tmpToggle1 = GUILayout.Toggle(!isSSASMode, "Stock SAS", GeneralUI.toggleButtonStyle);
+            bool tmpToggle2 = GUILayout.Toggle(isSSASMode, "SSAS", GeneralUI.toggleButtonStyle);
+            // tmpToggle1 and tmpToggle2 are true when the user clicks the non-active mode, i.e. the mode changes. 
+            if (tmpToggle1 && tmpToggle2)
+                SurfSAS.ToggleSSASMode();
+            
+            GUILayout.EndHorizontal();
 
-            if (!useStockSAS)
+            if (isSSASMode)
             {
-                bool tmpToggle1 = GUILayout.Toggle(SurfSAS.IsArmed(), SurfSAS.IsArmed() ? "Disarm SAS" : "Arm SAS", GeneralUI.toggleButtonStyle);
-                if (tmpToggle1 != SurfSAS.IsArmed())
-                {
-                    SurfSAS.ToggleArmed();
-                    ScreenMessages.PostScreenMessage("Surface SAS " + (SurfSAS.IsArmed() ? "Armed" : "Disarmed"));
-                }
-
-                if (SurfSAS.IsArmed())
-                {
-                    double pitch = SurfSAS.GetController(SASList.Pitch).SetPoint;
-                    double roll = SurfSAS.GetController(SASList.Roll).SetPoint;
-                    double hdg = SurfSAS.GetController(SASList.Yaw).SetPoint;
-        
-                    SurfSAS.GetController(SASList.Pitch).SetPoint = GeneralUI.labPlusNumBox2("Pitch:", pitch.ToString("N2"), 80, 60, 80, -80);
-                    SurfSAS.GetController(SASList.Roll).SetPoint = GeneralUI.labPlusNumBox2("Roll:", roll.ToString("N2"), 80, 60, 180, -180);
-                    SurfSAS.GetController(SASList.Yaw).SetPoint = GeneralUI.labPlusNumBox2("Heading:", hdg.ToString("N2"), 80, 60, 360, 0);
-                    
-                    //SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Utility.Functions.Clamp((float)GeneralUI.labPlusNumBox2("Pitch:", SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint.ToString("N2"), 80), -80, 80);
-                    //SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint = (float)GeneralUI.labPlusNumBox2("Heading:", SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint.ToString("N2"), 80, 60, 360, 0);
-                    //SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.labPlusNumBox2("Roll:", SurfSAS.SASControllers[(int)SASList.Roll].SetPoint.ToString("N2"), 80, 60, 180, -180);
-                    drawPIDValues(SASList.Pitch, "Pitch");
-                    drawPIDValues(SASList.Roll, "Roll");
-                    drawPIDValues(SASList.Yaw, "Yaw");
-                }
+                double pitch = SurfSAS.GetController(SASList.Pitch).SetPoint;
+                double roll = SurfSAS.GetController(SASList.Roll).SetPoint;
+                double hdg = SurfSAS.GetController(SASList.Yaw).SetPoint;
+                
+                SurfSAS.GetController(SASList.Pitch).SetPoint = GeneralUI.labPlusNumBox2("Pitch:", pitch.ToString("N2"), 80, 60, 80, -80);
+                SurfSAS.GetController(SASList.Roll).SetPoint = GeneralUI.labPlusNumBox2("Roll:", roll.ToString("N2"), 80, 60, 180, -180);
+                SurfSAS.GetController(SASList.Yaw).SetPoint = GeneralUI.labPlusNumBox2("Heading:", hdg.ToString("N2"), 80, 60, 360, 0);
             }
             else
             {
-                VesselSAS sas = Utility.FlightData.thisVessel.VesselSAS;
+                VesselAutopilot.VesselSAS sas = Utility.FlightData.thisVessel.Autopilot.SAS;
 
                 drawPIDValues(sas.pidLockedPitch, "Pitch", 0);
                 drawPIDValues(sas.pidLockedRoll, "Roll", 1);
                 drawPIDValues(sas.pidLockedYaw, "Yaw", 2);
             }
- 
+
             GUILayout.EndVertical();
             GUI.DragWindow();
         }

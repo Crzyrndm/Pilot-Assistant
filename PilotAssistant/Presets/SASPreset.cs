@@ -29,7 +29,7 @@ namespace PilotAssistant.Presets
             }
         }
 
-        public SASPreset(VesselSAS sas, string name) // used for adding a new stock preset
+        public SASPreset(VesselAutopilot.VesselSAS sas, string name) // used for adding a new stock preset
         {
             this.name = name;
             useStockSAS = true;
@@ -99,20 +99,20 @@ namespace PilotAssistant.Presets
 
         public void LoadStockPreset()
         {
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.kp = PIDGains[(int)SASList.Pitch][0];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.ki = PIDGains[(int)SASList.Pitch][1];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.kd = PIDGains[(int)SASList.Pitch][2];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedPitch.clamp = PIDGains[(int)SASList.Pitch][3];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kp = PIDGains[(int)SASList.Pitch][0];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.ki = PIDGains[(int)SASList.Pitch][1];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kd = PIDGains[(int)SASList.Pitch][2];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.clamp = PIDGains[(int)SASList.Pitch][3];
 
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.kp = PIDGains[(int)SASList.Roll][0];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.ki = PIDGains[(int)SASList.Roll][1];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.kd = PIDGains[(int)SASList.Roll][2];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedRoll.clamp = PIDGains[(int)SASList.Roll][3];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kp = PIDGains[(int)SASList.Roll][0];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.ki = PIDGains[(int)SASList.Roll][1];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kd = PIDGains[(int)SASList.Roll][2];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.clamp = PIDGains[(int)SASList.Roll][3];
 
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.kp = PIDGains[(int)SASList.Yaw][0];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.ki = PIDGains[(int)SASList.Yaw][1];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.kd = PIDGains[(int)SASList.Yaw][2];
-            Utility.FlightData.thisVessel.VesselSAS.pidLockedYaw.clamp = PIDGains[(int)SASList.Yaw][3];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kp = PIDGains[(int)SASList.Yaw][0];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.ki = PIDGains[(int)SASList.Yaw][1];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kd = PIDGains[(int)SASList.Yaw][2];
+            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.clamp = PIDGains[(int)SASList.Yaw][3];
         }
 
         public void Update(PID.PID_Controller[] controllers)
@@ -131,7 +131,7 @@ namespace PilotAssistant.Presets
             PIDGains = newPIDGains;
         }
 
-        public void UpdateStock(VesselSAS sas)
+        public void UpdateStock(VesselAutopilot.VesselSAS sas)
         {
             List<double[]> newPIDGains = new List<double[]>();
             double[] pitchGains = { sas.pidLockedPitch.kp, sas.pidLockedPitch.ki, sas.pidLockedPitch.kd, sas.pidLockedPitch.clamp };

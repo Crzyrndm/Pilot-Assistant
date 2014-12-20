@@ -71,7 +71,7 @@ namespace PilotAssistant.Presets
 
         public static void InitDefaultStockSASTuning()
         {
-            defaultStockSASTuning = new SASPreset(Utility.FlightData.thisVessel.VesselSAS, "Stock");
+            defaultStockSASTuning = new SASPreset(Utility.FlightData.thisVessel.Autopilot.SAS, "Stock");
             if (activeStockSASPreset == null)
                 activeStockSASPreset = defaultStockSASTuning;
             else if (activeStockSASPreset != defaultStockSASTuning)
@@ -145,7 +145,7 @@ namespace PilotAssistant.Presets
                     return;
             }
 
-            SASPreset p2 = new SASPreset(Utility.FlightData.thisVessel.VesselSAS, name);
+            SASPreset p2 = new SASPreset(Utility.FlightData.thisVessel.Autopilot.SAS, name);
             SASPresetList.Add(p2);
             LoadStockSASPreset(p2);
             SavePresetsToFile();

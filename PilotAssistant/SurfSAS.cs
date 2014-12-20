@@ -23,11 +23,14 @@ namespace PilotAssistant
         private static PID_Controller[] controllers = new PID_Controller[3]; 
 
         private static bool initialized = false;
-        private static bool isArmed = false;
-        private static bool isActive = false;
-        private static bool[] isPaused = new bool[3]; // pause on a per axis basis
-        private static bool inAtmosphere = false;
-        private static bool stockSASEnabled = false;
+        // Current mode
+        private static bool ssasMode = false;
+        // Whether SSAS is active
+        private static bool isSSASActive = false;
+        // Used to monitor the use of SAS_HOLD key
+        private static bool ssasHoldKey = false;
+        // Used to monitor user input, and pause SSAS on a per axis basis
+        private static bool[] isPaused = new bool[3]; 
 
         private static float activationFadeRoll = 1;
         private static float activationFadePitch = 1;
@@ -40,7 +43,7 @@ namespace PilotAssistant
                 FlightData.thisVessel = FlightGlobals.ActiveVessel;
 
             // grab stock PID values
-            if (FlightData.thisVessel.VesselSAS.pidLockedPitch != null)
+            if (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch != null)
             {
                 PresetManager.InitDefaultStockSASTuning();
 
@@ -65,10 +68,9 @@ namespace PilotAssistant
         public void OnDestroy()
         {
             initialized = false;
-            isArmed = false;
-            ActivitySwitch(false);
+            ssasMode = false;
+            isSSASActive = false;
 
-            // controllers.Clear();
             for (int i = 0; i < controllers.Length; i++)
                 controllers[i] = null;
 
@@ -80,37 +82,32 @@ namespace PilotAssistant
             if (!initialized)
                 Initialize();
 
-            // SAS activated by user
-            if (isArmed && !ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown())
+            if (ssasMode)
+                FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] = false;
+
+            
+            if (ssasMode && GameSettings.SAS_TOGGLE.GetKeyDown())
             {
-                ActivitySwitch(true);
-                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                updateTarget();
-            }
-            else if (ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown())
-            {
-                ActivitySwitch(false);
-                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
+                isSSASActive = !isSSASActive;
             }
 
-            // Atmospheric mode tracks horizon, don't want in space
-            if (FlightData.thisVessel.staticPressure > 0 && !inAtmosphere)
+            // Allow for temporarily enabling/disabling SAS
+            if (GameSettings.SAS_HOLD.GetKeyDown())
             {
-                inAtmosphere = true;
-                if (FlightData.thisVessel.ctrlState.killRot && isArmed)
-                {
-                    ActivitySwitch(true);
-                    FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                }
+                ssasHoldKey = true;
             }
-            else if (FlightData.thisVessel.staticPressure == 0 && inAtmosphere)
+            if (GameSettings.SAS_HOLD.GetKeyUp())
             {
-                inAtmosphere = false;
-                if (ActivityCheck())
-                {
-                    ActivitySwitch(false);
-                    FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, true);
-                }
+                ssasHoldKey = false;
+                updateTarget(); // TODO: fix this
+            }
+
+            if (ssasMode && FlightData.thisVessel.staticPressure == 0)
+            {
+                ssasMode = false;
+                // Try to seamlessly switch to stock SAS
+                FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] = isSSASActive;
+                isSSASActive = false;
             }
 
             PauseManager(); // manage activation of SAS axes depending on user input
@@ -125,7 +122,7 @@ namespace PilotAssistant
 
         public void FixedUpdate()
         {
-            if (isArmed)
+            if (IsSSASOperational())
             {
                 FlightData.updateAttitude();
 
@@ -141,7 +138,7 @@ namespace PilotAssistant
 
                 double rollRad = Math.PI / 180 * FlightData.roll;
 
-                if (!IsPaused(SASList.Pitch) && ActivityCheck()) // && IsActive(SASList.Pitch))
+                if (!IsPaused(SASList.Pitch)) 
                 {
                     FlightData.thisVessel.ctrlState.pitch = (pitchResponse * (float)Math.Cos(rollRad) - yawResponse * (float)Math.Sin(rollRad)) / activationFadePitch;
                     if (activationFadePitch > 1)
@@ -150,7 +147,7 @@ namespace PilotAssistant
                         activationFadePitch = 1;
                 }
 
-                if (!IsPaused(SASList.Yaw) && ActivityCheck()) // && IsActive(SASList.Yaw))
+                if (!IsPaused(SASList.Yaw)) 
                 {
                     FlightData.thisVessel.ctrlState.yaw = (pitchResponse * (float)Math.Sin(rollRad) + yawResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
                     if (activationFadeYaw > 1)
@@ -159,7 +156,7 @@ namespace PilotAssistant
                         activationFadeYaw = 1;
                 }
 
-                if (!IsPaused(SASList.Roll) && ActivityCheck()) // && IsActive(SASList.Roll))
+                if (!IsPaused(SASList.Roll)) 
                 {
                     if (GetController(SASList.Roll).SetPoint - FlightData.roll >= -180 && GetController(SASList.Roll).SetPoint - FlightData.roll <= 180)
                         FlightData.thisVessel.ctrlState.roll = (float)GetController(SASList.Roll).Response(FlightData.roll) / activationFadeRoll;
@@ -181,44 +178,46 @@ namespace PilotAssistant
             return controllers[(int)id];
         }
 
-        public static void ToggleStockSAS()
+        public static void ToggleSSASMode()
         {
-            stockSASEnabled = !stockSASEnabled;
-            // This was binned in 5cd3773
-            /*if (stockSASEnabled)
+            ssasMode = !ssasMode;
+            if (!ssasMode)
+                isSSASActive = false;
+        }
+
+        public static void ToggleActive()
+        {
+            if (ssasMode)
             {
-                if (PresetManager.activeStockSASPreset == null)
-                {
-                    PresetManager.loadStockSASPreset(PresetManager.defaultStockSASTuning);
-                    PresetManager.activeStockSASPreset = PresetManager.defaultStockSASTuning;
-                }
-                else
-                    PresetManager.loadStockSASPreset(PresetManager.activeStockSASPreset);
+                isSSASActive = !isSSASActive;
+                updateTarget();
             }
             else
             {
-                if (PresetManager.activeSASPreset == null)
-                {
-                    PresetManager.loadSASPreset(PresetManager.defaultSASTuning);
-                    PresetManager.activeSASPreset = PresetManager.defaultSASTuning;
-                }
-                else
-                    PresetManager.loadSASPreset(PresetManager.activeSASPreset);
-            }*/
+                FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS]
+                    = !FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS];
+            }
         }
 
-        public static void ToggleArmed()
+        public static void SetActive(bool active)
         {
-            isArmed = !isArmed;
-            if (!isArmed)
-                SurfSAS.ActivitySwitch(false);
+            if (ssasMode)
+            {
+                // If only just switched on, update target
+                if (!isSSASActive && active)
+                    updateTarget();
+                isSSASActive = active;
+            }
+            else
+            {
+                FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS]
+                    = active;
+            }
         }
 
-        public static bool StockSASEnabled() { return stockSASEnabled; }
+        public static bool IsSSASMode() { return ssasMode; }
 
-        public static bool IsArmed() { return isArmed; }
-
-        public static bool IsPaused(SASList id)
+        private static bool IsPaused(SASList id)
         {
             return isPaused[(int)id];
         }
@@ -250,7 +249,7 @@ namespace PilotAssistant
         {
             SASPreset p = PresetManager.GetActiveStockSASPreset();
             if (p != null)
-                p.UpdateStock(Utility.FlightData.thisVessel.VesselSAS);
+                p.UpdateStock(Utility.FlightData.thisVessel.Autopilot.SAS);
             PresetManager.SavePresetsToFile();
         }
         
@@ -286,7 +285,7 @@ namespace PilotAssistant
             {
                 SetPaused(SASList.Pitch, false);
                 SetPaused(SASList.Yaw, false);
-                if (ActivityCheck()) // IsActive(SASList.Pitch))
+                if (IsSSASOperational())
                 {
                     GetController(SASList.Pitch).SetPoint = FlightData.pitch;
                     GetController(SASList.Yaw).SetPoint = FlightData.heading;
@@ -301,33 +300,23 @@ namespace PilotAssistant
             if (GameSettings.ROLL_LEFT.GetKeyUp() || GameSettings.ROLL_RIGHT.GetKeyUp())
             {
                 SetPaused(SASList.Roll, false);
-                if (ActivityCheck()) // IsActive(SASList.Roll))
+                if (IsSSASOperational())
                     GetController(SASList.Roll).SetPoint = FlightData.roll;
 
                 activationFadeRoll = 10;
             }
-
-            if (GameSettings.SAS_HOLD.GetKeyDown())
-            {
-                ActivitySwitch(true);
-                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-            }
-            if (GameSettings.SAS_HOLD.GetKeyUp())
-            {
-                ActivitySwitch(false);
-                updateTarget();
-                FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-            }
         }
 
-        public static void ActivitySwitch(bool enable)
+
+        public static bool IsSSASOperational()
         {
-            isActive = enable;
+            // ssasHoldKey toggles the main state, i.e. active --> off, off --> active
+            return (isSSASActive != ssasHoldKey) && ssasMode;
         }
 
-        public static bool ActivityCheck()
+        public static bool IsStockSASOperational()
         {
-            return isActive;
+            return FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS];
         }
     }
 }

@@ -19,10 +19,10 @@ namespace PilotAssistant.UI
 
         private static void drawPresetWindow(int id)
         {
-            if (SurfSAS.StockSASEnabled())
-                DrawStockPreset();
-            else
+            if (SurfSAS.IsSSASMode())
                 DrawSurfPreset();
+            else
+                DrawStockPreset();
         }
 
         private static void DrawSurfPreset()
