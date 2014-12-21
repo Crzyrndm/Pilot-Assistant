@@ -12,7 +12,7 @@ namespace PilotAssistant.Utility
         internal static Color HeaderButtonBackground;
 
         internal static GUIStyle labelAlertStyle;
-        internal static GUIStyle textStyle;
+        internal static GUIStyle numBoxTextStyle;
 
         // New
         internal static bool stylesInitialized;
@@ -47,9 +47,9 @@ namespace PilotAssistant.Utility
             labelAlertStyle.fontStyle = FontStyle.Bold;
 
             // style for text box to align with increment buttons better
-            textStyle = new GUIStyle(GUI.skin.textField);
-            textStyle.alignment = TextAnchor.MiddleLeft;
-            textStyle.margin = new RectOffset(4, 0, 5, 3);
+            numBoxTextStyle = new GUIStyle(GUI.skin.textField);
+            numBoxTextStyle.alignment = TextAnchor.MiddleLeft;
+            numBoxTextStyle.margin = new RectOffset(4, 0, 5, 3);
 
             guiSectionStyle = new GUIStyle(GUI.skin.box);
             guiSectionStyle.normal.textColor
@@ -118,7 +118,7 @@ namespace PilotAssistant.Utility
             GUILayout.Label(labelText, labelStyle, GUILayout.Width(labelWidth));
             val = double.Parse(boxText);
             boxText = val.ToString(",0.0#####");
-            string text = GUILayout.TextField(boxText, textStyle, GUILayout.Width(boxWidth));
+            string text = GUILayout.TextField(boxText, numBoxTextStyle, GUILayout.Width(boxWidth));
             //
             try
             {
@@ -150,47 +150,47 @@ namespace PilotAssistant.Utility
         /// <summary>
         /// Draws a label and text box of specified widths with +/- 1 increment buttons. Returns the numeric value of the text box
         /// </summary>
-        /// <param name="labelText"></param>
-        /// <param name="boxText"></param>
-        /// <param name="labelWidth"></param>
+        /// <param name="toggleText"></param>
+        /// <param name="boxVal"></param>
+        /// <param name="toggleWidth"></param>
         /// <param name="boxWidth"></param>
         /// <param name="upper">upper value to which input will be clamped, attempting to increase will roll value down to lower</param>
         /// <param name="lower">lower value to which input will be clamped, attempting to decrease will roll value up to upper</param>
         /// <returns></returns>
-        internal static double labPlusNumBox2(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60, float upper = 360, float lower = -360)
+        internal static double TogPlusNumBox(
+            string toggleText,
+            ref bool toggleState,
+            double boxVal,
+            float toggleWidth = 100,
+            float boxWidth = 60,
+            float upper = 360,
+            float lower = -360)
         {
-            double val;
             GUILayout.BeginHorizontal();
-
-            GUILayout.Label(labelText, labelStyle, GUILayout.Width(labelWidth));
-            string text = GUILayout.TextField(boxText, textStyle, GUILayout.Width(boxWidth));
-            //
+            // state is returned by reference
+            toggleState = GUILayout.Toggle(toggleState, toggleText, toggleButtonStyle, GUILayout.Width(toggleWidth));
+            string text = GUILayout.TextField(boxVal.ToString("N2"), numBoxTextStyle, GUILayout.Width(boxWidth));
             try
             {
-                val = double.Parse(text);
+                boxVal = double.Parse(text);
             }
-            catch
-            {
-                val = double.Parse(boxText);
-            }
-            //
+            catch {}
             GUILayout.BeginVertical();
             if (GUILayout.Button("+", spinnerPlusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
             {
-                val += 1;
-                if (val >= upper)
-                    val = lower;
+                boxVal += 1;
+                if (boxVal >= upper)
+                    boxVal = lower;
             }
             if (GUILayout.Button("-", spinnerMinusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
             {
-                val -= 1;
-                if (val < lower)
-                    val = upper - 1;
+                boxVal -= 1;
+                if (boxVal < lower)
+                    boxVal = upper - 1;
             }
             GUILayout.EndVertical();
-            //
             GUILayout.EndHorizontal();
-            return Functions.Clamp(val, lower, upper);
+            return Functions.Clamp(boxVal, lower, upper);
         }
 
         // Unused?

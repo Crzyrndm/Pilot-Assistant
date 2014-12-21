@@ -27,10 +27,12 @@ namespace PilotAssistant
         private static bool ssasMode = false;
         // Whether SSAS is active
         private static bool isSSASActive = false;
+        // Used to selectively enable SSAS on a per axis basis
+        private static bool[] isSSASAxisEnabled = { true, true, true };
         // Used to monitor the use of SAS_HOLD key
         private static bool ssasHoldKey = false;
         // Used to monitor user input, and pause SSAS on a per axis basis
-        private static bool[] isPaused = new bool[3]; 
+        private static bool[] isPaused = { false, false, false };
 
         private static float activationFadeRoll = 1;
         private static float activationFadePitch = 1;
@@ -234,6 +236,16 @@ namespace PilotAssistant
                 FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS]
                     = active;
             }
+        }
+
+        public static bool IsSSASAxisEnabled(SASList id)
+        {
+            return isSSASAxisEnabled[(int)id];
+        }
+
+        public static void SetSSASAxisEnabled(SASList id, bool enabled)
+        {
+            isSSASAxisEnabled[(int)id] = enabled;
         }
 
         public static bool IsSSASMode() { return ssasMode; }

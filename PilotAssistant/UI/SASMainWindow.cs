@@ -74,10 +74,16 @@ namespace PilotAssistant.UI
                 double pitch = SurfSAS.GetController(SASList.Pitch).SetPoint;
                 double roll = SurfSAS.GetController(SASList.Roll).SetPoint;
                 double hdg = SurfSAS.GetController(SASList.Yaw).SetPoint;
-                
-                SurfSAS.GetController(SASList.Pitch).SetPoint = GeneralUI.labPlusNumBox2("Pitch:", pitch.ToString("N2"), 80, 60, 80, -80);
-                SurfSAS.GetController(SASList.Roll).SetPoint = GeneralUI.labPlusNumBox2("Roll:", roll.ToString("N2"), 80, 60, 180, -180);
-                SurfSAS.GetController(SASList.Yaw).SetPoint = GeneralUI.labPlusNumBox2("Heading:", hdg.ToString("N2"), 80, 60, 360, 0);
+
+                bool tmp1 = SurfSAS.IsSSASAxisEnabled(SASList.Pitch);
+                bool tmp2 = SurfSAS.IsSSASAxisEnabled(SASList.Roll);
+                bool tmp3 = SurfSAS.IsSSASAxisEnabled(SASList.Yaw);
+                SurfSAS.GetController(SASList.Pitch).SetPoint = GeneralUI.TogPlusNumBox("Pitch:", ref tmp1, pitch, 80, 60, 80, -80);
+                SurfSAS.GetController(SASList.Roll).SetPoint = GeneralUI.TogPlusNumBox("Roll:", ref tmp2, roll, 80, 60, 180, -180);
+                SurfSAS.GetController(SASList.Yaw).SetPoint = GeneralUI.TogPlusNumBox("Heading:", ref tmp3, hdg, 80, 60, 360, 0);
+                SurfSAS.SetSSASAxisEnabled(SASList.Pitch, tmp1);
+                SurfSAS.SetSSASAxisEnabled(SASList.Roll, tmp2);
+                SurfSAS.SetSSASAxisEnabled(SASList.Yaw, tmp3);
 
                 drawPIDValues(SASList.Pitch, "Pitch");
                 drawPIDValues(SASList.Roll, "Roll");
