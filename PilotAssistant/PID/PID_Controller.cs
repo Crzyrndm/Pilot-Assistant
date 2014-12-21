@@ -33,6 +33,7 @@ namespace PilotAssistant.PID
         private double scale = 1;
 
         internal bool bShow = false;
+        internal bool skipDerivative = false;
 
         public PID_Controller(double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1)
         {
@@ -51,14 +52,22 @@ namespace PilotAssistant.PID
             input = Clamp(input, inMin, inMax);
             dt = TimeWarp.fixedDeltaTime;
             error = input - setpoint;
-            return Clamp((proportionalError(input) + integralError(input) + derivativeError(input)), outMin, outMax);
+            double response = proportionalError(error) + integralError(error);
+            if (!skipDerivative)
+                response += derivativeError(input);
+            else
+            {
+                skipDerivative = false;
+                previous = input;
+            }
+            return Clamp(response, outMin, outMax);
         }
 
         private double proportionalError(double input)
         {
             if (k_proportional == 0)
                 return 0;
-            return error * k_proportional / scale;
+            return input * k_proportional / scale;
         }
 
         private double integralError(double input)
@@ -69,7 +78,7 @@ namespace PilotAssistant.PID
                 return sum;
             }
 
-            sum += error * dt * k_integral / scale;
+            sum += input * dt * k_integral / scale;
             sum = Clamp(sum, integralClampLower, integralClampUpper); // AIW
 
             return sum;
