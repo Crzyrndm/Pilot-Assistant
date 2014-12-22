@@ -33,7 +33,7 @@ namespace PilotAssistant.UI
 
                 if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
                 {
-                    SurfSAS.ToggleActive();
+                    SurfSAS.ToggleOperational();
                 }
                 GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             }
@@ -44,7 +44,7 @@ namespace PilotAssistant.UI
 
         private static void DrawSASWindow(int id)
         {
-            bool isActive = SurfSAS.IsSSASOperational() || SurfSAS.IsStockSASOperational();
+            bool isOperational = SurfSAS.IsSSASOperational() || SurfSAS.IsStockSASOperational();
             bool isSSASMode = SurfSAS.IsSSASMode();
             GUILayout.BeginHorizontal();
             showPresets = GUILayout.Toggle(showPresets, "Presets", GeneralUI.toggleButtonStyle);
@@ -53,9 +53,9 @@ namespace PilotAssistant.UI
             // SSAS/SAS
             GUILayout.BeginVertical(GeneralUI.guiSectionStyle, GUILayout.ExpandWidth(true));
             GUILayout.BeginHorizontal();
-            if (GUILayout.Toggle(isActive, isActive ? "On" : "Off", GeneralUI.toggleButtonStyle, GUILayout.ExpandWidth(false)) != isActive)
+            if (GUILayout.Toggle(isOperational, isOperational ? "On" : "Off", GeneralUI.toggleButtonStyle, GUILayout.ExpandWidth(false)) != isOperational)
             {
-                SurfSAS.ToggleActive();
+                SurfSAS.ToggleOperational();
             }
             GUILayout.Label("SAS", GeneralUI.boldLabelStyle, GUILayout.ExpandWidth(true));
             GUILayout.EndHorizontal();

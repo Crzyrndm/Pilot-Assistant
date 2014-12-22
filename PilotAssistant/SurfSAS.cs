@@ -25,12 +25,12 @@ namespace PilotAssistant
         private static bool initialized = false;
         // Current mode
         private static bool ssasMode = false;
-        // Whether SSAS is active
-        private static bool isSSASActive = false;
+        // Used to monitor the use of SAS_TOGGLE key for SSAS.
+        private static bool ssasToggleKey = false;
+        // Used to monitor the use of SAS_HOLD key for SSAS.
+        private static bool ssasHoldKey = false;
         // Used to selectively enable SSAS on a per axis basis
         private static bool[] isSSASAxisEnabled = { true, true, true };
-        // Used to monitor the use of SAS_HOLD key
-        private static bool ssasHoldKey = false;
         // Used to monitor user input, and pause SSAS on a per axis basis
         private static bool[] isPaused = { false, false, false };
 
@@ -75,7 +75,8 @@ namespace PilotAssistant
         {
             initialized = false;
             ssasMode = false;
-            isSSASActive = false;
+            ssasToggleKey = false;
+            ssasHoldKey = false;
 
             for (int i = 0; i < controllers.Length; i++)
                 controllers[i] = null;
@@ -94,7 +95,7 @@ namespace PilotAssistant
             
             if (ssasMode && GameSettings.SAS_TOGGLE.GetKeyDown())
             {
-                isSSASActive = !isSSASActive;
+                ssasToggleKey = !ssasToggleKey;
                 // If the change made SSAS operational, update target
                 if (IsSSASOperational())
                     updateTarget();
@@ -118,10 +119,8 @@ namespace PilotAssistant
 
             if (ssasMode && FlightData.thisVessel.staticPressure == 0)
             {
-                ssasMode = false;
                 // Try to seamlessly switch to stock SAS
-                FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] = isSSASActive;
-                isSSASActive = false;
+                ToggleSSASMode();
             }
 
             PauseManager(); // manage activation of SAS axes depending on user input
@@ -243,51 +242,39 @@ namespace PilotAssistant
 
         public static void ToggleSSASMode()
         {
+            // Swap modes, ensure operational state doesn't change.
+            bool wasOperational = IsSSASOperational() || IsStockSASOperational();
             ssasMode = !ssasMode;
-            if (ssasMode)
-            {
-                // If SAS is active, make SSAS active
-                isSSASActive = FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS];
-                FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS]
-                    = false;
-                if (isSSASActive)
-                    updateTarget();
-            }
-            else
-            {
-                // If SSAS is active, make SAS active
-                FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS]
-                    = isSSASActive;
-                isSSASActive = false;
-            }
-                
+            SetOperational(wasOperational);                
         }
 
-        public static void ToggleActive()
+        public static void ToggleOperational()
+        {
+            if (ssasMode)
+                SetOperational(!IsSSASOperational());
+            else
+                SetOperational(!IsStockSASOperational());
+        }
+
+        public static void SetOperational(bool operational)
         {
             if (ssasMode)
             {
-                SetActive(!isSSASActive);
-            }
-            else
-            {
-                SetActive(!FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS]);
-            }
-        }
-
-        public static void SetActive(bool active)
-        {
-            if (ssasMode)
-            {
+                bool wasOperational = IsSSASOperational();
+                // Behave the same a stock SAS
+                if (wasOperational != ssasToggleKey && wasOperational != operational)
+                    ssasToggleKey = !operational;
+                else if (wasOperational != operational)
+                    ssasToggleKey = operational;
                 // If only just switched on, update target
-                if (!isSSASActive && active)
+                if (IsSSASOperational() && !wasOperational)
                     updateTarget();
-                isSSASActive = active;
+                
             }
             else
             {
                 FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS]
-                    = active;
+                    = operational;
             }
         }
 
@@ -425,7 +412,7 @@ namespace PilotAssistant
         public static bool IsSSASOperational()
         {
             // ssasHoldKey toggles the main state, i.e. active --> off, off --> active
-            return (isSSASActive != ssasHoldKey) && ssasMode;
+            return (ssasToggleKey != ssasHoldKey) && ssasMode;
         }
 
         public static bool IsStockSASOperational()

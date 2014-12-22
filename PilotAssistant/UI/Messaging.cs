@@ -15,6 +15,11 @@ namespace PilotAssistant.UI
         static ScreenMessage StockSASPresetMessage = new ScreenMessage("Stock SAS active preset loaded", 3, ScreenMessageStyle.UPPER_RIGHT);
         static ScreenMessage derpMessage = new ScreenMessage("Idiot, this isn't a valid number", 3, ScreenMessageStyle.UPPER_RIGHT);
 
+        public static void PostMessage(string msg)
+        {
+            ScreenMessages.PostScreenMessage(new ScreenMessage(msg, 3, ScreenMessageStyle.UPPER_RIGHT));
+        }
+
         internal static void statusMessage(int messageNumber)
         {
             switch (messageNumber)

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using KSP.IO;
 
-
-
 namespace PilotAssistant
 {
     using Presets;
@@ -28,8 +26,9 @@ namespace PilotAssistant
     {
         private static PID_Controller[] controllers = new PID_Controller[7];
 
+        // Whether PA has been paused by the user, does not account for SAS being turned on.
+        // Use SurfSAS.CheckSAS() as well. 
         private static bool isPaused = false;
-
         // RollController
         private static bool isHdgActive = false;
         // PitchController
@@ -184,7 +183,7 @@ namespace PilotAssistant
             GetController(PIDList.HdgBank).SetPoint = newHdg;
             GetController(PIDList.HdgYaw).SetPoint = newHdg;
             isHdgActive = true;
-            SurfSAS.SetActive(false);
+            SurfSAS.SetOperational(false);
             isPaused = false;
         }
         
@@ -195,7 +194,7 @@ namespace PilotAssistant
             GetController(PIDList.VertSpeed).SetPoint = newSpd;
             isVertActive = true;
             isAltitudeHoldActive = false;
-            SurfSAS.SetActive(false);
+            SurfSAS.SetOperational(false);
             isPaused = false;
         }
         
@@ -206,7 +205,7 @@ namespace PilotAssistant
             GetController(PIDList.Altitude).SetPoint = newAlt;
             isVertActive = true;
             isAltitudeHoldActive = true;
-            SurfSAS.SetActive(false);
+            SurfSAS.SetOperational(false);
             isPaused = false;
         }
         
@@ -219,10 +218,8 @@ namespace PilotAssistant
                 GetController(PIDList.HdgBank).SetPoint = FlightData.heading;
                 GetController(PIDList.HdgYaw).SetPoint = FlightData.heading; // added
                 PAMainWindow.SetTargetHeading(FlightData.heading);
-                SurfSAS.SetActive(false);
+                SurfSAS.SetOperational(false);
                 isPaused = false;
-                //FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                //SurfSAS.ActivitySwitch(false);
             }
             else
             {
@@ -259,7 +256,7 @@ namespace PilotAssistant
                     GetController(PIDList.VertSpeed).SetPoint = FlightData.thisVessel.verticalSpeed;
                     PAMainWindow.SetTargetVerticalSpeed(FlightData.thisVessel.verticalSpeed);
                 }
-                SurfSAS.SetActive(false);
+                SurfSAS.SetOperational(false);
                 isPaused = false;
             }
             else
@@ -316,20 +313,19 @@ namespace PilotAssistant
             // Pause key
             if (Input.GetKeyDown(KeyCode.Tab))
             {
-                if (isPaused || SASCheck())
+                // When active and paused, unpause.
+                if ((IsHdgActive() || IsVertActive()) && (isPaused || SASCheck()))
                 {
                     isPaused = false;
-                    SurfSAS.SetActive(false);
+                    SurfSAS.SetOperational(false);
+                    Messaging.PostMessage("Pilot assistant unpaused.");
                 }
-                else
+                // Otherwise, when active and not paused, pause.
+                else if (IsHdgActive() || IsVertActive())
                 {
                     isPaused = true;
+                    Messaging.PostMessage("Pilot assistant paused.");
                 }
-                
-                if (isPaused)
-                    Messaging.statusMessage(0);
-                else
-                    Messaging.statusMessage(1);
             }
 
             // SAS activation change, only show messages when active and not paused.
@@ -337,28 +333,31 @@ namespace PilotAssistant
                 && !isPaused && (IsHdgActive() || IsVertActive()))
             {
                 if (SASCheck())
-                {
-                    Messaging.statusMessage(2);
-                }
+                    Messaging.PostMessage("Pilot Assistant control handed to SAS.");
                 else
-                {
-                    Messaging.statusMessage(3);
-                }
+                    Messaging.PostMessage("Pilot Assistant control retrieved from SAS.");
             }
 
+            // Level wings and set vertical speed to 0. 
             if (mod && Input.GetKeyDown(KeyCode.X))
             {
+                // Set controller and modes. 
                 GetController(PIDList.VertSpeed).SetPoint = 0;
+                isVertActive = true;
                 isAltitudeHoldActive = false;
                 isWingLvlActive = true;
+                // Update GUI
                 PAMainWindow.SetTargetVerticalSpeed(0.0);
-                Messaging.statusMessage(4);
+                // Make sure we are not paused and SAS is off. 
+                isPaused = false;
+                SurfSAS.SetOperational(false);
+                Messaging.PostMessage("Pilot Assistant is levelling off.");
             }
 
-            // Only update target when not paused, MAYBE: Also use !SASCheck()?
+            // Only update target when not paused.
             if (!isPaused && !SASCheck())
             {
-                double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1;
+                double scale = mod ? 10 : 1;
                 bool bFineControl = FlightInputHandler.fetch.precisionMode;
                 if (GameSettings.YAW_LEFT.GetKey() && isHdgActive)
                 {
