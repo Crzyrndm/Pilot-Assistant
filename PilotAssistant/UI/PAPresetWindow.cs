@@ -56,7 +56,6 @@ namespace PilotAssistant.UI
                 if (GUILayout.Button(p.GetName(), GeneralUI.buttonStyle))
                 {
                     PilotAssistant.LoadPreset(p);
-                    //ScreenMessages.PostScreenMessage("Loaded preset " + p.name);
                 }
                 if (GUILayout.Button("x", GeneralUI.buttonStyle, GUILayout.Width(25)))
                 {

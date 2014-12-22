@@ -64,7 +64,6 @@ namespace PilotAssistant.UI
                 if (GUILayout.Button(p.GetName(), GeneralUI.buttonStyle))
                 {
                     SurfSAS.LoadPreset(p);
-                    //ScreenMessages.PostScreenMessage("Loaded preset " + p.name);
                 }
                 if (GUILayout.Button("x", GeneralUI.buttonStyle, GUILayout.Width(25)))
                 {
@@ -114,7 +113,6 @@ namespace PilotAssistant.UI
                 if (GUILayout.Button(p.GetName(), GeneralUI.buttonStyle))
                 {
                     SurfSAS.LoadStockPreset(p);
-                    //ScreenMessages.PostScreenMessage("Loaded preset " + p.name);
                 }
                 if (GUILayout.Button("x", GeneralUI.buttonStyle, GUILayout.Width(25)))
                 {

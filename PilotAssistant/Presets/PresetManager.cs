@@ -6,6 +6,8 @@ using UnityEngine;
 
 namespace PilotAssistant.Presets
 {
+    using UI;
+
     [KSPAddon(KSPAddon.Startup.MainMenu, true)]
     internal class PresetManager : MonoBehaviour
     {
@@ -77,7 +79,7 @@ namespace PilotAssistant.Presets
             else if (activeStockSASPreset != defaultStockSASTuning)
             {
                 LoadStockSASPreset(activeStockSASPreset);
-                // TODO: Messaging.statusMessage(7);
+                Messaging.PostMessage("Stock SAS active preset loaded.");
             }
         }
         
@@ -89,7 +91,7 @@ namespace PilotAssistant.Presets
             else if (activeSASPreset != defaultSASTuning)
             {
                 LoadSASPreset(controllers, activeSASPreset);
-                // TODO: Messaging.statusMessage(6);
+                Messaging.PostMessage("SSAS active preset loaded.");
             }
         }
         
@@ -101,7 +103,7 @@ namespace PilotAssistant.Presets
             else if (activePAPreset != defaultPATuning)
             {
                 LoadPAPreset(controllers, activePAPreset);
-                // TODO: Messaging.statusMessage(5);
+                Messaging.PostMessage("Pilot Assistant active preset loaded.");
             }
         }
 
@@ -138,11 +140,17 @@ namespace PilotAssistant.Presets
         public static void RegisterStockSASPreset(string name)
         {
             if (name == "")
+            {
+                Messaging.PostMessage("Failed to add preset with no name.");
                 return;
+            } 
             foreach (SASPreset p in SASPresetList)
             {
                 if (name == p.GetName())
+                {
+                    Messaging.PostMessage("Failed to add preset with duplicate name.");
                     return;
+                }
             }
 
             SASPreset p2 = new SASPreset(Utility.FlightData.thisVessel.Autopilot.SAS, name);
@@ -154,11 +162,17 @@ namespace PilotAssistant.Presets
         public static void RegisterSASPreset(PID.PID_Controller[] controllers, string name)
         {
             if (name == "")
-                return;   
+            {
+                Messaging.PostMessage("Failed to add preset with no name.");
+                return;
+            } 
             foreach (SASPreset p in SASPresetList)
             {
                 if (name == p.GetName())
+                {
+                    Messaging.PostMessage("Failed to add preset with duplicate name.");
                     return;
+                }
             }
 
             SASPreset p2 = new SASPreset(controllers, name);
@@ -170,11 +184,17 @@ namespace PilotAssistant.Presets
         public static void RegisterPAPreset(PID.PID_Controller[] controllers, string name)
         {
             if (name == "")
-                return; // ScreenMessages.PostScreenMessage("Failed to add preset with no name");
+            {
+                Messaging.PostMessage("Failed to add preset with no name.");
+                return;
+            }
             foreach (PAPreset p in PAPresetList)
             {
                 if (name == p.GetName())
-                    return; // ScreenMessages.PostScreenMessage("Failed to add preset with duplicate name");
+                {
+                    Messaging.PostMessage("Failed to add preset with duplicate name.");
+                    return;
+                }
             }
                 
             PAPreset p2 = new PAPreset(controllers, name);
@@ -187,18 +207,21 @@ namespace PilotAssistant.Presets
         {
             activeStockSASPreset = p;
             p.LoadStockPreset();
+            Messaging.PostMessage("Loaded preset \"" + p.GetName() + "\"");
         }
         
         public static void LoadSASPreset(PID.PID_Controller[] controllers, SASPreset p)
         {
             activeSASPreset = p;
             p.LoadPreset(controllers);
+            Messaging.PostMessage("Loaded preset \"" + p.GetName() + "\"");
         }
         
         public static void LoadPAPreset(PID.PID_Controller[] controllers, PAPreset p)
         {
             activePAPreset = p;
             p.LoadPreset(controllers);
+            Messaging.PostMessage("Loaded preset \"" + p.GetName() + "\"");
         }
 
         public static List<SASPreset> GetAllSASPresets()
