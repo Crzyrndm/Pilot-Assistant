@@ -15,13 +15,9 @@ namespace PilotAssistant.UI
         private static bool showPIDLimits = false;
         private static bool showControlSurfaces = false;
 
-        private static string targetVert = "0";
-        private static string targetAlt = "0";
-        private static string targetHeading = "0";
-
-        //private static bool showSettings = true;
-        //private static bool showHdg = true;
-        //private static bool showVert = true;
+        private static double targetVert = 0.0;
+        private static double targetAlt = 0.0;
+        private static double targetHeading = 0.0;
 
         private const int WINDOW_ID = 34244;
         private const string TEXT_FIELD_GROUP = "PAMainWindow";
@@ -30,7 +26,6 @@ namespace PilotAssistant.UI
         {
             GeneralUI.Styles();
 
-            // GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             windowRect = GUILayout.Window(WINDOW_ID, windowRect, DrawWindow, "Pilot Assistant", GUILayout.Width(0), GUILayout.Height(0));
 
             PAPresetWindow.windowRect.x = windowRect.x + windowRect.width;
@@ -43,32 +38,32 @@ namespace PilotAssistant.UI
 
         public static void SetTargetHeading(double heading)
         {
-            targetHeading = heading.ToString("N2");
+            targetHeading = heading;
         }
 
         public static double GetTargetHeading()
         {
-            return double.Parse(targetHeading);
+            return targetHeading;
         }
 
         public static void SetTargetVerticalSpeed(double speed)
         {
-            targetVert = speed.ToString("N3");
+            targetVert = speed;
         }
 
         public static double GetTargetVerticalSpeed()
         {
-            return double.Parse(targetVert);
+            return targetVert;
         }
 
         public static void SetTargetAltitude(double altitude)
         {
-            targetAlt = altitude.ToString("N1");
+            targetAlt = altitude;
         }
 
         public static double GetTargetAltitude()
         {
-            return double.Parse(targetAlt);
+            return targetAlt;
         }
 
         private static void DrawHeadingControls()
@@ -82,10 +77,6 @@ namespace PilotAssistant.UI
             if (GUILayout.Toggle(isHdgActive, isHdgActive ? "On" : "Off", GeneralUI.toggleButtonStyle, GUILayout.ExpandWidth(false)) != isHdgActive)
             {
                 PilotAssistant.ToggleHdg();
-                //PilotAssistant.bHdgActive = !PilotAssistant.bHdgActive;
-                //PilotAssistant.bPause = false;
-                //FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                //SurfSAS.ActivitySwitch(false);
             }
             GUILayout.Label("Roll and Yaw Control", GeneralUI.boldLabelStyle, GUILayout.ExpandWidth(true));
             GUILayout.EndHorizontal();
@@ -96,7 +87,6 @@ namespace PilotAssistant.UI
             // tmpToggle1 and tmpToggle2 are true when the user clicks the non-active mode, i.e. the mode changes. 
             if (tmpToggle1 && tmpToggle2)
                 PilotAssistant.ToggleWingLvl();
-                //PilotAssistant.bWingLeveller = !PilotAssistant.bWingLeveller;
                 
             GUILayout.EndHorizontal();
             if (!isWingLvlActive)
@@ -104,24 +94,16 @@ namespace PilotAssistant.UI
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Target Hdg: ");
                 GeneralUI.TextFieldNext(TEXT_FIELD_GROUP);
-                targetHeading = GUILayout.TextField(targetHeading);
+                string targetHeadingText = GUILayout.TextField(targetHeading.ToString("N2"), GUILayout.Width(60));
+                try
+                {
+                    targetHeading = Functions.Clamp(double.Parse(targetHeadingText), 0, 360);
+                }
+                catch {}
                 if (GUILayout.Button("Set", GeneralUI.buttonStyle, GUILayout.ExpandWidth(false)))
                 {
                     ScreenMessages.PostScreenMessage("Target Heading updated");
-                    double newHdg;
-                    if (double.TryParse(targetHeading, out newHdg) &&
-                        newHdg >= 0 && newHdg <= 360)
-                    {
-                        PilotAssistant.SetHdgActive();
-                        //PilotAssistant.controllers[(int)PIDList.HdgBank].SetPoint = newHdg;
-                        //PilotAssistant.controllers[(int)PIDList.HdgYaw].SetPoint = newHdg;
-                        //PilotAssistant.bHdgActive = PilotAssistant.bHdgWasActive = true; // skip toggle check to avoid being overwritten
-                    }
-                    else
-                    {
-                        // Bad input, reset UI to previous value
-                        
-                    }
+                    PilotAssistant.SetHdgActive();
                 }
                 GUILayout.EndHorizontal();
             }
@@ -148,11 +130,6 @@ namespace PilotAssistant.UI
             if (GUILayout.Toggle(isVertActive, isVertActive ? "On" : "Off", GeneralUI.toggleButtonStyle, GUILayout.ExpandWidth(false)) != isVertActive)
             {
                 PilotAssistant.ToggleVert();
-                //PilotAssistant.bVertActive = !PilotAssistant.bVertActive;
-                //if (!PilotAssistant.bVertActive)
-                //    PilotAssistant.bPause = false;
-                //FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, false);
-                //SurfSAS.ActivitySwitch(false);
             }
             GUILayout.Label("Vertical Control", GeneralUI.boldLabelStyle, GUILayout.ExpandWidth(true));
             GUILayout.EndHorizontal();
@@ -163,7 +140,6 @@ namespace PilotAssistant.UI
             // tmpToggle1 and tmpToggle2 are true when the user clicks the non-active mode, i.e. the mode changes. 
             if (tmpToggle1 && tmpToggle2)
                 PilotAssistant.ToggleAltitudeHold();
-                //PilotAssistant.bAltitudeHold = !PilotAssistant.bAltitudeHold;
             
             GUILayout.EndHorizontal();
 
@@ -172,22 +148,16 @@ namespace PilotAssistant.UI
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Target Altitude: ");
                 GeneralUI.TextFieldNext(TEXT_FIELD_GROUP);
-                targetAlt = GUILayout.TextField(targetAlt);
+                string targetAltText = GUILayout.TextField(targetAlt.ToString("N1"), GUILayout.Width(60));
+                try
+                {
+                    targetAlt = double.Parse(targetAltText);
+                }
+                catch {}
                 if (GUILayout.Button("Set", GeneralUI.buttonStyle, GUILayout.ExpandWidth(false)))
                 {
                     ScreenMessages.PostScreenMessage("Target Altitude updated");
-
-                    double newVal;
-                    if (double.TryParse(targetAlt, out newVal))
-                    {
-                        PilotAssistant.SetAltitudeHoldActive();
-                        //PilotAssistant.controllers[(int)PIDList.Altitude].SetPoint = newVal;
-                        //PilotAssistant.bVertActive = PilotAssistant.bVertWasActive = true; // skip the toggle check so value isn't overwritten
-                    }
-                    else
-                    {
-                        // Bad input, reset UI value
-                    }
+                    PilotAssistant.SetAltitudeHoldActive();
                 }
                 GUILayout.EndHorizontal();
             }
@@ -196,22 +166,16 @@ namespace PilotAssistant.UI
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Target Speed: ");
                 GeneralUI.TextFieldNext(TEXT_FIELD_GROUP);
-                targetVert = GUILayout.TextField(targetVert);
+                string targetVertText = GUILayout.TextField(targetVert.ToString("N3"), GUILayout.Width(60));
+                try
+                {
+                    targetVert = double.Parse(targetVertText);
+                }
+                catch {}
                 if (GUILayout.Button("Set", GeneralUI.buttonStyle, GUILayout.ExpandWidth(false)))
                 {
                     ScreenMessages.PostScreenMessage("Target Speed updated");
-
-                    double newVal;
-                    if (double.TryParse(targetVert, out newVal))
-                    {
-                        PilotAssistant.SetVertSpeedActive();
-                        //PilotAssistant.controllers[(int)PIDList.Altitude].SetPoint = newVal;
-                        //PilotAssistant.bVertActive = PilotAssistant.bVertWasActive = true; // skip the toggle check so value isn't overwritten
-                    }
-                    else
-                    {
-                        // Bad input, reset UI value
-                    }
+                    PilotAssistant.SetVertSpeedActive();
                 }
                 GUILayout.EndHorizontal();
             }
