@@ -12,6 +12,8 @@ namespace PilotAssistant.UI
         private static string newPresetName = "";
         internal static Rect windowRect = new Rect(550, 50, 50, 50);
 
+        private const string TEXT_FIELD_GROUP = "SASPresetWindow";
+
         internal static void Draw()
         {
             windowRect = GUILayout.Window(78934857, windowRect, drawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
@@ -19,6 +21,8 @@ namespace PilotAssistant.UI
 
         private static void drawPresetWindow(int id)
         {
+            // Start a text field group.
+            GeneralUI.StartTextFieldGroup(TEXT_FIELD_GROUP);
             if (SurfSAS.IsSSASMode())
                 DrawSurfPreset();
             else
@@ -41,6 +45,7 @@ namespace PilotAssistant.UI
             }
 
             GUILayout.BeginHorizontal();
+            GeneralUI.TextFieldNext(TEXT_FIELD_GROUP);
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GeneralUI.buttonStyle, GUILayout.Width(25)))
             {
@@ -71,6 +76,9 @@ namespace PilotAssistant.UI
                 }
                 GUILayout.EndHorizontal();
             }
+            // Autolock vessel controls on focus.
+            GeneralUI.AutolockTextFieldGroup(TEXT_FIELD_GROUP, ControlTypes.ALL_SHIP_CONTROLS | ControlTypes.TIMEWARP);
+            
             GUILayout.EndVertical();
         }
 
@@ -90,6 +98,7 @@ namespace PilotAssistant.UI
             }
 
             GUILayout.BeginHorizontal();
+            GeneralUI.TextFieldNext(TEXT_FIELD_GROUP);
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GeneralUI.buttonStyle, GUILayout.Width(25)))
             {
@@ -120,6 +129,9 @@ namespace PilotAssistant.UI
                 }
                 GUILayout.EndHorizontal();
             }
+            // Autolock vessel controls on focus.
+            GeneralUI.AutolockTextFieldGroup(TEXT_FIELD_GROUP, ControlTypes.ALL_SHIP_CONTROLS | ControlTypes.TIMEWARP);
+
             GUILayout.EndVertical();
         }
     }

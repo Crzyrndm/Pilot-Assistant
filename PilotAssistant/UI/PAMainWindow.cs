@@ -24,6 +24,7 @@ namespace PilotAssistant.UI
         //private static bool showVert = true;
 
         private const int WINDOW_ID = 34244;
+        private const string TEXT_FIELD_GROUP = "PAMainWindow";
 
         public static void Draw()
         {
@@ -102,6 +103,7 @@ namespace PilotAssistant.UI
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Target Hdg: ");
+                GeneralUI.TextFieldNext(TEXT_FIELD_GROUP);
                 targetHeading = GUILayout.TextField(targetHeading);
                 if (GUILayout.Button("Set", GeneralUI.buttonStyle, GUILayout.ExpandWidth(false)))
                 {
@@ -169,6 +171,7 @@ namespace PilotAssistant.UI
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Target Altitude: ");
+                GeneralUI.TextFieldNext(TEXT_FIELD_GROUP);
                 targetAlt = GUILayout.TextField(targetAlt);
                 if (GUILayout.Button("Set", GeneralUI.buttonStyle, GUILayout.ExpandWidth(false)))
                 {
@@ -192,6 +195,7 @@ namespace PilotAssistant.UI
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Target Speed: ");
+                GeneralUI.TextFieldNext(TEXT_FIELD_GROUP);
                 targetVert = GUILayout.TextField(targetVert);
                 if (GUILayout.Button("Set", GeneralUI.buttonStyle, GUILayout.ExpandWidth(false)))
                 {
@@ -221,6 +225,9 @@ namespace PilotAssistant.UI
 
         private static void DrawWindow(int id)
         {
+            // Start a text field group.
+            GeneralUI.StartTextFieldGroup(TEXT_FIELD_GROUP);
+
             GUILayout.BeginVertical(GUILayout.Height(0), GUILayout.Width(0), GUILayout.ExpandHeight(true));
             if (PilotAssistant.IsPaused() && (PilotAssistant.IsHdgActive() || PilotAssistant.IsVertActive()))
             {
@@ -237,6 +244,9 @@ namespace PilotAssistant.UI
 
             DrawVerticalControls();
 
+            // Autolock vessel controls on focus.
+            GeneralUI.AutolockTextFieldGroup(TEXT_FIELD_GROUP, ControlTypes.ALL_SHIP_CONTROLS | ControlTypes.TIMEWARP);
+            
             GUILayout.EndVertical();
             GUI.DragWindow();
         }
@@ -263,10 +273,10 @@ namespace PilotAssistant.UI
                 GUILayout.BeginHorizontal();
                 GUILayout.BeginVertical();
                 
-                controller.PGain = GeneralUI.labPlusNumBox(string.Format("Kp:", inputName), controller.PGain.ToString("G3"), 45);
-                controller.IGain = GeneralUI.labPlusNumBox(string.Format("Ki:", inputName), controller.IGain.ToString("G3"), 45);
-                controller.DGain = GeneralUI.labPlusNumBox(string.Format("Kd:", inputName), controller.DGain.ToString("G3"), 45);
-                controller.Scalar = GeneralUI.labPlusNumBox(string.Format("Scalar:", inputName), controller.Scalar.ToString("G3"), 45);
+                controller.PGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Kp:", inputName), controller.PGain.ToString("G3"), 45);
+                controller.IGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Ki:", inputName), controller.IGain.ToString("G3"), 45);
+                controller.DGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Kd:", inputName), controller.DGain.ToString("G3"), 45);
+                controller.Scalar = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Scalar:", inputName), controller.Scalar.ToString("G3"), 45);
 
                 if (showPIDLimits)
                 {
@@ -275,23 +285,23 @@ namespace PilotAssistant.UI
 
                     if (!invertOutput)
                     {
-                        controller.OutMax = GeneralUI.labPlusNumBox(string.Format("Max {0}{1}:", outputName, outputUnits), controller.OutMax.ToString("G3"));
+                        controller.OutMax = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Max {0}{1}:", outputName, outputUnits), controller.OutMax.ToString("G3"));
                         if (doublesided)
-                            controller.OutMin = GeneralUI.labPlusNumBox(string.Format("Min {0}{1}:", outputName, outputUnits), controller.OutMin.ToString("G3"));
+                            controller.OutMin = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Min {0}{1}:", outputName, outputUnits), controller.OutMin.ToString("G3"));
                         else
                             controller.OutMin = -controller.OutMax;
-                        controller.ClampLower = GeneralUI.labPlusNumBox("I Clamp Lower:", controller.ClampLower.ToString("G3"));
-                        controller.ClampUpper = GeneralUI.labPlusNumBox("I Clamp Upper:", controller.ClampUpper.ToString("G3"));
+                        controller.ClampLower = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "I Clamp Lower:", controller.ClampLower.ToString("G3"));
+                        controller.ClampUpper = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "I Clamp Upper:", controller.ClampUpper.ToString("G3"));
                     }
                     else
                     { // used when response * -1 is used to get the correct output
-                        controller.OutMax = -1 * GeneralUI.labPlusNumBox(string.Format("Min {0}{1}:", outputName, outputUnits), (-controller.OutMax).ToString("G3"));
+                        controller.OutMax = -1 * GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Min {0}{1}:", outputName, outputUnits), (-controller.OutMax).ToString("G3"));
                         if (doublesided)
-                            controller.OutMin = -1 * GeneralUI.labPlusNumBox(string.Format("Max {0}{1}:", outputName, outputUnits), (-controller.OutMin).ToString("G3"));
+                            controller.OutMin = -1 * GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Max {0}{1}:", outputName, outputUnits), (-controller.OutMin).ToString("G3"));
                         else
                             controller.OutMin = -controller.OutMax;
-                        controller.ClampUpper = -1 * GeneralUI.labPlusNumBox("I Clamp Lower:", (-controller.ClampUpper).ToString("G3"));
-                        controller.ClampLower = -1 * GeneralUI.labPlusNumBox("I Clamp Upper:", (-controller.ClampLower).ToString("G3"));
+                        controller.ClampUpper = -1 * GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "I Clamp Lower:", (-controller.ClampUpper).ToString("G3"));
+                        controller.ClampLower = -1 * GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "I Clamp Upper:", (-controller.ClampLower).ToString("G3"));
                     }
                 }
                 GUILayout.EndVertical();

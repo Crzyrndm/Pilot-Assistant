@@ -47,6 +47,8 @@ namespace PilotAssistant.UI
 
             if (m.bShow)
             {
+                // This doesn't seem to be used yet, just commenting it out for now.
+                /*
                 GUILayout.Label(string.Format("{0}: {1}", m.Name, m.current.ToString()));
                 m.Lower = GeneralUI.labPlusNumBox("Lower", m.Lower.ToString());
                 m.Upper = GeneralUI.labPlusNumBox("Upper", m.Upper.ToString());
@@ -54,6 +56,7 @@ namespace PilotAssistant.UI
                 GUILayout.Label(string.Format("{0}': {1}", m.Name, m.diff.ToString()));
                 m.Rate = GeneralUI.labPlusNumBox("Rate", m.Rate.ToString());
                 m.RateKp = GeneralUI.labPlusNumBox("Rate Kp", m.RateKp.ToString());
+                */
             }
         }
     }

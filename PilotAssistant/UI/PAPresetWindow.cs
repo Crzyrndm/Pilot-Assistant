@@ -12,13 +12,18 @@ namespace PilotAssistant.UI
         private static string newPresetName = "";
         internal static Rect windowRect = new Rect(0, 0, 200, 10);
 
+        private const string TEXT_FIELD_GROUP = "PAPresetWindow";
+
         internal static void Draw()
         {
-            windowRect = GUILayout.Window(34245, windowRect, drawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
+            windowRect = GUILayout.Window(34245, windowRect, DrawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
         }
 
-        private static void drawPresetWindow(int id)
+        private static void DrawPresetWindow(int id)
         {
+            // Start a text field group.
+            GeneralUI.StartTextFieldGroup(TEXT_FIELD_GROUP);
+            
             if (PresetManager.GetActivePAPreset() != null)
             {
                 PAPreset p = PresetManager.GetActivePAPreset();
@@ -33,6 +38,7 @@ namespace PilotAssistant.UI
             }
 
             GUILayout.BeginHorizontal();
+            GeneralUI.TextFieldNext(TEXT_FIELD_GROUP);
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GeneralUI.buttonStyle, GUILayout.Width(25)))
             {
@@ -63,6 +69,10 @@ namespace PilotAssistant.UI
                 }
                 GUILayout.EndHorizontal();
             }
+
+            // Autolock vessel controls on focus.
+            GeneralUI.AutolockTextFieldGroup(TEXT_FIELD_GROUP, ControlTypes.ALL_SHIP_CONTROLS | ControlTypes.TIMEWARP);
+            
             GUILayout.EndVertical();
         }
     }
