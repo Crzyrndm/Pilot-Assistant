@@ -251,9 +251,17 @@ namespace PilotAssistant.UI
             GUI.DragWindow();
         }
 
-        private static void drawPIDValues(PIDList controllerID, string inputName, string inputUnits, double inputValue,
-                                          int displayPrecision, string outputName, string outputUnits,
-                                          bool invertOutput = false, bool showTarget = true, bool doublesided = true)
+        private static void drawPIDValues(
+            PIDList controllerID,
+            string inputName,
+            string inputUnits,
+            double inputValue,
+            int displayPrecision,
+            string outputName,
+            string outputUnits,
+            bool invertOutput = false,
+            bool showTarget = true,
+            bool doublesided = true)
         {
             PID.PID_Controller controller = PilotAssistant.GetController(controllerID); // controllers[(int)controllerID];
             string buttonText = string.Format("{0}: {1}{2}",
@@ -273,35 +281,37 @@ namespace PilotAssistant.UI
                 GUILayout.BeginHorizontal();
                 GUILayout.BeginVertical();
                 
-                controller.PGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Kp:", inputName), controller.PGain.ToString("G3"), 45);
-                controller.IGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Ki:", inputName), controller.IGain.ToString("G3"), 45);
-                controller.DGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Kd:", inputName), controller.DGain.ToString("G3"), 45);
-                controller.Scalar = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Scalar:", inputName), controller.Scalar.ToString("G3"), 45);
+                controller.PGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.PGain, "G3", 45);
+                controller.IGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.IGain, "G3", 45);
+                controller.DGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kd:", controller.DGain, "G3", 45);
+                controller.Scalar = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Scalar:", controller.Scalar, "G3", 45);
 
                 if (showPIDLimits)
                 {
                     GUILayout.EndVertical();
                     GUILayout.BeginVertical();
+                    string tmpMinText = string.Format("Max {0}{1}:", outputName, outputUnits);
+                    string tmpMaxText = string.Format("Min {0}{1}:", outputName, outputUnits);
 
                     if (!invertOutput)
                     {
-                        controller.OutMax = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Max {0}{1}:", outputName, outputUnits), controller.OutMax.ToString("G3"));
+                        controller.OutMax = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, tmpMaxText, controller.OutMax, "G3");
                         if (doublesided)
-                            controller.OutMin = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Min {0}{1}:", outputName, outputUnits), controller.OutMin.ToString("G3"));
+                            controller.OutMin = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, tmpMinText, controller.OutMin, "G3");
                         else
                             controller.OutMin = -controller.OutMax;
-                        controller.ClampLower = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "I Clamp Lower:", controller.ClampLower.ToString("G3"));
-                        controller.ClampUpper = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "I Clamp Upper:", controller.ClampUpper.ToString("G3"));
+                        controller.ClampLower = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "I Clamp Lower:", controller.ClampLower, "G3");
+                        controller.ClampUpper = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "I Clamp Upper:", controller.ClampUpper, "G3");
                     }
                     else
                     { // used when response * -1 is used to get the correct output
-                        controller.OutMax = -1 * GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Min {0}{1}:", outputName, outputUnits), (-controller.OutMax).ToString("G3"));
+                        controller.OutMax = -1 * GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, tmpMinText, -controller.OutMax, "G3");
                         if (doublesided)
-                            controller.OutMin = -1 * GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, string.Format("Max {0}{1}:", outputName, outputUnits), (-controller.OutMin).ToString("G3"));
+                            controller.OutMin = -1 * GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, tmpMaxText, -controller.OutMin, "G3");
                         else
                             controller.OutMin = -controller.OutMax;
-                        controller.ClampUpper = -1 * GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "I Clamp Lower:", (-controller.ClampUpper).ToString("G3"));
-                        controller.ClampLower = -1 * GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "I Clamp Upper:", (-controller.ClampLower).ToString("G3"));
+                        controller.ClampUpper = -1 * GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "I Clamp Lower:", -controller.ClampUpper, "G3");
+                        controller.ClampLower = -1 * GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "I Clamp Upper:", -controller.ClampLower, "G3");
                     }
                 }
                 GUILayout.EndVertical();

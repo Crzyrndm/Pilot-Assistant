@@ -163,51 +163,44 @@ namespace PilotAssistant.Utility
         /// </summary>
         /// <param name="textFieldGroup">The text field group the input box should have.</param>
         /// <param name="labelText">text for the label</param>
-        /// <param name="boxText">number to display in text box</param>
+        /// <param name="boxVal">number to display in text box</param>
         /// <param name="labelWidth"></param>
         /// <param name="boxWidth"></param>
         /// <returns>edited value of the text box</returns>
         internal static double labPlusNumBox(
             string textFieldGroup,
             string labelText,
-            string boxText,
+            double boxVal,
+            string format,
             float labelWidth = 100,
             float boxWidth = 60)
         {
-            double val;
+            string boxText = (format != null) ? boxVal.ToString(format) : boxVal.ToString();
             GUILayout.BeginHorizontal();
 
             GUILayout.Label(labelText, labelStyle, GUILayout.Width(labelWidth));
-            val = double.Parse(boxText);
-            boxText = val.ToString(",0.0#####");
             GeneralUI.TextFieldNext(textFieldGroup);
             string text = GUILayout.TextField(boxText, numBoxTextStyle, GUILayout.Width(boxWidth));
-            //
             try
             {
-                val = double.Parse(text);
+                boxVal = double.Parse(text);
             }
-            catch
-            {
-                val = double.Parse(boxText);
-            }
-            //
+            catch {}
             GUILayout.BeginVertical();
             if (GUILayout.Button("+", spinnerPlusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
             {
-                if (val != 0)
-                    val *= 1.1;
+                if (boxVal != 0)
+                    boxVal *= 1.1;
                 else
-                    val = 0.01;
+                    boxVal = 0.01;
             }
             if (GUILayout.Button("-", spinnerMinusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
             {
-                val /= 1.1;
+                boxVal /= 1.1;
             }
             GUILayout.EndVertical();
-            //
             GUILayout.EndHorizontal();
-            return val;
+            return boxVal;
         }
 
         /// <summary>
