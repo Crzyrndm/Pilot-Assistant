@@ -28,20 +28,6 @@ namespace PilotAssistant.UI
                 SASPresetWindow.windowRect.x = windowRect.x + windowRect.width;
                 SASPresetWindow.windowRect.y = windowRect.y;
                 
-                if (SurfSAS.IsSSASMode())
-                {
-                    if (SurfSAS.IsSSASOperational())
-                        GUI.backgroundColor = GeneralUI.ActiveBackground;
-                    else
-                        GUI.backgroundColor = GeneralUI.InActiveBackground;
-                    
-                    if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
-                    {
-                        SurfSAS.ToggleOperational();
-                    }
-                    GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
-                }
-                
                 SASPresetWindow.Draw(showPresets);
             }
             else

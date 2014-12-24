@@ -66,7 +66,7 @@ namespace PilotAssistant
                 isPaused[0] = isPaused[1] = isPaused[2] = false;
 
                 GeneralUI.InitColors();
-                RenderingManager.AddToPostDrawQueue(5, GUI);
+                RenderingManager.AddToPostDrawQueue(5, DrawGUI);
                 FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(DoSSAS);
             }
         }
@@ -81,7 +81,7 @@ namespace PilotAssistant
             for (int i = 0; i < controllers.Length; i++)
                 controllers[i] = null;
 
-            RenderingManager.RemoveFromPostDrawQueue(5, GUI);
+            RenderingManager.RemoveFromPostDrawQueue(5, DrawGUI);
             FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(DoSSAS);
         }
 
@@ -135,8 +135,21 @@ namespace PilotAssistant
             PauseManager(); // manage activation of SAS axes depending on user input
         }
 
-        public void GUI()
+        public void DrawGUI()
         {
+            if (IsSSASMode())
+            {
+                if (IsSSASOperational())
+                    GUI.backgroundColor = GeneralUI.ActiveBackground;
+                else
+                    GUI.backgroundColor = GeneralUI.InActiveBackground;
+                
+                if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
+                {
+                    ToggleOperational();
+                }
+                GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+            }
             SASMainWindow.Draw(AppLauncher.AppLauncherInstance.bDisplaySAS);
         }
 

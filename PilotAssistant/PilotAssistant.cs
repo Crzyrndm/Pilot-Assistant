@@ -71,7 +71,7 @@ namespace PilotAssistant
             // Init UI
             GeneralUI.InitColors();
 
-            RenderingManager.AddToPostDrawQueue(5, GUI);
+            RenderingManager.AddToPostDrawQueue(5, DrawGUI);
         }
 
         public static PID_Controller GetController(PIDList id)
@@ -89,7 +89,7 @@ namespace PilotAssistant
 
         public void OnDestroy()
         {
-            RenderingManager.RemoveFromPostDrawQueue(5, GUI);
+            RenderingManager.RemoveFromPostDrawQueue(5, DrawGUI);
             GameEvents.onVesselChange.Remove(vesselSwitch);
             PresetManager.SavePresetsToFile();
             isHdgActive = false;
@@ -108,7 +108,7 @@ namespace PilotAssistant
         {
         }
 
-        public void GUI()
+        public void DrawGUI()
         {
             PAMainWindow.Draw(AppLauncher.AppLauncherInstance.bDisplayAssistant);
         }
