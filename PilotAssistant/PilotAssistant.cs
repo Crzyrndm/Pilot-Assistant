@@ -306,6 +306,9 @@ namespace PilotAssistant
 
         private static void keyPressChanges()
         {
+            // Respect current input locks
+            if (InputLockManager.IsLocked(ControlTypes.ALL_SHIP_CONTROLS))
+                return;
             bool mod = GameSettings.MODIFIER_KEY.GetKey();
 
             // Pause key

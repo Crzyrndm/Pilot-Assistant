@@ -92,7 +92,22 @@ namespace PilotAssistant
 
             if (ssasMode)
                 FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] = false;
-            
+
+            if (ssasMode && FlightData.thisVessel.staticPressure == 0)
+            {
+                // Try to seamlessly switch to stock SAS
+                ToggleSSASMode();
+            }
+
+            keyPressChanges();
+        }
+
+        private static void keyPressChanges()
+        {
+            // Respect current input locks
+            if (InputLockManager.IsLocked(ControlTypes.ALL_SHIP_CONTROLS))
+                return;
+
             if (ssasMode && GameSettings.SAS_TOGGLE.GetKeyDown())
             {
                 ssasToggleKey = !ssasToggleKey;
@@ -116,13 +131,7 @@ namespace PilotAssistant
                 if (IsSSASOperational())
                     updateTarget();
             }
-
-            if (ssasMode && FlightData.thisVessel.staticPressure == 0)
-            {
-                // Try to seamlessly switch to stock SAS
-                ToggleSSASMode();
-            }
-
+            
             PauseManager(); // manage activation of SAS axes depending on user input
         }
 
