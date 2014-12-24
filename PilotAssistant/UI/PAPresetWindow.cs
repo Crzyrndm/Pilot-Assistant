@@ -14,9 +14,16 @@ namespace PilotAssistant.UI
 
         private const string TEXT_FIELD_GROUP = "PAPresetWindow";
 
-        internal static void Draw()
+        internal static void Draw(bool show)
         {
-            windowRect = GUILayout.Window(34245, windowRect, DrawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
+            if (show)
+            {
+                windowRect = GUILayout.Window(34245, windowRect, DrawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
+            }
+            else
+            {
+                GeneralUI.ClearLocks(TEXT_FIELD_GROUP);
+            }
         }
 
         private static void DrawPresetWindow(int id)

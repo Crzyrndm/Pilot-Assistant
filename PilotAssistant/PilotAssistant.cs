@@ -110,9 +110,7 @@ namespace PilotAssistant
 
         public void GUI()
         {
-            if (!AppLauncher.AppLauncherInstance.bDisplayAssistant)
-                return;
-            PAMainWindow.Draw();
+            PAMainWindow.Draw(AppLauncher.AppLauncherInstance.bDisplayAssistant);
         }
 
         private void vesselController(FlightCtrlState state)

@@ -82,6 +82,21 @@ namespace PilotAssistant.Utility
             return false;
         }
 
+        // Clear the lock for a specific text field group
+        public static void ClearLocks(string groupName)
+        {
+            TextFieldGroupState st = null;
+            if (textFieldGroups.TryGetValue(groupName, out st))
+            {
+                st.counter = 0;
+                if (st.locked)
+                {
+                    st.locked = false;
+                    InputLockManager.RemoveControlLock(groupName + "_ControlLock");
+                }
+            }
+        }
+
         internal static void InitColors()
         {
             stockBackgroundGUIColor = GUI.backgroundColor;

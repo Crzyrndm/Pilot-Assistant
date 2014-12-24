@@ -128,9 +128,7 @@ namespace PilotAssistant
 
         public void GUI()
         {
-            if (!AppLauncher.AppLauncherInstance.bDisplaySAS)
-                return;
-            SASMainWindow.Draw();
+            SASMainWindow.Draw(AppLauncher.AppLauncherInstance.bDisplaySAS);
         }
 
         public void DoSSAS(FlightCtrlState state)

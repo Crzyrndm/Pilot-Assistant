@@ -17,31 +17,38 @@ namespace PilotAssistant.UI
 
         private const string TEXT_FIELD_GROUP = "SASMainWindow";
 
-        public static void Draw()
+        public static void Draw(bool show)
         {
-            GeneralUI.Styles();
-
-            windowRect = GUILayout.Window(78934856, windowRect, DrawSASWindow, "SAS Module", GUILayout.Width(0), GUILayout.Height(0));
-
-            SASPresetWindow.windowRect.x = windowRect.x + windowRect.width;
-            SASPresetWindow.windowRect.y = windowRect.y;
-
-            if (SurfSAS.IsSSASMode())
+            if (show)
             {
-                if (SurfSAS.IsSSASOperational())
-                    GUI.backgroundColor = GeneralUI.ActiveBackground;
-                else
-                    GUI.backgroundColor = GeneralUI.InActiveBackground;
-
-                if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
+                GeneralUI.Styles();
+                
+                windowRect = GUILayout.Window(78934856, windowRect, DrawSASWindow, "SAS Module", GUILayout.Width(0), GUILayout.Height(0));
+                
+                SASPresetWindow.windowRect.x = windowRect.x + windowRect.width;
+                SASPresetWindow.windowRect.y = windowRect.y;
+                
+                if (SurfSAS.IsSSASMode())
                 {
-                    SurfSAS.ToggleOperational();
+                    if (SurfSAS.IsSSASOperational())
+                        GUI.backgroundColor = GeneralUI.ActiveBackground;
+                    else
+                        GUI.backgroundColor = GeneralUI.InActiveBackground;
+                    
+                    if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
+                    {
+                        SurfSAS.ToggleOperational();
+                    }
+                    GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
                 }
-                GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+                
+                SASPresetWindow.Draw(showPresets);
             }
-
-            if (showPresets)
-                SASPresetWindow.Draw();
+            else
+            {
+                GeneralUI.ClearLocks(TEXT_FIELD_GROUP);
+                SASPresetWindow.Draw(false);
+            }
         }
 
         private static void DrawSASWindow(int id)

@@ -22,17 +22,22 @@ namespace PilotAssistant.UI
         private const int WINDOW_ID = 34244;
         private const string TEXT_FIELD_GROUP = "PAMainWindow";
 
-        public static void Draw()
+        public static void Draw(bool show)
         {
-            GeneralUI.Styles();
-
-            windowRect = GUILayout.Window(WINDOW_ID, windowRect, DrawWindow, "Pilot Assistant", GUILayout.Width(0), GUILayout.Height(0));
-
-            PAPresetWindow.windowRect.x = windowRect.x + windowRect.width;
-            PAPresetWindow.windowRect.y = windowRect.y;
-            if (showPresets)
+            if (show)
             {
-                PAPresetWindow.Draw();
+                GeneralUI.Styles();
+
+                windowRect = GUILayout.Window(WINDOW_ID, windowRect, DrawWindow, "Pilot Assistant", GUILayout.Width(0), GUILayout.Height(0));
+                
+                PAPresetWindow.windowRect.x = windowRect.x + windowRect.width;
+                PAPresetWindow.windowRect.y = windowRect.y;
+                PAPresetWindow.Draw(showPresets);
+            }
+            else
+            {
+                GeneralUI.ClearLocks(TEXT_FIELD_GROUP);
+                PAPresetWindow.Draw(false);
             }
         }
 
