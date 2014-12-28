@@ -127,7 +127,7 @@ namespace PilotAssistant.Utility
         }
 
         /// <summary>
-        /// Draws a label and text box of specified widths with +/- 1 increment buttons. Returns the numeric value of the text box
+        /// Draws a toggle button and text box of specified widths with +/- 1 increment buttons. Returns the numeric value of the text box
         /// </summary>
         /// <param name="toggleText"></param>
         /// <param name="boxVal"></param>
@@ -136,12 +136,18 @@ namespace PilotAssistant.Utility
         /// <param name="upper">upper value to which input will be clamped, attempting to increase will roll value down to lower</param>
         /// <param name="lower">lower value to which input will be clamped, attempting to decrease will roll value up to upper</param>
         /// <returns></returns>
-        internal static double TogPlusNumBox(string toggleText, ref bool toggleState, double boxVal, float toggleWidth = 100, float boxWidth = 60, float upper = 360, float lower = -360)
+        internal static double TogPlusNumBox(string toggleText, ref bool toggleState, double currentVal, double boxVal, float toggleWidth = 100, float boxWidth = 60, float upper = 360, float lower = -360)
         {
             GUILayout.BeginHorizontal();
 
             // state is returned by reference
-            toggleState = GUILayout.Toggle(toggleState, toggleText, toggleButton, GUILayout.Width(toggleWidth));
+            bool tempState = GUILayout.Toggle(toggleState, toggleText, toggleButton, GUILayout.Width(toggleWidth));
+            if (tempState != toggleState)
+            {
+                toggleState = tempState;
+                if (toggleState)
+                    boxVal = currentVal;
+            }
 
             string text = GUILayout.TextField(boxVal.ToString("N2"), numBoxTextStyle, GUILayout.Width(boxWidth));
             //

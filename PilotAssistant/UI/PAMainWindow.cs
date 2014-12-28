@@ -83,7 +83,7 @@ namespace PilotAssistant.UI
         private static void displayWindow(int id)
         {
             if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
-                AppLauncher.AppLauncherInstance.bDisplayAssistant = false;
+                AppLauncher.AppLauncherFlight.bDisplayAssistant = false;
 
             if (PilotAssistant.bPause || PilotAssistant.SASMonitor())
                 GUILayout.Box("CONTROL PAUSED", GeneralUI.labelAlertStyle);

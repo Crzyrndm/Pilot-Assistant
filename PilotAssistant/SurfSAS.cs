@@ -177,7 +177,7 @@ namespace PilotAssistant
             }
             
             // Main and preset window stuff
-            if (!AppLauncher.AppLauncherInstance.bDisplaySAS)
+            if (!AppLauncher.AppLauncherFlight.bDisplaySAS)
                 return;
             SASMainWindow.Draw();
         }

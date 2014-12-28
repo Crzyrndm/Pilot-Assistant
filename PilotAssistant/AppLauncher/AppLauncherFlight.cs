@@ -5,7 +5,7 @@ using UnityEngine;
 namespace PilotAssistant.AppLauncher
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
-    public class AppLauncherInstance : MonoBehaviour
+    public class AppLauncherFlight : MonoBehaviour
     {
         private static ApplicationLauncherButton btnLauncher;
         private static Rect window;

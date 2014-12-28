@@ -128,7 +128,7 @@ namespace PilotAssistant
 
         public void drawGUI()
         {
-            if (!AppLauncher.AppLauncherInstance.bDisplayAssistant)
+            if (!AppLauncher.AppLauncherFlight.bDisplayAssistant)
                 return;
 
             if (GeneralUI.UISkin == null)

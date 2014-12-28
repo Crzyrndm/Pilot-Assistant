@@ -10,14 +10,20 @@ namespace PilotAssistant.Presets
     internal class PresetManager : MonoBehaviour
     {
         internal static PresetPA defaultPATuning;
+        
         internal static List<PresetPA> PAPresetList = new List<PresetPA>();
+
         internal static PresetPA activePAPreset = null;
 
         internal static PresetSAS defaultSASTuning;
         internal static PresetSAS defaultStockSASTuning;
+
         internal static List<PresetSAS> SASPresetList = new List<PresetSAS>();
+
         internal static PresetSAS activeSASPreset = null;
         internal static PresetSAS activeStockSASPreset = null;
+
+        internal static List<CraftPreset> craftPresetList = new List<CraftPreset>();
 
         public void Start()
         {
@@ -32,7 +38,6 @@ namespace PilotAssistant.Presets
 
         internal static void loadPresetsFromFile()
         {
-            PAPresetList.Clear();
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("PIDPreset"))
             {
                 if (node == null)
@@ -60,12 +65,23 @@ namespace PilotAssistant.Presets
                 gains.Add(controllerSASGains(node.GetNode("ElevatorController")));
                 SASPresetList.Add(new PresetSAS(gains, node.GetValue("name"), bool.Parse(node.GetValue("stock"))));
             }
+
+            foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("CraftPreset"))
+            {
+                if (node == null)
+                    continue;
+
+                CraftPreset cP = new CraftPreset(node.GetValue("name"),
+                                        PAPresetList.FirstOrDefault(p => p.name == node.GetValue("pilot")),
+                                        SASPresetList.FirstOrDefault(p => p.name == node.GetValue("ssas")),
+                                        SASPresetList.FirstOrDefault(p => p.name == node.GetValue("stock")));
+            }
         }
 
         internal static void saveCFG()
         {
             ConfigNode node = new ConfigNode();
-            if (PAPresetList.Count == 0 && SASPresetList.Count == 0)
+            if (PAPresetList.Count == 0 && SASPresetList.Count == 0 && craftPresetList.Count == 0)
                 node.AddValue("dummy", "do not delete me");
             else
             {
@@ -76,6 +92,10 @@ namespace PilotAssistant.Presets
                 foreach (PresetSAS p in SASPresetList)
                 {
                     node.AddNode(SASPresetNode(p));
+                }
+                foreach (CraftPreset c in craftPresetList)
+                {
+                    node.AddNode(CraftNode(c));
                 }
             }
             node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/Pilot Assistant/Presets.cfg");
@@ -130,6 +150,17 @@ namespace PilotAssistant.Presets
             node.AddNode(PIDnode("AileronController", (int)SASList.Roll, preset));
             node.AddNode(PIDnode("RudderController", (int)SASList.Yaw, preset));
             node.AddNode(PIDnode("ElevatorController", (int)SASList.Pitch, preset));
+
+            return node;
+        }
+
+        private static ConfigNode CraftNode(CraftPreset preset)
+        {
+            ConfigNode node = new ConfigNode("CraftPreset");
+            node.AddValue("name", preset.Name);
+            node.AddValue("pilot", preset.PresetPA);
+            node.AddValue("ssas", preset.SSAS);
+            node.AddValue("stock", preset.Stock);
 
             return node;
         }

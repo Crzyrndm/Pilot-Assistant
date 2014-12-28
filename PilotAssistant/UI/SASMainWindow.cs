@@ -15,7 +15,7 @@ namespace PilotAssistant.UI
 
         public static void Draw()
         {
-            if (AppLauncher.AppLauncherInstance.bDisplaySAS)
+            if (AppLauncher.AppLauncherFlight.bDisplaySAS)
                 SASwindow = GUILayout.Window(78934856, SASwindow, drawSASWindow, "SAS Module", GUILayout.Height(0));
 
             SASPresetWindow.Draw();
@@ -25,7 +25,7 @@ namespace PilotAssistant.UI
         {
             if (GUI.Button(new Rect(SASwindow.width - 16, 2, 14, 14), ""))
             {
-                AppLauncher.AppLauncherInstance.bDisplaySAS = false;
+                AppLauncher.AppLauncherFlight.bDisplaySAS = false;
             }
 
             SASPresetWindow.bShowPresets = GUILayout.Toggle(SASPresetWindow.bShowPresets, SASPresetWindow.bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
@@ -50,10 +50,10 @@ namespace PilotAssistant.UI
 
                 if (SurfSAS.bArmed)
                 {
-                    SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Functions.Clamp((float)GeneralUI.TogPlusNumBox("Pitch:", ref SurfSAS.bActive[(int)SASList.Pitch], SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint, 80), -80, 80);
-                    SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint = (float)GeneralUI.TogPlusNumBox("Heading:", ref SurfSAS.bActive[(int)SASList.Yaw], SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint, 80, 60, 360, 0);
+                    SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Functions.Clamp((float)GeneralUI.TogPlusNumBox("Pitch:", ref SurfSAS.bActive[(int)SASList.Pitch], FlightData.pitch, SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint, 80), -80, 80);
+                    SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint = (float)GeneralUI.TogPlusNumBox("Heading:", ref SurfSAS.bActive[(int)SASList.Yaw], FlightData.heading, SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint, 80, 60, 360, 0);
                     if (!SurfSAS.rollState) // editable
-                        SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.TogPlusNumBox("Roll:", ref SurfSAS.bActive[(int)SASList.Roll], SurfSAS.SASControllers[(int)SASList.Roll].SetPoint, 80, 60, 180, -180);
+                        SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.TogPlusNumBox("Roll:", ref SurfSAS.bActive[(int)SASList.Roll], FlightData.roll, SurfSAS.SASControllers[(int)SASList.Roll].SetPoint, 80, 60, 180, -180);
                     else // not editable b/c vector mode
                     {
                         GUILayout.BeginHorizontal();
