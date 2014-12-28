@@ -22,6 +22,7 @@ namespace PilotAssistant
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class InputModerator : MonoBehaviour
     {
+        private static FlightData flightData;
         internal static List<Monitor> Monitors = new List<Monitor>();
         
         public void Start()
@@ -32,8 +33,8 @@ namespace PilotAssistant
             Monitors.Add(new Monitor(-100, 100, 10, 0, 0, "VSpd"));
 
             // register vessel
-            FlightData.thisVessel = FlightGlobals.ActiveVessel;
-            FlightData.thisVessel.OnFlyByWire += new FlightInputCallback(vesselController);
+            flightData = new FlightData(FlightGlobals.ActiveVessel);
+            flightData.Vessel.OnFlyByWire += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
 
             // Init colours
@@ -50,9 +51,9 @@ namespace PilotAssistant
 
         private void vesselSwitch(Vessel v)
         {
-            FlightData.thisVessel.OnFlyByWire -= new FlightInputCallback(vesselController);
-            FlightData.thisVessel = v;
-            FlightData.thisVessel.OnFlyByWire += new FlightInputCallback(vesselController);
+            flightData.Vessel.OnFlyByWire -= new FlightInputCallback(vesselController);
+            flightData.Vessel = v;
+            flightData.Vessel.OnFlyByWire += new FlightInputCallback(vesselController);
         }
 
         public void Update()
@@ -70,10 +71,10 @@ namespace PilotAssistant
 
         private void vesselController(FlightCtrlState c)
         {
-            FlightData.updateAttitude();
+            flightData.UpdateAttitude();
 
-            c.pitch -= Monitors[(int)MonitorList.Altitude].response(FlightData.thisVessel.altitude)
-                - Monitors[(int)MonitorList.Pitch].response(FlightData.pitch);
+            c.pitch -= Monitors[(int)MonitorList.Altitude].response(flightData.Vessel.altitude)
+                - Monitors[(int)MonitorList.Pitch].response(flightData.Pitch);
         }
     }
 }

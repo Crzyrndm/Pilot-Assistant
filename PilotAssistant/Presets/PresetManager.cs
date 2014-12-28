@@ -7,6 +7,7 @@ using UnityEngine;
 namespace PilotAssistant.Presets
 {
     using UI;
+    using Utility;
 
     [KSPAddon(KSPAddon.Startup.MainMenu, true)]
     internal class PresetManager : MonoBehaviour
@@ -73,7 +74,7 @@ namespace PilotAssistant.Presets
 
         public static void InitDefaultStockSASTuning()
         {
-            defaultStockSASTuning = new SASPreset(Utility.FlightData.thisVessel.Autopilot.SAS, "Stock");
+            defaultStockSASTuning = new SASPreset(FlightGlobals.ActiveVessel.Autopilot.SAS, "Stock");
             if (activeStockSASPreset == null)
                 activeStockSASPreset = defaultStockSASTuning;
             else if (activeStockSASPreset != defaultStockSASTuning)
@@ -153,7 +154,7 @@ namespace PilotAssistant.Presets
                 }
             }
 
-            SASPreset p2 = new SASPreset(Utility.FlightData.thisVessel.Autopilot.SAS, name);
+            SASPreset p2 = new SASPreset(FlightGlobals.ActiveVessel.Autopilot.SAS, name);
             SASPresetList.Add(p2);
             LoadStockSASPreset(p2);
             SavePresetsToFile();
