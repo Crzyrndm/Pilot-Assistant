@@ -53,8 +53,6 @@ namespace PilotAssistant
             // grab stock PID values
             if (flightData.Vessel.Autopilot.SAS.pidLockedPitch != null)
             {
-                PresetManager.InitDefaultStockSASTuning();
-
                 PID_Controller pitch = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
                 PID_Controller roll = new PID.PID_Controller(0.1, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
                 PID_Controller yaw = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
@@ -64,6 +62,7 @@ namespace PilotAssistant
 
                 // Set up a default preset that can be easily returned to
                 PresetManager.InitDefaultSASTuning(controllers);
+                PresetManager.InitDefaultStockSASTuning(flightData.Vessel.Autopilot.SAS);
                 
                 initialized = true;
                 isPaused[0] = isPaused[1] = isPaused[2] = false;
@@ -365,12 +364,12 @@ namespace PilotAssistant
         
         public static void RegisterNewStockPreset(string name)
         {
-            PresetManager.RegisterStockSASPreset(name);
+            PresetManager.RegisterStockSASPreset(flightData.Vessel.Autopilot.SAS, name);
         }
         
         public static void LoadStockPreset(SASPreset p)
         {
-            PresetManager.LoadStockSASPreset(p);
+            PresetManager.LoadStockSASPreset(flightData.Vessel.Autopilot.SAS, p);
         }
 
         public static void updateTarget()

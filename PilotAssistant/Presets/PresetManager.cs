@@ -72,14 +72,14 @@ namespace PilotAssistant.Presets
             node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/Pilot Assistant/Presets.cfg");
         }
 
-        public static void InitDefaultStockSASTuning()
+        public static void InitDefaultStockSASTuning(VesselAutopilot.VesselSAS sas)
         {
-            defaultStockSASTuning = new SASPreset(FlightGlobals.ActiveVessel.Autopilot.SAS, "Stock");
+            defaultStockSASTuning = new SASPreset(sas, "Stock");
             if (activeStockSASPreset == null)
                 activeStockSASPreset = defaultStockSASTuning;
             else if (activeStockSASPreset != defaultStockSASTuning)
             {
-                LoadStockSASPreset(activeStockSASPreset);
+                LoadStockSASPreset(sas, activeStockSASPreset);
                 Messaging.PostMessage("Stock SAS active preset loaded.");
             }
         }
@@ -138,7 +138,7 @@ namespace PilotAssistant.Presets
             return defaultPATuning;
         }
 
-        public static void RegisterStockSASPreset(string name)
+        public static void RegisterStockSASPreset(VesselAutopilot.VesselSAS sas, string name)
         {
             if (name == "")
             {
@@ -154,9 +154,9 @@ namespace PilotAssistant.Presets
                 }
             }
 
-            SASPreset p2 = new SASPreset(FlightGlobals.ActiveVessel.Autopilot.SAS, name);
+            SASPreset p2 = new SASPreset(sas, name);
             SASPresetList.Add(p2);
-            LoadStockSASPreset(p2);
+            LoadStockSASPreset(sas, p2);
             SavePresetsToFile();
         }
         
@@ -204,10 +204,10 @@ namespace PilotAssistant.Presets
             SavePresetsToFile();
         }
 
-        public static void LoadStockSASPreset(SASPreset p)
+        public static void LoadStockSASPreset(VesselAutopilot.VesselSAS sas, SASPreset p)
         {
             activeStockSASPreset = p;
-            p.LoadStockPreset();
+            p.LoadStockPreset(sas);
             Messaging.PostMessage("Loaded preset \"" + p.GetName() + "\"");
         }
         

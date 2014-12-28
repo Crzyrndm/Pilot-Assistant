@@ -99,23 +99,22 @@ namespace PilotAssistant.Presets
             }
         }
 
-        public void LoadStockPreset()
+        public void LoadStockPreset(VesselAutopilot.VesselSAS sas)
         {
-            Vessel v = FlightGlobals.ActiveVessel;
-            v.Autopilot.SAS.pidLockedPitch.kp = PIDGains[(int)SASList.Pitch][0];
-            v.Autopilot.SAS.pidLockedPitch.ki = PIDGains[(int)SASList.Pitch][1];
-            v.Autopilot.SAS.pidLockedPitch.kd = PIDGains[(int)SASList.Pitch][2];
-            v.Autopilot.SAS.pidLockedPitch.clamp = PIDGains[(int)SASList.Pitch][3];
+            sas.pidLockedPitch.kp = PIDGains[(int)SASList.Pitch][0];
+            sas.pidLockedPitch.ki = PIDGains[(int)SASList.Pitch][1];
+            sas.pidLockedPitch.kd = PIDGains[(int)SASList.Pitch][2];
+            sas.pidLockedPitch.clamp = PIDGains[(int)SASList.Pitch][3];
 
-            v.Autopilot.SAS.pidLockedRoll.kp = PIDGains[(int)SASList.Roll][0];
-            v.Autopilot.SAS.pidLockedRoll.ki = PIDGains[(int)SASList.Roll][1];
-            v.Autopilot.SAS.pidLockedRoll.kd = PIDGains[(int)SASList.Roll][2];
-            v.Autopilot.SAS.pidLockedRoll.clamp = PIDGains[(int)SASList.Roll][3];
+            sas.pidLockedRoll.kp = PIDGains[(int)SASList.Roll][0];
+            sas.pidLockedRoll.ki = PIDGains[(int)SASList.Roll][1];
+            sas.pidLockedRoll.kd = PIDGains[(int)SASList.Roll][2];
+            sas.pidLockedRoll.clamp = PIDGains[(int)SASList.Roll][3];
 
-            v.Autopilot.SAS.pidLockedYaw.kp = PIDGains[(int)SASList.Yaw][0];
-            v.Autopilot.SAS.pidLockedYaw.ki = PIDGains[(int)SASList.Yaw][1];
-            v.Autopilot.SAS.pidLockedYaw.kd = PIDGains[(int)SASList.Yaw][2];
-            v.Autopilot.SAS.pidLockedYaw.clamp = PIDGains[(int)SASList.Yaw][3];
+            sas.pidLockedYaw.kp = PIDGains[(int)SASList.Yaw][0];
+            sas.pidLockedYaw.ki = PIDGains[(int)SASList.Yaw][1];
+            sas.pidLockedYaw.kd = PIDGains[(int)SASList.Yaw][2];
+            sas.pidLockedYaw.clamp = PIDGains[(int)SASList.Yaw][3];
         }
 
         public void Update(PID.PID_Controller[] controllers)
