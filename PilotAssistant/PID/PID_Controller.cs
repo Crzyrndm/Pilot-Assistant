@@ -32,8 +32,7 @@ namespace PilotAssistant.PID
 
         private double scale = 1;
 
-        internal bool bShow = false;
-        internal bool skipDerivative = false;
+        private bool skipDerivative = false;
 
         public PID_Controller(double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1)
         {
@@ -106,6 +105,14 @@ namespace PilotAssistant.PID
         #endregion
 
         #region properties
+        public bool SkipDerivative
+        {
+            set
+            {
+                skipDerivative = true;
+            }
+        }
+        
         public double SetPoint
         {
             get

@@ -14,6 +14,7 @@ namespace PilotAssistant.UI
         private static bool showPresets = false;
 
         private static bool[] stockPIDDisplay = { false, false, false };
+        private static bool[] ssasPIDDisplay = { false, false, false };
 
         private const string TEXT_FIELD_GROUP = "SASMainWindow";
 
@@ -108,9 +109,9 @@ namespace PilotAssistant.UI
         {
             PID.PID_Controller controller = SurfSAS.GetController(controllerID);
             if (GUILayout.Button(inputName, GeneralUI.buttonStyle, GUILayout.ExpandWidth(true)))
-                controller.bShow = !controller.bShow;
+                ssasPIDDisplay[(int)controllerID] = !ssasPIDDisplay[(int)controllerID]; 
 
-            if (controller.bShow)
+            if (ssasPIDDisplay[(int)controllerID])
             {
                 controller.PGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.PGain, "F3", 45);
                 controller.IGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.IGain, "F3", 45);

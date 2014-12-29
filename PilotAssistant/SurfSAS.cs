@@ -229,7 +229,7 @@ namespace PilotAssistant
                     if (!rollStateWas)
                     {
                         GetController(SASList.Roll).SetPoint = 0;
-                        GetController(SASList.Roll).skipDerivative = true;
+                        GetController(SASList.Roll).SkipDerivative = true;
                         rollTarget = flightData.Vessel.ReferenceTransform.right;
                     }
 
@@ -244,7 +244,7 @@ namespace PilotAssistant
                     if (rollStateWas)
                     {
                         GetController(SASList.Roll).SetPoint = flightData.Roll;
-                        GetController(SASList.Roll).skipDerivative = true;
+                        GetController(SASList.Roll).SkipDerivative = true;
                     }
 
                     if (GetController(SASList.Roll).SetPoint - flightData.Roll >= -180 && GetController(SASList.Roll).SetPoint - flightData.Roll <= 180)

@@ -12,6 +12,8 @@ namespace PilotAssistant.UI
 
         private static bool showPresets = false;
 
+        private static bool[] pidDisplay = { false, false, false, false, false, false, false };
+
         private static bool showPIDLimits = false;
         private static bool showControlSurfaces = false;
 
@@ -241,11 +243,10 @@ namespace PilotAssistant.UI
                                               inputValue.ToString("F" + displayPrecision),
                                               inputUnits);
             if (GUILayout.Button(buttonText, GeneralUI.buttonStyle, GUILayout.ExpandWidth(true)))
-            {
-                controller.bShow = !controller.bShow;
-            }
+                pidDisplay[(int)controllerID] = !pidDisplay[(int)controllerID];
 
-            if (controller.bShow)
+
+            if (pidDisplay[(int)controllerID])
             {
                 if (showTarget)
                     GUILayout.Label(string.Format("Target: ", inputName) + controller.SetPoint.ToString("F" + displayPrecision) + inputUnits);
