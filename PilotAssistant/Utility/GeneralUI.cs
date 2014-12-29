@@ -6,25 +6,141 @@ namespace PilotAssistant.Utility
 {
     static class GeneralUI
     {
-        internal static Color stockBackgroundGUIColor;
-        internal static Color ActiveBackground;
-        internal static Color InActiveBackground;
-        internal static Color HeaderButtonBackground;
+        private static Color ssasActiveBGColor = XKCDColors.BrightOrange;
+        private static Color ssasInactiveBGColor = XKCDColors.BrightSkyBlue;
 
-        internal static GUIStyle labelAlertStyle;
-        internal static GUIStyle numBoxTextStyle;
+        private static GUIStyle labelAlertStyle;
+        private static GUIStyle numBoxTextStyle;
 
-        // New
-        internal static bool stylesInitialized;
-        internal static GUIStyle guiSectionStyle;
-        internal static GUIStyle toggleButtonStyle;
-        internal static GUIStyle buttonStyle;
-        internal static GUIStyle boldLabelStyle;
+        private static bool stylesInitialized;
+        private static GUIStyle guiSectionStyle;
+        private static GUIStyle toggleButtonStyle;
+        private static GUIStyle buttonStyle;
+        private static GUIStyle boldLabelStyle;
 
-        internal static GUIStyle spinnerPlusBtnStyle;
-        internal static GUIStyle spinnerMinusBtnStyle;
+        private static GUIStyle spinnerPlusBtnStyle;
+        private static GUIStyle spinnerMinusBtnStyle;
 
-        internal static GUIStyle labelStyle;
+        private static GUIStyle labelStyle;
+
+        public static Color SSASActiveBGColor
+        {
+            get
+            {
+                return ssasActiveBGColor;
+            }
+        }
+        public static Color SSASInactiveBGColor
+        {
+            get
+            {
+                return ssasInactiveBGColor;
+            }
+        }
+
+        public static GUIStyle LabelAlertStyle
+        {
+            get
+            {
+                if (!stylesInitialized)
+                {
+                    InitStyles();
+                }
+                return labelAlertStyle;
+            }
+        }
+
+        public static GUIStyle NumBoxTextStyle
+        {
+            get
+            {
+                if (!stylesInitialized)
+                {
+                    InitStyles();
+                }
+                return numBoxTextStyle;
+            }
+        }
+
+        public static GUIStyle GUISectionStyle
+        {
+            get
+            {
+                if (!stylesInitialized)
+                {
+                    InitStyles();
+                }
+                return guiSectionStyle;
+            }
+        }
+        public static GUIStyle ToggleButtonStyle
+        {
+            get
+            {
+                if (!stylesInitialized)
+                {
+                    InitStyles();
+                }
+                return toggleButtonStyle;
+            }
+        }
+        public static GUIStyle ButtonStyle
+        {
+            get
+            {
+                if (!stylesInitialized)
+                {
+                    InitStyles();
+                }
+                return buttonStyle;
+            }
+        }
+        public static GUIStyle BoldLabelStyle
+        {
+            get
+            {
+                if (!stylesInitialized)
+                {
+                    InitStyles();
+                }
+                return boldLabelStyle;
+            }
+        }
+
+        public static GUIStyle SpinnerPlusBtnStyle
+        {
+            get
+            {
+                if (!stylesInitialized)
+                {
+                    InitStyles();
+                }
+                return spinnerPlusBtnStyle;
+            }
+        }
+        public static GUIStyle SpinnerMinusBtnStyle
+        {
+            get
+            {
+                if (!stylesInitialized)
+                {
+                    InitStyles();
+                }
+                return spinnerMinusBtnStyle;
+            }
+        }
+
+        public static GUIStyle LabelStyle
+        {
+            get
+            {
+                if (!stylesInitialized)
+                {
+                    InitStyles();
+                }
+                return labelStyle;
+            }
+        }
 
         // Used to track the state of a text field group.
         private class TextFieldGroupState
@@ -97,32 +213,21 @@ namespace PilotAssistant.Utility
             }
         }
 
-        internal static void InitColors()
+        private static void InitStyles()
         {
-            stockBackgroundGUIColor = GUI.backgroundColor;
-            ActiveBackground = XKCDColors.BrightOrange;
-            InActiveBackground = XKCDColors.BrightSkyBlue;
-            HeaderButtonBackground = XKCDColors.BlueBlue;
-        }
-
-        internal static void Styles()
-        {
-            if (stylesInitialized)
-                return;
-            GUI.skin = HighLogic.Skin;
-
+            GUISkin skin = HighLogic.Skin;
             // style for the paused message
-            labelAlertStyle = new GUIStyle(GUI.skin.label);
+            labelAlertStyle = new GUIStyle(skin.label);
             labelAlertStyle.normal.textColor = XKCDColors.Red;
             labelAlertStyle.fontSize = 21;
             labelAlertStyle.fontStyle = FontStyle.Bold;
 
             // style for text box to align with increment buttons better
-            numBoxTextStyle = new GUIStyle(GUI.skin.textField);
+            numBoxTextStyle = new GUIStyle(skin.textField);
             numBoxTextStyle.alignment = TextAnchor.MiddleLeft;
             numBoxTextStyle.margin = new RectOffset(4, 0, 5, 3);
 
-            guiSectionStyle = new GUIStyle(GUI.skin.box);
+            guiSectionStyle = new GUIStyle(skin.box);
             guiSectionStyle.normal.textColor
                 = guiSectionStyle.focused.textColor
                 = Color.white;
@@ -136,7 +241,7 @@ namespace PilotAssistant.Utility
                 = Color.green;
             guiSectionStyle.padding = new RectOffset(4, 4, 4, 4);
 
-            toggleButtonStyle = new GUIStyle(GUI.skin.button);
+            toggleButtonStyle = new GUIStyle(skin.button);
             toggleButtonStyle.normal.textColor
                 = toggleButtonStyle.focused.textColor
                 = Color.white;
@@ -150,27 +255,26 @@ namespace PilotAssistant.Utility
                 = Color.green;
             toggleButtonStyle.padding = new RectOffset(4, 4, 4, 4);
 
-            buttonStyle = new GUIStyle(GUI.skin.button);
+            buttonStyle = new GUIStyle(skin.button);
             buttonStyle.padding = new RectOffset(4, 4, 4, 4);
             
             // style for increment button
-            spinnerPlusBtnStyle = new GUIStyle(GUI.skin.button);
+            spinnerPlusBtnStyle = new GUIStyle(skin.button);
             spinnerPlusBtnStyle.margin = new RectOffset(0, 2, 2, 0);
 
             // style for derement button
-            spinnerMinusBtnStyle = new GUIStyle(GUI.skin.button);
+            spinnerMinusBtnStyle = new GUIStyle(skin.button);
             spinnerMinusBtnStyle.margin = new RectOffset(0, 2, 0, 2);
 
             // style for label to align with increment buttons
-            labelStyle = new GUIStyle(GUI.skin.label);
+            labelStyle = new GUIStyle(skin.label);
             labelStyle.alignment = TextAnchor.MiddleLeft;
             labelStyle.margin = new RectOffset(4, 4, 5, 3);
             
-            boldLabelStyle = new GUIStyle(GUI.skin.label);
+            boldLabelStyle = new GUIStyle(skin.label);
             boldLabelStyle.fontStyle = FontStyle.Bold;
             boldLabelStyle.alignment = TextAnchor.MiddleLeft;
-
-            stylesInitialized = false;
+            stylesInitialized = true;
         }
 
         /// <summary>
@@ -182,7 +286,7 @@ namespace PilotAssistant.Utility
         /// <param name="labelWidth"></param>
         /// <param name="boxWidth"></param>
         /// <returns>edited value of the text box</returns>
-        internal static double labPlusNumBox(
+        public static double LabPlusNumBox(
             string textFieldGroup,
             string labelText,
             double boxVal,
@@ -193,23 +297,23 @@ namespace PilotAssistant.Utility
             string boxText = (format != null) ? boxVal.ToString(format) : boxVal.ToString();
             GUILayout.BeginHorizontal();
 
-            GUILayout.Label(labelText, labelStyle, GUILayout.Width(labelWidth));
+            GUILayout.Label(labelText, LabelStyle, GUILayout.Width(labelWidth));
             GeneralUI.TextFieldNext(textFieldGroup);
-            string text = GUILayout.TextField(boxText, numBoxTextStyle, GUILayout.Width(boxWidth));
+            string text = GUILayout.TextField(boxText, NumBoxTextStyle, GUILayout.Width(boxWidth));
             try
             {
                 boxVal = double.Parse(text);
             }
             catch {}
             GUILayout.BeginVertical();
-            if (GUILayout.Button("+", spinnerPlusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("+", SpinnerPlusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 if (boxVal != 0)
                     boxVal *= 1.1;
                 else
                     boxVal = 0.01;
             }
-            if (GUILayout.Button("-", spinnerMinusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("-", SpinnerMinusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 boxVal /= 1.1;
             }
@@ -229,7 +333,7 @@ namespace PilotAssistant.Utility
         /// <param name="upper">upper value to which input will be clamped, attempting to increase will roll value down to lower</param>
         /// <param name="lower">lower value to which input will be clamped, attempting to decrease will roll value up to upper</param>
         /// <returns></returns>
-        internal static double TogPlusNumBox(
+        public static double TogPlusNumBox(
             string textFieldGroup,
             string toggleText,
             ref bool toggleState,
@@ -241,22 +345,22 @@ namespace PilotAssistant.Utility
         {
             GUILayout.BeginHorizontal();
             // state is returned by reference
-            toggleState = GUILayout.Toggle(toggleState, toggleText, toggleButtonStyle, GUILayout.Width(toggleWidth));
+            toggleState = GUILayout.Toggle(toggleState, toggleText, ToggleButtonStyle, GUILayout.Width(toggleWidth));
             GeneralUI.TextFieldNext(textFieldGroup);
-            string text = GUILayout.TextField(boxVal.ToString("F2"), numBoxTextStyle, GUILayout.Width(boxWidth));
+            string text = GUILayout.TextField(boxVal.ToString("F2"), NumBoxTextStyle, GUILayout.Width(boxWidth));
             try
             {
                 boxVal = double.Parse(text);
             }
             catch {}
             GUILayout.BeginVertical();
-            if (GUILayout.Button("+", spinnerPlusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("+", SpinnerPlusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 boxVal += 1;
                 if (boxVal >= upper)
                     boxVal = lower;
             }
-            if (GUILayout.Button("-", spinnerMinusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("-", SpinnerMinusBtnStyle, GUILayout.Width(20), GUILayout.Height(13)))
             {
                 boxVal -= 1;
                 if (boxVal < lower)
@@ -268,7 +372,7 @@ namespace PilotAssistant.Utility
         }
 
         // Unused?
-        internal static Texture2D textureBlock(int w, int h, Color col)
+        public static Texture2D textureBlock(int w, int h, Color col)
         {
             Color[] pixels = new Color[w * h];
             for( int i = 0; i < pixels.Length; i++)

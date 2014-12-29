@@ -22,8 +22,7 @@ namespace PilotAssistant.UI
         {
             if (show)
             {
-                GeneralUI.Styles();
-                
+                GUI.skin = HighLogic.Skin;
                 windowRect = GUILayout.Window(78934856, windowRect, DrawSASWindow, "SAS Module", GUILayout.Width(0), GUILayout.Height(0));
                 
                 SASPresetWindow.windowRect.x = windowRect.x + windowRect.width;
@@ -46,22 +45,22 @@ namespace PilotAssistant.UI
             bool isOperational = SurfSAS.IsSSASOperational() || SurfSAS.IsStockSASOperational();
             bool isSSASMode = SurfSAS.IsSSASMode();
             GUILayout.BeginHorizontal();
-            showPresets = GUILayout.Toggle(showPresets, "Presets", GeneralUI.toggleButtonStyle);
+            showPresets = GUILayout.Toggle(showPresets, "Presets", GeneralUI.ToggleButtonStyle);
             GUILayout.EndHorizontal();
             
             // SSAS/SAS
-            GUILayout.BeginVertical(GeneralUI.guiSectionStyle, GUILayout.ExpandWidth(true));
+            GUILayout.BeginVertical(GeneralUI.GUISectionStyle, GUILayout.ExpandWidth(true));
             GUILayout.BeginHorizontal();
-            if (GUILayout.Toggle(isOperational, isOperational ? "On" : "Off", GeneralUI.toggleButtonStyle, GUILayout.ExpandWidth(false)) != isOperational)
+            if (GUILayout.Toggle(isOperational, isOperational ? "On" : "Off", GeneralUI.ToggleButtonStyle, GUILayout.ExpandWidth(false)) != isOperational)
             {
                 SurfSAS.ToggleOperational();
             }
-            GUILayout.Label("SAS", GeneralUI.boldLabelStyle, GUILayout.ExpandWidth(true));
+            GUILayout.Label("SAS", GeneralUI.BoldLabelStyle, GUILayout.ExpandWidth(true));
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
             GUILayout.Label("Mode:");
-            bool tmpToggle1 = GUILayout.Toggle(!isSSASMode, "Stock SAS", GeneralUI.toggleButtonStyle);
-            bool tmpToggle2 = GUILayout.Toggle(isSSASMode, "SSAS", GeneralUI.toggleButtonStyle);
+            bool tmpToggle1 = GUILayout.Toggle(!isSSASMode, "Stock SAS", GeneralUI.ToggleButtonStyle);
+            bool tmpToggle2 = GUILayout.Toggle(isSSASMode, "SSAS", GeneralUI.ToggleButtonStyle);
             // tmpToggle1 and tmpToggle2 are true when the user clicks the non-active mode, i.e. the mode changes. 
             if (tmpToggle1 && tmpToggle2)
                 SurfSAS.ToggleSSASMode();
@@ -108,31 +107,31 @@ namespace PilotAssistant.UI
         private static void drawPIDValues(SASList controllerID, string inputName)
         {
             PID.PID_Controller controller = SurfSAS.GetController(controllerID);
-            if (GUILayout.Button(inputName, GeneralUI.buttonStyle, GUILayout.ExpandWidth(true)))
+            if (GUILayout.Button(inputName, GeneralUI.ButtonStyle, GUILayout.ExpandWidth(true)))
                 ssasPIDDisplay[(int)controllerID] = !ssasPIDDisplay[(int)controllerID]; 
 
             if (ssasPIDDisplay[(int)controllerID])
             {
-                controller.PGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.PGain, "F3", 45);
-                controller.IGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.IGain, "F3", 45);
-                controller.DGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kd:", controller.DGain, "F3", 45);
-                controller.Scalar = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Scalar:", controller.Scalar, "F3", 45);
+                controller.PGain = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.PGain, "F3", 45);
+                controller.IGain = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.IGain, "F3", 45);
+                controller.DGain = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Kd:", controller.DGain, "F3", 45);
+                controller.Scalar = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Scalar:", controller.Scalar, "F3", 45);
             }
         }
 
         private static void drawPIDValues(PIDclamp controller, string inputName, SASList id)
         {
-            if (GUILayout.Button(inputName, GeneralUI.buttonStyle, GUILayout.ExpandWidth(true)))
+            if (GUILayout.Button(inputName, GeneralUI.ButtonStyle, GUILayout.ExpandWidth(true)))
             {
                 stockPIDDisplay[(int)id] = !stockPIDDisplay[(int)id];
             }
 
             if (stockPIDDisplay[(int)id])
             {
-                controller.kp = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.kp, "F3", 45);
-                controller.ki = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.ki, "F3", 45);
-                controller.kd = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kd:", controller.kd, "F3", 45);
-                controller.clamp = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Scalar:", controller.clamp, "F3", 45);
+                controller.kp = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.kp, "F3", 45);
+                controller.ki = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.ki, "F3", 45);
+                controller.kd = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Kd:", controller.kd, "F3", 45);
+                controller.clamp = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Scalar:", controller.clamp, "F3", 45);
             }
         }
     }

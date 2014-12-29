@@ -69,9 +69,6 @@ namespace PilotAssistant
             flightData.Vessel.OnAutopilotUpdate += new FlightInputCallback(VesselController);
             GameEvents.onVesselChange.Add(VesselSwitch);
 
-            // Init UI
-            GeneralUI.InitColors();
-
             RenderingManager.AddToPostDrawQueue(5, DrawGUI);
         }
 

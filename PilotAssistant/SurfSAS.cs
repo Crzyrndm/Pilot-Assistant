@@ -68,9 +68,6 @@ namespace PilotAssistant
             flightData.Vessel.OnAutopilotUpdate += new FlightInputCallback(VesselController);
             GameEvents.onVesselChange.Add(VesselSwitch);
             
-            // Init UI
-            GeneralUI.InitColors();
-            
             RenderingManager.AddToPostDrawQueue(5, DrawGUI);
         }
 
@@ -143,18 +140,20 @@ namespace PilotAssistant
 
         public void DrawGUI()
         {
+            GUI.skin = HighLogic.Skin;
             if (IsSSASMode())
             {
+                Color oldColor = GUI.backgroundColor;
                 if (IsSSASOperational())
-                    GUI.backgroundColor = GeneralUI.ActiveBackground;
+                    GUI.backgroundColor = GeneralUI.SSASActiveBGColor;
                 else
-                    GUI.backgroundColor = GeneralUI.InActiveBackground;
+                    GUI.backgroundColor = GeneralUI.SSASInactiveBGColor;
                 
                 if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
                 {
                     ToggleOperational();
                 }
-                GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+                GUI.backgroundColor = oldColor;
             }
             SASMainWindow.Draw(AppLauncher.AppLauncherInstance.bDisplaySAS);
         }

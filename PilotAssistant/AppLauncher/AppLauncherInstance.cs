@@ -53,7 +53,7 @@ namespace PilotAssistant.AppLauncher
 
         private void OnGUI()
         {
-            GeneralUI.Styles();
+            GUI.skin = HighLogic.Skin;
             if (bDisplayOptions)
             {
                 window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.MaxWidth(200));
@@ -63,7 +63,7 @@ namespace PilotAssistant.AppLauncher
         private void optionsWindow(int id)
         {
             
-            bool tmpToggle = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", GeneralUI.toggleButtonStyle);
+            bool tmpToggle = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", GeneralUI.ToggleButtonStyle);
             if (tmpToggle != bDisplayAssistant)
             {
                 bDisplayAssistant = !bDisplayAssistant;
@@ -74,7 +74,7 @@ namespace PilotAssistant.AppLauncher
                 bDisplayModerator = !bDisplayModerator;
                 btnLauncher.toggleButton.SetFalse();
             }*/
-            tmpToggle = GUILayout.Toggle(bDisplaySAS, "SAS Systems", GeneralUI.toggleButtonStyle);
+            tmpToggle = GUILayout.Toggle(bDisplaySAS, "SAS Systems", GeneralUI.ToggleButtonStyle);
             if (tmpToggle != bDisplaySAS)
             {
                 bDisplaySAS = !bDisplaySAS;
