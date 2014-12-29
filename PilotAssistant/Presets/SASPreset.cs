@@ -10,16 +10,14 @@ namespace PilotAssistant.Presets
     class SASPreset
     {
         private string name;
-        private List<double[]> PIDGains = new List<double[]>();
+        private double[][] pidGains = new double[3][];
         private bool useStockSAS = true;
-
-        private const int NUM_CONTROLLERS = 3;
 
         public SASPreset(PID.PID_Controller[] controllers, string name) // used for adding a new preset, can clone the current values
         {
             this.name = name;
             useStockSAS = false;
-            for (int i = 0; i < NUM_CONTROLLERS; i++) // 3 PID controlers to save
+            for (int i = 0; i < pidGains.Length; i++)
             {
                 double[] gains = new double[4];
                 gains[0] = controllers[i].PGain;
@@ -27,7 +25,7 @@ namespace PilotAssistant.Presets
                 gains[2] = controllers[i].DGain;
                 gains[3] = controllers[i].Scalar;
 
-                PIDGains.Add(gains);
+                pidGains[i] = gains;
             }
         }
 
@@ -35,21 +33,24 @@ namespace PilotAssistant.Presets
         {
             this.name = name;
             useStockSAS = true;
-            double[] pitchGains = {sas.pidLockedPitch.kp, sas.pidLockedPitch.ki, sas.pidLockedPitch.kd, sas.pidLockedPitch.clamp};
-            PIDGains.Add(pitchGains);
+            double[] pitchGains = { sas.pidLockedPitch.kp, sas.pidLockedPitch.ki, sas.pidLockedPitch.kd, sas.pidLockedPitch.clamp };
             double[] rollGains = { sas.pidLockedRoll.kp, sas.pidLockedRoll.ki, sas.pidLockedRoll.kd, sas.pidLockedRoll.clamp };
-            PIDGains.Add(rollGains);
             double[] yawGains = { sas.pidLockedYaw.kp, sas.pidLockedYaw.ki, sas.pidLockedYaw.kd, sas.pidLockedYaw.clamp };
-            PIDGains.Add(yawGains);
+            pidGains[(int)SASList.Pitch] = pitchGains;
+            pidGains[(int)SASList.Roll] = rollGains;
+            pidGains[(int)SASList.Yaw] = yawGains;
         }
 
         public SASPreset(ConfigNode node) // used for loading presets from file
         {
             name = node.GetValue("name");
             useStockSAS = bool.Parse(node.GetValue("stock"));
-            PIDGains.Add(LoadControllerGains(node.GetNode("AileronController")));
-            PIDGains.Add(LoadControllerGains(node.GetNode("RudderController")));
-            PIDGains.Add(LoadControllerGains(node.GetNode("ElevatorController")));
+            double[] pitchGains = LoadControllerGains(node.GetNode("ElevatorController"));
+            double[] rollGains = LoadControllerGains(node.GetNode("AileronController"));
+            double[] yawGains = LoadControllerGains(node.GetNode("RudderController"));
+            pidGains[(int)SASList.Pitch] = pitchGains;
+            pidGains[(int)SASList.Roll] = rollGains;
+            pidGains[(int)SASList.Yaw] = yawGains;
         }
 
         public string GetName() { return name; }
@@ -62,7 +63,6 @@ namespace PilotAssistant.Presets
             double.TryParse(node.GetValue("IGain"), out gains[1]);
             double.TryParse(node.GetValue("DGain"), out gains[2]);
             double.TryParse(node.GetValue("Scalar"), out gains[3]);
-
             return gains;
         }
 
@@ -81,46 +81,44 @@ namespace PilotAssistant.Presets
             ConfigNode node = new ConfigNode("SASPreset");
             node.AddValue("name", name);
             node.AddValue("stock", useStockSAS);
-            node.AddNode(GainsToConfigNode("ElevatorController", PIDGains[(int)SASList.Pitch]));
-            node.AddNode(GainsToConfigNode("AileronController", PIDGains[(int)SASList.Roll]));
-            node.AddNode(GainsToConfigNode("RudderController", PIDGains[(int)SASList.Yaw]));
-
+            node.AddNode(GainsToConfigNode("ElevatorController", pidGains[(int)SASList.Pitch]));
+            node.AddNode(GainsToConfigNode("AileronController", pidGains[(int)SASList.Roll]));
+            node.AddNode(GainsToConfigNode("RudderController", pidGains[(int)SASList.Yaw]));
             return node;
         }
 
         public void LoadPreset(PID.PID_Controller[] controllers)
         {
-            for (int i = 0; i < NUM_CONTROLLERS; i++)
+            for (int i = 0; i < pidGains.Length; i++)
             {
-                controllers[i].PGain = PIDGains[i][0];
-                controllers[i].IGain = PIDGains[i][1];
-                controllers[i].DGain = PIDGains[i][2];
-                controllers[i].Scalar = PIDGains[i][3];
+                controllers[i].PGain = pidGains[i][0];
+                controllers[i].IGain = pidGains[i][1];
+                controllers[i].DGain = pidGains[i][2];
+                controllers[i].Scalar = pidGains[i][3];
             }
         }
 
         public void LoadStockPreset(VesselAutopilot.VesselSAS sas)
         {
-            sas.pidLockedPitch.kp = PIDGains[(int)SASList.Pitch][0];
-            sas.pidLockedPitch.ki = PIDGains[(int)SASList.Pitch][1];
-            sas.pidLockedPitch.kd = PIDGains[(int)SASList.Pitch][2];
-            sas.pidLockedPitch.clamp = PIDGains[(int)SASList.Pitch][3];
+            sas.pidLockedPitch.kp = pidGains[(int)SASList.Pitch][0];
+            sas.pidLockedPitch.ki = pidGains[(int)SASList.Pitch][1];
+            sas.pidLockedPitch.kd = pidGains[(int)SASList.Pitch][2];
+            sas.pidLockedPitch.clamp = pidGains[(int)SASList.Pitch][3];
 
-            sas.pidLockedRoll.kp = PIDGains[(int)SASList.Roll][0];
-            sas.pidLockedRoll.ki = PIDGains[(int)SASList.Roll][1];
-            sas.pidLockedRoll.kd = PIDGains[(int)SASList.Roll][2];
-            sas.pidLockedRoll.clamp = PIDGains[(int)SASList.Roll][3];
+            sas.pidLockedRoll.kp = pidGains[(int)SASList.Roll][0];
+            sas.pidLockedRoll.ki = pidGains[(int)SASList.Roll][1];
+            sas.pidLockedRoll.kd = pidGains[(int)SASList.Roll][2];
+            sas.pidLockedRoll.clamp = pidGains[(int)SASList.Roll][3];
 
-            sas.pidLockedYaw.kp = PIDGains[(int)SASList.Yaw][0];
-            sas.pidLockedYaw.ki = PIDGains[(int)SASList.Yaw][1];
-            sas.pidLockedYaw.kd = PIDGains[(int)SASList.Yaw][2];
-            sas.pidLockedYaw.clamp = PIDGains[(int)SASList.Yaw][3];
+            sas.pidLockedYaw.kp = pidGains[(int)SASList.Yaw][0];
+            sas.pidLockedYaw.ki = pidGains[(int)SASList.Yaw][1];
+            sas.pidLockedYaw.kd = pidGains[(int)SASList.Yaw][2];
+            sas.pidLockedYaw.clamp = pidGains[(int)SASList.Yaw][3];
         }
 
         public void Update(PID.PID_Controller[] controllers)
         {
-            List<double[]> newPIDGains = new List<double[]>();
-            for (int i = 0; i < NUM_CONTROLLERS; i++) // 3 PID controlers to save
+            for (int i = 0; i < pidGains.Length; i++)
             {
                 double[] gains = new double[4];
                 gains[0] = controllers[i].PGain;
@@ -128,22 +126,18 @@ namespace PilotAssistant.Presets
                 gains[2] = controllers[i].DGain;
                 gains[3] = controllers[i].Scalar;
 
-                newPIDGains.Add(gains);
+                pidGains[i] = gains;
             }
-            PIDGains = newPIDGains;
         }
 
         public void UpdateStock(VesselAutopilot.VesselSAS sas)
         {
-            List<double[]> newPIDGains = new List<double[]>();
             double[] pitchGains = { sas.pidLockedPitch.kp, sas.pidLockedPitch.ki, sas.pidLockedPitch.kd, sas.pidLockedPitch.clamp };
-            newPIDGains.Add(pitchGains);
             double[] rollGains = { sas.pidLockedRoll.kp, sas.pidLockedRoll.ki, sas.pidLockedRoll.kd, sas.pidLockedRoll.clamp };
-            newPIDGains.Add(rollGains);
             double[] yawGains = { sas.pidLockedYaw.kp, sas.pidLockedYaw.ki, sas.pidLockedYaw.kd, sas.pidLockedYaw.clamp };
-            newPIDGains.Add(yawGains);
-
-            PIDGains = newPIDGains;
+            pidGains[(int)SASList.Pitch] = pitchGains;
+            pidGains[(int)SASList.Roll] = rollGains;
+            pidGains[(int)SASList.Yaw] = yawGains;
         }
     }
 }
