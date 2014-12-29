@@ -81,7 +81,7 @@ namespace PilotAssistant
             return controllers[(int)id];
         }
 
-        private static void VesselSwitch(Vessel v)
+        private void VesselSwitch(Vessel v)
         {
             flightData.Vessel.OnAutopilotUpdate -= new FlightInputCallback(VesselController);
             flightData.Vessel = v;
@@ -95,9 +95,11 @@ namespace PilotAssistant
             PresetManager.SavePresetsToFile();
             isHdgActive = false;
             isVertActive = false;
-            //controllers.Clear();
+
             for (int i = 0; i < controllers.Length; i++)
-                controllers[i] = null; 
+                controllers[i] = null;
+
+            flightData.Vessel.OnAutopilotUpdate -= new FlightInputCallback(VesselController);
         }
 
         public void Update()
@@ -116,11 +118,6 @@ namespace PilotAssistant
 
         private static void VesselController(FlightCtrlState state)
         {
-            if (!HighLogic.LoadedSceneIsFlight)
-                return;
-            if (flightData.Vessel == null)
-                return;
-
             flightData.UpdateAttitude();
 
             if (isPaused || SASCheck())
