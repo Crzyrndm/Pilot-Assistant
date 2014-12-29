@@ -48,7 +48,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppLauncher\AppLauncherInstance.cs" />
-    <Compile Include="InputModerator.cs" />
     <Compile Include="PID\Monitor.cs" />
     <Compile Include="SurfSAS.cs" />
     <Compile Include="PID\PID_Controller.cs" />
@@ -59,7 +58,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI\Messaging.cs" />
     <Compile Include="UI\PAMainWindow.cs" />
-    <Compile Include="UI\ModeratorMainWindow.cs" />
     <Compile Include="UI\PAPresetWindow.cs" />
     <Compile Include="UI\SASMainWindow.cs" />
     <Compile Include="UI\SASPresetWindow.cs" />
