@@ -112,10 +112,10 @@ namespace PilotAssistant.UI
 
             if (controller.bShow)
             {
-                controller.PGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.PGain, "G3", 45);
-                controller.IGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.IGain, "G3", 45);
-                controller.DGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kd:", controller.DGain, "G3", 45);
-                controller.Scalar = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Scalar:", controller.Scalar, "G3", 45);
+                controller.PGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.PGain, "F3", 45);
+                controller.IGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.IGain, "F3", 45);
+                controller.DGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kd:", controller.DGain, "F3", 45);
+                controller.Scalar = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Scalar:", controller.Scalar, "F3", 45);
             }
         }
 
@@ -128,10 +128,10 @@ namespace PilotAssistant.UI
 
             if (stockPIDDisplay[(int)id])
             {
-                controller.kp = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.kp, "G3", 45);
-                controller.ki = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.ki, "G3", 45);
-                controller.kd = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kd:", controller.kd, "G3", 45);
-                controller.clamp = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Scalar:", controller.clamp, "G3", 45);
+                controller.kp = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.kp, "F3", 45);
+                controller.ki = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.ki, "F3", 45);
+                controller.kd = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kd:", controller.kd, "F3", 45);
+                controller.clamp = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Scalar:", controller.clamp, "F3", 45);
             }
         }
     }

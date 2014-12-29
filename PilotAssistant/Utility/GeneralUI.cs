@@ -243,7 +243,7 @@ namespace PilotAssistant.Utility
             // state is returned by reference
             toggleState = GUILayout.Toggle(toggleState, toggleText, toggleButtonStyle, GUILayout.Width(toggleWidth));
             GeneralUI.TextFieldNext(textFieldGroup);
-            string text = GUILayout.TextField(boxVal.ToString("N2"), numBoxTextStyle, GUILayout.Width(boxWidth));
+            string text = GUILayout.TextField(boxVal.ToString("F2"), numBoxTextStyle, GUILayout.Width(boxWidth));
             try
             {
                 boxVal = double.Parse(text);
