@@ -10,7 +10,7 @@ namespace PilotAssistant.Presets
     using Utility;
 
     [KSPAddon(KSPAddon.Startup.MainMenu, true)]
-    internal class PresetManager : MonoBehaviour
+    public class PresetManager : MonoBehaviour
     {
         private static PAPreset defaultPATuning = null;
         private static List<PAPreset> PAPresetList = new List<PAPreset>();

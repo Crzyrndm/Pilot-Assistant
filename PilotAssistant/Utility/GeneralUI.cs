@@ -372,7 +372,7 @@ namespace PilotAssistant.Utility
         }
 
         // Unused?
-        public static Texture2D textureBlock(int w, int h, Color col)
+        public static Texture2D TextureBlock(int w, int h, Color col)
         {
             Color[] pixels = new Color[w * h];
             for( int i = 0; i < pixels.Length; i++)

@@ -10,11 +10,11 @@ namespace PilotAssistant.UI
     static class PAPresetWindow
     {
         private static string newPresetName = "";
-        internal static Rect windowRect = new Rect(0, 0, 200, 10);
+        private static Rect windowRect = new Rect(0, 0, 200, 10);
 
         private const string TEXT_FIELD_GROUP = "PAPresetWindow";
 
-        internal static void Draw(bool show)
+        public static void Draw(bool show)
         {
             if (show)
             {
@@ -25,6 +25,12 @@ namespace PilotAssistant.UI
             {
                 GeneralUI.ClearLocks(TEXT_FIELD_GROUP);
             }
+        }
+
+        public static void Reposition(float x, float y)
+        {
+            windowRect.x = x;
+            windowRect.y = y;
         }
 
         private static void DrawPresetWindow(int id)

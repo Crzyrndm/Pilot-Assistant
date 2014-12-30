@@ -7,25 +7,31 @@ namespace PilotAssistant.UI
     using Presets;
     using Utility;
 
-    internal static class SASPresetWindow
+    public static class SASPresetWindow
     {
         private static string newPresetName = "";
-        internal static Rect windowRect = new Rect(550, 50, 50, 50);
+        private static Rect windowRect = new Rect(550, 50, 50, 50);
 
         private const string TEXT_FIELD_GROUP = "SASPresetWindow";
 
-        internal static void Draw(bool show)
+        public static void Draw(bool show)
         {
             if (show)
             {
                 GUI.skin = HighLogic.Skin;
-                windowRect = GUILayout.Window(78934857, windowRect, drawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
+                windowRect = GUILayout.Window(78934857, windowRect, DrawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
             }
             else
                 GeneralUI.ClearLocks(TEXT_FIELD_GROUP);
         }
 
-        private static void drawPresetWindow(int id)
+        public static void Reposition(float x, float y)
+        {
+            windowRect.x = x;
+            windowRect.y = y;
+        }
+
+        private static void DrawPresetWindow(int id)
         {
             // Start a text field group.
             GeneralUI.StartTextFieldGroup(TEXT_FIELD_GROUP);

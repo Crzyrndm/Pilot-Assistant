@@ -10,7 +10,7 @@ namespace PilotAssistant
     using UI;
     using Presets;
 
-    internal enum SASList
+    public enum SASList
     {
         Pitch,
         Roll,
@@ -104,10 +104,10 @@ namespace PilotAssistant
                 ToggleSSASMode();
             }
 
-            keyPressChanges();
+            KeyPressChanges();
         }
 
-        private static void keyPressChanges()
+        private static void KeyPressChanges()
         {
             // Respect current input locks
             if (InputLockManager.IsLocked(ControlTypes.ALL_SHIP_CONTROLS))

@@ -31,8 +31,7 @@ namespace PilotAssistant.UI
                 GUI.skin = HighLogic.Skin;
                 windowRect = GUILayout.Window(WINDOW_ID, windowRect, DrawWindow, "Pilot Assistant", GUILayout.Width(0), GUILayout.Height(0));
                 
-                PAPresetWindow.windowRect.x = windowRect.x + windowRect.width;
-                PAPresetWindow.windowRect.y = windowRect.y;
+                PAPresetWindow.Reposition(windowRect.x + windowRect.width, windowRect.y);
                 PAPresetWindow.Draw(showPresets);
             }
             else
@@ -116,13 +115,13 @@ namespace PilotAssistant.UI
             }
             if (!isWingLvlActive)
             {
-                drawPIDValues(PIDList.HdgBank, "Heading", "\u00B0", flightData.Heading, 2, "Bank", "\u00B0", false, true, false);
-                drawPIDValues(PIDList.HdgYaw, "Bank => Yaw", "\u00B0", flightData.Yaw, 2, "Yaw", "\u00B0", true, false, false);
+                DrawPIDValues(PIDList.HdgBank, "Heading", "\u00B0", flightData.Heading, 2, "Bank", "\u00B0", false, true, false);
+                DrawPIDValues(PIDList.HdgYaw, "Bank => Yaw", "\u00B0", flightData.Yaw, 2, "Yaw", "\u00B0", true, false, false);
             }
             if (showControlSurfaces)
             {
-                drawPIDValues(PIDList.Aileron, "Bank", "\u00B0", flightData.Roll, 3, "Deflect", "\u00B0", false, true, false);
-                drawPIDValues(PIDList.Rudder, "Yaw", "\u00B0", flightData.Yaw, 3, "Deflect", "\u00B0", false, true, false);
+                DrawPIDValues(PIDList.Aileron, "Bank", "\u00B0", flightData.Roll, 3, "Deflect", "\u00B0", false, true, false);
+                DrawPIDValues(PIDList.Rudder, "Yaw", "\u00B0", flightData.Yaw, 3, "Deflect", "\u00B0", false, true, false);
             }
             GUILayout.EndVertical();            
         }
@@ -189,10 +188,10 @@ namespace PilotAssistant.UI
                 GUILayout.EndHorizontal();
             }
             if (isAltitudeHoldActive)
-                drawPIDValues(PIDList.Altitude, "Altitude", "m", flightData.Vessel.altitude, 2, "Speed ", "m/s", true, true, false);
-            drawPIDValues(PIDList.VertSpeed, "Vertical Speed", "m/s", flightData.Vessel.verticalSpeed, 2, "AoA", "\u00B0", true);
+                DrawPIDValues(PIDList.Altitude, "Altitude", "m", flightData.Vessel.altitude, 2, "Speed ", "m/s", true, true, false);
+            DrawPIDValues(PIDList.VertSpeed, "Vertical Speed", "m/s", flightData.Vessel.verticalSpeed, 2, "AoA", "\u00B0", true);
             if (showControlSurfaces)
-                drawPIDValues(PIDList.Elevator, "Angle of Attack", "\u00B0", flightData.AoA, 3, "Deflect", "\u00B0", true, true, false);
+                DrawPIDValues(PIDList.Elevator, "Angle of Attack", "\u00B0", flightData.AoA, 3, "Deflect", "\u00B0", true, true, false);
             GUILayout.EndVertical();
         }
 
@@ -223,7 +222,7 @@ namespace PilotAssistant.UI
             GUI.DragWindow();
         }
 
-        private static void drawPIDValues(
+        private static void DrawPIDValues(
             PIDList controllerID,
             string inputName,
             string inputUnits,

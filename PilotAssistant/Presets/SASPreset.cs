@@ -7,7 +7,7 @@ namespace PilotAssistant.Presets
 {
     using Utility;
 
-    class SASPreset
+    public class SASPreset
     {
         private string name;
         private double[][] pidGains = new double[3][];

@@ -9,7 +9,7 @@ namespace PilotAssistant.Presets
     /// <summary>
     /// Holds all the PID tuning values for the 7 (or more if required) controllers involved.
     /// </summary>
-    class PAPreset
+    public class PAPreset
     {
         private string name;
         private double[][] pidGains = new double[7][];

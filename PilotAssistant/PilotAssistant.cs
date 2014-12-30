@@ -10,7 +10,7 @@ namespace PilotAssistant
     using PID;
     using UI;
 
-    internal enum PIDList
+    public enum PIDList
     {
         HdgBank,
         HdgYaw,
