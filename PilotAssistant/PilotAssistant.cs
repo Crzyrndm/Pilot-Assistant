@@ -346,6 +346,7 @@ namespace PilotAssistant
                 GetController(PIDList.VertSpeed).SetPoint = 0;
                 isVertActive = true;
                 isAltitudeHoldActive = false;
+                isHdgActive = true;
                 isWingLvlActive = true;
                 // Update GUI
                 PAMainWindow.SetTargetVerticalSpeed(0.0);
