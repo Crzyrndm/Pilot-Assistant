@@ -101,11 +101,7 @@ namespace PilotAssistant
 
         public void Update()
         {
-            keyPressChanges();
-        }
-
-        public void FixedUpdate()
-        {
+            KeyPressChanges();
         }
 
         public void DrawGUI()
@@ -300,7 +296,7 @@ namespace PilotAssistant
             return SurfSAS.IsSSASOperational() || SurfSAS.IsStockSASOperational();
         }
 
-        private static void keyPressChanges()
+        private static void KeyPressChanges()
         {
             // Respect current input locks
             if (InputLockManager.IsLocked(ControlTypes.ALL_SHIP_CONTROLS))
@@ -354,60 +350,62 @@ namespace PilotAssistant
             // Only update target when not paused.
             if (!isPaused && !SASCheck())
             {
-                double scale = mod ? 10 : 1;
-                bool bFineControl = FlightInputHandler.fetch.precisionMode;
-                if (GameSettings.YAW_LEFT.GetKey() && isHdgActive)
+                double scale;
+                if (FlightInputHandler.fetch.precisionMode)
+                    scale = mod ? 0.01 : 0.1;
+                else
+                    scale = mod ? 10 : 1;
+
+                // Update heading based on user control input
+                if (isHdgActive && !isWingLvlActive)
                 {
                     double hdg = PAMainWindow.GetTargetHeading();
-                    hdg -= bFineControl ? 0.04 / scale : 0.4 * scale;
+                    if (GameSettings.YAW_LEFT.GetKey())
+                        hdg -= 0.4 * scale;
+                    else if (GameSettings.YAW_RIGHT.GetKey())
+                        hdg += 0.4 * scale;
+                    else if (!GameSettings.AXIS_YAW.IsNeutral())
+                        hdg += 0.4 * scale * GameSettings.AXIS_YAW.GetAxis();
+
                     if (hdg < 0)
                         hdg += 360;
-                    GetController(PIDList.HdgBank).SetPoint = hdg;
-                    GetController(PIDList.HdgYaw).SetPoint = hdg;
-                    PAMainWindow.SetTargetHeading(hdg);
-                }
-                else if (GameSettings.YAW_RIGHT.GetKey() && isHdgActive)
-                {
-                    double hdg = PAMainWindow.GetTargetHeading();
-                    hdg += bFineControl ? 0.04 / scale : 0.4 * scale;
-                    if (hdg > 360)
+                    else if (hdg > 360)
                         hdg -= 360;
                     GetController(PIDList.HdgBank).SetPoint = hdg;
                     GetController(PIDList.HdgYaw).SetPoint = hdg;
                     PAMainWindow.SetTargetHeading(hdg);
                 }
 
-                if (GameSettings.PITCH_DOWN.GetKey() && isVertActive)
+                // Update target vertical speed based on user control input
+                if (isVertActive && !isAltitudeHoldActive)
                 {
                     double vert = PAMainWindow.GetTargetVerticalSpeed();
-                    if (isAltitudeHoldActive)
-                    {
-                        vert -= bFineControl ? 0.4 / scale : 4 * scale;
-                        if (vert < 0)
-                            vert = 0;
-                        GetController(PIDList.Altitude).SetPoint = vert;
-                    }
-                    else
-                    {
-                        vert -= bFineControl ? 0.04 / scale : 0.4 * scale;
-                        GetController(PIDList.VertSpeed).SetPoint = vert;
-                    }
+                    if (GameSettings.PITCH_DOWN.GetKey())
+                        vert -= 0.4 * scale;
+                    else if (GameSettings.PITCH_UP.GetKey())
+                        vert += 0.4 * scale;
+                    else if (!GameSettings.AXIS_PITCH.IsNeutral())
+                        vert += 0.4 * scale * GameSettings.AXIS_PITCH.GetAxis();
+
+                    GetController(PIDList.VertSpeed).SetPoint = vert;
                     PAMainWindow.SetTargetVerticalSpeed(vert);
                 }
-                if (GameSettings.PITCH_UP.GetKey() && isVertActive)
+
+                // Update target altitude based on user control input
+                if (isVertActive && isAltitudeHoldActive)
                 {
-                    double vert = PAMainWindow.GetTargetVerticalSpeed();
-                    if (isAltitudeHoldActive)
-                    {
-                        vert += bFineControl ? 0.4 / scale : 4 * scale;
-                        GetController(PIDList.Altitude).SetPoint = vert;
-                    }
-                    else
-                    {
-                        vert += bFineControl ? 0.04 / scale : 0.4 * scale;
-                        GetController(PIDList.VertSpeed).SetPoint = vert;
-                    }
-                    PAMainWindow.SetTargetVerticalSpeed(vert);
+                    double alt = PAMainWindow.GetTargetAltitude();
+                    if (GameSettings.PITCH_DOWN.GetKey())
+                        alt -= 4 * scale;
+                    else if (GameSettings.PITCH_UP.GetKey())
+                        alt += 4 * scale;
+                    else if (!GameSettings.AXIS_PITCH.IsNeutral())
+                        alt += 4 * scale * GameSettings.AXIS_PITCH.GetAxis();
+
+                    if (alt < 0)
+                        alt = 0;
+                    GetController(PIDList.Altitude).SetPoint = alt;
+                    PAMainWindow.SetTargetAltitude(alt);
                 }
             }
         }
