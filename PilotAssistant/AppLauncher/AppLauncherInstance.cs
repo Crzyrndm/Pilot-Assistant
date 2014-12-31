@@ -9,12 +9,13 @@ namespace PilotAssistant.AppLauncher
     public class AppLauncherInstance : MonoBehaviour
     {
         private static ApplicationLauncherButton btnLauncher;
-        private static Rect window = new Rect(Screen.width - 180, 40, 30, 30);
+        private static Rect windowRect = new Rect(Screen.width - 180, 40, 30, 30);
+
+        private const int WINDOW_ID = 0984653;
 
         public static bool bDisplayOptions = false;
         public static bool bDisplayAssistant = false;
         public static bool bDisplaySAS = false;
-        public static bool bDisplayModerator = false;
 
         private void Awake()
         {
@@ -30,10 +31,11 @@ namespace PilotAssistant.AppLauncher
 
         private void OnAppLauncherReady()
         {
-            btnLauncher = ApplicationLauncher.Instance.AddModApplication(OnToggleTrue, OnToggleFalse,
-                                                                        null, null, null, null,
-                                                                        ApplicationLauncher.AppScenes.ALWAYS,
-                                                                        GameDatabase.Instance.GetTexture("Pilot Assistant/Icons/AppLauncherIcon", false));
+            btnLauncher = ApplicationLauncher.Instance.AddModApplication(
+                OnToggleTrue, OnToggleFalse,
+                null, null, null, null,
+                ApplicationLauncher.AppScenes.ALWAYS,
+                GameDatabase.Instance.GetTexture("Pilot Assistant/Icons/AppLauncherIcon", false));
         }
 
         private void OnGameSceneChange(GameScenes scene)
@@ -53,28 +55,23 @@ namespace PilotAssistant.AppLauncher
 
         private void OnGUI()
         {
-            GeneralUI.Styles();
+            GUI.skin = HighLogic.Skin;
             if (bDisplayOptions)
             {
-                window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.MaxWidth(200));
+                windowRect = GUILayout.Window(WINDOW_ID, windowRect, DrawOptionsWindow, "", GeneralUI.OptionsWindowStyle, GUILayout.Width(0), GUILayout.Height(0));
             }
         }
 
-        private void optionsWindow(int id)
+        private void DrawOptionsWindow(int id)
         {
-            
-            bool tmpToggle = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", GeneralUI.toggleButtonStyle);
+            bool tmpToggle = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", GeneralUI.ToggleButtonStyle);
             if (tmpToggle != bDisplayAssistant)
             {
                 bDisplayAssistant = !bDisplayAssistant;
                 btnLauncher.toggleButton.SetFalse();
             }
-            /*if (GUILayout.Button("Input Moderator"))
-            {
-                bDisplayModerator = !bDisplayModerator;
-                btnLauncher.toggleButton.SetFalse();
-            }*/
-            tmpToggle = GUILayout.Toggle(bDisplaySAS, "SAS Systems", GeneralUI.toggleButtonStyle);
+
+            tmpToggle = GUILayout.Toggle(bDisplaySAS, "SAS Systems", GeneralUI.ToggleButtonStyle);
             if (tmpToggle != bDisplaySAS)
             {
                 bDisplaySAS = !bDisplaySAS;

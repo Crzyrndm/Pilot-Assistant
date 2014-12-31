@@ -10,7 +10,7 @@ namespace PilotAssistant
     using PID;
     using UI;
 
-    internal enum PIDList
+    public enum PIDList
     {
         HdgBank,
         HdgYaw,
@@ -24,6 +24,7 @@ namespace PilotAssistant
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class PilotAssistant : MonoBehaviour
     {
+        private static FlightData flightData;
         private static PID_Controller[] controllers = new PID_Controller[7];
 
         // Whether PA has been paused by the user, does not account for SAS being turned on.
@@ -64,12 +65,9 @@ namespace PilotAssistant
             PresetManager.InitDefaultPATuning(controllers);
 
             // register vessel
-            FlightData.thisVessel = FlightGlobals.ActiveVessel;
-            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(vesselController);
-            GameEvents.onVesselChange.Add(vesselSwitch);
-
-            // Init UI
-            GeneralUI.InitColors();
+            flightData = new FlightData(FlightGlobals.ActiveVessel);
+            flightData.Vessel.OnAutopilotUpdate += new FlightInputCallback(VesselController);
+            GameEvents.onVesselChange.Add(VesselSwitch);
 
             RenderingManager.AddToPostDrawQueue(5, DrawGUI);
         }
@@ -80,32 +78,30 @@ namespace PilotAssistant
             return controllers[(int)id];
         }
 
-        private void vesselSwitch(Vessel v)
+        private void VesselSwitch(Vessel v)
         {
-            FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(vesselController);
-            FlightData.thisVessel = v;
-            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(vesselController);
+            flightData.Vessel.OnAutopilotUpdate -= new FlightInputCallback(VesselController);
+            flightData.Vessel = v;
+            flightData.Vessel.OnAutopilotUpdate += new FlightInputCallback(VesselController);
         }
 
         public void OnDestroy()
         {
             RenderingManager.RemoveFromPostDrawQueue(5, DrawGUI);
-            GameEvents.onVesselChange.Remove(vesselSwitch);
+            GameEvents.onVesselChange.Remove(VesselSwitch);
             PresetManager.SavePresetsToFile();
             isHdgActive = false;
             isVertActive = false;
-            //controllers.Clear();
+
             for (int i = 0; i < controllers.Length; i++)
-                controllers[i] = null; 
+                controllers[i] = null;
+
+            flightData.Vessel.OnAutopilotUpdate -= new FlightInputCallback(VesselController);
         }
 
         public void Update()
         {
-            keyPressChanges();
-        }
-
-        public void FixedUpdate()
-        {
+            KeyPressChanges();
         }
 
         public void DrawGUI()
@@ -113,14 +109,9 @@ namespace PilotAssistant
             PAMainWindow.Draw(AppLauncher.AppLauncherInstance.bDisplayAssistant);
         }
 
-        private void vesselController(FlightCtrlState state)
+        private static void VesselController(FlightCtrlState state)
         {
-            if (!HighLogic.LoadedSceneIsFlight)
-                return;
-            if (FlightData.thisVessel == null)
-                return;
-
-            FlightData.updateAttitude();
+            flightData.UpdateAttitude();
 
             if (isPaused || SASCheck())
                 return;
@@ -130,44 +121,45 @@ namespace PilotAssistant
             {
                 if (!isWingLvlActive)
                 {
-                    if (GetController(PIDList.HdgBank).SetPoint - FlightData.heading >= -180 && GetController(PIDList.HdgBank).SetPoint - FlightData.heading <= 180)
+                    if (GetController(PIDList.HdgBank).SetPoint - flightData.Heading >= -180 && GetController(PIDList.HdgBank).SetPoint - flightData.Heading <= 180)
                     {
-                        GetController(PIDList.Aileron).SetPoint = GetController(PIDList.HdgBank).Response(FlightData.heading);
-                        GetController(PIDList.HdgYaw).SetPoint = GetController(PIDList.HdgBank).Response(FlightData.heading);
+                        GetController(PIDList.Aileron).SetPoint = GetController(PIDList.HdgBank).Response(flightData.Heading);
+                        GetController(PIDList.HdgYaw).SetPoint = GetController(PIDList.HdgBank).Response(flightData.Heading);
                     }
-                    else if (GetController(PIDList.HdgBank).SetPoint - FlightData.heading < -180)
+                    else if (GetController(PIDList.HdgBank).SetPoint - flightData.Heading < -180)
                     {
-                        GetController(PIDList.Aileron).SetPoint = GetController(PIDList.HdgBank).Response(FlightData.heading - 360);
-                        GetController(PIDList.HdgYaw).SetPoint = GetController(PIDList.HdgBank).Response(FlightData.heading - 360);
+                        GetController(PIDList.Aileron).SetPoint = GetController(PIDList.HdgBank).Response(flightData.Heading - 360);
+                        GetController(PIDList.HdgYaw).SetPoint = GetController(PIDList.HdgBank).Response(flightData.Heading - 360);
                     }
-                    else if (GetController(PIDList.HdgBank).SetPoint - FlightData.heading > 180)
+                    else if (GetController(PIDList.HdgBank).SetPoint - flightData.Heading > 180)
                     {
-                        GetController(PIDList.Aileron).SetPoint = GetController(PIDList.HdgBank).Response(FlightData.heading + 360);
-                        GetController(PIDList.HdgYaw).SetPoint = GetController(PIDList.HdgBank).Response(FlightData.heading + 360);
+                        GetController(PIDList.Aileron).SetPoint = GetController(PIDList.HdgBank).Response(flightData.Heading + 360);
+                        GetController(PIDList.HdgYaw).SetPoint = GetController(PIDList.HdgBank).Response(flightData.Heading + 360);
                     }
 
-                    GetController(PIDList.Rudder).SetPoint = -GetController(PIDList.HdgYaw).Response(FlightData.yaw);
+                    GetController(PIDList.Rudder).SetPoint = -GetController(PIDList.HdgYaw).Response(flightData.Yaw);
                 }
                 else
                 {
                     GetController(PIDList.Aileron).SetPoint = 0;
                     GetController(PIDList.Rudder).SetPoint = 0;
                 }
-                state.roll = (float)Functions.Clamp(GetController(PIDList.Aileron).Response(FlightData.roll) + state.roll, -1, 1);
-                state.yaw = (float)GetController(PIDList.Rudder).Response(FlightData.yaw);
+                state.roll = (float)Functions.Clamp(GetController(PIDList.Aileron).Response(flightData.Roll) + state.roll, -1, 1);
+                state.yaw = (float)GetController(PIDList.Rudder).Response(flightData.Yaw);
             }
 
             if (isVertActive)
             {
                 // Set requested vertical speed
                 if (isAltitudeHoldActive)
-                    GetController(PIDList.VertSpeed).SetPoint = -GetController(PIDList.Altitude).Response(FlightData.thisVessel.altitude);
+                    GetController(PIDList.VertSpeed).SetPoint = -GetController(PIDList.Altitude).Response(flightData.Vessel.altitude);
 
-                GetController(PIDList.Elevator).SetPoint = -GetController(PIDList.VertSpeed).Response(FlightData.thisVessel.verticalSpeed);
-                state.pitch = (float)-GetController(PIDList.Elevator).Response(FlightData.AoA);
+                GetController(PIDList.Elevator).SetPoint = -GetController(PIDList.VertSpeed).Response(flightData.Vessel.verticalSpeed);
+                state.pitch = (float)-GetController(PIDList.Elevator).Response(flightData.AoA);
             }
         }
 
+        public static FlightData GetFlightData() { return flightData; } 
         public static bool IsPaused() { return isPaused || SASCheck(); }
         public static bool IsHdgActive() { return isHdgActive; }
         public static bool IsWingLvlActive() { return isWingLvlActive; }
@@ -213,9 +205,9 @@ namespace PilotAssistant
             if (isHdgActive)
             {
                 // Set heading control on, use current heading
-                GetController(PIDList.HdgBank).SetPoint = FlightData.heading;
-                GetController(PIDList.HdgYaw).SetPoint = FlightData.heading; // added
-                PAMainWindow.SetTargetHeading(FlightData.heading);
+                GetController(PIDList.HdgBank).SetPoint = flightData.Heading;
+                GetController(PIDList.HdgYaw).SetPoint = flightData.Heading; // added
+                PAMainWindow.SetTargetHeading(flightData.Heading);
                 SurfSAS.SetOperational(false);
                 isPaused = false;
             }
@@ -234,8 +226,8 @@ namespace PilotAssistant
             isWingLvlActive = !isWingLvlActive;
             if (!isWingLvlActive)
             {
-                GetController(PIDList.HdgBank).SetPoint = FlightData.heading;
-                GetController(PIDList.HdgYaw).SetPoint = FlightData.heading;
+                GetController(PIDList.HdgBank).SetPoint = flightData.Heading;
+                GetController(PIDList.HdgYaw).SetPoint = flightData.Heading;
             }
         }
         
@@ -246,13 +238,13 @@ namespace PilotAssistant
             {
                 if (isAltitudeHoldActive)
                 {
-                    GetController(PIDList.Altitude).SetPoint = FlightData.thisVessel.altitude;
-                    PAMainWindow.SetTargetAltitude(FlightData.thisVessel.altitude);
+                    GetController(PIDList.Altitude).SetPoint = flightData.Vessel.altitude;
+                    PAMainWindow.SetTargetAltitude(flightData.Vessel.altitude);
                 }
                 else
                 {
-                    GetController(PIDList.VertSpeed).SetPoint = FlightData.thisVessel.verticalSpeed;
-                    PAMainWindow.SetTargetVerticalSpeed(FlightData.thisVessel.verticalSpeed);
+                    GetController(PIDList.VertSpeed).SetPoint = flightData.Vessel.verticalSpeed;
+                    PAMainWindow.SetTargetVerticalSpeed(flightData.Vessel.verticalSpeed);
                 }
                 SurfSAS.SetOperational(false);
                 isPaused = false;
@@ -271,13 +263,13 @@ namespace PilotAssistant
             isAltitudeHoldActive = !isAltitudeHoldActive;
             if (isAltitudeHoldActive)
             {
-                GetController(PIDList.Altitude).SetPoint = FlightData.thisVessel.altitude;
-                PAMainWindow.SetTargetAltitude(FlightData.thisVessel.altitude);
+                GetController(PIDList.Altitude).SetPoint = flightData.Vessel.altitude;
+                PAMainWindow.SetTargetAltitude(flightData.Vessel.altitude);
             }
             else
             {
-                GetController(PIDList.VertSpeed).SetPoint = FlightData.thisVessel.verticalSpeed;
-                PAMainWindow.SetTargetVerticalSpeed(FlightData.thisVessel.verticalSpeed);
+                GetController(PIDList.VertSpeed).SetPoint = flightData.Vessel.verticalSpeed;
+                PAMainWindow.SetTargetVerticalSpeed(flightData.Vessel.verticalSpeed);
             }
         }
 
@@ -304,7 +296,7 @@ namespace PilotAssistant
             return SurfSAS.IsSSASOperational() || SurfSAS.IsStockSASOperational();
         }
 
-        private static void keyPressChanges()
+        private static void KeyPressChanges()
         {
             // Respect current input locks
             if (InputLockManager.IsLocked(ControlTypes.ALL_SHIP_CONTROLS))
@@ -359,60 +351,62 @@ namespace PilotAssistant
             // Only update target when not paused.
             if (!isPaused && !SASCheck())
             {
-                double scale = mod ? 10 : 1;
-                bool bFineControl = FlightInputHandler.fetch.precisionMode;
-                if (GameSettings.YAW_LEFT.GetKey() && isHdgActive)
+                double scale;
+                if (FlightInputHandler.fetch.precisionMode)
+                    scale = mod ? 0.01 : 0.1;
+                else
+                    scale = mod ? 10 : 1;
+
+                // Update heading based on user control input
+                if (isHdgActive && !isWingLvlActive)
                 {
                     double hdg = PAMainWindow.GetTargetHeading();
-                    hdg -= bFineControl ? 0.04 / scale : 0.4 * scale;
+                    if (GameSettings.YAW_LEFT.GetKey())
+                        hdg -= 0.4 * scale;
+                    else if (GameSettings.YAW_RIGHT.GetKey())
+                        hdg += 0.4 * scale;
+                    else if (!GameSettings.AXIS_YAW.IsNeutral())
+                        hdg += 0.4 * scale * GameSettings.AXIS_YAW.GetAxis();
+
                     if (hdg < 0)
                         hdg += 360;
-                    GetController(PIDList.HdgBank).SetPoint = hdg;
-                    GetController(PIDList.HdgYaw).SetPoint = hdg;
-                    PAMainWindow.SetTargetHeading(hdg);
-                }
-                else if (GameSettings.YAW_RIGHT.GetKey() && isHdgActive)
-                {
-                    double hdg = PAMainWindow.GetTargetHeading();
-                    hdg += bFineControl ? 0.04 / scale : 0.4 * scale;
-                    if (hdg > 360)
+                    else if (hdg > 360)
                         hdg -= 360;
                     GetController(PIDList.HdgBank).SetPoint = hdg;
                     GetController(PIDList.HdgYaw).SetPoint = hdg;
                     PAMainWindow.SetTargetHeading(hdg);
                 }
 
-                if (GameSettings.PITCH_DOWN.GetKey() && isVertActive)
+                // Update target vertical speed based on user control input
+                if (isVertActive && !isAltitudeHoldActive)
                 {
                     double vert = PAMainWindow.GetTargetVerticalSpeed();
-                    if (isAltitudeHoldActive)
-                    {
-                        vert -= bFineControl ? 0.4 / scale : 4 * scale;
-                        if (vert < 0)
-                            vert = 0;
-                        GetController(PIDList.Altitude).SetPoint = vert;
-                    }
-                    else
-                    {
-                        vert -= bFineControl ? 0.04 / scale : 0.4 * scale;
-                        GetController(PIDList.VertSpeed).SetPoint = vert;
-                    }
+                    if (GameSettings.PITCH_DOWN.GetKey())
+                        vert -= 0.4 * scale;
+                    else if (GameSettings.PITCH_UP.GetKey())
+                        vert += 0.4 * scale;
+                    else if (!GameSettings.AXIS_PITCH.IsNeutral())
+                        vert += 0.4 * scale * GameSettings.AXIS_PITCH.GetAxis();
+
+                    GetController(PIDList.VertSpeed).SetPoint = vert;
                     PAMainWindow.SetTargetVerticalSpeed(vert);
                 }
-                if (GameSettings.PITCH_UP.GetKey() && isVertActive)
+
+                // Update target altitude based on user control input
+                if (isVertActive && isAltitudeHoldActive)
                 {
-                    double vert = PAMainWindow.GetTargetVerticalSpeed();
-                    if (isAltitudeHoldActive)
-                    {
-                        vert += bFineControl ? 0.4 / scale : 4 * scale;
-                        GetController(PIDList.Altitude).SetPoint = vert;
-                    }
-                    else
-                    {
-                        vert += bFineControl ? 0.04 / scale : 0.4 * scale;
-                        GetController(PIDList.VertSpeed).SetPoint = vert;
-                    }
-                    PAMainWindow.SetTargetVerticalSpeed(vert);
+                    double alt = PAMainWindow.GetTargetAltitude();
+                    if (GameSettings.PITCH_DOWN.GetKey())
+                        alt -= 4 * scale;
+                    else if (GameSettings.PITCH_UP.GetKey())
+                        alt += 4 * scale;
+                    else if (!GameSettings.AXIS_PITCH.IsNeutral())
+                        alt += 4 * scale * GameSettings.AXIS_PITCH.GetAxis();
+
+                    if (alt < 0)
+                        alt = 0;
+                    GetController(PIDList.Altitude).SetPoint = alt;
+                    PAMainWindow.SetTargetAltitude(alt);
                 }
             }
         }

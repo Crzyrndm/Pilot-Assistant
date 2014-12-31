@@ -14,7 +14,7 @@ namespace PilotAssistant.Utility
         /// <param name="min">minimum output value of the variable</param>
         /// <param name="max">maximum output value of the variable</param>
         /// <returns>val clamped between max and min</returns>
-        internal static double Clamp(double val, double min, double max)
+        public static double Clamp(double val, double min, double max)
         {
             if (val < min)
                 return min;
@@ -32,7 +32,7 @@ namespace PilotAssistant.Utility
         /// <param name="upper">reference point treated as the target (pct = 1)</param>
         /// <param name="clamp">clamp pct input between 0 and 1?</param>
         /// <returns></returns>
-        internal static double Lerp(double pct, double lower, double upper, bool clamp = true)
+        public static double Lerp(double pct, double lower, double upper, bool clamp = true)
         {
             if (clamp)
             {

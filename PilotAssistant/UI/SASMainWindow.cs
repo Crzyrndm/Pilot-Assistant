@@ -7,27 +7,26 @@ namespace PilotAssistant.UI
     using Presets;
     using Utility;
 
-    internal static class SASMainWindow
+    public static class SASMainWindow
     {
         public static Rect windowRect = new Rect(350, 50, 200, 30);
 
         private static bool showPresets = false;
 
         private static bool[] stockPIDDisplay = { false, false, false };
+        private static bool[] ssasPIDDisplay = { false, false, false };
 
+        private const int WINDOW_ID = 78934856;
         private const string TEXT_FIELD_GROUP = "SASMainWindow";
 
         public static void Draw(bool show)
         {
             if (show)
             {
-                GeneralUI.Styles();
+                GUI.skin = HighLogic.Skin;
+                windowRect = GUILayout.Window(WINDOW_ID, windowRect, DrawSASWindow, "SAS Module", GUILayout.Width(0), GUILayout.Height(0));
                 
-                windowRect = GUILayout.Window(78934856, windowRect, DrawSASWindow, "SAS Module", GUILayout.Width(0), GUILayout.Height(0));
-                
-                SASPresetWindow.windowRect.x = windowRect.x + windowRect.width;
-                SASPresetWindow.windowRect.y = windowRect.y;
-                
+                SASPresetWindow.Reposition(windowRect.x + windowRect.width, windowRect.y);
                 SASPresetWindow.Draw(showPresets);
             }
             else
@@ -45,22 +44,22 @@ namespace PilotAssistant.UI
             bool isOperational = SurfSAS.IsSSASOperational() || SurfSAS.IsStockSASOperational();
             bool isSSASMode = SurfSAS.IsSSASMode();
             GUILayout.BeginHorizontal();
-            showPresets = GUILayout.Toggle(showPresets, "Presets", GeneralUI.toggleButtonStyle);
+            showPresets = GUILayout.Toggle(showPresets, "Presets", GeneralUI.ToggleButtonStyle);
             GUILayout.EndHorizontal();
             
             // SSAS/SAS
-            GUILayout.BeginVertical(GeneralUI.guiSectionStyle, GUILayout.ExpandWidth(true));
+            GUILayout.BeginVertical(GeneralUI.GUISectionStyle, GUILayout.ExpandWidth(true));
             GUILayout.BeginHorizontal();
-            if (GUILayout.Toggle(isOperational, isOperational ? "On" : "Off", GeneralUI.toggleButtonStyle, GUILayout.ExpandWidth(false)) != isOperational)
+            if (GUILayout.Toggle(isOperational, isOperational ? "On" : "Off", GeneralUI.ToggleButtonStyle, GUILayout.ExpandWidth(false)) != isOperational)
             {
                 SurfSAS.ToggleOperational();
             }
-            GUILayout.Label("SAS", GeneralUI.boldLabelStyle, GUILayout.ExpandWidth(true));
+            GUILayout.Label("SAS", GeneralUI.BoldLabelStyle, GUILayout.ExpandWidth(true));
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
             GUILayout.Label("Mode:");
-            bool tmpToggle1 = GUILayout.Toggle(!isSSASMode, "Stock SAS", GeneralUI.toggleButtonStyle);
-            bool tmpToggle2 = GUILayout.Toggle(isSSASMode, "SSAS", GeneralUI.toggleButtonStyle);
+            bool tmpToggle1 = GUILayout.Toggle(!isSSASMode, "Stock SAS", GeneralUI.ToggleButtonStyle);
+            bool tmpToggle2 = GUILayout.Toggle(isSSASMode, "SSAS", GeneralUI.ToggleButtonStyle);
             // tmpToggle1 and tmpToggle2 are true when the user clicks the non-active mode, i.e. the mode changes. 
             if (tmpToggle1 && tmpToggle2)
                 SurfSAS.ToggleSSASMode();
@@ -83,17 +82,18 @@ namespace PilotAssistant.UI
                 SurfSAS.SetSSASAxisEnabled(SASList.Roll, tmp2);
                 SurfSAS.SetSSASAxisEnabled(SASList.Yaw, tmp3);
 
-                drawPIDValues(SASList.Pitch, "Pitch");
-                drawPIDValues(SASList.Roll, "Roll");
-                drawPIDValues(SASList.Yaw, "Yaw");
+                DrawPIDValues(SASList.Pitch, "Pitch");
+                DrawPIDValues(SASList.Roll, "Roll");
+                DrawPIDValues(SASList.Yaw, "Yaw");
             }
             else
             {
-                VesselAutopilot.VesselSAS sas = Utility.FlightData.thisVessel.Autopilot.SAS;
+                FlightData flightData = SurfSAS.GetFlightData();
+                VesselAutopilot.VesselSAS sas = flightData.Vessel.Autopilot.SAS;
 
-                drawPIDValues(sas.pidLockedPitch, "Pitch", SASList.Pitch);
-                drawPIDValues(sas.pidLockedRoll, "Roll", SASList.Roll);
-                drawPIDValues(sas.pidLockedYaw, "Yaw", SASList.Yaw);
+                DrawPIDValues(sas.pidLockedPitch, "Pitch", SASList.Pitch);
+                DrawPIDValues(sas.pidLockedRoll, "Roll", SASList.Roll);
+                DrawPIDValues(sas.pidLockedYaw, "Yaw", SASList.Yaw);
             }
 
             // Autolock vessel controls on focus.
@@ -103,34 +103,34 @@ namespace PilotAssistant.UI
             GUI.DragWindow();
         }
 
-        private static void drawPIDValues(SASList controllerID, string inputName)
+        private static void DrawPIDValues(SASList controllerID, string inputName)
         {
             PID.PID_Controller controller = SurfSAS.GetController(controllerID);
-            if (GUILayout.Button(inputName, GeneralUI.buttonStyle, GUILayout.ExpandWidth(true)))
-                controller.bShow = !controller.bShow;
+            if (GUILayout.Button(inputName, GeneralUI.ButtonStyle, GUILayout.ExpandWidth(true)))
+                ssasPIDDisplay[(int)controllerID] = !ssasPIDDisplay[(int)controllerID]; 
 
-            if (controller.bShow)
+            if (ssasPIDDisplay[(int)controllerID])
             {
-                controller.PGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.PGain, "G3", 45);
-                controller.IGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.IGain, "G3", 45);
-                controller.DGain = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kd:", controller.DGain, "G3", 45);
-                controller.Scalar = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Scalar:", controller.Scalar, "G3", 45);
+                controller.PGain = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.PGain, "F3", 45);
+                controller.IGain = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.IGain, "F3", 45);
+                controller.DGain = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Kd:", controller.DGain, "F3", 45);
+                controller.Scalar = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Scalar:", controller.Scalar, "F3", 45);
             }
         }
 
-        private static void drawPIDValues(PIDclamp controller, string inputName, SASList id)
+        private static void DrawPIDValues(PIDclamp controller, string inputName, SASList id)
         {
-            if (GUILayout.Button(inputName, GeneralUI.buttonStyle, GUILayout.ExpandWidth(true)))
+            if (GUILayout.Button(inputName, GeneralUI.ButtonStyle, GUILayout.ExpandWidth(true)))
             {
                 stockPIDDisplay[(int)id] = !stockPIDDisplay[(int)id];
             }
 
             if (stockPIDDisplay[(int)id])
             {
-                controller.kp = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.kp, "G3", 45);
-                controller.ki = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.ki, "G3", 45);
-                controller.kd = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Kd:", controller.kd, "G3", 45);
-                controller.clamp = GeneralUI.labPlusNumBox(TEXT_FIELD_GROUP, "Scalar:", controller.clamp, "G3", 45);
+                controller.kp = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Kp:", controller.kp, "F3", 45);
+                controller.ki = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Ki:", controller.ki, "F3", 45);
+                controller.kd = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Kd:", controller.kd, "F3", 45);
+                controller.clamp = GeneralUI.LabPlusNumBox(TEXT_FIELD_GROUP, "Scalar:", controller.clamp, "F3", 45);
             }
         }
     }
