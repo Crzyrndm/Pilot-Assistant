@@ -30,7 +30,7 @@ namespace PilotAssistant.UI
                     if (GUILayout.Button("Update Preset"))
                     {
                         PresetManager.activePAPreset.Update(PilotAssistant.controllers);
-                        PresetManager.saveCFG();
+                        PresetManager.saveToFile();
                         Messaging.postMessage(PresetManager.activePAPreset.name + " updated");
                     }
                 }
@@ -55,7 +55,7 @@ namespace PilotAssistant.UI
                     PresetManager.PAPresetList.Add(new PresetPA(PilotAssistant.controllers, newPresetName));
                     newPresetName = "";
                     PresetManager.activePAPreset = PresetManager.PAPresetList[PresetManager.PAPresetList.Count - 1];
-                    PresetManager.saveCFG();
+                    PresetManager.saveToFile();
                 }
                 else
                 {
@@ -89,7 +89,7 @@ namespace PilotAssistant.UI
                     if (PresetManager.activePAPreset == p)
                         PresetManager.activePAPreset = null;
                     PresetManager.PAPresetList.Remove(p);
-                    PresetManager.saveCFG();
+                    PresetManager.saveToFile();
                 }
                 GUILayout.EndHorizontal();
             }

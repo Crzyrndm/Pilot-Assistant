@@ -45,7 +45,7 @@ namespace PilotAssistant.UI
                     if (GUILayout.Button("Update Preset"))
                     {
                         PresetManager.activeSASPreset.Update(SurfSAS.SASControllers);
-                        PresetManager.saveCFG();
+                        PresetManager.saveToFile();
                     }
                 }
                 GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
@@ -66,7 +66,7 @@ namespace PilotAssistant.UI
                     PresetManager.SASPresetList.Add(new PresetSAS(SurfSAS.SASControllers, newPresetName));
                     newPresetName = "";
                     PresetManager.activeSASPreset = PresetManager.SASPresetList[PresetManager.SASPresetList.Count - 1];
-                    PresetManager.saveCFG();
+                    PresetManager.saveToFile();
                 }
             }
             GUILayout.EndHorizontal();
@@ -97,7 +97,7 @@ namespace PilotAssistant.UI
                     if (PresetManager.activeSASPreset == p)
                         PresetManager.activeSASPreset = null;
                     PresetManager.SASPresetList.Remove(p);
-                    PresetManager.saveCFG();
+                    PresetManager.saveToFile();
                 }
                 GUILayout.EndHorizontal();
             }
@@ -113,7 +113,7 @@ namespace PilotAssistant.UI
                     if (GUILayout.Button("Update Preset"))
                     {
                         PresetManager.activeStockSASPreset.Update(Utility.FlightData.thisVessel.Autopilot.SAS);
-                        PresetManager.saveCFG();
+                        PresetManager.saveToFile();
                     }
                 }
                 GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
@@ -134,7 +134,7 @@ namespace PilotAssistant.UI
                     PresetManager.SASPresetList.Add(new PresetSAS(Utility.FlightData.thisVessel.Autopilot.SAS, newPresetName));
                     newPresetName = "";
                     PresetManager.activeStockSASPreset = PresetManager.SASPresetList[PresetManager.SASPresetList.Count - 1];
-                    PresetManager.saveCFG();
+                    PresetManager.saveToFile();
                 }
             }
             GUILayout.EndHorizontal();
@@ -165,7 +165,7 @@ namespace PilotAssistant.UI
                     if (PresetManager.activeStockSASPreset == p)
                         PresetManager.activeStockSASPreset = null;
                     PresetManager.SASPresetList.Remove(p);
-                    PresetManager.saveCFG();
+                    PresetManager.saveToFile();
                 }
                 GUILayout.EndHorizontal();
             }

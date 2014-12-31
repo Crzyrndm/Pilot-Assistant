@@ -49,7 +49,6 @@
   <ItemGroup>
     <Compile Include="AppLauncher\AppLauncherEditor.cs" />
     <Compile Include="AppLauncher\AppLauncherFlight.cs" />
-    <Compile Include="PID\Monitor.cs" />
     <Compile Include="Presets\CraftPreset.cs" />
     <Compile Include="SurfSAS.cs" />
     <Compile Include="PID\PID_Controller.cs" />

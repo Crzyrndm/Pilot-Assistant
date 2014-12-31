@@ -33,7 +33,7 @@ namespace PilotAssistant.Presets
 
         public void OnDestroy()
         {
-            saveCFG();
+            saveToFile();
         }
 
         internal static void loadPresetsFromFile()
@@ -78,7 +78,7 @@ namespace PilotAssistant.Presets
             }
         }
 
-        internal static void saveCFG()
+        internal static void saveToFile()
         {
             ConfigNode node = new ConfigNode();
             if (PAPresetList.Count == 0 && SASPresetList.Count == 0 && craftPresetList.Count == 0)

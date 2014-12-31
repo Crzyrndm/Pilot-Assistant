@@ -127,26 +127,6 @@ namespace PilotAssistant
                 setStockSAS(bStockSAS);
             }
 
-            // Atmospheric mode tracks horizon, don't want in space
-            if (FlightData.thisVessel.staticPressure > 0 && !bAtmosphere)
-            {
-                bAtmosphere = true;
-                if (FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] && bArmed)
-                {
-                    ActivitySwitch(true);
-                    setStockSAS(false);
-                }
-            }
-            else if (FlightData.thisVessel.staticPressure == 0 && bAtmosphere)
-            {
-                bAtmosphere = false;
-                if (ActivityCheck())
-                {
-                    ActivitySwitch(false);
-                    setStockSAS(true);
-                }
-            }
-
             pauseManager(); // manage activation of SAS axes depending on user input
         }
 
@@ -162,18 +142,18 @@ namespace PilotAssistant
             if (SurfSAS.bArmed)
             {
                 if (SurfSAS.ActivityCheck())
-                    UnityEngine.GUI.backgroundColor = GeneralUI.ActiveBackground;
+                    GUI.backgroundColor = GeneralUI.ActiveBackground;
                 else
-                    UnityEngine.GUI.backgroundColor = GeneralUI.InActiveBackground;
+                    GUI.backgroundColor = GeneralUI.InActiveBackground;
 
-                if (UnityEngine.GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
+                if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
                 {
                     ActivitySwitch(!ActivityCheck());
                     updateTarget();
                     if (ActivityCheck())
                         setStockSAS(false);
                 }
-                UnityEngine.GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+                GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             }
             
             // Main and preset window stuff
@@ -220,10 +200,7 @@ namespace PilotAssistant
                         activationFadeYaw = 1;
                 }
 
-
-                //pitchResponse();
                 rollResponse();
-                //yawResponse();
             }
         }
 
@@ -288,24 +265,6 @@ namespace PilotAssistant
                     SASControllers[(int)SASList.Pitch].SetPoint = FlightData.pitch;
                     yawTarget = FlightData.thisVessel.ReferenceTransform.up;
                     activationFadeYaw = 10;
-                }
-            }
-            if (!bStockSAS)
-            {
-                if (GameSettings.SAS_HOLD.GetKeyDown())
-                {
-                    bPause[(int)SASList.Pitch] = !bPause[(int)SASList.Pitch];
-                    bPause[(int)SASList.Roll] = !bPause[(int)SASList.Roll];
-                    bPause[(int)SASList.Yaw] = !bPause[(int)SASList.Yaw];
-                    setStockSAS(false);
-                }
-                else if (GameSettings.SAS_HOLD.GetKeyUp())
-                {
-                    bPause[(int)SASList.Pitch] = !bPause[(int)SASList.Pitch];
-                    bPause[(int)SASList.Roll] = !bPause[(int)SASList.Roll];
-                    bPause[(int)SASList.Yaw] = !bPause[(int)SASList.Yaw];
-                    setStockSAS(false);
-                    updateTarget();
                 }
             }
         }

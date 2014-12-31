@@ -4,6 +4,8 @@ using UnityEngine;
 
 namespace PilotAssistant.AppLauncher
 {
+    using Utility;
+
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class AppLauncherFlight : MonoBehaviour
     {
@@ -54,7 +56,7 @@ namespace PilotAssistant.AppLauncher
 
         private void OnGUI()
         {
-            Utility.GeneralUI.Styles();
+            GeneralUI.Styles();
             if (bDisplayOptions)
             {
                 window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
