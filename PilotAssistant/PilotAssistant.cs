@@ -112,19 +112,22 @@ namespace PilotAssistant
 
         public void Update()
         {
-            if (bHdgActive != bHdgWasActive && !bPause)
+            keyPressChanges();
+
+            if (IsPaused())
+                return;
+
+            if (bHdgActive != bHdgWasActive)
                 hdgToggle();
 
-            if (bVertActive != bVertWasActive && !bPause)
+            if (bVertActive != bVertWasActive)
                 vertToggle();
 
-            if (bAltitudeHold != bWasAltitudeHold && !bPause)
+            if (bAltitudeHold != bWasAltitudeHold)
                 altToggle();
 
-            if (bWingLeveller != bWasWingLeveller && !bPause)
+            if (bWingLeveller != bWasWingLeveller)
                 wingToggle();
-
-            keyPressChanges();
         }
 
         public void FixedUpdate()
@@ -151,7 +154,7 @@ namespace PilotAssistant
 
             FlightData.updateAttitude();
 
-            if (bPause || SASMonitor())
+            if (IsPaused())
                 return;
             
             // Heading Control
@@ -301,8 +304,11 @@ namespace PilotAssistant
 
             if (GameSettings.SAS_TOGGLE.GetKeyDown())
             {
+                bHdgWasActive = false; // reset heading/vert lock on unpausing
+                bVertWasActive = false;
                 if (!bPause && FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] && SurfSAS.ActivityCheck())
                 {
+                    // prepare to rest these on SAS off
                     Messaging.statusMessage(2);
                 }
                 else if (bPause && (!FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] || !SurfSAS.ActivityCheck()))
@@ -321,7 +327,7 @@ namespace PilotAssistant
                 Messaging.statusMessage(4);
             }
 
-            if (!bPause)
+            if (!IsPaused())
             {
                 double scale = mod ? 10 : 1;
                 bool bFineControl = FlightInputHandler.fetch.precisionMode;
