@@ -50,7 +50,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppLauncher\AppLauncherInstance.cs" />
-    <Compile Include="PID\Monitor.cs" />
     <Compile Include="SurfSAS.cs" />
     <Compile Include="PID\PID_Controller.cs" />
     <Compile Include="PilotAssistant.cs" />
