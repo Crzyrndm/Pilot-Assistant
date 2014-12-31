@@ -11,6 +11,8 @@ namespace PilotAssistant.AppLauncher
         private static ApplicationLauncherButton btnLauncher;
         private static Rect windowRect = new Rect(Screen.width - 180, 40, 30, 30);
 
+        private const int WINDOW_ID = 0984653;
+
         public static bool bDisplayOptions = false;
         public static bool bDisplayAssistant = false;
         public static bool bDisplaySAS = false;
@@ -56,7 +58,7 @@ namespace PilotAssistant.AppLauncher
             GUI.skin = HighLogic.Skin;
             if (bDisplayOptions)
             {
-                windowRect = GUILayout.Window(0984653, windowRect, DrawOptionsWindow, "", GUILayout.MaxWidth(200));
+                windowRect = GUILayout.Window(WINDOW_ID, windowRect, DrawOptionsWindow, "", GeneralUI.OptionsWindowStyle, GUILayout.Width(0), GUILayout.Height(0));
             }
         }
 

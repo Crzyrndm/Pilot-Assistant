@@ -16,6 +16,7 @@ namespace PilotAssistant.UI
         private static bool[] stockPIDDisplay = { false, false, false };
         private static bool[] ssasPIDDisplay = { false, false, false };
 
+        private const int WINDOW_ID = 78934856;
         private const string TEXT_FIELD_GROUP = "SASMainWindow";
 
         public static void Draw(bool show)
@@ -23,7 +24,7 @@ namespace PilotAssistant.UI
             if (show)
             {
                 GUI.skin = HighLogic.Skin;
-                windowRect = GUILayout.Window(78934856, windowRect, DrawSASWindow, "SAS Module", GUILayout.Width(0), GUILayout.Height(0));
+                windowRect = GUILayout.Window(WINDOW_ID, windowRect, DrawSASWindow, "SAS Module", GUILayout.Width(0), GUILayout.Height(0));
                 
                 SASPresetWindow.Reposition(windowRect.x + windowRect.width, windowRect.y);
                 SASPresetWindow.Draw(showPresets);

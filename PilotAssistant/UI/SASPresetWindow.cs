@@ -12,6 +12,7 @@ namespace PilotAssistant.UI
         private static string newPresetName = "";
         private static Rect windowRect = new Rect(550, 50, 50, 50);
 
+        private const int WINDOW_ID = 78934857;
         private const string TEXT_FIELD_GROUP = "SASPresetWindow";
 
         public static void Draw(bool show)
@@ -19,7 +20,7 @@ namespace PilotAssistant.UI
             if (show)
             {
                 GUI.skin = HighLogic.Skin;
-                windowRect = GUILayout.Window(78934857, windowRect, DrawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
+                windowRect = GUILayout.Window(WINDOW_ID, windowRect, DrawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
             }
             else
                 GeneralUI.ClearLocks(TEXT_FIELD_GROUP);

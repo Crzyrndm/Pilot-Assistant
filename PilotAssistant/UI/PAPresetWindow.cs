@@ -12,6 +12,7 @@ namespace PilotAssistant.UI
         private static string newPresetName = "";
         private static Rect windowRect = new Rect(0, 0, 200, 10);
 
+        private const int WINDOW_ID = 34245;
         private const string TEXT_FIELD_GROUP = "PAPresetWindow";
 
         public static void Draw(bool show)
@@ -19,7 +20,7 @@ namespace PilotAssistant.UI
             if (show)
             {
                 GUI.skin = HighLogic.Skin;
-                windowRect = GUILayout.Window(34245, windowRect, DrawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
+                windowRect = GUILayout.Window(WINDOW_ID, windowRect, DrawPresetWindow, "Presets", GUILayout.Width(200), GUILayout.Height(0));
             }
             else
             {

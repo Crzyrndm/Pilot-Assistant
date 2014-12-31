@@ -22,6 +22,7 @@ namespace PilotAssistant.Utility
         private static GUIStyle spinnerMinusBtnStyle;
 
         private static GUIStyle labelStyle;
+        private static GUIStyle optionsWindowStyle;
 
         public static Color SSASActiveBGColor
         {
@@ -142,6 +143,18 @@ namespace PilotAssistant.Utility
             }
         }
 
+        public static GUIStyle OptionsWindowStyle
+        {
+            get
+            {
+                if (!stylesInitialized)
+                {
+                    InitStyles();
+                }
+                return optionsWindowStyle;
+            }
+        }
+
         // Used to track the state of a text field group.
         private class TextFieldGroupState
         {
@@ -218,6 +231,7 @@ namespace PilotAssistant.Utility
             GUISkin skin = HighLogic.Skin;
             // style for the paused message
             labelAlertStyle = new GUIStyle(skin.label);
+            labelAlertStyle.alignment = TextAnchor.MiddleCenter;
             labelAlertStyle.normal.textColor = XKCDColors.Red;
             labelAlertStyle.fontSize = 21;
             labelAlertStyle.fontStyle = FontStyle.Bold;
@@ -274,6 +288,9 @@ namespace PilotAssistant.Utility
             boldLabelStyle = new GUIStyle(skin.label);
             boldLabelStyle.fontStyle = FontStyle.Bold;
             boldLabelStyle.alignment = TextAnchor.MiddleLeft;
+
+            optionsWindowStyle = new GUIStyle(skin.window);
+            optionsWindowStyle.padding = new RectOffset(0, 0, 0, 0);
             stylesInitialized = true;
         }
 
