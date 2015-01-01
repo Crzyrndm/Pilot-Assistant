@@ -51,14 +51,12 @@ namespace PilotAssistant.PID
             input = Functions.Clamp(input, inMin, inMax);
             dt = TimeWarp.fixedDeltaTime;
             error = input - setpoint;
-            double response = proportionalError(error) + integralError(error);
-            if (!skipDerivative)
-                response += derivativeError(input);
-            else
+            if (skipDerivative)
             {
                 skipDerivative = false;
                 previous = input;
             }
+            double response = proportionalError(error) + integralError(error) + derivativeError(input);
             return Functions.Clamp(response, outMin, outMax);
         }
 
