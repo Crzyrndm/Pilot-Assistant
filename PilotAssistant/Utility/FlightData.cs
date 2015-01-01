@@ -26,7 +26,7 @@ namespace PilotAssistant.Utility
 
         internal static void updateAttitude()
         {
-            // this gives me 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
+            // 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
 
             // surface vectors
             planetUp = (thisVessel.findWorldCenterOfMass() - thisVessel.mainBody.position).normalized;

@@ -173,7 +173,7 @@ namespace PilotAssistant
                     vertResponse = -1 * (float)SASControllers[(int)SASList.Pitch].Response(FlightData.pitch);
 
                 float hrztResponse = 0;
-                if (bActive[(int)SASList.Yaw])
+                if (bActive[(int)SASList.Yaw] && (FlightData.thisVessel.latitude < 88 && FlightData.thisVessel.latitude > -88))
                 {
                     if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading >= -180 && SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading <= 180)
                         hrztResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading);
@@ -182,18 +182,22 @@ namespace PilotAssistant
                     else if (SASControllers[(int)SASList.Yaw].SetPoint - FlightData.heading > 180)
                         hrztResponse = -1 * (float)SASControllers[(int)SASList.Yaw].Response(FlightData.heading + 360);
                 }
+                else
+                {
+                    SASControllers[(int)SASList.Yaw].SetPoint = FlightData.heading;
+                }
 
                 double rollRad = Math.PI / 180 * FlightData.roll;
 
                 if ((!bPause[(int)SASList.Pitch] && bActive[(int)SASList.Pitch]) || (!bPause[(int)SASList.Yaw] && bActive[(int)SASList.Yaw]))
                 {
-                    FlightData.thisVessel.ctrlState.pitch = (vertResponse * (float)Math.Cos(rollRad) - hrztResponse * (float)Math.Sin(rollRad)) / activationFadePitch;
+                    state.pitch = (vertResponse * (float)Math.Cos(rollRad) - hrztResponse * (float)Math.Sin(rollRad)) / activationFadePitch;
                     if (activationFadePitch > 1)
                         activationFadePitch *= 0.98f; // ~100 physics frames
                     else
                         activationFadePitch = 1;
                 
-                    FlightData.thisVessel.ctrlState.yaw = (vertResponse * (float)Math.Sin(rollRad) + hrztResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
+                    state.yaw = (vertResponse * (float)Math.Sin(rollRad) + hrztResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
                     if (activationFadeYaw > 1)
                         activationFadeYaw *= 0.98f; // ~100 physics frames
                     else

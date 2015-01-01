@@ -160,7 +160,7 @@ namespace PilotAssistant
             // Heading Control
             if (bHdgActive)
             {
-                if (!bWingLeveller)
+                if (!bWingLeveller && (FlightData.thisVessel.latitude < 88 && FlightData.thisVessel.latitude > -88))
                 {
                     if (GetController(PIDList.HdgBank).SetPoint - FlightData.heading >= -180 && GetController(PIDList.HdgBank).SetPoint - FlightData.heading <= 180)
                     {
@@ -182,6 +182,7 @@ namespace PilotAssistant
                 }
                 else
                 {
+                    bWasWingLeveller = true;
                     GetController(PIDList.Aileron).SetPoint = 0;
                     GetController(PIDList.Rudder).SetPoint = 0;
                 }
