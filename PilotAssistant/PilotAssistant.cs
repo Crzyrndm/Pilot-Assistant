@@ -203,17 +203,13 @@ namespace PilotAssistant
 
 
         public static bool IsPaused() { return bPause || SASMonitor(); }
-        public static bool IsHdgActive() { return bHdgActive; }
-        public static bool IsWingLvlActive() { return bWingLeveller; }
-        public static bool IsVertActive() { return bVertActive; }
-        public static bool IsAltitudeHoldActive() { return bAltitudeHold; }
 
         private void hdgToggle()
         {
             bHdgWasActive = bHdgActive;
             if (bHdgActive)
             {
-                controllers[(int)PIDList.HdgBank].SetPoint = FlightData.heading;
+                GetController(PIDList.HdgBank).SetPoint = FlightData.heading;
                 PAMainWindow.targetHeading = FlightData.heading.ToString("N2");
 
                 bPause = false;

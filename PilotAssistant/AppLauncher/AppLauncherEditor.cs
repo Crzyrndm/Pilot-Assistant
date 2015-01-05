@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 
 using UnityEngine;
-using PilotAssistant.Presets;
 
 namespace PilotAssistant.AppLauncher
 {
+    using Presets;
+    using Utility;
+
     [KSPAddon(KSPAddon.Startup.EditorAny, false)]
-    class AppLauncherEditor
+    class AppLauncherEditor : MonoBehaviour
     {
         private static ApplicationLauncherButton btnLauncher;
         private static Rect window;
