@@ -9,7 +9,7 @@ namespace PilotAssistant.Utility
 
     public static class Utils
     {
-        internal static float Clamp(float val, float min, float max)
+        public static float Clamp(float val, float min, float max)
         {
             if (val < min)
                 return min;
@@ -21,7 +21,7 @@ namespace PilotAssistant.Utility
 
         public static PID_Controller GetAsst(PIDList id)
         {
-            return PilotAssistant.controllers[(int)id];
+            return PilotAssistant.Instance.controllers[(int)id];
         }
 
         public static PID_Controller GetSAS(SASList id)

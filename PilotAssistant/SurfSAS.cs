@@ -42,6 +42,14 @@ namespace PilotAssistant
 
         bool rollState = false; // false = surface mode, true = vector mode
 
+        Rect SASwindow = new Rect(350, 50, 200, 30);
+
+        bool[] stockPIDDisplay = { true, false, false };
+
+        string newPresetName = "";
+        Rect SASPresetwindow = new Rect(550, 50, 50, 50);
+        bool bShowPresets = false;
+
         public void Start()
         {
             instance = this;
@@ -414,10 +422,6 @@ namespace PilotAssistant
 
         #region GUI
 
-        Rect SASwindow = new Rect(350, 50, 200, 30);
-
-        bool[] stockPIDDisplay = { true, false, false };
-
         public void Draw()
         {
             if (AppLauncherFlight.bDisplaySAS)
@@ -518,12 +522,6 @@ namespace PilotAssistant
             }
         }
 
-
-
-        internal static string newPresetName = "";
-        internal static Rect SASPresetwindow = new Rect(550, 50, 50, 50);
-        internal static bool bShowPresets = false;
-
         private void drawPresetWindow(int id)
         {
             if (GUI.Button(new Rect(SASPresetwindow.width - 16, 2, 14, 14), ""))
@@ -545,10 +543,7 @@ namespace PilotAssistant
                 if (PresetManager.Instance.activeSASPreset.name != "Default")
                 {
                     if (GUILayout.Button("Update Preset"))
-                    {
-                        PresetManager.Instance.activeSASPreset.Update(SASControllers);
-                        PresetManager.saveToFile();
-                    }
+                        PresetManager.updateSASPreset(false, SASControllers);
                 }
                 GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
             }
@@ -556,30 +551,13 @@ namespace PilotAssistant
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-            {
-                if (newPresetName != "")
-                {
-                    foreach (PresetSAS p in PresetManager.Instance.SASPresetList)
-                    {
-                        if (newPresetName == p.name)
-                            return;
-                    }
-
-                    PresetManager.Instance.SASPresetList.Add(new PresetSAS(SASControllers, newPresetName));
-                    newPresetName = "";
-                    PresetManager.Instance.activeSASPreset = PresetManager.Instance.SASPresetList[PresetManager.Instance.SASPresetList.Count - 1];
-                    PresetManager.saveToFile();
-                }
-            }
+                PresetManager.newSASPreset(ref newPresetName, SASControllers);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
             if (GUILayout.Button("Reset to Defaults"))
-            {
                 PresetManager.loadSASPreset(PresetManager.Instance.defaultSASTuning);
-                PresetManager.Instance.activeSASPreset = PresetManager.Instance.defaultSASTuning;
-            }
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
@@ -590,17 +568,9 @@ namespace PilotAssistant
 
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(p.name))
-                {
                     PresetManager.loadSASPreset(p);
-                    PresetManager.Instance.activeSASPreset = p;
-                }
-                if (GUILayout.Button("x", GUILayout.Width(25)))
-                {
-                    if (PresetManager.Instance.activeSASPreset == p)
-                        PresetManager.Instance.activeSASPreset = null;
-                    PresetManager.Instance.SASPresetList.Remove(p);
-                    PresetManager.saveToFile();
-                }
+                else if (GUILayout.Button("x", GUILayout.Width(25)))
+                    PresetManager.deleteSASPreset(p);
                 GUILayout.EndHorizontal();
             }
         }
@@ -613,10 +583,7 @@ namespace PilotAssistant
                 if (PresetManager.Instance.activeStockSASPreset.name != "Stock")
                 {
                     if (GUILayout.Button("Update Preset"))
-                    {
-                        PresetManager.Instance.activeStockSASPreset.Update(Utility.FlightData.thisVessel.Autopilot.SAS);
-                        PresetManager.saveToFile();
-                    }
+                        PresetManager.updateSASPreset(true);
                 }
                 GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
             }
@@ -624,30 +591,13 @@ namespace PilotAssistant
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-            {
-                if (newPresetName != "")
-                {
-                    foreach (PresetSAS p in PresetManager.Instance.SASPresetList)
-                    {
-                        if (newPresetName == p.name)
-                            return;
-                    }
-
-                    PresetManager.Instance.SASPresetList.Add(new PresetSAS(Utility.FlightData.thisVessel.Autopilot.SAS, newPresetName));
-                    newPresetName = "";
-                    PresetManager.Instance.activeStockSASPreset = PresetManager.Instance.SASPresetList[PresetManager.Instance.SASPresetList.Count - 1];
-                    PresetManager.saveToFile();
-                }
-            }
+                PresetManager.newSASPreset(ref newPresetName);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
             if (GUILayout.Button("Reset to Defaults"))
-            {
                 PresetManager.loadStockSASPreset(PresetManager.Instance.defaultStockSASTuning);
-                PresetManager.Instance.activeStockSASPreset = PresetManager.Instance.defaultStockSASTuning;
-            }
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
@@ -658,17 +608,9 @@ namespace PilotAssistant
 
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(p.name))
-                {
                     PresetManager.loadStockSASPreset(p);
-                    PresetManager.Instance.activeStockSASPreset = p;
-                }
-                if (GUILayout.Button("x", GUILayout.Width(25)))
-                {
-                    if (PresetManager.Instance.activeStockSASPreset == p)
-                        PresetManager.Instance.activeStockSASPreset = null;
-                    PresetManager.Instance.SASPresetList.Remove(p);
-                    PresetManager.saveToFile();
-                }
+                else if (GUILayout.Button("x", GUILayout.Width(25)))
+                    PresetManager.deleteSASPreset(p);
                 GUILayout.EndHorizontal();
             }
         }

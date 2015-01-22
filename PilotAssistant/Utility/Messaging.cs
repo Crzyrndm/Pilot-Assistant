@@ -67,7 +67,7 @@ namespace PilotAssistant.Utility
 
         static bool checkAssistantActive()
         {
-            return (PilotAssistant.bHdgActive || PilotAssistant.bVertActive);
+            return (PilotAssistant.Instance.bHdgActive || PilotAssistant.Instance.bVertActive);
         }
     }
 }

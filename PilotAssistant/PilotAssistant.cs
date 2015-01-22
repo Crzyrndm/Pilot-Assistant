@@ -3,14 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using KSP.IO;
 
-
-
 namespace PilotAssistant
 {
     using Presets;
     using Utility;
     using PID;
-    using UI;
     using AppLauncher;
 
     [Flags]
@@ -28,26 +25,57 @@ namespace PilotAssistant
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class PilotAssistant : MonoBehaviour
     {
-        static bool init = false; // create the default the first time through
-        internal static PID_Controller[] controllers = new PID_Controller[7];
+        private static PilotAssistant instance;
+        public static PilotAssistant Instance 
+        {
+            get { return instance; }
+        }
 
-        internal static bool bPause = false;
+        static bool init = false; // create the default the first time through
+        public PID_Controller[] controllers = new PID_Controller[7];
+
+        bool bPause = false;
 
         // RollController
-        internal static bool bHdgActive = false;
-        internal static bool bHdgWasActive = false;
+        public bool bHdgActive = false;
+        bool bHdgWasActive = false;
         // PitchController
-        internal static bool bVertActive = false;
-        internal static bool bVertWasActive = false;
+        public bool bVertActive = false;
+        bool bVertWasActive = false;
         // Altitude / vertical speed
-        internal static bool bAltitudeHold = false;
-        internal static bool bWasAltitudeHold = false;
+        bool bAltitudeHold = false;
+        bool bWasAltitudeHold = false;
         // Wing leveller / Heading control
-        internal static bool bWingLeveller = false;
-        internal static bool bWasWingLeveller = false;
+        bool bWingLeveller = false;
+        bool bWasWingLeveller = false;
+
+        Rect window = new Rect(10, 50, 10, 10);
+
+        Vector2 scrollbarHdg = Vector2.zero;
+        Vector2 scrollbarVert = Vector2.zero;
+
+        bool showPresets = false;
+
+        bool showPIDLimits = false;
+        bool showControlSurfaces = false;
+
+        string targetVert = "0";
+        string targetHeading = "0";
+
+        bool bShowSettings = true;
+        bool bShowHdg = true;
+        bool bShowVert = true;
+
+        float hdgScrollHeight;
+        float vertScrollHeight;
+
+        string newPresetName = "";
+        Rect presetWindow = new Rect(0, 0, 200, 10);
 
         public void Start()
         {
+            instance = this;
+
             if (!init)
                 Initialise();
 
@@ -174,7 +202,7 @@ namespace PilotAssistant
                     Utils.GetAsst(PIDList.Aileron).SetPoint = 0;
                     Utils.GetAsst(PIDList.Rudder).SetPoint = 0;
                 }
-                state.roll = Utils.Clamp(Utils.GetAsst(PIDList.Aileron).ResponseF(FlightData.roll) + state.roll, -1, 1);
+                state.roll = (float)Utils.Clamp(Utils.GetAsst(PIDList.Aileron).ResponseF(FlightData.roll) + state.roll, -1, 1);
                 state.yaw = Utils.GetAsst(PIDList.Rudder).ResponseF(FlightData.yaw);
             }
 
@@ -190,7 +218,7 @@ namespace PilotAssistant
         }
 
 
-        public static bool IsPaused() { return bPause || SASMonitor(); }
+        public static bool IsPaused() { return Instance.bPause || SASMonitor(); }
 
         private void hdgToggle()
         {
@@ -376,26 +404,6 @@ namespace PilotAssistant
 
         #region GUI
 
-        Rect window = new Rect(10, 50, 10, 10);
-
-        Vector2 scrollbarHdg = Vector2.zero;
-        Vector2 scrollbarVert = Vector2.zero;
-
-        bool showPresets = false;
-
-        bool showPIDLimits = false;
-        bool showControlSurfaces = false;
-
-        string targetVert = "0";
-        string targetHeading = "0";
-
-        bool bShowSettings = true;
-        bool bShowHdg = true;
-        bool bShowVert = true;
-
-        float hdgScrollHeight;
-        float vertScrollHeight;
-
         public void Draw()
         {
             GUI.skin = GeneralUI.UISkin;
@@ -567,7 +575,7 @@ namespace PilotAssistant
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(bAltitudeHold ? "Target Altitude:" : "Target Speed:", GUILayout.Width(98)))
                 {
-                    ScreenMessages.PostScreenMessage("Target " + (PilotAssistant.bAltitudeHold ? "Altitude" : "Vertical Speed") + " updated");
+                    ScreenMessages.PostScreenMessage("Target " + (PilotAssistant.Instance.bAltitudeHold ? "Altitude" : "Vertical Speed") + " updated");
 
                     double newVal;
                     double.TryParse(targetVert, out newVal);
@@ -646,10 +654,6 @@ namespace PilotAssistant
             }
         }
 
-
-        string newPresetName = "";
-        Rect presetWindow = new Rect(0, 0, 200, 10);
-
         private void displayPresetWindow(int id)
         {
             if (GUI.Button(new Rect(presetWindow.width - 16, 2, 14, 14), ""))
@@ -671,7 +675,7 @@ namespace PilotAssistant
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-                newPreset();
+                PresetManager.newPAPreset(ref newPresetName, controllers);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
@@ -679,7 +683,6 @@ namespace PilotAssistant
             if (GUILayout.Button("Reset to Defaults"))
             {
                 PresetManager.loadPAPreset(PresetManager.Instance.defaultPATuning);
-                PresetManager.Instance.activePAPreset = PresetManager.Instance.defaultPATuning;
             }
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
@@ -688,65 +691,25 @@ namespace PilotAssistant
             {
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(p.name))
-                {
                     PresetManager.loadPAPreset(p);
-                    PresetManager.Instance.activePAPreset = p;
-                    Messaging.postMessage("Loaded preset " + p.name);
-                }
-                if (GUILayout.Button("x", GUILayout.Width(25)))
-                {
-                    Messaging.postMessage("Deleted preset " + p.name);
-                    if (PresetManager.Instance.activePAPreset == p)
-                        PresetManager.Instance.activePAPreset = null;
-                    PresetManager.Instance.PAPresetList.Remove(p);
-                    PresetManager.saveToFile();
-                }
+                else if (GUILayout.Button("x", GUILayout.Width(25)))
+                    PresetManager.deletePAPreset(p);
                 GUILayout.EndHorizontal();
             }
         }
 
-        private void newPreset()
-        {
-            if (newPresetName != "")
-            {
-                foreach (PresetPA p in PresetManager.Instance.PAPresetList)
-                {
-                    if (newPresetName == p.name)
-                    {
-                        Messaging.postMessage("Failed to add preset with duplicate name");
-                        return;
-                    }
-                }
-
-                if (PresetManager.Instance.craftPresetList.ContainsKey(FlightData.thisVessel.vesselName))
-                    PresetManager.Instance.craftPresetList[FlightData.thisVessel.vesselName].PresetPA = new PresetPA(PilotAssistant.controllers, newPresetName);
-                else
-                {
-                    PresetManager.Instance.craftPresetList.Add(FlightData.thisVessel.vesselName,
-                        new CraftPreset(FlightData.thisVessel.vesselName, new PresetPA(PilotAssistant.controllers, newPresetName), PresetManager.Instance.activeSASPreset, PresetManager.Instance.activeStockSASPreset));
-                }
-
-                PresetManager.Instance.PAPresetList.Add(new PresetPA(PilotAssistant.controllers, newPresetName));
-                newPresetName = "";
-                PresetManager.Instance.activePAPreset = PresetManager.Instance.PAPresetList[PresetManager.Instance.PAPresetList.Count - 1];
-                PresetManager.saveToFile();
-            }
-            else
-            {
-                Messaging.postMessage("Failed to add preset with no name");
-            }
-        }
+        
 
         private void updatePreset()
         {
-            PresetManager.Instance.activePAPreset.Update(PilotAssistant.controllers);
+            PresetManager.Instance.activePAPreset.Update(controllers);
 
             if (PresetManager.Instance.craftPresetList.ContainsKey(FlightData.thisVessel.vesselName))
-                PresetManager.Instance.craftPresetList[FlightData.thisVessel.vesselName].PresetPA = new PresetPA(PilotAssistant.controllers, newPresetName);
+                PresetManager.Instance.craftPresetList[FlightData.thisVessel.vesselName].PresetPA = new PresetPA(controllers, newPresetName);
             else
             {
                 PresetManager.Instance.craftPresetList.Add(FlightData.thisVessel.vesselName,
-                    new CraftPreset(FlightData.thisVessel.vesselName, new PresetPA(PilotAssistant.controllers, newPresetName), PresetManager.Instance.activeSASPreset, PresetManager.Instance.activeStockSASPreset));
+                    new CraftPreset(FlightData.thisVessel.vesselName, new PresetPA(controllers, newPresetName), PresetManager.Instance.activeSASPreset, PresetManager.Instance.activeStockSASPreset));
             }
 
             PresetManager.saveToFile();

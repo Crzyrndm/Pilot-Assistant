@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace PilotAssistant.Presets
+namespace PilotAssistant
 {
     using PID;
     using Utility;
+    using Presets;
 
     [KSPAddon(KSPAddon.Startup.MainMenu, true)]
     internal class PresetManager : MonoBehaviour
@@ -203,9 +204,37 @@ namespace PilotAssistant.Presets
             return node;
         }
 
+        public static void newPAPreset(ref string name, PID_Controller[] controllers)
+        {
+            if (name == "")
+                return;
+            
+            foreach (PresetPA p in Instance.PAPresetList)
+            {
+                if (name == p.name)
+                {
+                    Messaging.postMessage("Failed to add preset with duplicate name");
+                    return;
+                }
+            }
+
+            if (Instance.craftPresetList.ContainsKey(FlightData.thisVessel.vesselName))
+                Instance.craftPresetList[FlightData.thisVessel.vesselName].PresetPA = new PresetPA(controllers, name);
+            else
+            {
+                Instance.craftPresetList.Add(FlightData.thisVessel.vesselName,
+                    new CraftPreset(FlightData.thisVessel.vesselName, new PresetPA(PilotAssistant.Instance.controllers, name), PresetManager.Instance.activeSASPreset, PresetManager.Instance.activeStockSASPreset));
+            }
+
+            Instance.PAPresetList.Add(new PresetPA(PilotAssistant.Instance.controllers, name));
+            name = "";
+            Instance.activePAPreset = PresetManager.Instance.PAPresetList[PresetManager.Instance.PAPresetList.Count - 1];
+            saveToFile();
+        }
+
         public static void loadPAPreset(PresetPA p)
         {
-            PID_Controller[] c = PilotAssistant.controllers;
+            PID_Controller[] c = PilotAssistant.Instance.controllers;
 
             for (int i = 0; i < 7; i++)
             {
@@ -218,6 +247,52 @@ namespace PilotAssistant.Presets
                 c[i].ClampUpper = p.PIDGains[i][6];
                 c[i].Scalar = p.PIDGains[i][7];
             }
+
+            Instance.activePAPreset = p;
+            Messaging.postMessage("Loaded preset " + p.name);
+        }
+
+        public static void deletePAPreset(PresetPA p)
+        {
+            Messaging.postMessage("Deleted preset " + p.name);
+            if (Instance.activePAPreset == p)
+                Instance.activePAPreset = null;
+            Instance.PAPresetList.Remove(p);
+            saveToFile();
+        }
+
+        public static void newSASPreset(ref string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return;
+
+            foreach (PresetSAS p in Instance.SASPresetList)
+            {
+                if (name == p.name)
+                    return;
+            }
+            
+            Instance.SASPresetList.Add(new PresetSAS(Utility.FlightData.thisVessel.Autopilot.SAS, name));
+            Instance.activeSASPreset = Instance.SASPresetList.Last();
+            saveToFile();
+            name = "";
+        }
+
+        public static void newSASPreset(ref string name, PID_Controller[] controllers)
+        {
+            if (string.IsNullOrEmpty(name))
+                return;
+
+            foreach (PresetSAS p in Instance.SASPresetList)
+            {
+                if (name == p.name)
+                    return;
+            }
+
+            Instance.SASPresetList.Add(new PresetSAS(controllers, name));
+            Instance.activeSASPreset = Instance.SASPresetList.Last();
+            saveToFile();
+            name = "";
         }
 
         public static void loadSASPreset(PresetSAS p)
@@ -231,6 +306,27 @@ namespace PilotAssistant.Presets
                 c[i].DGain = p.PIDGains[i][2];
                 c[i].Scalar = p.PIDGains[i][3];
             }
+
+            Instance.activeSASPreset = p;
+        }
+
+        public static void deleteSASPreset(PresetSAS p)
+        {
+            if (Instance.activeSASPreset == p && !p.bStockSAS)
+                Instance.activeSASPreset = null;
+            else if (Instance.activeStockSASPreset == p && p.bStockSAS)
+                Instance.activeStockSASPreset = null;
+            Instance.SASPresetList.Remove(p);
+            saveToFile();
+        }
+
+        public static void updateSASPreset(bool stock, PID_Controller[] controllers = null)
+        {
+            if (stock)
+                Instance.activeStockSASPreset.Update(Utility.FlightData.thisVessel.Autopilot.SAS);
+            else
+                Instance.activeSASPreset.Update(controllers);
+            saveToFile();
         }
 
         public static void loadStockSASPreset(PresetSAS p)
@@ -249,6 +345,8 @@ namespace PilotAssistant.Presets
             FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[(int)SASList.Yaw][1];
             FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[(int)SASList.Yaw][2];
             FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)SASList.Yaw][3];
+
+            Instance.activeStockSASPreset = p;
         }
 
         public static void loadAssistantPreset()
