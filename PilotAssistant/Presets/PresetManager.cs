@@ -168,17 +168,6 @@ namespace PilotAssistant.Presets
             return node;
         }
 
-        public static ConfigNode CraftNode(CraftPreset preset)
-        {
-            ConfigNode node = new ConfigNode("CraftPreset");
-            node.AddValue("name", preset.Name);
-            node.AddValue("pilot", preset.PresetPA.name);
-            node.AddValue("ssas", preset.SSAS.name);
-            node.AddValue("stock", preset.Stock.name);
-
-            return node;
-        }
-
         public static ConfigNode PIDnode(string name, int index, PresetPA preset)
         {
             ConfigNode node = new ConfigNode(name);
@@ -203,6 +192,17 @@ namespace PilotAssistant.Presets
             return node;
         }
 
+        public static ConfigNode CraftNode(CraftPreset preset)
+        {
+            ConfigNode node = new ConfigNode("CraftPreset");
+            node.AddValue("name", preset.Name);
+            node.AddValue("pilot", preset.PresetPA.name);
+            node.AddValue("ssas", preset.SSAS.name);
+            node.AddValue("stock", preset.Stock.name);
+
+            return node;
+        }
+
         public static void loadPAPreset(PresetPA p)
         {
             PID_Controller[] c = PilotAssistant.controllers;
@@ -222,7 +222,7 @@ namespace PilotAssistant.Presets
 
         public static void loadSASPreset(PresetSAS p)
         {
-            PID_Controller[] c = SurfSAS.SASControllers;
+            PID_Controller[] c = SurfSAS.Instance.SASControllers;
 
             for (int i = 0; i < 3; i++)
             {
@@ -280,7 +280,7 @@ namespace PilotAssistant.Presets
             if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName))
             {
                 CraftPreset cP = instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName];
-                if (cP.SSAS != null)
+                if (cP.Stock != null)
                     instance.activeStockSASPreset = cP.Stock;
                 else
                     instance.activeStockSASPreset = instance.defaultStockSASTuning;

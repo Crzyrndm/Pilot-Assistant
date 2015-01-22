@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace PilotAssistant.UI
+namespace PilotAssistant.Utility
 {
     class Messaging
     {

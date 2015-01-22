@@ -47,7 +47,7 @@ namespace PilotAssistant.PID
             scale = scalar;
         }
 
-        public double Response(double input)
+        public double ResponseD(double input)
         {
             input = Clamp(input, inMin, inMax);
             dt = TimeWarp.fixedDeltaTime;
@@ -61,6 +61,22 @@ namespace PilotAssistant.PID
 
             double response = proportionalError(error) + integralError(error) + derivativeError(input);
             return Clamp(response, outMin, outMax);
+        }
+
+        public float ResponseF(double input)
+        {
+            input = Clamp(input, inMin, inMax);
+            dt = TimeWarp.fixedDeltaTime;
+            error = input - setpoint;
+
+            if (skipDerivative)
+            {
+                skipDerivative = false;
+                previous = input;
+            }
+
+            double response = proportionalError(error) + integralError(error) + derivativeError(input);
+            return (float)Clamp(response, outMin, outMax);
         }
 
         private double proportionalError(double input)

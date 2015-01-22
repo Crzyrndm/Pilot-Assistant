@@ -11,6 +11,7 @@ namespace PilotAssistant
     using Utility;
     using PID;
     using UI;
+    using AppLauncher;
 
     [Flags]
     public enum PIDList
@@ -123,13 +124,13 @@ namespace PilotAssistant
 
         public void drawGUI()
         {
-            if (!AppLauncher.AppLauncherFlight.bDisplayAssistant)
+            if (!AppLauncherFlight.bDisplayAssistant)
                 return;
 
             if (GeneralUI.UISkin == null)
                 GeneralUI.UISkin = UnityEngine.GUI.skin;
 
-            PAMainWindow.Draw();
+            Draw();
         }
 
         private void vesselController(FlightCtrlState state)
@@ -151,21 +152,21 @@ namespace PilotAssistant
                 {
                     if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading >= -180 && Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading <= 180)
                     {
-                        Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).Response(FlightData.heading);
-                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).Response(FlightData.heading);
+                        Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading);
+                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading);
                     }
                     else if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading < -180)
                     {
-                        Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).Response(FlightData.heading - 360);
-                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).Response(FlightData.heading - 360);
+                        Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading - 360);
+                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading - 360);
                     }
                     else if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading > 180)
                     {
-                        Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).Response(FlightData.heading + 360);
-                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).Response(FlightData.heading + 360);
+                        Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading + 360);
+                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading + 360);
                     }
 
-                    Utils.GetAsst(PIDList.Rudder).SetPoint = -Utils.GetAsst(PIDList.HdgYaw).Response(FlightData.yaw);
+                    Utils.GetAsst(PIDList.Rudder).SetPoint = -Utils.GetAsst(PIDList.HdgYaw).ResponseD(FlightData.yaw);
                 }
                 else
                 {
@@ -173,18 +174,18 @@ namespace PilotAssistant
                     Utils.GetAsst(PIDList.Aileron).SetPoint = 0;
                     Utils.GetAsst(PIDList.Rudder).SetPoint = 0;
                 }
-                state.roll = (float)Utils.Clamp(Utils.GetAsst(PIDList.Aileron).Response(FlightData.roll) + state.roll, -1, 1);
-                state.yaw = (float)Utils.GetAsst(PIDList.Rudder).Response(FlightData.yaw);
+                state.roll = Utils.Clamp(Utils.GetAsst(PIDList.Aileron).ResponseF(FlightData.roll) + state.roll, -1, 1);
+                state.yaw = Utils.GetAsst(PIDList.Rudder).ResponseF(FlightData.yaw);
             }
 
             if (bVertActive)
             {
                 // Set requested vertical speed
                 if (bAltitudeHold)
-                    Utils.GetAsst(PIDList.VertSpeed).SetPoint = -Utils.GetAsst(PIDList.Altitude).Response(FlightData.thisVessel.altitude);
+                    Utils.GetAsst(PIDList.VertSpeed).SetPoint = -Utils.GetAsst(PIDList.Altitude).ResponseD(FlightData.thisVessel.altitude);
 
-                Utils.GetAsst(PIDList.Elevator).SetPoint = -Utils.GetAsst(PIDList.VertSpeed).Response(FlightData.thisVessel.verticalSpeed);
-                state.pitch = (float)-Utils.GetAsst(PIDList.Elevator).Response(FlightData.AoA);
+                Utils.GetAsst(PIDList.Elevator).SetPoint = -Utils.GetAsst(PIDList.VertSpeed).ResponseD(FlightData.thisVessel.verticalSpeed);
+                state.pitch = -Utils.GetAsst(PIDList.Elevator).ResponseF(FlightData.AoA);
             }
         }
 
@@ -197,7 +198,7 @@ namespace PilotAssistant
             if (bHdgActive)
             {
                 Utils.GetAsst(PIDList.HdgBank).SetPoint = FlightData.heading;
-                PAMainWindow.targetHeading = FlightData.heading.ToString("N2");
+                targetHeading = FlightData.heading.ToString("N2");
 
                 bPause = false;
             }
@@ -218,12 +219,12 @@ namespace PilotAssistant
                 if (bAltitudeHold)
                 {
                     Utils.GetAsst(PIDList.Altitude).SetPoint = FlightData.thisVessel.altitude;
-                    PAMainWindow.targetVert = Utils.GetAsst(PIDList.Altitude).SetPoint.ToString("N1");
+                    targetVert = Utils.GetAsst(PIDList.Altitude).SetPoint.ToString("N1");
                 }
                 else
                 {
                     Utils.GetAsst(PIDList.VertSpeed).SetPoint = FlightData.thisVessel.verticalSpeed;
-                    PAMainWindow.targetVert = Utils.GetAsst(PIDList.VertSpeed).SetPoint.ToString("N3");
+                    targetVert = Utils.GetAsst(PIDList.VertSpeed).SetPoint.ToString("N3");
                 }
 
                 bPause = false;
@@ -242,12 +243,12 @@ namespace PilotAssistant
             if (bAltitudeHold)
             {
                 Utils.GetAsst(PIDList.Altitude).SetPoint = FlightData.thisVessel.altitude;
-                PAMainWindow.targetVert = Utils.GetAsst(PIDList.Altitude).SetPoint.ToString("N1");
+                targetVert = Utils.GetAsst(PIDList.Altitude).SetPoint.ToString("N1");
             }
             else
             {
                 Utils.GetAsst(PIDList.VertSpeed).SetPoint = FlightData.thisVessel.verticalSpeed;
-                PAMainWindow.targetVert = Utils.GetAsst(PIDList.VertSpeed).SetPoint.ToString("N2");
+                targetVert = Utils.GetAsst(PIDList.VertSpeed).SetPoint.ToString("N2");
             }
         }
 
@@ -258,7 +259,7 @@ namespace PilotAssistant
             {
                 Utils.GetAsst(PIDList.HdgBank).SetPoint = FlightData.heading;
                 Utils.GetAsst(PIDList.HdgYaw).SetPoint = FlightData.heading;
-                PAMainWindow.targetHeading = Utils.GetAsst(PIDList.HdgBank).SetPoint.ToString("N2");
+                targetHeading = Utils.GetAsst(PIDList.HdgBank).SetPoint.ToString("N2");
             }
         }
 
@@ -298,7 +299,7 @@ namespace PilotAssistant
                 bAltitudeHold = false;
                 bWasAltitudeHold = false;
                 bWingLeveller = true;
-                PAMainWindow.targetVert = "0";
+                targetVert = "0";
                 Messaging.statusMessage(4);
             }
 
@@ -310,23 +311,23 @@ namespace PilotAssistant
                 {
                     if (GameSettings.YAW_LEFT.GetKey())
                     {
-                        double hdg = double.Parse(PAMainWindow.targetHeading);
+                        double hdg = double.Parse(targetHeading);
                         hdg -= bFineControl ? 0.04 / scale : 0.4 * scale;
                         if (hdg < 0)
                             hdg += 360;
                         Utils.GetAsst(PIDList.HdgBank).SetPoint = hdg;
                         Utils.GetAsst(PIDList.HdgYaw).SetPoint = hdg;
-                        PAMainWindow.targetHeading = hdg.ToString();
+                        targetHeading = hdg.ToString();
                     }
                     else if (GameSettings.YAW_RIGHT.GetKey())
                     {
-                        double hdg = double.Parse(PAMainWindow.targetHeading);
+                        double hdg = double.Parse(targetHeading);
                         hdg += bFineControl ? 0.04 / scale : 0.4 * scale;
                         if (hdg > 360)
                             hdg -= 360;
                         Utils.GetAsst(PIDList.HdgBank).SetPoint = hdg;
                         Utils.GetAsst(PIDList.HdgYaw).SetPoint = hdg;
-                        PAMainWindow.targetHeading = hdg.ToString();
+                        targetHeading = hdg.ToString();
                     }
                 }
 
@@ -334,7 +335,7 @@ namespace PilotAssistant
                 {
                     if (GameSettings.PITCH_DOWN.GetKey())
                     {
-                        double vert = double.Parse(PAMainWindow.targetVert);
+                        double vert = double.Parse(targetVert);
                         if (bAltitudeHold)
                         {
                             vert -= bFineControl ? 0.4 / scale : 4 * scale;
@@ -347,11 +348,11 @@ namespace PilotAssistant
                             vert -= bFineControl ? 0.04 / scale : 0.4 * scale;
                             Utils.GetAsst(PIDList.VertSpeed).SetPoint = vert;
                         }
-                        PAMainWindow.targetVert = vert.ToString();
+                        targetVert = vert.ToString();
                     }
                     else if (GameSettings.PITCH_UP.GetKey())
                     {
-                        double vert = double.Parse(PAMainWindow.targetVert);
+                        double vert = double.Parse(targetVert);
                         if (bAltitudeHold)
                         {
                             vert += bFineControl ? 0.4 / scale : 4 * scale;
@@ -362,7 +363,7 @@ namespace PilotAssistant
                             vert += bFineControl ? 0.04 / scale : 0.4 * scale;
                             Utils.GetAsst(PIDList.VertSpeed).SetPoint = vert;
                         }
-                        PAMainWindow.targetVert = vert.ToString();
+                        targetVert = vert.ToString();
                     }
                 }
             }
@@ -372,5 +373,385 @@ namespace PilotAssistant
         {
             return (FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] || SurfSAS.ActivityCheck());
         }
+
+        #region GUI
+
+        Rect window = new Rect(10, 50, 10, 10);
+
+        Vector2 scrollbarHdg = Vector2.zero;
+        Vector2 scrollbarVert = Vector2.zero;
+
+        bool showPresets = false;
+
+        bool showPIDLimits = false;
+        bool showControlSurfaces = false;
+
+        string targetVert = "0";
+        string targetHeading = "0";
+
+        bool bShowSettings = true;
+        bool bShowHdg = true;
+        bool bShowVert = true;
+
+        float hdgScrollHeight;
+        float vertScrollHeight;
+
+        public void Draw()
+        {
+            GUI.skin = GeneralUI.UISkin;
+            GeneralUI.Styles();
+
+            // Window resizing (scroll views dont work nicely with GUILayout)
+            // Have to put the width changes before the draw so the close button is correctly placed
+            if (showPIDLimits)
+                window.width = 370;
+            else
+                window.width = 233; // why is this this particularly odd number?
+
+            if (bShowHdg)
+            {
+                hdgScrollHeight = 0;
+                if (!bWingLeveller)
+                    hdgScrollHeight += 55;
+                if ((Utils.GetAsst(PIDList.HdgBank).bShow || Utils.GetAsst(PIDList.HdgYaw).bShow) && !bWingLeveller)
+                    hdgScrollHeight += 150;
+                else if (showControlSurfaces)
+                {
+                    hdgScrollHeight += 50;
+                    if (Utils.GetAsst(PIDList.Aileron).bShow || Utils.GetAsst(PIDList.Rudder).bShow)
+                        hdgScrollHeight += 100;
+                }
+            }
+            if (bShowVert)
+            {
+                vertScrollHeight = 38;
+                if (bAltitudeHold)
+                    vertScrollHeight += 27;
+                if ((Utils.GetAsst(PIDList.Altitude).bShow && bAltitudeHold) || (Utils.GetAsst(PIDList.VertSpeed).bShow))
+                    vertScrollHeight += 150;
+                else if (showControlSurfaces)
+                {
+                    vertScrollHeight += 27;
+                    if (Utils.GetAsst(PIDList.Elevator).bShow)
+                        vertScrollHeight += 123;
+                }
+            }
+
+            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+            window = GUILayout.Window(34244, window, displayWindow, "Pilot Assistant", GUILayout.Height(0), GUILayout.MinWidth(233));
+
+            presetWindow.x = window.x + window.width;
+            presetWindow.y = window.y;
+            if (showPresets)
+                presetWindow = GUILayout.Window(34245, presetWindow, displayPresetWindow, "Pilot Assistant Presets", GUILayout.Width(200), GUILayout.Height(0));
+        }
+
+        private void displayWindow(int id)
+        {
+            if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
+                AppLauncherFlight.bDisplayAssistant = false;
+
+            if (bPause || SASMonitor())
+                GUILayout.Box("CONTROL PAUSED", GeneralUI.labelAlertStyle);
+
+            GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
+            if (GUILayout.Button("Options", GUILayout.Width(205)))
+            {
+                bShowSettings = !bShowSettings;
+            }
+            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+            if (bShowSettings)
+            {
+                showPresets = GUILayout.Toggle(showPresets, showPresets ? "Hide Presets" : "Show Presets", GUILayout.Width(200));
+
+                showPIDLimits = GUILayout.Toggle(showPIDLimits, showPIDLimits ? "Hide PID Limits" : "Show PID Limits", GUILayout.Width(200));
+                showControlSurfaces = GUILayout.Toggle(showControlSurfaces, showControlSurfaces ? "Hide Control Surfaces" : "Show Control Surfaces", GUILayout.Width(200));
+            }
+
+            #region Hdg GUI
+
+            GUILayout.BeginHorizontal();
+            // button background colour
+            GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
+            if (GUILayout.Button("Roll and Yaw Control", GUILayout.Width(186)))
+            {
+                bShowHdg = !bShowHdg;
+            }
+            // Toggle colour
+            if (bHdgActive)
+                GUI.backgroundColor = GeneralUI.ActiveBackground;
+            else
+                GUI.backgroundColor = GeneralUI.InActiveBackground;
+
+            bool toggleCheck = GUILayout.Toggle(bHdgActive, "");
+            if (toggleCheck != bHdgActive)
+            {
+                bHdgActive = toggleCheck;
+                bPause = false;
+                SurfSAS.setStockSAS(false);
+                SurfSAS.ActivitySwitch(false);
+            }
+            // reset colour
+            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+            GUILayout.EndHorizontal();
+
+            if (bShowHdg)
+            {
+                bWingLeveller = GUILayout.Toggle(bWingLeveller, bWingLeveller ? "Mode: Wing Leveller" : "Mode: Hdg Control", GUILayout.Width(200));
+                if (!bWingLeveller)
+                {
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Target Hdg: ", GUILayout.Width(98)))
+                    {
+                        ScreenMessages.PostScreenMessage("Target Heading updated");
+                        double newHdg;
+                        double.TryParse(targetHeading, out newHdg);
+                        if (newHdg >= 0 && newHdg <= 360)
+                        {
+                            Utils.GetAsst(PIDList.HdgBank).SetPoint = newHdg;
+                            Utils.GetAsst(PIDList.HdgYaw).SetPoint = newHdg;
+                            bHdgActive = bHdgWasActive = true; // skip toggle check to avoid being overwritten
+                        }
+                    }
+                    targetHeading = GUILayout.TextField(targetHeading, GUILayout.Width(98));
+                    GUILayout.EndHorizontal();
+                }
+
+                scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, GUILayout.Height(hdgScrollHeight));
+                if (!bWingLeveller)
+                {
+                    drawPIDvalues(PIDList.HdgBank, "Heading", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0", false, true, false);
+                    drawPIDvalues(PIDList.HdgYaw, "Bank => Yaw", "\u00B0", FlightData.yaw, 2, "Yaw", "\u00B0", true, false, false);
+                }
+                if (showControlSurfaces)
+                {
+                    drawPIDvalues(PIDList.Aileron, "Bank", "\u00B0", FlightData.roll, 3, "Deflection", "\u00B0", false, true, false);
+                    drawPIDvalues(PIDList.Rudder, "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0", false, true, false);
+                }
+                GUILayout.EndScrollView();
+            }
+            #endregion
+
+            #region Pitch GUI
+
+            GUILayout.BeginHorizontal();
+            // button background
+            GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
+            if (GUILayout.Button("Vertical Control", GUILayout.Width(186)))
+            {
+                bShowVert = !bShowVert;
+            }
+            // Toggle colour
+            if (bVertActive)
+                GUI.backgroundColor = GeneralUI.ActiveBackground;
+            else
+                GUI.backgroundColor = GeneralUI.InActiveBackground;
+
+            toggleCheck = GUILayout.Toggle(bVertActive, "");
+            if (toggleCheck != bVertActive)
+            {
+                bVertActive = toggleCheck;
+                if (!toggleCheck)
+                    bPause = false;
+                SurfSAS.setStockSAS(false);
+                SurfSAS.ActivitySwitch(false);
+            }
+            // reset colour
+            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+            GUILayout.EndHorizontal();
+
+            if (bShowVert)
+            {
+                bAltitudeHold = GUILayout.Toggle(bAltitudeHold, bAltitudeHold ? "Mode: Altitude" : "Mode: Vertical Speed", GUILayout.Width(200));
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button(bAltitudeHold ? "Target Altitude:" : "Target Speed:", GUILayout.Width(98)))
+                {
+                    ScreenMessages.PostScreenMessage("Target " + (PilotAssistant.bAltitudeHold ? "Altitude" : "Vertical Speed") + " updated");
+
+                    double newVal;
+                    double.TryParse(targetVert, out newVal);
+                    if (bAltitudeHold)
+                        Utils.GetAsst(PIDList.Altitude).SetPoint = newVal;
+                    else
+                        Utils.GetAsst(PIDList.VertSpeed).SetPoint = newVal;
+
+                    bVertActive = bVertWasActive = true; // skip the toggle check so value isn't overwritten
+                }
+                targetVert = GUILayout.TextField(targetVert, GUILayout.Width(98));
+                GUILayout.EndHorizontal();
+
+                scrollbarVert = GUILayout.BeginScrollView(scrollbarVert, GUILayout.Height(vertScrollHeight));
+
+                if (bAltitudeHold)
+                    drawPIDvalues(PIDList.Altitude, "Altitude", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true, true, false);
+                drawPIDvalues(PIDList.VertSpeed, "Vertical Speed", "m/s", FlightData.thisVessel.verticalSpeed, 2, "AoA", "\u00B0", true);
+
+                if (showControlSurfaces)
+                    drawPIDvalues(PIDList.Elevator, "Angle of Attack", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0", true, true, false);
+
+                GUILayout.EndScrollView();
+            }
+            #endregion
+
+            GUI.DragWindow();
+        }
+
+        private void drawPIDvalues(PIDList controllerid, string inputName, string inputUnits, double inputValue, int displayPrecision, string outputName, string outputUnits, bool invertOutput = false, bool showTarget = true, bool doublesided = true)
+        {
+            PID_Controller controller = Utils.GetAsst(controllerid);
+            controller.bShow = GUILayout.Toggle(controller.bShow, string.Format("{0}: {1}{2}", inputName, inputValue.ToString("N" + displayPrecision.ToString()), inputUnits), GeneralUI.toggleButton, GUILayout.Width(window.width - 50));
+
+            if (controller.bShow)
+            {
+                if (showTarget)
+                    GUILayout.Label(string.Format("Target: ", inputName) + controller.SetPoint.ToString("N" + displayPrecision.ToString()) + inputUnits);
+
+                GUILayout.BeginHorizontal();
+                GUILayout.BeginVertical();
+
+                controller.PGain = GeneralUI.labPlusNumBox(string.Format("Kp:", inputName), controller.PGain.ToString("G3"), 45);
+                controller.IGain = GeneralUI.labPlusNumBox(string.Format("Ki:", inputName), controller.IGain.ToString("G3"), 45);
+                controller.DGain = GeneralUI.labPlusNumBox(string.Format("Kd:", inputName), controller.DGain.ToString("G3"), 45);
+                controller.Scalar = GeneralUI.labPlusNumBox(string.Format("Scalar:", inputName), controller.Scalar.ToString("G3"), 45);
+
+                if (showPIDLimits)
+                {
+                    GUILayout.EndVertical();
+                    GUILayout.BeginVertical();
+
+                    if (!invertOutput)
+                    {
+                        controller.OutMax = GeneralUI.labPlusNumBox(string.Format("Max {0}{1}:", outputName, outputUnits), controller.OutMax.ToString("G3"));
+                        if (doublesided)
+                            controller.OutMin = GeneralUI.labPlusNumBox(string.Format("Min {0}{1}:", outputName, outputUnits), controller.OutMin.ToString("G3"));
+                        else
+                            controller.OutMin = -controller.OutMax;
+                        controller.ClampLower = GeneralUI.labPlusNumBox("I Clamp Lower:", controller.ClampLower.ToString("G3"));
+                        controller.ClampUpper = GeneralUI.labPlusNumBox("I Clamp Upper:", controller.ClampUpper.ToString("G3"));
+                    }
+                    else
+                    { // used when response * -1 is used to get the correct output
+                        controller.OutMax = -1 * GeneralUI.labPlusNumBox(string.Format("Min {0}{1}:", outputName, outputUnits), (-controller.OutMax).ToString("G3"));
+                        if (doublesided)
+                            controller.OutMin = -1 * GeneralUI.labPlusNumBox(string.Format("Max {0}{1}:", outputName, outputUnits), (-controller.OutMin).ToString("G3"));
+                        else
+                            controller.OutMin = -controller.OutMax;
+                        controller.ClampUpper = -1 * GeneralUI.labPlusNumBox("I Clamp Lower:", (-controller.ClampUpper).ToString("G3"));
+                        controller.ClampLower = -1 * GeneralUI.labPlusNumBox("I Clamp Upper:", (-controller.ClampLower).ToString("G3"));
+                    }
+                }
+                GUILayout.EndVertical();
+                GUILayout.EndHorizontal();
+            }
+        }
+
+
+        string newPresetName = "";
+        Rect presetWindow = new Rect(0, 0, 200, 10);
+
+        private void displayPresetWindow(int id)
+        {
+            if (GUI.Button(new Rect(presetWindow.width - 16, 2, 14, 14), ""))
+            {
+                showPresets = false;
+            }
+
+            if (PresetManager.Instance.activePAPreset != null)
+            {
+                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.Instance.activePAPreset.name));
+                if (PresetManager.Instance.activePAPreset.name != "Default")
+                {
+                    if (GUILayout.Button("Update Preset"))
+                        updatePreset();
+                }
+                GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
+            }
+
+            GUILayout.BeginHorizontal();
+            newPresetName = GUILayout.TextField(newPresetName);
+            if (GUILayout.Button("+", GUILayout.Width(25)))
+                newPreset();
+            GUILayout.EndHorizontal();
+
+            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
+
+            if (GUILayout.Button("Reset to Defaults"))
+            {
+                PresetManager.loadPAPreset(PresetManager.Instance.defaultPATuning);
+                PresetManager.Instance.activePAPreset = PresetManager.Instance.defaultPATuning;
+            }
+
+            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
+
+            foreach (PresetPA p in PresetManager.Instance.PAPresetList)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button(p.name))
+                {
+                    PresetManager.loadPAPreset(p);
+                    PresetManager.Instance.activePAPreset = p;
+                    Messaging.postMessage("Loaded preset " + p.name);
+                }
+                if (GUILayout.Button("x", GUILayout.Width(25)))
+                {
+                    Messaging.postMessage("Deleted preset " + p.name);
+                    if (PresetManager.Instance.activePAPreset == p)
+                        PresetManager.Instance.activePAPreset = null;
+                    PresetManager.Instance.PAPresetList.Remove(p);
+                    PresetManager.saveToFile();
+                }
+                GUILayout.EndHorizontal();
+            }
+        }
+
+        private void newPreset()
+        {
+            if (newPresetName != "")
+            {
+                foreach (PresetPA p in PresetManager.Instance.PAPresetList)
+                {
+                    if (newPresetName == p.name)
+                    {
+                        Messaging.postMessage("Failed to add preset with duplicate name");
+                        return;
+                    }
+                }
+
+                if (PresetManager.Instance.craftPresetList.ContainsKey(FlightData.thisVessel.vesselName))
+                    PresetManager.Instance.craftPresetList[FlightData.thisVessel.vesselName].PresetPA = new PresetPA(PilotAssistant.controllers, newPresetName);
+                else
+                {
+                    PresetManager.Instance.craftPresetList.Add(FlightData.thisVessel.vesselName,
+                        new CraftPreset(FlightData.thisVessel.vesselName, new PresetPA(PilotAssistant.controllers, newPresetName), PresetManager.Instance.activeSASPreset, PresetManager.Instance.activeStockSASPreset));
+                }
+
+                PresetManager.Instance.PAPresetList.Add(new PresetPA(PilotAssistant.controllers, newPresetName));
+                newPresetName = "";
+                PresetManager.Instance.activePAPreset = PresetManager.Instance.PAPresetList[PresetManager.Instance.PAPresetList.Count - 1];
+                PresetManager.saveToFile();
+            }
+            else
+            {
+                Messaging.postMessage("Failed to add preset with no name");
+            }
+        }
+
+        private void updatePreset()
+        {
+            PresetManager.Instance.activePAPreset.Update(PilotAssistant.controllers);
+
+            if (PresetManager.Instance.craftPresetList.ContainsKey(FlightData.thisVessel.vesselName))
+                PresetManager.Instance.craftPresetList[FlightData.thisVessel.vesselName].PresetPA = new PresetPA(PilotAssistant.controllers, newPresetName);
+            else
+            {
+                PresetManager.Instance.craftPresetList.Add(FlightData.thisVessel.vesselName,
+                    new CraftPreset(FlightData.thisVessel.vesselName, new PresetPA(PilotAssistant.controllers, newPresetName), PresetManager.Instance.activeSASPreset, PresetManager.Instance.activeStockSASPreset));
+            }
+
+            PresetManager.saveToFile();
+            Messaging.postMessage(PresetManager.Instance.activePAPreset.name + " updated");
+        }
+        #endregion
     }
 }

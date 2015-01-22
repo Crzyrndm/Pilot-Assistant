@@ -136,7 +136,7 @@ namespace PilotAssistant.Utility
         /// <param name="upper">upper value to which input will be clamped, attempting to increase will roll value down to lower</param>
         /// <param name="lower">lower value to which input will be clamped, attempting to decrease will roll value up to upper</param>
         /// <returns></returns>
-        internal static double TogPlusNumBox(string toggleText, ref bool toggleState, double currentVal, double boxVal, float toggleWidth = 100, float boxWidth = 60, float upper = 360, float lower = -360)
+        internal static float TogPlusNumBox(string toggleText, ref bool toggleState, double currentVal, double boxVal, float toggleWidth = 100, float boxWidth = 60, float upper = 360, float lower = -360)
         {
             GUILayout.BeginHorizontal();
 
@@ -173,20 +173,7 @@ namespace PilotAssistant.Utility
             GUILayout.EndVertical();
             //
             GUILayout.EndHorizontal();
-            return Utils.Clamp(boxVal, lower, upper);
-        }
-
-        internal static Texture2D textureBlock(int w, int h, Color col)
-        {
-            Color[] pixels = new Color[w * h];
-            for( int i = 0; i < pixels.Length; i++)
-            {
-                pixels[i] = col;
-            }
-            Texture2D texture = new Texture2D(w, h);
-            texture.SetPixels(pixels);
-            texture.Apply();
-            return texture;
+            return Utils.Clamp((float)boxVal, (float)lower, (float)upper);
         }
     }
 }
