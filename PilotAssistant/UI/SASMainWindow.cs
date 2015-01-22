@@ -50,10 +50,10 @@ namespace PilotAssistant.UI
 
                 if (SurfSAS.bArmed)
                 {
-                    SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint = Functions.Clamp((float)GeneralUI.TogPlusNumBox("Pitch:", ref SurfSAS.bActive[(int)SASList.Pitch], FlightData.pitch, SurfSAS.SASControllers[(int)SASList.Pitch].SetPoint, 80), -80, 80);
-                    SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint = (float)GeneralUI.TogPlusNumBox("Heading:", ref SurfSAS.bActive[(int)SASList.Yaw], FlightData.heading, SurfSAS.SASControllers[(int)SASList.Yaw].SetPoint, 80, 60, 360, 0);
+                    Utils.GetSAS(SASList.Pitch).SetPoint = Utils.Clamp((float)GeneralUI.TogPlusNumBox("Pitch:", ref SurfSAS.bActive[(int)SASList.Pitch], FlightData.pitch, Utils.GetSAS(SASList.Pitch).SetPoint, 80), -80, 80);
+                    Utils.GetSAS(SASList.Yaw).SetPoint = (float)GeneralUI.TogPlusNumBox("Heading:", ref SurfSAS.bActive[(int)SASList.Yaw], FlightData.heading, Utils.GetSAS(SASList.Yaw).SetPoint, 80, 60, 360, 0);
                     if (!SurfSAS.rollState) // editable
-                        SurfSAS.SASControllers[(int)SASList.Roll].SetPoint = (float)GeneralUI.TogPlusNumBox("Roll:", ref SurfSAS.bActive[(int)SASList.Roll], FlightData.roll, SurfSAS.SASControllers[(int)SASList.Roll].SetPoint, 80, 60, 180, -180);
+                        Utils.GetSAS(SASList.Roll).SetPoint = (float)GeneralUI.TogPlusNumBox("Roll:", ref SurfSAS.bActive[(int)SASList.Roll], FlightData.roll, Utils.GetSAS(SASList.Roll).SetPoint, 80, 60, 180, -180);
                     else // not editable b/c vector mode
                     {
                         GUILayout.BeginHorizontal();
@@ -83,7 +83,7 @@ namespace PilotAssistant.UI
 
         private static void drawPIDValues(SASList controllerID, string inputName)
         {
-            PID.PID_Controller controller = SurfSAS.SASControllers[(int)controllerID];
+            PID.PID_Controller controller = Utils.GetSAS(controllerID);
             controller.bShow = GUILayout.Toggle(controller.bShow, inputName, GeneralUI.toggleButton);
 
             if (controller.bShow)
@@ -99,8 +99,6 @@ namespace PilotAssistant.UI
         {
             stockPIDDisplay[ID] = GUILayout.Toggle(stockPIDDisplay[ID], inputName, GeneralUI.toggleButton);
             
-            
-
             if (stockPIDDisplay[ID])
             {
                 controller.kp = GeneralUI.labPlusNumBox("Kp:", controller.kp.ToString("G3"), 45);

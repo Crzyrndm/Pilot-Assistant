@@ -173,7 +173,7 @@ namespace PilotAssistant.Utility
             GUILayout.EndVertical();
             //
             GUILayout.EndHorizontal();
-            return Functions.Clamp(boxVal, lower, upper);
+            return Utils.Clamp(boxVal, lower, upper);
         }
 
         internal static Texture2D textureBlock(int w, int h, Color col)

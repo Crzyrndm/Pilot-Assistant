@@ -14,10 +14,25 @@ namespace PilotAssistant.Presets
 
         public CraftPreset(string Name, PresetPA PA, PresetSAS SSAS, PresetSAS stockSAS)
         {
-            name = Name;
-            pa = PA;
-            ssas = SSAS;
-            stock = stockSAS;
+            if (Name != null)
+                name = Name;
+            else
+                name = "";
+
+            if (PA != null)
+                pa = PA;
+            else
+                pa = PresetManager.Instance.defaultPATuning;
+
+            if (SSAS != null)
+                ssas = SSAS;
+            else
+                ssas = PresetManager.Instance.defaultSASTuning;
+
+            if (stockSAS != null)
+                stock = stockSAS;
+            else
+                stock = PresetManager.Instance.defaultStockSASTuning;
         }
 
         public string Name

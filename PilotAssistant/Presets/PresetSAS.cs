@@ -28,6 +28,22 @@ namespace PilotAssistant.Presets
             }
         }
 
+        public PresetSAS(PID.PID_Controller[] controllers, string Name) // used for adding a new preset, can clone the current values
+        {
+            name = Name;
+            bStockSAS = false;
+            for (int i = 0; i < numControllers; i++) // 3 PID controlers to save
+            {
+                double[] gains = new double[4];
+                gains[0] = controllers[i].PGain;
+                gains[1] = controllers[i].IGain;
+                gains[2] = controllers[i].DGain;
+                gains[3] = controllers[i].Scalar;
+
+                PIDGains.Add(gains);
+            }
+        }
+
         public PresetSAS(VesselAutopilot.VesselSAS sas, string Name) // used for adding a new stock preset
         {
             name = Name;
@@ -48,6 +64,22 @@ namespace PilotAssistant.Presets
         }
 
         public void Update(List<PID.PID_Controller> controllers)
+        {
+            List<double[]> newPIDGains = new List<double[]>();
+            for (int i = 0; i < numControllers; i++) // 3 PID controlers to save
+            {
+                double[] gains = new double[4];
+                gains[0] = controllers[i].PGain;
+                gains[1] = controllers[i].IGain;
+                gains[2] = controllers[i].DGain;
+                gains[3] = controllers[i].Scalar;
+
+                newPIDGains.Add(gains);
+            }
+            PIDGains = newPIDGains;
+        }
+
+        public void Update(PID.PID_Controller[] controllers)
         {
             List<double[]> newPIDGains = new List<double[]>();
             for (int i = 0; i < numControllers; i++) // 3 PID controlers to save

@@ -6,27 +6,40 @@ using UnityEngine;
 
 namespace PilotAssistant.Presets
 {
+    using PID;
+    using Utility;
+
     [KSPAddon(KSPAddon.Startup.MainMenu, true)]
     internal class PresetManager : MonoBehaviour
     {
-        internal static PresetPA defaultPATuning;
-        
-        internal static List<PresetPA> PAPresetList = new List<PresetPA>();
+        private static PresetManager instance;
+        public static PresetManager Instance
+        {
+            get
+            {
+                return instance;
+            }
+        }
 
-        internal static PresetPA activePAPreset = null;
 
-        internal static PresetSAS defaultSASTuning;
-        internal static PresetSAS defaultStockSASTuning;
+        public PresetPA defaultPATuning;
+        public List<PresetPA> PAPresetList = new List<PresetPA>();
+        public PresetPA activePAPreset = null;
 
-        internal static List<PresetSAS> SASPresetList = new List<PresetSAS>();
+        public PresetSAS defaultSASTuning;
+        public PresetSAS defaultStockSASTuning;
 
-        internal static PresetSAS activeSASPreset = null;
-        internal static PresetSAS activeStockSASPreset = null;
+        public List<PresetSAS> SASPresetList = new List<PresetSAS>();
 
-        internal static List<CraftPreset> craftPresetList = new List<CraftPreset>();
+        public PresetSAS activeSASPreset = null;
+        public PresetSAS activeStockSASPreset = null;
+
+        public Dictionary<string, CraftPreset> craftPresetList = new Dictionary<string, CraftPreset>();
 
         public void Start()
         {
+            instance = this;
+
             loadPresetsFromFile();
             DontDestroyOnLoad(this);
         }
@@ -36,7 +49,7 @@ namespace PilotAssistant.Presets
             saveToFile();
         }
 
-        internal static void loadPresetsFromFile()
+        public static void loadPresetsFromFile()
         {
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("PIDPreset"))
             {
@@ -51,7 +64,7 @@ namespace PilotAssistant.Presets
                 gains.Add(controllerGains(node.GetNode("AltitudeController")));
                 gains.Add(controllerGains(node.GetNode("AoAController")));
                 gains.Add(controllerGains(node.GetNode("ElevatorController")));
-                PAPresetList.Add(new PresetPA(gains, node.GetValue("name")));
+                instance.PAPresetList.Add(new PresetPA(gains, node.GetValue("name")));
             }
 
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("SASPreset"))
@@ -63,7 +76,7 @@ namespace PilotAssistant.Presets
                 gains.Add(controllerSASGains(node.GetNode("AileronController")));
                 gains.Add(controllerSASGains(node.GetNode("RudderController")));
                 gains.Add(controllerSASGains(node.GetNode("ElevatorController")));
-                SASPresetList.Add(new PresetSAS(gains, node.GetValue("name"), bool.Parse(node.GetValue("stock"))));
+                instance.SASPresetList.Add(new PresetSAS(gains, node.GetValue("name"), bool.Parse(node.GetValue("stock"))));
             }
 
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("CraftPreset"))
@@ -72,36 +85,37 @@ namespace PilotAssistant.Presets
                     continue;
 
                 CraftPreset cP = new CraftPreset(node.GetValue("name"),
-                                        PAPresetList.FirstOrDefault(p => p.name == node.GetValue("pilot")),
-                                        SASPresetList.FirstOrDefault(p => p.name == node.GetValue("ssas")),
-                                        SASPresetList.FirstOrDefault(p => p.name == node.GetValue("stock")));
+                                        instance.PAPresetList.FirstOrDefault(p => p.name == node.GetValue("pilot")),
+                                        instance.SASPresetList.FirstOrDefault(p => p.name == node.GetValue("ssas")),
+                                        instance.SASPresetList.FirstOrDefault(p => p.name == node.GetValue("stock")));
+                instance.craftPresetList.Add(cP.Name, cP);
             }
         }
 
-        internal static void saveToFile()
+        public static void saveToFile()
         {
             ConfigNode node = new ConfigNode();
-            if (PAPresetList.Count == 0 && SASPresetList.Count == 0 && craftPresetList.Count == 0)
+            if (instance.PAPresetList.Count == 0 && instance.SASPresetList.Count == 0 && instance.craftPresetList.Count == 0)
                 node.AddValue("dummy", "do not delete me");
             else
             {
-                foreach (PresetPA p in PAPresetList)
+                foreach (PresetPA p in instance.PAPresetList)
                 {
                     node.AddNode(PAPresetNode(p));
                 }
-                foreach (PresetSAS p in SASPresetList)
+                foreach (PresetSAS p in instance.SASPresetList)
                 {
                     node.AddNode(SASPresetNode(p));
                 }
-                foreach (CraftPreset c in craftPresetList)
+                foreach (KeyValuePair<string, CraftPreset> cP in instance.craftPresetList)
                 {
-                    node.AddNode(CraftNode(c));
+                    node.AddNode(CraftNode(cP.Value));
                 }
             }
             node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/Pilot Assistant/Presets.cfg");
         }
 
-        private static double[] controllerGains(ConfigNode node)
+        public static double[] controllerGains(ConfigNode node)
         {
             double[] gains = new double[8];
             double.TryParse(node.GetValue("PGain"), out gains[0]);
@@ -116,7 +130,7 @@ namespace PilotAssistant.Presets
             return gains;
         }
 
-        private static double[] controllerSASGains(ConfigNode node)
+        public static double[] controllerSASGains(ConfigNode node)
         {
             double[] gains = new double[4];
             double.TryParse(node.GetValue("PGain"), out gains[0]);
@@ -127,7 +141,7 @@ namespace PilotAssistant.Presets
             return gains;
         }
 
-        private static ConfigNode PAPresetNode(PresetPA preset)
+        public static ConfigNode PAPresetNode(PresetPA preset)
         {
             ConfigNode node = new ConfigNode("PIDPreset");
             node.AddValue("name", preset.name);
@@ -142,7 +156,7 @@ namespace PilotAssistant.Presets
             return node;
         }
 
-        private static ConfigNode SASPresetNode(PresetSAS preset)
+        public static ConfigNode SASPresetNode(PresetSAS preset)
         {
             ConfigNode node = new ConfigNode("SASPreset");
             node.AddValue("name", preset.name);
@@ -154,18 +168,18 @@ namespace PilotAssistant.Presets
             return node;
         }
 
-        private static ConfigNode CraftNode(CraftPreset preset)
+        public static ConfigNode CraftNode(CraftPreset preset)
         {
             ConfigNode node = new ConfigNode("CraftPreset");
             node.AddValue("name", preset.Name);
-            node.AddValue("pilot", preset.PresetPA);
-            node.AddValue("ssas", preset.SSAS);
-            node.AddValue("stock", preset.Stock);
+            node.AddValue("pilot", preset.PresetPA.name);
+            node.AddValue("ssas", preset.SSAS.name);
+            node.AddValue("stock", preset.Stock.name);
 
             return node;
         }
 
-        private static ConfigNode PIDnode(string name, int index, PresetPA preset)
+        public static ConfigNode PIDnode(string name, int index, PresetPA preset)
         {
             ConfigNode node = new ConfigNode(name);
             node.AddValue("PGain", preset.PIDGains[index][0]);
@@ -179,7 +193,7 @@ namespace PilotAssistant.Presets
             return node;
         }
 
-        private static ConfigNode PIDnode(string name, int index, PresetSAS preset)
+        public static ConfigNode PIDnode(string name, int index, PresetSAS preset)
         {
             ConfigNode node = new ConfigNode(name);
             node.AddValue("PGain", preset.PIDGains[index][0]);
@@ -189,9 +203,9 @@ namespace PilotAssistant.Presets
             return node;
         }
 
-        internal static void loadPAPreset(PresetPA p)
+        public static void loadPAPreset(PresetPA p)
         {
-            List<PID.PID_Controller> c = PilotAssistant.controllers;
+            PID_Controller[] c = PilotAssistant.controllers;
 
             for (int i = 0; i < 7; i++)
             {
@@ -206,9 +220,9 @@ namespace PilotAssistant.Presets
             }
         }
 
-        internal static void loadSASPreset(PresetSAS p)
+        public static void loadSASPreset(PresetSAS p)
         {
-            List<PID.PID_Controller> c = SurfSAS.SASControllers;
+            PID_Controller[] c = SurfSAS.SASControllers;
 
             for (int i = 0; i < 3; i++)
             {
@@ -219,22 +233,58 @@ namespace PilotAssistant.Presets
             }
         }
 
-        internal static void loadStockSASPreset(PresetSAS p)
+        public static void loadStockSASPreset(PresetSAS p)
         {
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[(int)SASList.Pitch][0];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[(int)SASList.Pitch][1];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[(int)SASList.Pitch][2];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[(int)SASList.Pitch][3];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[(int)SASList.Pitch][0];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[(int)SASList.Pitch][1];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[(int)SASList.Pitch][2];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[(int)SASList.Pitch][3];
 
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[(int)SASList.Roll][0];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[(int)SASList.Roll][1];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[(int)SASList.Roll][2];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[(int)SASList.Roll][3];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[(int)SASList.Roll][0];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[(int)SASList.Roll][1];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[(int)SASList.Roll][2];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[(int)SASList.Roll][3];
 
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[(int)SASList.Yaw][0];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[(int)SASList.Yaw][1];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[(int)SASList.Yaw][2];
-            Utility.FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)SASList.Yaw][3];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[(int)SASList.Yaw][0];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[(int)SASList.Yaw][1];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[(int)SASList.Yaw][2];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)SASList.Yaw][3];
+        }
+
+        public static void loadAssistantPreset()
+        {
+            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName))
+            {
+                CraftPreset cP = instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName];
+                if (cP.PresetPA != null)
+                    instance.activePAPreset = cP.PresetPA;
+                else
+                    instance.activePAPreset = instance.defaultPATuning;
+            }
+        }
+
+        public static void loadSSASPreset()
+        {
+            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName))
+            {
+                CraftPreset cP = instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName];
+                if (cP.SSAS != null)
+                    instance.activeSASPreset = cP.SSAS;
+                else
+                    instance.activeSASPreset = instance.defaultSASTuning;
+            }
+        }
+
+        public static void loadStockPreset()
+        {
+            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName))
+            {
+                CraftPreset cP = instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName];
+                if (cP.SSAS != null)
+                    instance.activeStockSASPreset = cP.Stock;
+                else
+                    instance.activeStockSASPreset = instance.defaultStockSASTuning;
+            }
         }
     }
 }

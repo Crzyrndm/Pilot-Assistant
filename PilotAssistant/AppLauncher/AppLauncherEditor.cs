@@ -20,7 +20,7 @@ namespace PilotAssistant.AppLauncher
         void Awake()
         {
             GameEvents.onGUIApplicationLauncherReady.Add(this.OnAppLauncherReady);
-            window = new Rect(Screen.width - 180, 40, 30, 30);
+            window = new Rect(500, 40, 30, 30);
         }
 
         void OnDestroy()
@@ -66,25 +66,27 @@ namespace PilotAssistant.AppLauncher
         private void managerWindow(int id)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Craft Name");
-            GUILayout.Label("Pilot Assistant Preset");
-            GUILayout.Label("SSAS Preset");
-            GUILayout.Label("Stock SAS Preset");
+            GUILayout.Label("Craft Name", GUILayout.Width(200));
+            GUILayout.Label("Pilot Assistant Preset", GUILayout.Width(200));
+            GUILayout.Label("SSAS Preset", GUILayout.Width(200));
+            GUILayout.Label("Stock SAS Preset", GUILayout.Width(200));
             GUILayout.EndHorizontal();
 
-            foreach (CraftPreset cp in PresetManager.craftPresetList)
+            foreach (KeyValuePair<string, CraftPreset> cp in PresetManager.Instance.craftPresetList)
             {
-                drawCraftPreset(cp);
+                drawCraftPreset(cp.Value);
             }
+
+            GUI.DragWindow();
         }
 
         private void drawCraftPreset(CraftPreset cp)
         {
             GUILayout.BeginHorizontal();
-            cp.Name = GUILayout.TextField(cp.Name);
-            GUILayout.Label(cp.PresetPA.name);
-            GUILayout.Label(cp.SSAS.name);
-            GUILayout.Label(cp.Stock.name);
+            GUILayout.Label(cp.Name, GUILayout.Width(200));
+            GUILayout.Label(cp.PresetPA.name, GUILayout.Width(200));
+            GUILayout.Label(cp.SSAS.name, GUILayout.Width(200));
+            GUILayout.Label(cp.Stock.name, GUILayout.Width(200));
             GUILayout.EndHorizontal();
         }
     }

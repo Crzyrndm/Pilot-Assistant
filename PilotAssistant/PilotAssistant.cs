@@ -13,7 +13,7 @@ namespace PilotAssistant
     using UI;
 
     [Flags]
-    internal enum PIDList
+    public enum PIDList
     {
         HdgBank,
         HdgYaw,
@@ -27,7 +27,8 @@ namespace PilotAssistant
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class PilotAssistant : MonoBehaviour
     {
-        internal static List<PID_Controller> controllers = new List<PID_Controller>();
+        static bool init = false; // create the default the first time through
+        internal static PID_Controller[] controllers = new PID_Controller[7];
 
         internal static bool bPause = false;
 
@@ -46,36 +47,10 @@ namespace PilotAssistant
 
         public void Start()
         {
-            PID_Controller HeadingBankController = new PID.PID_Controller(2, 0.1, 0, -30, 30, -0.5, 0.5);
-            controllers.Add(HeadingBankController);
-            PID_Controller HeadingYawController = new PID.PID_Controller(0, 0, 0.01, -2, 2, -0.5, 0.5);
-            controllers.Add(HeadingYawController);
-            PID_Controller AileronController = new PID.PID_Controller(0.02, 0.005, 0.01, -1, 1, -0.4, 0.4);
-            controllers.Add(AileronController);
-            PID_Controller RudderController = new PID.PID_Controller(0.1, 0.08, 0.05, -1, 1, -0.4, 0.4);
-            controllers.Add(RudderController);
-            PID_Controller AltitudeToClimbRate = new PID.PID_Controller(0.15, 0.01, 0, -50, 50, -0.01, 0.01);
-            controllers.Add(AltitudeToClimbRate);
-            PID_Controller AoAController = new PID.PID_Controller(2, 0.8, 2, -10, 10, -5, 5);
-            controllers.Add(AoAController);
-            PID_Controller ElevatorController = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 1, -0.4, 0.4);
-            controllers.Add(ElevatorController);
+            if (!init)
+                Initialise();
 
-            // PID inits
-            AileronController.InMax = 180;
-            AileronController.InMin = -180;
-            AltitudeToClimbRate.InMin = 0;
-
-            // Set up a default preset that can be easily returned to
-            PresetManager.defaultPATuning = new PresetPA(controllers, "Default");
-
-            if (PresetManager.activePAPreset == null)
-                PresetManager.activePAPreset = PresetManager.defaultPATuning;
-            else if (PresetManager.activePAPreset != PresetManager.defaultPATuning)
-            {
-                PresetManager.loadPAPreset(PresetManager.activePAPreset);
-                Messaging.statusMessage(5);
-            }
+            PresetManager.loadAssistantPreset();
             
             // register vessel
             FlightData.thisVessel = FlightGlobals.ActiveVessel;
@@ -88,9 +63,25 @@ namespace PilotAssistant
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
         }
 
-        public static PID_Controller GetController(PIDList id)
+        void Initialise()
         {
-            return controllers[(int)id];
+            controllers[(int)PIDList.HdgBank] = new PID.PID_Controller(2, 0.1, 0, -30, 30, -0.5, 0.5);
+            controllers[(int)PIDList.HdgYaw] = new PID.PID_Controller(0, 0, 0.01, -2, 2, -0.5, 0.5);
+            controllers[(int)PIDList.Aileron] = new PID.PID_Controller(0.02, 0.005, 0.01, -1, 1, -0.4, 0.4);
+            controllers[(int)PIDList.Rudder] = new PID.PID_Controller(0.1, 0.08, 0.05, -1, 1, -0.4, 0.4);
+            controllers[(int)PIDList.Altitude] = new PID.PID_Controller(0.15, 0.01, 0, -50, 50, -0.01, 0.01);
+            controllers[(int)PIDList.VertSpeed] = new PID.PID_Controller(2, 0.8, 2, -10, 10, -5, 5);
+            controllers[(int)PIDList.Elevator] = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 1, -0.4, 0.4);
+
+            // PID inits
+            Utils.GetAsst(PIDList.Aileron).InMax = 180;
+            Utils.GetAsst(PIDList.Aileron).InMin = -180;
+            Utils.GetAsst(PIDList.Altitude).InMin = 0;
+
+            // Set up a default preset that can be easily returned to
+            PresetManager.Instance.defaultPATuning = new PresetPA(controllers, "Default");
+
+            init = true;
         }
 
         private void vesselSwitch(Vessel v)
@@ -107,7 +98,7 @@ namespace PilotAssistant
             PresetManager.saveToFile();
             bHdgActive = false;
             bVertActive = false;
-            controllers.Clear();
+            Array.Clear(controllers, 0, 7);
         }
 
         public void Update()
@@ -128,10 +119,6 @@ namespace PilotAssistant
 
             if (bWingLeveller != bWasWingLeveller)
                 wingToggle();
-        }
-
-        public void FixedUpdate()
-        {
         }
 
         public void drawGUI()
@@ -162,42 +149,42 @@ namespace PilotAssistant
             {
                 if (!bWingLeveller && (FlightData.thisVessel.latitude < 88 && FlightData.thisVessel.latitude > -88))
                 {
-                    if (GetController(PIDList.HdgBank).SetPoint - FlightData.heading >= -180 && GetController(PIDList.HdgBank).SetPoint - FlightData.heading <= 180)
+                    if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading >= -180 && Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading <= 180)
                     {
-                        GetController(PIDList.Aileron).SetPoint = GetController(PIDList.HdgBank).Response(FlightData.heading);
-                        GetController(PIDList.HdgYaw).SetPoint = GetController(PIDList.HdgBank).Response(FlightData.heading);
+                        Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).Response(FlightData.heading);
+                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).Response(FlightData.heading);
                     }
-                    else if (GetController(PIDList.HdgBank).SetPoint - FlightData.heading < -180)
+                    else if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading < -180)
                     {
-                        GetController(PIDList.Aileron).SetPoint = GetController(PIDList.HdgBank).Response(FlightData.heading - 360);
-                        GetController(PIDList.HdgYaw).SetPoint = GetController(PIDList.HdgBank).Response(FlightData.heading - 360);
+                        Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).Response(FlightData.heading - 360);
+                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).Response(FlightData.heading - 360);
                     }
-                    else if (GetController(PIDList.HdgBank).SetPoint - FlightData.heading > 180)
+                    else if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading > 180)
                     {
-                        GetController(PIDList.Aileron).SetPoint = GetController(PIDList.HdgBank).Response(FlightData.heading + 360);
-                        GetController(PIDList.HdgYaw).SetPoint = GetController(PIDList.HdgBank).Response(FlightData.heading + 360);
+                        Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).Response(FlightData.heading + 360);
+                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).Response(FlightData.heading + 360);
                     }
 
-                    GetController(PIDList.Rudder).SetPoint = -GetController(PIDList.HdgYaw).Response(FlightData.yaw);
+                    Utils.GetAsst(PIDList.Rudder).SetPoint = -Utils.GetAsst(PIDList.HdgYaw).Response(FlightData.yaw);
                 }
                 else
                 {
                     bWasWingLeveller = true;
-                    GetController(PIDList.Aileron).SetPoint = 0;
-                    GetController(PIDList.Rudder).SetPoint = 0;
+                    Utils.GetAsst(PIDList.Aileron).SetPoint = 0;
+                    Utils.GetAsst(PIDList.Rudder).SetPoint = 0;
                 }
-                state.roll = (float)Functions.Clamp(GetController(PIDList.Aileron).Response(FlightData.roll) + state.roll, -1, 1);
-                state.yaw = (float)GetController(PIDList.Rudder).Response(FlightData.yaw);
+                state.roll = (float)Utils.Clamp(Utils.GetAsst(PIDList.Aileron).Response(FlightData.roll) + state.roll, -1, 1);
+                state.yaw = (float)Utils.GetAsst(PIDList.Rudder).Response(FlightData.yaw);
             }
 
             if (bVertActive)
             {
                 // Set requested vertical speed
                 if (bAltitudeHold)
-                    GetController(PIDList.VertSpeed).SetPoint = -GetController(PIDList.Altitude).Response(FlightData.thisVessel.altitude);
+                    Utils.GetAsst(PIDList.VertSpeed).SetPoint = -Utils.GetAsst(PIDList.Altitude).Response(FlightData.thisVessel.altitude);
 
-                GetController(PIDList.Elevator).SetPoint = -GetController(PIDList.VertSpeed).Response(FlightData.thisVessel.verticalSpeed);
-                state.pitch = (float)-GetController(PIDList.Elevator).Response(FlightData.AoA);
+                Utils.GetAsst(PIDList.Elevator).SetPoint = -Utils.GetAsst(PIDList.VertSpeed).Response(FlightData.thisVessel.verticalSpeed);
+                state.pitch = (float)-Utils.GetAsst(PIDList.Elevator).Response(FlightData.AoA);
             }
         }
 
@@ -209,17 +196,17 @@ namespace PilotAssistant
             bHdgWasActive = bHdgActive;
             if (bHdgActive)
             {
-                GetController(PIDList.HdgBank).SetPoint = FlightData.heading;
+                Utils.GetAsst(PIDList.HdgBank).SetPoint = FlightData.heading;
                 PAMainWindow.targetHeading = FlightData.heading.ToString("N2");
 
                 bPause = false;
             }
             else
             {
-                GetController(PIDList.HdgBank).Clear();
-                GetController(PIDList.HdgYaw).Clear();
-                GetController(PIDList.Aileron).Clear();
-                GetController(PIDList.Rudder).Clear();
+                Utils.GetAsst(PIDList.HdgBank).Clear();
+                Utils.GetAsst(PIDList.HdgYaw).Clear();
+                Utils.GetAsst(PIDList.Aileron).Clear();
+                Utils.GetAsst(PIDList.Rudder).Clear();
             }
         }
 
@@ -230,22 +217,22 @@ namespace PilotAssistant
             {
                 if (bAltitudeHold)
                 {
-                    controllers[(int)PIDList.Altitude].SetPoint = FlightData.thisVessel.altitude;
-                    PAMainWindow.targetVert = controllers[(int)PIDList.Altitude].SetPoint.ToString("N1");
+                    Utils.GetAsst(PIDList.Altitude).SetPoint = FlightData.thisVessel.altitude;
+                    PAMainWindow.targetVert = Utils.GetAsst(PIDList.Altitude).SetPoint.ToString("N1");
                 }
                 else
                 {
-                    controllers[(int)PIDList.VertSpeed].SetPoint = FlightData.thisVessel.verticalSpeed;
-                    PAMainWindow.targetVert = controllers[(int)PIDList.VertSpeed].SetPoint.ToString("N3");
+                    Utils.GetAsst(PIDList.VertSpeed).SetPoint = FlightData.thisVessel.verticalSpeed;
+                    PAMainWindow.targetVert = Utils.GetAsst(PIDList.VertSpeed).SetPoint.ToString("N3");
                 }
 
                 bPause = false;
             }
             else
             {
-                GetController(PIDList.Altitude).Clear();
-                GetController(PIDList.HdgBank).Clear();
-                GetController(PIDList.Elevator).Clear();
+                Utils.GetAsst(PIDList.Altitude).Clear();
+                Utils.GetAsst(PIDList.HdgBank).Clear();
+                Utils.GetAsst(PIDList.Elevator).Clear();
             }
         }
 
@@ -254,13 +241,13 @@ namespace PilotAssistant
             bWasAltitudeHold = bAltitudeHold;
             if (bAltitudeHold)
             {
-                controllers[(int)PIDList.Altitude].SetPoint = FlightData.thisVessel.altitude;
-                PAMainWindow.targetVert = controllers[(int)PIDList.Altitude].SetPoint.ToString("N1");
+                Utils.GetAsst(PIDList.Altitude).SetPoint = FlightData.thisVessel.altitude;
+                PAMainWindow.targetVert = Utils.GetAsst(PIDList.Altitude).SetPoint.ToString("N1");
             }
             else
             {
-                controllers[(int)PIDList.VertSpeed].SetPoint = FlightData.thisVessel.verticalSpeed;
-                PAMainWindow.targetVert = controllers[(int)PIDList.VertSpeed].SetPoint.ToString("N2");
+                Utils.GetAsst(PIDList.VertSpeed).SetPoint = FlightData.thisVessel.verticalSpeed;
+                PAMainWindow.targetVert = Utils.GetAsst(PIDList.VertSpeed).SetPoint.ToString("N2");
             }
         }
 
@@ -269,9 +256,9 @@ namespace PilotAssistant
             bWasWingLeveller = bWingLeveller;
             if (!bWingLeveller)
             {
-                PilotAssistant.controllers[(int)PIDList.HdgBank].SetPoint = FlightData.heading;
-                PilotAssistant.controllers[(int)PIDList.HdgYaw].SetPoint = FlightData.heading;
-                PAMainWindow.targetHeading = controllers[(int)PIDList.HdgBank].SetPoint.ToString("N2");
+                Utils.GetAsst(PIDList.HdgBank).SetPoint = FlightData.heading;
+                Utils.GetAsst(PIDList.HdgYaw).SetPoint = FlightData.heading;
+                PAMainWindow.targetHeading = Utils.GetAsst(PIDList.HdgBank).SetPoint.ToString("N2");
             }
         }
 
@@ -303,20 +290,11 @@ namespace PilotAssistant
             {
                 bHdgWasActive = false; // reset heading/vert lock on unpausing
                 bVertWasActive = false;
-                if (!bPause && FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] && SurfSAS.ActivityCheck())
-                {
-                    // prepare to rest these on SAS off
-                    Messaging.statusMessage(2);
-                }
-                else if (bPause && (!FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] || !SurfSAS.ActivityCheck()))
-                {
-                    Messaging.statusMessage(3);
-                }
             }
 
             if (mod && Input.GetKeyDown(KeyCode.X))
             {
-                GetController(PIDList.VertSpeed).SetPoint = 0;
+                Utils.GetAsst(PIDList.VertSpeed).SetPoint = 0;
                 bAltitudeHold = false;
                 bWasAltitudeHold = false;
                 bWingLeveller = true;
@@ -336,8 +314,8 @@ namespace PilotAssistant
                         hdg -= bFineControl ? 0.04 / scale : 0.4 * scale;
                         if (hdg < 0)
                             hdg += 360;
-                        GetController(PIDList.HdgBank).SetPoint = hdg;
-                        GetController(PIDList.HdgYaw).SetPoint = hdg;
+                        Utils.GetAsst(PIDList.HdgBank).SetPoint = hdg;
+                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = hdg;
                         PAMainWindow.targetHeading = hdg.ToString();
                     }
                     else if (GameSettings.YAW_RIGHT.GetKey())
@@ -346,8 +324,8 @@ namespace PilotAssistant
                         hdg += bFineControl ? 0.04 / scale : 0.4 * scale;
                         if (hdg > 360)
                             hdg -= 360;
-                        GetController(PIDList.HdgBank).SetPoint = hdg;
-                        GetController(PIDList.HdgYaw).SetPoint = hdg;
+                        Utils.GetAsst(PIDList.HdgBank).SetPoint = hdg;
+                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = hdg;
                         PAMainWindow.targetHeading = hdg.ToString();
                     }
                 }
@@ -362,12 +340,12 @@ namespace PilotAssistant
                             vert -= bFineControl ? 0.4 / scale : 4 * scale;
                             if (vert < 0)
                                 vert = 0;
-                            GetController(PIDList.Altitude).SetPoint = vert;
+                            Utils.GetAsst(PIDList.Altitude).SetPoint = vert;
                         }
                         else
                         {
                             vert -= bFineControl ? 0.04 / scale : 0.4 * scale;
-                            GetController(PIDList.VertSpeed).SetPoint = vert;
+                            Utils.GetAsst(PIDList.VertSpeed).SetPoint = vert;
                         }
                         PAMainWindow.targetVert = vert.ToString();
                     }
@@ -377,12 +355,12 @@ namespace PilotAssistant
                         if (bAltitudeHold)
                         {
                             vert += bFineControl ? 0.4 / scale : 4 * scale;
-                            GetController(PIDList.Altitude).SetPoint = vert;
+                            Utils.GetAsst(PIDList.Altitude).SetPoint = vert;
                         }
                         else
                         {
                             vert += bFineControl ? 0.04 / scale : 0.4 * scale;
-                            GetController(PIDList.VertSpeed).SetPoint = vert;
+                            Utils.GetAsst(PIDList.VertSpeed).SetPoint = vert;
                         }
                         PAMainWindow.targetVert = vert.ToString();
                     }

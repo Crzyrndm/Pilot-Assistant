@@ -5,6 +5,7 @@ using System.Text;
 
 namespace PilotAssistant.Presets
 {
+    using PID;
     /// <summary>
     /// Holds all the PID tuning values for the 7 (or more if required) controllers involved.
     /// </summary>
@@ -12,25 +13,17 @@ namespace PilotAssistant.Presets
     {
         public string name;
         public List<double[]> PIDGains = new List<double[]>();
-        private int numControllers = 7;
 
-        public PresetPA(List<PID.PID_Controller> controllers, string Name) // used for adding a new preset, can clone the current values
+        public PresetPA(List<PID_Controller> controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
-            for (int i = 0; i < numControllers; i++) // currently 7 PID controlers to save
-            {
-                double[] gains = new double[8];
-                gains[0] = controllers[i].PGain;
-                gains[1] = controllers[i].IGain;
-                gains[2] = controllers[i].DGain;
-                gains[3] = controllers[i].OutMin;
-                gains[4] = controllers[i].OutMax;
-                gains[5] = controllers[i].ClampLower;
-                gains[6] = controllers[i].ClampUpper;
-                gains[7] = controllers[i].Scalar;
+            Update(controllers);
+        }
 
-                PIDGains.Add(gains);
-            }
+        public PresetPA(PID_Controller[] controllers, string Name) // used for adding a new preset, can clone the current values
+        {
+            name = Name;
+            Update(controllers);
         }
 
         public PresetPA(List<double[]> gains, string Name) // used for loading presets from file
@@ -39,24 +32,42 @@ namespace PilotAssistant.Presets
             PIDGains = gains;        
         }
 
-        public void Update(List<PID.PID_Controller> controllers)
+        public void Update(List<PID_Controller> controllers)
         {
-            List<double[]> newPIDGains = new List<double[]>();
-            for (int i = 0; i < numControllers; i++) // currently 7 PID controlers to save
+            PIDGains.Clear();
+            foreach (PID_Controller controller in controllers)
             {
                 double[] gains = new double[8];
-                gains[0] = controllers[i].PGain;
-                gains[1] = controllers[i].IGain;
-                gains[2] = controllers[i].DGain;
-                gains[3] = controllers[i].OutMin;
-                gains[4] = controllers[i].OutMax;
-                gains[5] = controllers[i].ClampLower;
-                gains[6] = controllers[i].ClampUpper;
-                gains[7] = controllers[i].Scalar;
+                gains[0] = controller.PGain;
+                gains[1] = controller.IGain;
+                gains[2] = controller.DGain;
+                gains[3] = controller.OutMin;
+                gains[4] = controller.OutMax;
+                gains[5] = controller.ClampLower;
+                gains[6] = controller.ClampUpper;
+                gains[7] = controller.Scalar;
 
-                newPIDGains.Add(gains);
+                PIDGains.Add(gains);
             }
-            PIDGains = newPIDGains;
+        }
+
+        public void Update(PID_Controller[] controllers)
+        {
+            PIDGains.Clear();
+            foreach (PID_Controller controller in controllers)
+            {
+                double[] gains = new double[8];
+                gains[0] = controller.PGain;
+                gains[1] = controller.IGain;
+                gains[2] = controller.DGain;
+                gains[3] = controller.OutMin;
+                gains[4] = controller.OutMax;
+                gains[5] = controller.ClampLower;
+                gains[6] = controller.ClampUpper;
+                gains[7] = controller.Scalar;
+
+                PIDGains.Add(gains);
+            }
         }
     }
 }
