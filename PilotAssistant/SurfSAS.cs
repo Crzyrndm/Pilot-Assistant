@@ -26,18 +26,21 @@ namespace PilotAssistant
             get { return instance; }
         }
 
-        public PID_Controller[] SASControllers = new PID_Controller[3];
+        public static PID_Controller[] SASControllers = new PID_Controller[3];
 
         static bool bInit = false;
         bool bArmed = false;
         bool[] bActive = new bool[3]; // activate on per axis basis
         bool[] bPause = new bool[3]; // pause on a per axis basis
-        bool bAtmosphere = false;
         bool bStockSAS = true;
 
         float activationFadeRoll = 1;
         float activationFadePitch = 1;
         float activationFadeYaw = 1;
+
+        float fadeRollMult = 0.98f;
+        float fadePitchMult = 0.98f;
+        float fadeYawMult = 0.98f;
 
         bool rollState = false; // false = surface mode, true = vector mode
 
@@ -52,7 +55,7 @@ namespace PilotAssistant
         public void Start()
         {
             instance = this;
-            
+            DontDestroyOnLoad(this);
             StartCoroutine(Initialise());
 
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
@@ -102,8 +105,6 @@ namespace PilotAssistant
             bInit = false;
             bArmed = false;
             ActivitySwitch(false);
-
-            Array.Clear(SASControllers, 0, 3);
 
             RenderingManager.RemoveFromPostDrawQueue(5, drawGUI);
             FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(SurfaceSAS);
@@ -617,5 +618,34 @@ namespace PilotAssistant
             }
         }
         #endregion
+
+        public float FadeRollMult
+        {
+            get { return fadeRollMult; }
+            set {
+                fadeRollMult = Utils.Clamp(value, 0, 1);
+            }
+        }
+
+        public float FadePitchMult
+        {
+            get { return fadePitchMult; }
+            set {
+                fadePitchMult = Utils.Clamp(value, 0, 1);
+            }
+        }
+
+        public float FadeYawMult
+        {
+            get { return fadeYawMult; }
+            set {
+                fadeYawMult = Utils.Clamp(value, 0, 1);
+            }
+        }
+
+        //public bool stockDefault
+        //{
+
+        //}
     }
 }

@@ -258,10 +258,10 @@ namespace PilotAssistant
             else
             {
                 Instance.craftPresetList.Add(FlightData.thisVessel.vesselName,
-                    new CraftPreset(FlightData.thisVessel.vesselName, new PresetPA(PilotAssistant.Instance.controllers, name), PresetManager.Instance.activeSASPreset, PresetManager.Instance.activeStockSASPreset));
+                    new CraftPreset(FlightData.thisVessel.vesselName, new PresetPA(PilotAssistant.controllers, name), PresetManager.Instance.activeSASPreset, PresetManager.Instance.activeStockSASPreset));
             }
 
-            Instance.PAPresetList.Add(new PresetPA(PilotAssistant.Instance.controllers, name));
+            Instance.PAPresetList.Add(new PresetPA(PilotAssistant.controllers, name));
             name = "";
             Instance.activePAPreset = PresetManager.Instance.PAPresetList[PresetManager.Instance.PAPresetList.Count - 1];
             saveToFile();
@@ -269,7 +269,14 @@ namespace PilotAssistant
 
         public static void loadPAPreset(PresetPA p)
         {
-            PID_Controller[] c = PilotAssistant.Instance.controllers;
+            print("loading");
+            print(p);
+            print(p.name);
+
+            PID_Controller[] c = PilotAssistant.controllers;
+
+            print(c);
+            print(c[0]);
 
             for (int i = 0; i < 7; i++)
             {
@@ -341,7 +348,7 @@ namespace PilotAssistant
 
         public static void loadSASPreset(PresetSAS p)
         {
-            PID_Controller[] c = SurfSAS.Instance.SASControllers;
+            PID_Controller[] c = SurfSAS.SASControllers;
 
             foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {

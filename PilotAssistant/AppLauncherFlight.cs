@@ -9,13 +9,14 @@ namespace PilotAssistant
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class AppLauncherFlight : MonoBehaviour
     {
-        private static ApplicationLauncherButton btnLauncher;
-        private static Rect window;
+        private ApplicationLauncherButton btnLauncher;
+        private Rect window;
+        private Rect settingRect;
 
-        internal static bool bDisplayOptions = false;
-        internal static bool bDisplayAssistant = false;
-        internal static bool bDisplaySAS = false;
-        internal static bool bDisplayModerator = false;
+        public static bool bDisplayOptions = false;
+        public static bool bDisplayAssistant = false;
+        public static bool bDisplaySAS = false;
+        private static bool bDisplaySettings = false;
 
         void Awake()
         {
@@ -58,9 +59,9 @@ namespace PilotAssistant
         {
             GeneralUI.Styles();
             if (bDisplayOptions)
-            {
                 window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
-            }
+            if (bDisplaySettings)
+                settingRect = GUILayout.Window(7549384, settingRect, settingsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
         }
 
         private void optionsWindow(int id)
@@ -77,6 +78,17 @@ namespace PilotAssistant
                 bDisplaySAS = temp;
                 btnLauncher.toggleButton.SetFalse();
             }
+            temp = GUILayout.Toggle(bDisplaySettings, "Settings", Utility.GeneralUI.toggleButton);
+            if (temp != bDisplaySettings)
+            {
+                bDisplaySettings = temp;
+                btnLauncher.toggleButton.SetFalse();
+            }
+        }
+
+        private void settingsWindow(int id)
+        {
+
         }
     }
 }

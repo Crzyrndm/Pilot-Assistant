@@ -31,7 +31,7 @@ namespace PilotAssistant
         }
 
         static bool init = false; // create the default the first time through
-        public PID_Controller[] controllers = new PID_Controller[7];
+        public static PID_Controller[] controllers = new PID_Controller[7];
 
         bool bPause = false;
 
@@ -74,7 +74,7 @@ namespace PilotAssistant
         public void Start()
         {
             instance = this;
-
+            
             if (!init)
                 Initialise();
 
@@ -137,7 +137,6 @@ namespace PilotAssistant
             PresetManager.saveToFile();
             bHdgActive = false;
             bVertActive = false;
-            Array.Clear(controllers, 0, 7);
         }
 
         public void Update()

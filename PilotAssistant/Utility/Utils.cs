@@ -21,12 +21,12 @@ namespace PilotAssistant.Utility
 
         public static PID_Controller GetAsst(PIDList id)
         {
-            return PilotAssistant.Instance.controllers[(int)id];
+            return PilotAssistant.controllers[(int)id];
         }
 
         public static PID_Controller GetSAS(SASList id)
         {
-            return SurfSAS.Instance.SASControllers[(int)id];
+            return SurfSAS.SASControllers[(int)id];
         }
     }
 }
