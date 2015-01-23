@@ -93,8 +93,8 @@ namespace PilotAssistant
                 GeneralUI.InitColors();
                 bInit = true;
             }
-            PresetManager.loadSSASPreset();
-            PresetManager.loadStockPreset();
+            PresetManager.loadCraftSSASPreset();
+            PresetManager.loadCraftStockPreset();
         }
 
         public void OnDestroy()

@@ -218,10 +218,10 @@ namespace PilotAssistant
         public static ConfigNode PIDnode(string name, int index, PresetSAS preset)
         {
             ConfigNode node = new ConfigNode(name);
-            node.AddValue("PGain", preset.PIDGains[index][0]);
-            node.AddValue("IGain", preset.PIDGains[index][1]);
-            node.AddValue("DGain", preset.PIDGains[index][2]);
-            node.AddValue("Scalar", preset.PIDGains[index][3]);
+            node.AddValue("PGain", preset.PIDGains[index, 0]);
+            node.AddValue("IGain", preset.PIDGains[index, 1]);
+            node.AddValue("DGain", preset.PIDGains[index, 2]);
+            node.AddValue("Scalar", preset.PIDGains[index, 3]);
             return node;
         }
 
@@ -343,12 +343,12 @@ namespace PilotAssistant
         {
             PID_Controller[] c = SurfSAS.Instance.SASControllers;
 
-            for (int i = 0; i < 3; i++)
+            foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {
-                c[i].PGain = p.PIDGains[i][0];
-                c[i].IGain = p.PIDGains[i][1];
-                c[i].DGain = p.PIDGains[i][2];
-                c[i].Scalar = p.PIDGains[i][3];
+                c[(int)s].PGain = p.PIDGains[(int)s, 0];
+                c[(int)s].IGain = p.PIDGains[(int)s, 1];
+                c[(int)s].DGain = p.PIDGains[(int)s, 2];
+                c[(int)s].Scalar = p.PIDGains[(int)s, 3];
             }
 
             Instance.activeSASPreset = p;
@@ -360,6 +360,7 @@ namespace PilotAssistant
                 Instance.activeSASPreset = null;
             else if (Instance.activeStockSASPreset == p && p.bStockSAS)
                 Instance.activeStockSASPreset = null;
+            
             Instance.SASPresetList.Remove(p);
 
             foreach (KeyValuePair<string, CraftPreset> cp in instance.craftPresetList)
@@ -390,25 +391,25 @@ namespace PilotAssistant
 
         public static void loadStockSASPreset(PresetSAS p)
         {
-            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[(int)SASList.Pitch][0];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[(int)SASList.Pitch][1];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[(int)SASList.Pitch][2];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[(int)SASList.Pitch][3];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[(int)SASList.Pitch, 0];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[(int)SASList.Pitch, 1];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[(int)SASList.Pitch, 2];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[(int)SASList.Pitch, 3];
 
-            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[(int)SASList.Roll][0];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[(int)SASList.Roll][1];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[(int)SASList.Roll][2];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[(int)SASList.Roll][3];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[(int)SASList.Roll, 0];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[(int)SASList.Roll, 1];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[(int)SASList.Roll, 2];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[(int)SASList.Roll, 3];
 
-            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[(int)SASList.Yaw][0];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[(int)SASList.Yaw][1];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[(int)SASList.Yaw][2];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)SASList.Yaw][3];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[(int)SASList.Yaw, 0];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[(int)SASList.Yaw, 1];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[(int)SASList.Yaw, 2];
+            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)SASList.Yaw, 3];
 
             Instance.activeStockSASPreset = p;
         }
 
-        public static void loadAssistantPreset()
+        public static void loadCraftAsstPreset()
         {
             if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].PresetPA != null)
                 loadPAPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].PresetPA);
@@ -416,7 +417,7 @@ namespace PilotAssistant
                 loadPAPreset(instance.craftPresetList["default"].PresetPA);
         }
 
-        public static void loadSSASPreset()
+        public static void loadCraftSSASPreset()
         {
             if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SSAS != null)
                 loadSASPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SSAS);
@@ -424,7 +425,7 @@ namespace PilotAssistant
                 loadSASPreset(instance.craftPresetList["default"].SSAS);
         }
 
-        public static void loadStockPreset()
+        public static void loadCraftStockPreset()
         {
             if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].Stock != null)
                 loadStockSASPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].Stock);

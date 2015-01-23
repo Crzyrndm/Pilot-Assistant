@@ -8,23 +8,20 @@ namespace PilotAssistant.Presets
     class PresetSAS
     {
         public string name;
-        public List<double[]> PIDGains = new List<double[]>();
+        public double[,] PIDGains = new double[3,4];
         public bool bStockSAS = true;
-        private int numControllers = 3;
 
         public PresetSAS(List<PID.PID_Controller> controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
             bStockSAS = false;
-            for (int i = 0; i < numControllers; i++) // 3 PID controlers to save
-            {
-                double[] gains = new double[4];
-                gains[0] = controllers[i].PGain;
-                gains[1] = controllers[i].IGain;
-                gains[2] = controllers[i].DGain;
-                gains[3] = controllers[i].Scalar;
 
-                PIDGains.Add(gains);
+            foreach (SASList s in Enum.GetValues(typeof(SASList)))
+            {
+                PIDGains[(int)s, 0] = controllers[(int)s].PGain;
+                PIDGains[(int)s, 1] = controllers[(int)s].IGain;
+                PIDGains[(int)s, 2] = controllers[(int)s].DGain;
+                PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
             }
         }
 
@@ -32,15 +29,12 @@ namespace PilotAssistant.Presets
         {
             name = Name;
             bStockSAS = false;
-            for (int i = 0; i < numControllers; i++) // 3 PID controlers to save
+            foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {
-                double[] gains = new double[4];
-                gains[0] = controllers[i].PGain;
-                gains[1] = controllers[i].IGain;
-                gains[2] = controllers[i].DGain;
-                gains[3] = controllers[i].Scalar;
-
-                PIDGains.Add(gains);
+                PIDGains[(int)s, 0] = controllers[(int)s].PGain;
+                PIDGains[(int)s, 1] = controllers[(int)s].IGain;
+                PIDGains[(int)s, 2] = controllers[(int)s].DGain;
+                PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
             }
         }
 
@@ -48,64 +42,70 @@ namespace PilotAssistant.Presets
         {
             name = Name;
             bStockSAS = true;
-            double[] pitchGains = {sas.pidLockedPitch.kp, sas.pidLockedPitch.ki, sas.pidLockedPitch.kd, sas.pidLockedPitch.clamp};
-            PIDGains.Add(pitchGains);
-            double[] rollGains = { sas.pidLockedRoll.kp, sas.pidLockedRoll.ki, sas.pidLockedRoll.kd, sas.pidLockedRoll.clamp };
-            PIDGains.Add(rollGains);
-            double[] yawGains = { sas.pidLockedYaw.kp, sas.pidLockedYaw.ki, sas.pidLockedYaw.kd, sas.pidLockedYaw.clamp };
-            PIDGains.Add(yawGains);
+
+            PIDclamp[] sasPID = new PIDclamp[3];
+            sasPID[(int)SASList.Pitch] = sas.pidLockedPitch;
+            sasPID[(int)SASList.Roll] = sas.pidLockedRoll;
+            sasPID[(int)SASList.Yaw] = sas.pidLockedYaw;
+
+            foreach (SASList s in Enum.GetValues(typeof(SASList)))
+            {
+                PIDGains[(int)s, 0] = sasPID[(int)s].kp;
+                PIDGains[(int)s, 1] = sasPID[(int)s].ki;
+                PIDGains[(int)s, 2] = sasPID[(int)s].kd;
+                PIDGains[(int)s, 3] = sasPID[(int)s].clamp;
+            }
         }
 
         public PresetSAS(List<double[]> gains, string Name, bool stockSAS) // used for loading presets from file
         {
             name = Name;
             bStockSAS = stockSAS;
-            PIDGains = gains;
+            foreach (SASList s in Enum.GetValues(typeof(SASList)))
+            {
+                PIDGains[(int)s, 0] = gains[(int)s][0];
+                PIDGains[(int)s, 1] = gains[(int)s][1];
+                PIDGains[(int)s, 2] = gains[(int)s][2];
+                PIDGains[(int)s, 3] = gains[(int)s][3];
+            }
         }
 
         public void Update(List<PID.PID_Controller> controllers)
         {
-            List<double[]> newPIDGains = new List<double[]>();
-            for (int i = 0; i < numControllers; i++) // 3 PID controlers to save
+            foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {
-                double[] gains = new double[4];
-                gains[0] = controllers[i].PGain;
-                gains[1] = controllers[i].IGain;
-                gains[2] = controllers[i].DGain;
-                gains[3] = controllers[i].Scalar;
-
-                newPIDGains.Add(gains);
+                PIDGains[(int)s, 0] = controllers[(int)s].PGain;
+                PIDGains[(int)s, 1] = controllers[(int)s].IGain;
+                PIDGains[(int)s, 2] = controllers[(int)s].DGain;
+                PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
             }
-            PIDGains = newPIDGains;
         }
 
         public void Update(PID.PID_Controller[] controllers)
         {
-            List<double[]> newPIDGains = new List<double[]>();
-            for (int i = 0; i < numControllers; i++) // 3 PID controlers to save
+            foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {
-                double[] gains = new double[4];
-                gains[0] = controllers[i].PGain;
-                gains[1] = controllers[i].IGain;
-                gains[2] = controllers[i].DGain;
-                gains[3] = controllers[i].Scalar;
-
-                newPIDGains.Add(gains);
+                PIDGains[(int)s, 0] = controllers[(int)s].PGain;
+                PIDGains[(int)s, 1] = controllers[(int)s].IGain;
+                PIDGains[(int)s, 2] = controllers[(int)s].DGain;
+                PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
             }
-            PIDGains = newPIDGains;
         }
 
         public void Update(VesselAutopilot.VesselSAS sas)
         {
-            List<double[]> newPIDGains = new List<double[]>();
-            double[] pitchGains = { sas.pidLockedPitch.kp, sas.pidLockedPitch.ki, sas.pidLockedPitch.kd, sas.pidLockedPitch.clamp};
-            newPIDGains.Add(pitchGains);
-            double[] rollGains = { sas.pidLockedRoll.kp, sas.pidLockedRoll.ki, sas.pidLockedRoll.kd, sas.pidLockedRoll.clamp };
-            newPIDGains.Add(rollGains);
-            double[] yawGains = { sas.pidLockedYaw.kp, sas.pidLockedYaw.ki, sas.pidLockedYaw.kd, sas.pidLockedYaw.clamp };
-            newPIDGains.Add(yawGains);
+            PIDclamp[] sasPID = new PIDclamp[3];
+            sasPID[(int)SASList.Pitch] = sas.pidLockedPitch;
+            sasPID[(int)SASList.Roll] = sas.pidLockedRoll;
+            sasPID[(int)SASList.Yaw] = sas.pidLockedYaw;
 
-            PIDGains = newPIDGains;
+            foreach (SASList s in Enum.GetValues(typeof(SASList)))
+            {
+                PIDGains[(int)s, 0] = sasPID[(int)s].kp;
+                PIDGains[(int)s, 1] = sasPID[(int)s].ki;
+                PIDGains[(int)s, 2] = sasPID[(int)s].kd;
+                PIDGains[(int)s, 3] = sasPID[(int)s].clamp;
+            }
         }
     }
 }

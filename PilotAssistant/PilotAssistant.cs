@@ -78,7 +78,7 @@ namespace PilotAssistant
             if (!init)
                 Initialise();
 
-            PresetManager.loadAssistantPreset();
+            PresetManager.loadCraftAsstPreset();
             print(Utils.GetAsst(PIDList.HdgBank).PGain);
             
             // register vessel
