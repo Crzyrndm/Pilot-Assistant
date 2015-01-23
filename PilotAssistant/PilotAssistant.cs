@@ -8,7 +8,6 @@ namespace PilotAssistant
     using Presets;
     using Utility;
     using PID;
-    using AppLauncher;
 
     [Flags]
     public enum PIDList
@@ -80,6 +79,7 @@ namespace PilotAssistant
                 Initialise();
 
             PresetManager.loadAssistantPreset();
+            print(Utils.GetAsst(PIDList.HdgBank).PGain);
             
             // register vessel
             FlightData.thisVessel = FlightGlobals.ActiveVessel;
@@ -108,7 +108,17 @@ namespace PilotAssistant
             Utils.GetAsst(PIDList.Altitude).InMin = 0;
 
             // Set up a default preset that can be easily returned to
-            PresetManager.Instance.defaultPATuning = new PresetPA(controllers, "Default");
+            if (PresetManager.Instance.craftPresetList.ContainsKey("default"))
+            {
+                if (PresetManager.Instance.craftPresetList["default"].PresetPA == null)
+                    PresetManager.Instance.craftPresetList["default"].PresetPA = new PresetPA(controllers, "default");
+            }
+            else
+                PresetManager.Instance.craftPresetList.Add("default", new CraftPreset("default", new PresetPA(controllers, "default"), null, null));
+
+            PresetManager.saveDefaults();
+
+            print(Utils.GetAsst(PIDList.HdgBank).PGain);
 
             init = true;
         }
@@ -444,7 +454,7 @@ namespace PilotAssistant
                         vertScrollHeight += 123;
                 }
             }
-
+            
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             window = GUILayout.Window(34244, window, displayWindow, "Pilot Assistant", GUILayout.Height(0), GUILayout.MinWidth(233));
 
@@ -664,10 +674,10 @@ namespace PilotAssistant
             if (PresetManager.Instance.activePAPreset != null)
             {
                 GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.Instance.activePAPreset.name));
-                if (PresetManager.Instance.activePAPreset.name != "Default")
+                if (PresetManager.Instance.activePAPreset.name != "default")
                 {
                     if (GUILayout.Button("Update Preset"))
-                        updatePreset();
+                        PresetManager.updatePAPreset(controllers);
                 }
                 GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
             }
@@ -681,9 +691,7 @@ namespace PilotAssistant
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
             if (GUILayout.Button("Reset to Defaults"))
-            {
-                PresetManager.loadPAPreset(PresetManager.Instance.defaultPATuning);
-            }
+                PresetManager.loadPAPreset(PresetManager.Instance.craftPresetList["default"].PresetPA);
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
@@ -696,24 +704,6 @@ namespace PilotAssistant
                     PresetManager.deletePAPreset(p);
                 GUILayout.EndHorizontal();
             }
-        }
-
-        
-
-        private void updatePreset()
-        {
-            PresetManager.Instance.activePAPreset.Update(controllers);
-
-            if (PresetManager.Instance.craftPresetList.ContainsKey(FlightData.thisVessel.vesselName))
-                PresetManager.Instance.craftPresetList[FlightData.thisVessel.vesselName].PresetPA = new PresetPA(controllers, newPresetName);
-            else
-            {
-                PresetManager.Instance.craftPresetList.Add(FlightData.thisVessel.vesselName,
-                    new CraftPreset(FlightData.thisVessel.vesselName, new PresetPA(controllers, newPresetName), PresetManager.Instance.activeSASPreset, PresetManager.Instance.activeStockSASPreset));
-            }
-
-            PresetManager.saveToFile();
-            Messaging.postMessage(PresetManager.Instance.activePAPreset.name + " updated");
         }
         #endregion
     }

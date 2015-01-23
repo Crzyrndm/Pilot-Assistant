@@ -47,7 +47,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AppLauncher\AppLauncherFlight.cs" />
+    <Compile Include="AppLauncherFlight.cs" />
     <Compile Include="Presets\CraftPreset.cs" />
     <Compile Include="SurfSAS.cs" />
     <Compile Include="PID\PID_Controller.cs" />
@@ -61,6 +61,7 @@
     <Compile Include="Utility\Utils.cs" />
     <Compile Include="Utility\GeneralUI.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>set SOURCE="D:\Users\Joshua\GitHub\Pilot-Assistant\GameData"

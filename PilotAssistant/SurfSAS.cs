@@ -7,7 +7,6 @@ namespace PilotAssistant
 {
     using PID;
     using Utility;
-    using AppLauncher;
     using Presets;
 
     [Flags]
@@ -53,13 +52,11 @@ namespace PilotAssistant
         public void Start()
         {
             instance = this;
-
-            if (!bInit)
-                StartCoroutine(Initialise());
+            
+            StartCoroutine(Initialise());
 
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
             FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
-            PresetManager.loadSSASPreset();
 
             bPause[0] = bPause[1] = bPause[2] = false;
             ActivitySwitch(false);
@@ -68,31 +65,36 @@ namespace PilotAssistant
         // need to wait for Stock SAS to be ready, hence the Coroutine
         IEnumerator Initialise()
         {
-            // register vessel if not already
-            if (FlightData.thisVessel == null)
-                FlightData.thisVessel = FlightGlobals.ActiveVessel;
-
-            // wait for SAS to init
-            if (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch == null)
-                yield return null;
-            
-            PresetManager.Instance.defaultStockSASTuning = new PresetSAS(FlightData.thisVessel.Autopilot.SAS, "Stock");
-            if (PresetManager.Instance.activeStockSASPreset == null)
-                PresetManager.Instance.activeStockSASPreset = PresetManager.Instance.defaultStockSASTuning;
-            else
+            if (!bInit)
             {
-                PresetManager.loadStockSASPreset(PresetManager.Instance.activeStockSASPreset);
-                Messaging.statusMessage(7);
+                // register vessel if not already
+                if (FlightData.thisVessel == null)
+                    FlightData.thisVessel = FlightGlobals.ActiveVessel;
+
+                SASControllers[(int)SASList.Pitch] = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
+                SASControllers[(int)SASList.Roll] = new PID.PID_Controller(0.1, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
+                SASControllers[(int)SASList.Yaw] = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
+
+                // wait for SAS to init
+                if (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch == null)
+                    yield return null;
+
+                if (!PresetManager.Instance.craftPresetList.ContainsKey("default"))
+                    PresetManager.Instance.craftPresetList.Add("default", new CraftPreset("default", null, new PresetSAS(SASControllers, "SSAS"), new PresetSAS(FlightData.thisVessel.Autopilot.SAS, "stock")));
+                else
+                {
+                    if (PresetManager.Instance.craftPresetList["default"].SSAS == null)
+                        PresetManager.Instance.craftPresetList["default"].SSAS = new PresetSAS(SASControllers, "SSAS");
+                    if (PresetManager.Instance.craftPresetList["default"].Stock == null)
+                        PresetManager.Instance.craftPresetList["default"].Stock = new PresetSAS(FlightData.thisVessel.Autopilot.SAS, "stock");
+                }
+                PresetManager.saveDefaults();
+
+                GeneralUI.InitColors();
+                bInit = true;
             }
-
-            SASControllers[(int)SASList.Pitch] = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
-            SASControllers[(int)SASList.Roll] = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
-            SASControllers[(int)SASList.Yaw] = new PID.PID_Controller(0.1, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
-            PresetManager.Instance.defaultSASTuning = new PresetSAS(SASControllers, "Default");
-
-            GeneralUI.InitColors();
-
-            bInit = true;
+            PresetManager.loadSSASPreset();
+            PresetManager.loadStockPreset();
         }
 
         public void OnDestroy()
@@ -540,7 +542,7 @@ namespace PilotAssistant
             if (PresetManager.Instance.activeSASPreset != null)
             {
                 GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.Instance.activeSASPreset.name));
-                if (PresetManager.Instance.activeSASPreset.name != "Default")
+                if (PresetManager.Instance.activeSASPreset.name != "SSAS")
                 {
                     if (GUILayout.Button("Update Preset"))
                         PresetManager.updateSASPreset(false, SASControllers);
@@ -557,7 +559,7 @@ namespace PilotAssistant
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
             if (GUILayout.Button("Reset to Defaults"))
-                PresetManager.loadSASPreset(PresetManager.Instance.defaultSASTuning);
+                PresetManager.loadSASPreset(PresetManager.Instance.craftPresetList["default"].SSAS);
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
@@ -580,7 +582,7 @@ namespace PilotAssistant
             if (PresetManager.Instance.activeStockSASPreset != null)
             {
                 GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.Instance.activeStockSASPreset.name));
-                if (PresetManager.Instance.activeStockSASPreset.name != "Stock")
+                if (PresetManager.Instance.activeStockSASPreset.name != "stock")
                 {
                     if (GUILayout.Button("Update Preset"))
                         PresetManager.updateSASPreset(true);
@@ -597,7 +599,7 @@ namespace PilotAssistant
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
             if (GUILayout.Button("Reset to Defaults"))
-                PresetManager.loadStockSASPreset(PresetManager.Instance.defaultStockSASTuning);
+                PresetManager.loadStockSASPreset(PresetManager.Instance.craftPresetList["default"].Stock);
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 

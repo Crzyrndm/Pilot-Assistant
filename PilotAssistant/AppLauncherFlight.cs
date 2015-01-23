@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace PilotAssistant.AppLauncher
+namespace PilotAssistant
 {
     using Utility;
 
