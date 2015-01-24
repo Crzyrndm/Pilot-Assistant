@@ -55,32 +55,40 @@ namespace PilotAssistant
         public void Start()
         {
             instance = this;
-            DontDestroyOnLoad(this);
             StartCoroutine(Initialise());
 
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
             FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
+            GameEvents.onVesselChange.Add(vesselSwitch);
 
             bPause[0] = bPause[1] = bPause[2] = false;
             ActivitySwitch(false);
         }
 
+        private void vesselSwitch(Vessel v)
+        {
+            FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(SurfaceSAS);
+            FlightData.thisVessel = v;
+            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
+
+            StartCoroutine(Initialise());
+        }
+
         // need to wait for Stock SAS to be ready, hence the Coroutine
         IEnumerator Initialise()
         {
+            if (FlightData.thisVessel == null)
+                FlightData.thisVessel = FlightGlobals.ActiveVessel;
+
+            // wait for SAS to init
+            if (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch == null)
+                yield return null;
+
             if (!bInit)
             {
-                // register vessel if not already
-                if (FlightData.thisVessel == null)
-                    FlightData.thisVessel = FlightGlobals.ActiveVessel;
-
                 SASControllers[(int)SASList.Pitch] = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
                 SASControllers[(int)SASList.Roll] = new PID.PID_Controller(0.1, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
                 SASControllers[(int)SASList.Yaw] = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
-
-                // wait for SAS to init
-                if (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch == null)
-                    yield return null;
 
                 if (!PresetManager.Instance.craftPresetList.ContainsKey("default"))
                     PresetManager.Instance.craftPresetList.Add("default", new CraftPreset("default", null, new PresetSAS(SASControllers, "SSAS"), new PresetSAS(FlightData.thisVessel.Autopilot.SAS, "stock")));
@@ -96,6 +104,7 @@ namespace PilotAssistant
                 GeneralUI.InitColors();
                 bInit = true;
             }
+
             PresetManager.loadCraftSSASPreset();
             PresetManager.loadCraftStockPreset();
         }

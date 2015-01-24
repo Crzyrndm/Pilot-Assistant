@@ -269,14 +269,7 @@ namespace PilotAssistant
 
         public static void loadPAPreset(PresetPA p)
         {
-            print("loading");
-            print(p);
-            print(p.name);
-
             PID_Controller[] c = PilotAssistant.controllers;
-
-            print(c);
-            print(c[0]);
 
             for (int i = 0; i < 7; i++)
             {

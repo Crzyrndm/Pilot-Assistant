@@ -16,7 +16,7 @@ namespace PilotAssistant
         public static bool bDisplayOptions = false;
         public static bool bDisplayAssistant = false;
         public static bool bDisplaySAS = false;
-        private static bool bDisplaySettings = false;
+        public static bool bDisplaySettings = false;
 
         void Awake()
         {
@@ -60,8 +60,6 @@ namespace PilotAssistant
             GeneralUI.Styles();
             if (bDisplayOptions)
                 window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
-            if (bDisplaySettings)
-                settingRect = GUILayout.Window(7549384, settingRect, settingsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
         }
 
         private void optionsWindow(int id)
@@ -78,17 +76,12 @@ namespace PilotAssistant
                 bDisplaySAS = temp;
                 btnLauncher.toggleButton.SetFalse();
             }
-            temp = GUILayout.Toggle(bDisplaySettings, "Settings", Utility.GeneralUI.toggleButton);
-            if (temp != bDisplaySettings)
-            {
-                bDisplaySettings = temp;
-                btnLauncher.toggleButton.SetFalse();
-            }
-        }
-
-        private void settingsWindow(int id)
-        {
-
+            //temp = GUILayout.Toggle(bDisplaySettings, "Settings", Utility.GeneralUI.toggleButton);
+            //if (temp != bDisplaySettings)
+            //{
+            //    bDisplaySettings = temp;
+            //    btnLauncher.toggleButton.SetFalse();
+            //}
         }
     }
 }

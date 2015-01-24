@@ -79,10 +79,11 @@ namespace PilotAssistant
                 Initialise();
 
             PresetManager.loadCraftAsstPreset();
-            print(Utils.GetAsst(PIDList.HdgBank).PGain);
             
             // register vessel
-            FlightData.thisVessel = FlightGlobals.ActiveVessel;
+            if (FlightData.thisVessel == null)
+                FlightData.thisVessel = FlightGlobals.ActiveVessel;
+
             FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
 
@@ -118,8 +119,6 @@ namespace PilotAssistant
 
             PresetManager.saveDefaults();
 
-            print(Utils.GetAsst(PIDList.HdgBank).PGain);
-
             init = true;
         }
 
@@ -128,6 +127,8 @@ namespace PilotAssistant
             FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(vesselController);
             FlightData.thisVessel = v;
             FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(vesselController);
+
+            PresetManager.loadCraftAsstPreset();
         }
 
         public void OnDestroy()
@@ -423,7 +424,7 @@ namespace PilotAssistant
             if (showPIDLimits)
                 window.width = 370;
             else
-                window.width = 233; // why is this this particularly odd number?
+                window.width = 233;
 
             if (bShowHdg)
             {
