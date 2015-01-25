@@ -55,6 +55,7 @@ namespace PilotAssistant
         public void Start()
         {
             instance = this;
+
             StartCoroutine(Initialise());
 
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
@@ -104,7 +105,6 @@ namespace PilotAssistant
                 GeneralUI.InitColors();
                 bInit = true;
             }
-
             PresetManager.loadCraftSSASPreset();
             PresetManager.loadCraftStockPreset();
         }
@@ -117,6 +117,7 @@ namespace PilotAssistant
 
             RenderingManager.RemoveFromPostDrawQueue(5, drawGUI);
             FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(SurfaceSAS);
+            GameEvents.onVesselChange.Remove(vesselSwitch);
         }
 
         public void Update()
