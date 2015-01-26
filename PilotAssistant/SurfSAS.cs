@@ -34,6 +34,8 @@ namespace PilotAssistant
         bool[] bPause = new bool[3]; // pause on a per axis basis
         bool bStockSAS = true;
 
+        float[] fadeReset = new float[3];
+
         float activationFadeRoll = 1;
         float activationFadePitch = 1;
         float activationFadeYaw = 1;
@@ -84,6 +86,8 @@ namespace PilotAssistant
             // wait for SAS to init
             if (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch == null)
                 yield return null;
+
+            fadeReset[0] = fadeReset[1] = fadeReset[2] = 10;
 
             if (!bInit)
             {
@@ -215,11 +219,6 @@ namespace PilotAssistant
                 if ((!bPause[(int)SASList.Pitch] && bActive[(int)SASList.Pitch]) || (!bPause[(int)SASList.Yaw] && bActive[(int)SASList.Yaw]))
                 {
                     state.pitch = (vertResponse * (float)Math.Cos(rollRad) - hrztResponse * (float)Math.Sin(rollRad)) / activationFadePitch;
-                    if (activationFadePitch > 1)
-                        activationFadePitch *= 0.98f; // ~100 physics frames
-                    else
-                        activationFadePitch = 1;
-                
                     state.yaw = (vertResponse * (float)Math.Sin(rollRad) + hrztResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
                 }
 
@@ -237,11 +236,11 @@ namespace PilotAssistant
             Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
             Utils.GetSAS(SASList.Yaw).SetPoint = FlightData.heading;
 
-            activationFadeRoll = 10;
-            activationFadePitch = 10;
-            activationFadeYaw = 10;
-
             rollTarget = FlightData.thisVessel.ReferenceTransform.right;
+
+            activationFadeRoll = fadeReset[(int)SASList.Roll];
+            activationFadePitch = fadeReset[(int)SASList.Pitch];
+            activationFadeYaw = fadeReset[(int)SASList.Yaw];
         }
 
         private void pauseManager()
@@ -253,7 +252,7 @@ namespace PilotAssistant
                 bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = false;
                 if (bActive[(int)SASList.Pitch])
                 {
-                    activationFadePitch = 10;
+                    activationFadePitch = fadeReset[(int)SASList.Pitch];
                     if (!pitchEnum)
                         StartCoroutine(FadeInPitch());
                 }
@@ -266,7 +265,7 @@ namespace PilotAssistant
                 bPause[(int)SASList.Roll] = false;
                 if (bActive[(int)SASList.Roll])
                 {
-                    activationFadeRoll = 10;
+                    activationFadeRoll = fadeReset[(int)SASList.Roll];
                     if (!rollEnum)
                         StartCoroutine(FadeInRoll());
                 }
@@ -279,7 +278,7 @@ namespace PilotAssistant
                 bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = false;
                 if (bActive[(int)SASList.Yaw])
                 {
-                    activationFadeYaw = 10;
+                    activationFadeYaw = fadeReset[(int)SASList.Yaw];
                     if (!yawEnum)
                         StartCoroutine(FadeInYaw());
                 }
@@ -323,10 +322,12 @@ namespace PilotAssistant
                         rollTarget = FlightData.thisVessel.ReferenceTransform.right;
                     else
                         Utils.GetSAS(SASList.Roll).SetPoint = FlightData.roll;
+
+                    print("here");
                 }
-                activationFadePitch = nextFade;
+                activationFadeRoll = nextFade;
             }
-            activationFadePitch = 1;
+            activationFadeRoll = 1;
             rollEnum = false;
         }
 
@@ -424,12 +425,9 @@ namespace PilotAssistant
                         FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Roll).ResponseD(FlightData.roll + 360) / activationFadeRoll;
                     else if (Utils.GetSAS(SASList.Roll).SetPoint - FlightData.roll < -180)
                         FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Roll).ResponseD(FlightData.roll - 360) / activationFadeRoll;
-                }
 
-                if (activationFadeRoll > 1)
-                    activationFadeRoll *= 0.98f; // ~100 physics frames
-                else
-                    activationFadeRoll = 1;
+                    print(FlightData.thisVessel.ctrlState.roll);
+                }
             }
         }
 
@@ -498,9 +496,9 @@ namespace PilotAssistant
             {
                 VesselAutopilot.VesselSAS sas = FlightData.thisVessel.Autopilot.SAS;
 
-                drawPIDValues(sas.pidLockedPitch, "Pitch", (int)SASList.Pitch);
-                drawPIDValues(sas.pidLockedRoll, "Roll", (int)SASList.Roll);
-                drawPIDValues(sas.pidLockedYaw, "Yaw", (int)SASList.Yaw);
+                drawPIDValues(sas.pidLockedPitch, "Pitch", SASList.Pitch);
+                drawPIDValues(sas.pidLockedRoll, "Roll", SASList.Roll);
+                drawPIDValues(sas.pidLockedYaw, "Yaw", SASList.Yaw);
 
 
             }
@@ -519,14 +517,15 @@ namespace PilotAssistant
                 controller.IGain = GeneralUI.labPlusNumBox("Ki:", controller.IGain.ToString("G3"), 45);
                 controller.DGain = GeneralUI.labPlusNumBox("Kd:", controller.DGain.ToString("G3"), 45);
                 controller.Scalar = GeneralUI.labPlusNumBox("Scalar:", controller.Scalar.ToString("G3"), 45);
+                fadeReset[(int)controllerID] = Math.Max((float)GeneralUI.labPlusNumBox("Slide:", fadeReset[(int)controllerID].ToString("G3"), 45), 1);
             }
         }
 
-        private void drawPIDValues(PIDclamp controller, string inputName, int ID)
+        private void drawPIDValues(PIDclamp controller, string inputName, SASList controllerID)
         {
-            stockPIDDisplay[ID] = GUILayout.Toggle(stockPIDDisplay[ID], inputName, GeneralUI.toggleButton);
+            stockPIDDisplay[(int)controllerID] = GUILayout.Toggle(stockPIDDisplay[(int)controllerID], inputName, GeneralUI.toggleButton);
 
-            if (stockPIDDisplay[ID])
+            if (stockPIDDisplay[(int)controllerID])
             {
                 controller.kp = GeneralUI.labPlusNumBox("Kp:", controller.kp.ToString("G3"), 45);
                 controller.ki = GeneralUI.labPlusNumBox("Ki:", controller.ki.ToString("G3"), 45);
