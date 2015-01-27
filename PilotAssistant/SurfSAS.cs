@@ -245,9 +245,9 @@ namespace PilotAssistant
 
         private void pauseManager()
         {
-            if (GameSettings.PITCH_DOWN.GetKeyDown() || GameSettings.PITCH_UP.GetKeyDown())
+            if (GameSettings.PITCH_DOWN.GetKeyDown() || GameSettings.PITCH_UP.GetKeyDown() || !GameSettings.AXIS_PITCH.IsNeutral())
                 bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = true;
-            else if (GameSettings.PITCH_DOWN.GetKeyUp() || GameSettings.PITCH_UP.GetKeyUp())
+            else if (GameSettings.PITCH_DOWN.GetKeyUp() || GameSettings.PITCH_UP.GetKeyUp() || (bPause[(int)SASList.Pitch] && GameSettings.AXIS_PITCH.IsNeutral()))
             {
                 bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = false;
                 if (bActive[(int)SASList.Pitch])
@@ -258,9 +258,9 @@ namespace PilotAssistant
                 }
             }
 
-            if (GameSettings.ROLL_LEFT.GetKeyDown() || GameSettings.ROLL_RIGHT.GetKeyDown())
+            if (GameSettings.ROLL_LEFT.GetKeyDown() || GameSettings.ROLL_RIGHT.GetKeyDown() || !GameSettings.AXIS_ROLL.IsNeutral())
                 bPause[(int)SASList.Roll] = true;
-            else if (GameSettings.ROLL_LEFT.GetKeyUp() || GameSettings.ROLL_RIGHT.GetKeyUp())
+            else if (GameSettings.ROLL_LEFT.GetKeyUp() || GameSettings.ROLL_RIGHT.GetKeyUp() || (bPause[(int)SASList.Roll] && GameSettings.AXIS_ROLL.IsNeutral()))
             {
                 bPause[(int)SASList.Roll] = false;
                 if (bActive[(int)SASList.Roll])
@@ -271,9 +271,9 @@ namespace PilotAssistant
                 }
             }
 
-            if (GameSettings.YAW_LEFT.GetKeyDown() || GameSettings.YAW_RIGHT.GetKeyDown())
+            if (GameSettings.YAW_LEFT.GetKeyDown() || GameSettings.YAW_RIGHT.GetKeyDown() || !GameSettings.AXIS_YAW.IsNeutral())
                 bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = true;
-            else if (GameSettings.YAW_LEFT.GetKeyUp() || GameSettings.YAW_RIGHT.GetKeyUp())
+            else if (GameSettings.YAW_LEFT.GetKeyUp() || GameSettings.YAW_RIGHT.GetKeyUp() || (bPause[(int)SASList.Yaw] && GameSettings.AXIS_YAW.IsNeutral()))
             {
                 bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = false;
                 if (bActive[(int)SASList.Yaw])
@@ -322,8 +322,6 @@ namespace PilotAssistant
                         rollTarget = FlightData.thisVessel.ReferenceTransform.right;
                     else
                         Utils.GetSAS(SASList.Roll).SetPoint = FlightData.roll;
-
-                    print("here");
                 }
                 activationFadeRoll = nextFade;
             }
@@ -425,8 +423,6 @@ namespace PilotAssistant
                         FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Roll).ResponseD(FlightData.roll + 360) / activationFadeRoll;
                     else if (Utils.GetSAS(SASList.Roll).SetPoint - FlightData.roll < -180)
                         FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Roll).ResponseD(FlightData.roll - 360) / activationFadeRoll;
-
-                    print(FlightData.thisVessel.ctrlState.roll);
                 }
             }
         }

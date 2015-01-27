@@ -347,62 +347,43 @@ namespace PilotAssistant
                 bool bFineControl = FlightInputHandler.fetch.precisionMode;
                 if (bHdgActive)
                 {
+                    double hdg = double.Parse(targetHeading);
                     if (GameSettings.YAW_LEFT.GetKey())
-                    {
-                        double hdg = double.Parse(targetHeading);
                         hdg -= bFineControl ? 0.04 / scale : 0.4 * scale;
-                        if (hdg < 0)
-                            hdg += 360;
-                        Utils.GetAsst(PIDList.HdgBank).SetPoint = hdg;
-                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = hdg;
-                        targetHeading = hdg.ToString();
-                    }
                     else if (GameSettings.YAW_RIGHT.GetKey())
-                    {
-                        double hdg = double.Parse(targetHeading);
                         hdg += bFineControl ? 0.04 / scale : 0.4 * scale;
-                        if (hdg > 360)
-                            hdg -= 360;
-                        Utils.GetAsst(PIDList.HdgBank).SetPoint = hdg;
-                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = hdg;
-                        targetHeading = hdg.ToString();
-                    }
+                    else if (!GameSettings.AXIS_YAW.IsNeutral())
+                        hdg += (bFineControl ? 0.04 / scale : 0.4 * scale) * GameSettings.AXIS_YAW.GetAxis();
+                    
+                    if (hdg < 0)
+                        hdg += 360;
+                    else if (hdg > 360)
+                        hdg -= 360;
+                    
+                    Utils.GetAsst(PIDList.HdgBank).SetPoint = hdg;
+                    Utils.GetAsst(PIDList.HdgYaw).SetPoint = hdg;
+                    targetHeading = hdg.ToString();
                 }
 
                 if (bVertActive)
                 {
+                    double vert = double.Parse(targetVert);
                     if (GameSettings.PITCH_DOWN.GetKey())
-                    {
-                        double vert = double.Parse(targetVert);
-                        if (bAltitudeHold)
-                        {
-                            vert -= bFineControl ? 0.4 / scale : 4 * scale;
-                            if (vert < 0)
-                                vert = 0;
-                            Utils.GetAsst(PIDList.Altitude).SetPoint = vert;
-                        }
-                        else
-                        {
-                            vert -= bFineControl ? 0.04 / scale : 0.4 * scale;
-                            Utils.GetAsst(PIDList.VertSpeed).SetPoint = vert;
-                        }
-                        targetVert = vert.ToString();
-                    }
+                        vert -= bFineControl ? 0.04 / scale : 0.4 * scale;
                     else if (GameSettings.PITCH_UP.GetKey())
+                        vert += bFineControl ? 0.04 / scale : 0.4 * scale;
+                    else if (!GameSettings.AXIS_PITCH.IsNeutral())
+                        vert += (bFineControl ? 0.04 / scale : 0.4 * scale) * GameSettings.AXIS_PITCH.GetAxis();
+
+                    if (bAltitudeHold)
                     {
-                        double vert = double.Parse(targetVert);
-                        if (bAltitudeHold)
-                        {
-                            vert += bFineControl ? 0.4 / scale : 4 * scale;
-                            Utils.GetAsst(PIDList.Altitude).SetPoint = vert;
-                        }
-                        else
-                        {
-                            vert += bFineControl ? 0.04 / scale : 0.4 * scale;
-                            Utils.GetAsst(PIDList.VertSpeed).SetPoint = vert;
-                        }
-                        targetVert = vert.ToString();
+                        vert = Math.Max(vert * 10, 0);
+                        Utils.GetAsst(PIDList.Altitude).SetPoint = vert;
                     }
+                    else
+                        Utils.GetAsst(PIDList.VertSpeed).SetPoint = vert;
+
+                    targetVert = vert.ToString();
                 }
             }
         }
@@ -650,11 +631,12 @@ namespace PilotAssistant
                     }
                     else
                     { // used when response * -1 is used to get the correct output
-                        controller.OutMax = -1 * GeneralUI.labPlusNumBox(string.Format("Min {0}{1}:", outputName, outputUnits), (-controller.OutMax).ToString("G3"));
+                        controller.OutMin = -1 * GeneralUI.labPlusNumBox(string.Format("Max {0}{1}:", outputName, outputUnits), (-controller.OutMin).ToString("G3"));
                         if (doublesided)
-                            controller.OutMin = -1 * GeneralUI.labPlusNumBox(string.Format("Max {0}{1}:", outputName, outputUnits), (-controller.OutMin).ToString("G3"));
+                            controller.OutMax = -1 * GeneralUI.labPlusNumBox(string.Format("Min {0}{1}:", outputName, outputUnits), (-controller.OutMax).ToString("G3"));
                         else
-                            controller.OutMin = -controller.OutMax;
+                            controller.OutMax = -controller.OutMin;
+
                         controller.ClampUpper = -1 * GeneralUI.labPlusNumBox("I Clamp Lower:", (-controller.ClampUpper).ToString("G3"));
                         controller.ClampLower = -1 * GeneralUI.labPlusNumBox("I Clamp Upper:", (-controller.ClampLower).ToString("G3"));
                     }
