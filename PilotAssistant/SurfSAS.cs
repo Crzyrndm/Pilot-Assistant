@@ -91,9 +91,9 @@ namespace PilotAssistant
 
             if (!bInit)
             {
-                SASControllers[(int)SASList.Pitch] = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
-                SASControllers[(int)SASList.Roll] = new PID.PID_Controller(0.1, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
-                SASControllers[(int)SASList.Yaw] = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -0.2, 0.2, 3);
+                SASControllers[(int)SASList.Pitch] = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -1, 1, 3);
+                SASControllers[(int)SASList.Roll] = new PID.PID_Controller(0.1, 0.0, 0.06, -1, 1, -1, 1, 3);
+                SASControllers[(int)SASList.Yaw] = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -1, 1, 3);
 
                 if (!PresetManager.Instance.craftPresetList.ContainsKey("default"))
                     PresetManager.Instance.craftPresetList.Add("default", new CraftPreset("default", null, new PresetSAS(SASControllers, "SSAS"), new PresetSAS(FlightData.thisVessel.Autopilot.SAS, "stock")));
@@ -153,8 +153,6 @@ namespace PilotAssistant
                 ActivitySwitch(false);
                 setStockSAS(bStockSAS);
             }
-
-            pauseManager(); // manage activation of SAS axes depending on user input
         }
 
         public void drawGUI()
@@ -195,6 +193,8 @@ namespace PilotAssistant
             {
                 FlightData.updateAttitude();
 
+                pauseManager(state);
+
                 float vertResponse = 0;
                 if (bActive[(int)SASList.Pitch])
                     vertResponse = -1 * (float)Utils.GetSAS(SASList.Pitch).ResponseD(FlightData.pitch);
@@ -216,12 +216,11 @@ namespace PilotAssistant
 
                 double rollRad = Math.PI / 180 * FlightData.roll;
 
-                if ((!bPause[(int)SASList.Pitch] && bActive[(int)SASList.Pitch]) || (!bPause[(int)SASList.Yaw] && bActive[(int)SASList.Yaw]))
-                {
+                if ((!bPause[(int)SASList.Pitch] && bActive[(int)SASList.Pitch]) && (!bPause[(int)SASList.Yaw] && bActive[(int)SASList.Yaw]))
+                {                    
                     state.pitch = (vertResponse * (float)Math.Cos(rollRad) - hrztResponse * (float)Math.Sin(rollRad)) / activationFadePitch;
                     state.yaw = (vertResponse * (float)Math.Sin(rollRad) + hrztResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
                 }
-
                 rollResponse();
             }
         }
@@ -243,11 +242,11 @@ namespace PilotAssistant
             activationFadeYaw = fadeReset[(int)SASList.Yaw];
         }
 
-        private void pauseManager()
+        private void pauseManager(FlightCtrlState state)
         {
-            if (GameSettings.PITCH_DOWN.GetKeyDown() || GameSettings.PITCH_UP.GetKeyDown() || !GameSettings.AXIS_PITCH.IsNeutral())
-                bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = true;
-            else if (GameSettings.PITCH_DOWN.GetKeyUp() || GameSettings.PITCH_UP.GetKeyUp() || (bPause[(int)SASList.Pitch] && GameSettings.AXIS_PITCH.IsNeutral()))
+            if (state.pitch != 0 && !bPause[(int)SASList.Pitch])
+                bPause[(int)SASList.Pitch] = true;
+            else if (state.pitch == 0 && bPause[(int)SASList.Pitch])
             {
                 bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = false;
                 if (bActive[(int)SASList.Pitch])
@@ -257,10 +256,10 @@ namespace PilotAssistant
                         StartCoroutine(FadeInPitch());
                 }
             }
-
-            if (GameSettings.ROLL_LEFT.GetKeyDown() || GameSettings.ROLL_RIGHT.GetKeyDown() || !GameSettings.AXIS_ROLL.IsNeutral())
+            
+            if (state.roll != 0 && !bPause[(int)SASList.Roll])
                 bPause[(int)SASList.Roll] = true;
-            else if (GameSettings.ROLL_LEFT.GetKeyUp() || GameSettings.ROLL_RIGHT.GetKeyUp() || (bPause[(int)SASList.Roll] && GameSettings.AXIS_ROLL.IsNeutral()))
+            else if (state.roll == 0 && bPause[(int)SASList.Roll])
             {
                 bPause[(int)SASList.Roll] = false;
                 if (bActive[(int)SASList.Roll])
@@ -271,9 +270,9 @@ namespace PilotAssistant
                 }
             }
 
-            if (GameSettings.YAW_LEFT.GetKeyDown() || GameSettings.YAW_RIGHT.GetKeyDown() || !GameSettings.AXIS_YAW.IsNeutral())
-                bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = true;
-            else if (GameSettings.YAW_LEFT.GetKeyUp() || GameSettings.YAW_RIGHT.GetKeyUp() || (bPause[(int)SASList.Yaw] && GameSettings.AXIS_YAW.IsNeutral()))
+            if (state.yaw != 0 && !bPause[(int)SASList.Yaw])
+                bPause[(int)SASList.Yaw] = true;
+            else if (state.yaw == 0 && bPause[(int)SASList.Yaw])
             {
                 bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = false;
                 if (bActive[(int)SASList.Yaw])
