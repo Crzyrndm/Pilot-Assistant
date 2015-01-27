@@ -368,6 +368,9 @@ namespace PilotAssistant
                 if (bVertActive)
                 {
                     double vert = double.Parse(targetVert);
+                    if (bAltitudeHold)
+                        vert /= 10;
+
                     if (GameSettings.PITCH_DOWN.GetKey())
                         vert -= bFineControl ? 0.04 / scale : 0.4 * scale;
                     else if (GameSettings.PITCH_UP.GetKey())
