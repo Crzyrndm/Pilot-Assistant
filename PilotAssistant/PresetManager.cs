@@ -165,11 +165,12 @@ namespace PilotAssistant
 
         public static double[] controllerSASGains(ConfigNode node)
         {
-            double[] gains = new double[4];
+            double[] gains = new double[5];
             double.TryParse(node.GetValue("PGain"), out gains[0]);
             double.TryParse(node.GetValue("IGain"), out gains[1]);
             double.TryParse(node.GetValue("DGain"), out gains[2]);
             double.TryParse(node.GetValue("Scalar"), out gains[3]);
+            double.TryParse(node.GetValue("Slide"), out gains[4]);
 
             return gains;
         }
@@ -222,6 +223,7 @@ namespace PilotAssistant
             node.AddValue("IGain", preset.PIDGains[index, 1]);
             node.AddValue("DGain", preset.PIDGains[index, 2]);
             node.AddValue("Scalar", preset.PIDGains[index, 3]);
+            node.AddValue("Slide", preset.PIDGains[index, 4]);
             return node;
         }
 
@@ -317,7 +319,7 @@ namespace PilotAssistant
             }
             
             Instance.SASPresetList.Add(new PresetSAS(Utility.FlightData.thisVessel.Autopilot.SAS, name));
-            Instance.activeSASPreset = Instance.SASPresetList.Last();
+            Instance.activeStockSASPreset = Instance.SASPresetList.Last();
             saveToFile();
             name = "";
         }
@@ -349,6 +351,7 @@ namespace PilotAssistant
                 c[(int)s].IGain = p.PIDGains[(int)s, 1];
                 c[(int)s].DGain = p.PIDGains[(int)s, 2];
                 c[(int)s].Scalar = p.PIDGains[(int)s, 3];
+                SurfSAS.Instance.fadeReset[(int)s] = (float)p.PIDGains[(int)s, 4];
             }
 
             Instance.activeSASPreset = p;

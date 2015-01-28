@@ -34,7 +34,7 @@ namespace PilotAssistant
         bool[] bPause = new bool[3]; // pause on a per axis basis
         bool bStockSAS = true;
 
-        float[] fadeReset = new float[3];
+        public float[] fadeReset = new float[3];
 
         float activationFadeRoll = 1;
         float activationFadePitch = 1;
@@ -63,9 +63,6 @@ namespace PilotAssistant
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
             FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
             GameEvents.onVesselChange.Add(vesselSwitch);
-
-            bPause[0] = bPause[1] = bPause[2] = false;
-            ActivitySwitch(false);
         }
 
         private void vesselSwitch(Vessel v)
@@ -86,7 +83,9 @@ namespace PilotAssistant
             // wait for SAS to init
             if (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch == null)
                 yield return null;
-
+            
+            bPause[0] = bPause[1] = bPause[2] = false;
+            ActivitySwitch(false);
             fadeReset[0] = fadeReset[1] = fadeReset[2] = 10;
 
             if (!bInit)

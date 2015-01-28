@@ -8,7 +8,7 @@ namespace PilotAssistant.Presets
     class PresetSAS
     {
         public string name;
-        public double[,] PIDGains = new double[3,4];
+        public double[,] PIDGains = new double[3,5];
         public bool bStockSAS = true;
 
         public PresetSAS(List<PID.PID_Controller> controllers, string Name) // used for adding a new preset, can clone the current values
@@ -22,6 +22,7 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = controllers[(int)s].IGain;
                 PIDGains[(int)s, 2] = controllers[(int)s].DGain;
                 PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
+                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeReset[(int)s];
             }
         }
 
@@ -35,6 +36,7 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = controllers[(int)s].IGain;
                 PIDGains[(int)s, 2] = controllers[(int)s].DGain;
                 PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
+                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeReset[(int)s];
             }
         }
 
@@ -67,6 +69,7 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = gains[(int)s][1];
                 PIDGains[(int)s, 2] = gains[(int)s][2];
                 PIDGains[(int)s, 3] = gains[(int)s][3];
+                PIDGains[(int)s, 4] = gains[(int)s][4];
             }
         }
 
@@ -78,6 +81,7 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = controllers[(int)s].IGain;
                 PIDGains[(int)s, 2] = controllers[(int)s].DGain;
                 PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
+                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeReset[(int)s];
             }
         }
 
@@ -89,6 +93,7 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = controllers[(int)s].IGain;
                 PIDGains[(int)s, 2] = controllers[(int)s].DGain;
                 PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
+                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeReset[(int)s];
             }
         }
 
