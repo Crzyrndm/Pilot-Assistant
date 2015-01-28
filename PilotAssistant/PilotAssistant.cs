@@ -107,7 +107,7 @@ namespace PilotAssistant
             controllers[(int)PIDList.Altitude] = new PID.PID_Controller(0.15, 0.01, 0, -50, 50, -0.01, 0.01);
             controllers[(int)PIDList.VertSpeed] = new PID.PID_Controller(2, 0.8, 2, -10, 10, -5, 5);
             controllers[(int)PIDList.Elevator] = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 1, -0.4, 0.4);
-            controllers[(int)PIDList.Throttle] = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 0, -0.4, 0.4);
+            controllers[(int)PIDList.Throttle] = new PID.PID_Controller(0.05, 0.005, 0.1, -1, 0, -1, 0.4); // output is inverted, throttle can't go below zero
 
             // PID inits
             Utils.GetAsst(PIDList.Aileron).InMax = 180;
@@ -684,6 +684,9 @@ namespace PilotAssistant
                 GUILayout.EndHorizontal();
 
                 drawPIDvalues(PIDList.Throttle, "Velocity", "m/s", FlightData.thisVessel.srfSpeed, 2, "Throttle", "", true, true, false);
+                // can't have people bugging things out now can we...
+                Utils.GetAsst(PIDList.Throttle).OutMin = Math.Min(Math.Max(Utils.GetAsst(PIDList.Throttle).OutMin, -1), 0);
+                Utils.GetAsst(PIDList.Throttle).OutMax = Math.Min(Utils.GetAsst(PIDList.Throttle).OutMax, 0);
             }
 
             #endregion
