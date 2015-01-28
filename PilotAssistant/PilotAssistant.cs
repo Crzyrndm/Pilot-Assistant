@@ -18,7 +18,8 @@ namespace PilotAssistant
         Rudder,
         Altitude,
         VertSpeed,
-        Elevator
+        Elevator,
+        Throttle
     }
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
@@ -31,7 +32,7 @@ namespace PilotAssistant
         }
 
         static bool init = false; // create the default the first time through
-        public static PID_Controller[] controllers = new PID_Controller[7];
+        public static PID_Controller[] controllers = new PID_Controller[8];
 
         bool bPause = false;
 
@@ -47,6 +48,9 @@ namespace PilotAssistant
         // Wing leveller / Heading control
         bool bWingLeveller = false;
         bool bWasWingLeveller = false;
+        // Throttle control
+        bool bThrottleActive = false;
+        bool bWasThrottleActive = false;
 
         Rect window = new Rect(10, 50, 10, 10);
 
@@ -54,16 +58,17 @@ namespace PilotAssistant
         Vector2 scrollbarVert = Vector2.zero;
 
         bool showPresets = false;
-
         bool showPIDLimits = false;
         bool showControlSurfaces = false;
 
         string targetVert = "0";
         string targetHeading = "0";
+        string targetVelocity = "0";
 
         bool bShowSettings = true;
         bool bShowHdg = true;
         bool bShowVert = true;
+        bool bShowThrottle = true;
 
         float hdgScrollHeight;
         float vertScrollHeight;
@@ -102,11 +107,13 @@ namespace PilotAssistant
             controllers[(int)PIDList.Altitude] = new PID.PID_Controller(0.15, 0.01, 0, -50, 50, -0.01, 0.01);
             controllers[(int)PIDList.VertSpeed] = new PID.PID_Controller(2, 0.8, 2, -10, 10, -5, 5);
             controllers[(int)PIDList.Elevator] = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 1, -0.4, 0.4);
+            controllers[(int)PIDList.Throttle] = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 0, -0.4, 0.4);
 
             // PID inits
             Utils.GetAsst(PIDList.Aileron).InMax = 180;
             Utils.GetAsst(PIDList.Aileron).InMin = -180;
             Utils.GetAsst(PIDList.Altitude).InMin = 0;
+            Utils.GetAsst(PIDList.Throttle).InMin = 0;
 
             // Set up a default preset that can be easily returned to
             if (PresetManager.Instance.craftPresetList.ContainsKey("default"))
@@ -158,6 +165,9 @@ namespace PilotAssistant
 
             if (bWingLeveller != bWasWingLeveller)
                 wingToggle();
+
+            if (bThrottleActive != bWasThrottleActive)
+                throttleToggle();
         }
 
         public void drawGUI()
@@ -224,6 +234,10 @@ namespace PilotAssistant
 
                 Utils.GetAsst(PIDList.Elevator).SetPoint = -Utils.GetAsst(PIDList.VertSpeed).ResponseD(FlightData.thisVessel.verticalSpeed);
                 state.pitch = -Utils.GetAsst(PIDList.Elevator).ResponseF(FlightData.AoA);
+            }
+            if (bThrottleActive)
+            {
+                state.mainThrottle = -Utils.GetAsst(PIDList.Throttle).ResponseF(FlightData.thisVessel.srfSpeed);
             }
         }
 
@@ -298,6 +312,16 @@ namespace PilotAssistant
                 Utils.GetAsst(PIDList.HdgBank).SetPoint = FlightData.heading;
                 Utils.GetAsst(PIDList.HdgYaw).SetPoint = FlightData.heading;
                 targetHeading = Utils.GetAsst(PIDList.HdgBank).SetPoint.ToString("N2");
+            }
+        }
+
+        private void throttleToggle()
+        {
+            bWasThrottleActive = bThrottleActive;
+            if (bThrottleActive)
+            {
+                Utils.GetAsst(PIDList.Throttle).SetPoint = FlightData.thisVessel.srfSpeed;
+                targetVelocity = Utils.GetAsst(PIDList.Throttle).SetPoint.ToString("N1");
             }
         }
 
@@ -387,6 +411,25 @@ namespace PilotAssistant
                         Utils.GetAsst(PIDList.VertSpeed).SetPoint = vert;
 
                     targetVert = vert.ToString();
+                }
+
+                if (bThrottleActive)
+                {
+                    double velocity = double.Parse(targetVelocity);
+
+                    if (GameSettings.THROTTLE_UP.GetKey())
+                        velocity += bFineControl ? 0.4 / scale : 4 * scale;
+                    else if (GameSettings.THROTTLE_DOWN.GetKey())
+                        velocity -= bFineControl ? 0.4 / scale : 4 * scale;
+
+                    if (GameSettings.THROTTLE_CUTOFF.GetKeyDown())
+                        velocity = 0;
+                    if (GameSettings.THROTTLE_FULL.GetKeyDown())
+                        velocity = 2400;
+
+                    Utils.GetAsst(PIDList.Throttle).SetPoint = velocity;
+
+                    targetVelocity = Math.Max(velocity, 0).ToString();
                 }
             }
         }
@@ -596,6 +639,54 @@ namespace PilotAssistant
             }
             #endregion
 
+            #region Throttle GUI
+
+            GUILayout.BeginHorizontal();
+            // button background
+            GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
+            if (GUILayout.Button("Throttle Control", GUILayout.Width(186)))
+            {
+                bShowThrottle = !bShowThrottle;
+            }
+            // Toggle colour
+            if (bThrottleActive)
+                GUI.backgroundColor = GeneralUI.ActiveBackground;
+            else
+                GUI.backgroundColor = GeneralUI.InActiveBackground;
+
+            toggleCheck = GUILayout.Toggle(bThrottleActive, "");
+            if (toggleCheck != bThrottleActive)
+            {
+                bThrottleActive = toggleCheck;
+                if (!toggleCheck)
+                    bPause = false;
+                SurfSAS.setStockSAS(false);
+                SurfSAS.ActivitySwitch(false);
+            }
+            // reset colour
+            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+            GUILayout.EndHorizontal();
+
+            if (bShowThrottle)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Target Velocity:", GUILayout.Width(118)))
+                {
+                    ScreenMessages.PostScreenMessage("Target Velocity updated");
+
+                    double newVal;
+                    double.TryParse(targetVelocity, out newVal);
+                    Utils.GetAsst(PIDList.Throttle).SetPoint = newVal;
+
+                    bThrottleActive = bWasThrottleActive = true; // skip the toggle check so value isn't overwritten
+                }
+                targetVelocity = GUILayout.TextField(targetVelocity, GUILayout.Width(78));
+                GUILayout.EndHorizontal();
+
+                drawPIDvalues(PIDList.Throttle, "Velocity", "m/s", FlightData.thisVessel.srfSpeed, 2, "Throttle", "", true, true, false);
+            }
+
+            #endregion
             GUI.DragWindow();
         }
 
