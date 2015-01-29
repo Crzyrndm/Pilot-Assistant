@@ -32,7 +32,7 @@ namespace PilotAssistant
         bool bArmed = false;
         bool[] bActive = new bool[3]; // activate on per axis basis
         bool[] bPause = new bool[3]; // pause on a per axis basis
-        bool bStockSAS = true;
+        public bool bStockSAS = true;
 
         public float[] fadeReset = new float[3];
 
@@ -95,13 +95,13 @@ namespace PilotAssistant
                 SASControllers[(int)SASList.Yaw] = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -1, 1, 3);
 
                 if (!PresetManager.Instance.craftPresetList.ContainsKey("default"))
-                    PresetManager.Instance.craftPresetList.Add("default", new CraftPreset("default", null, new PresetSAS(SASControllers, "SSAS"), new PresetSAS(FlightData.thisVessel.Autopilot.SAS, "stock")));
+                    PresetManager.Instance.craftPresetList.Add("default", new CraftPreset("default", null, new SASPreset(SASControllers, "SSAS"), new SASPreset(FlightData.thisVessel.Autopilot.SAS, "stock"), bStockSAS));
                 else
                 {
-                    if (PresetManager.Instance.craftPresetList["default"].SSAS == null)
-                        PresetManager.Instance.craftPresetList["default"].SSAS = new PresetSAS(SASControllers, "SSAS");
-                    if (PresetManager.Instance.craftPresetList["default"].Stock == null)
-                        PresetManager.Instance.craftPresetList["default"].Stock = new PresetSAS(FlightData.thisVessel.Autopilot.SAS, "stock");
+                    if (PresetManager.Instance.craftPresetList["default"].SSASPreset == null)
+                        PresetManager.Instance.craftPresetList["default"].SSASPreset = new SASPreset(SASControllers, "SSAS");
+                    if (PresetManager.Instance.craftPresetList["default"].StockPreset == null)
+                        PresetManager.Instance.craftPresetList["default"].StockPreset = new SASPreset(FlightData.thisVessel.Autopilot.SAS, "stock");
                 }
                 PresetManager.saveDefaults();
 
@@ -156,9 +156,6 @@ namespace PilotAssistant
 
         public void drawGUI()
         {
-            if (GeneralUI.UISkin == null)
-                GeneralUI.UISkin = UnityEngine.GUI.skin;
-
             GUI.skin = GeneralUI.UISkin;
             GeneralUI.Styles();
 
@@ -563,11 +560,11 @@ namespace PilotAssistant
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
             if (GUILayout.Button("Reset to Defaults"))
-                PresetManager.loadSASPreset(PresetManager.Instance.craftPresetList["default"].SSAS);
+                PresetManager.loadSASPreset(PresetManager.Instance.craftPresetList["default"].SSASPreset);
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
-            foreach (PresetSAS p in PresetManager.Instance.SASPresetList)
+            foreach (SASPreset p in PresetManager.Instance.SASPresetList)
             {
                 if (p.bStockSAS)
                     continue;
@@ -603,11 +600,11 @@ namespace PilotAssistant
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
             if (GUILayout.Button("Reset to Defaults"))
-                PresetManager.loadStockSASPreset(PresetManager.Instance.craftPresetList["default"].Stock);
+                PresetManager.loadStockSASPreset(PresetManager.Instance.craftPresetList["default"].StockPreset);
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
-            foreach (PresetSAS p in PresetManager.Instance.SASPresetList)
+            foreach (SASPreset p in PresetManager.Instance.SASPresetList)
             {
                 if (!p.bStockSAS)
                     continue;

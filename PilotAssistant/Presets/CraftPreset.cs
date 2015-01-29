@@ -8,16 +8,18 @@ namespace PilotAssistant.Presets
     class CraftPreset
     {
         string name;
-        PresetPA pa;
-        PresetSAS ssas;
-        PresetSAS stock;
+        AsstPreset pa;
+        SASPreset ssas;
+        SASPreset stock;
+        bool sasMode; // true = stock, false = ssas
 
-        public CraftPreset(string Name, PresetPA PA, PresetSAS SSAS, PresetSAS stockSAS)
+        public CraftPreset(string Name, AsstPreset PA, SASPreset SSAS, SASPreset stockSAS, bool Mode)
         {
             name = Name;
             pa = PA;
             ssas = SSAS;
             stock = stockSAS;
+            sasMode = Mode;
         }
 
         public string Name
@@ -26,27 +28,33 @@ namespace PilotAssistant.Presets
             set { name = value; }
         }
 
-        public PresetPA PresetPA
+        public AsstPreset AsstPreset
         {
             get { return pa; }
             set { pa = value; }
         }
 
-        public PresetSAS SSAS
+        public SASPreset SSASPreset
         {
             get { return ssas; }
             set { ssas = value; }
         }
 
-        public PresetSAS Stock
+        public SASPreset StockPreset
         {
             get { return stock; }
             set { stock = value; }
         }
 
-        public bool dead
+        public bool SASMode
         {
-            get { return PresetPA == null && SSAS == null && Stock == null; }
+            get { return sasMode; }
+            set { sasMode = value; }
+        }
+
+        public bool Dead
+        {
+            get { return AsstPreset == null && SSASPreset == null && StockPreset == null; }
         }
     }
 }

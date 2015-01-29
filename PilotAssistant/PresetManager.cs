@@ -23,12 +23,12 @@ namespace PilotAssistant
         }
 
 
-        public List<PresetPA> PAPresetList = new List<PresetPA>();
-        public List<PresetSAS> SASPresetList = new List<PresetSAS>();
+        public List<AsstPreset> PAPresetList = new List<AsstPreset>();
+        public List<SASPreset> SASPresetList = new List<SASPreset>();
 
-        public PresetPA activePAPreset = null;
-        public PresetSAS activeSASPreset = null;
-        public PresetSAS activeStockSASPreset = null;
+        public AsstPreset activePAPreset = null;
+        public SASPreset activeSASPreset = null;
+        public SASPreset activeStockSASPreset = null;
 
         public Dictionary<string, CraftPreset> craftPresetList = new Dictionary<string, CraftPreset>();
 
@@ -45,10 +45,16 @@ namespace PilotAssistant
             saveToFile();
         }
 
+        public void OnGUI()
+        {
+            if (GeneralUI.UISkin == null)
+                GeneralUI.UISkin = UnityEngine.GUI.skin;
+        }
+
         public static void loadPresetsFromFile()
         {
-            PresetPA asst = null;
-            PresetSAS SSAS = null, stock = null;
+            AsstPreset asst = null;
+            SASPreset SSAS = null, stock = null;
 
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("PIDPreset"))
             {
@@ -65,9 +71,9 @@ namespace PilotAssistant
                 gains.Add(controllerGains(node.GetNode("ElevatorController")));
 
                 if (node.GetValue("name") != "default" && !instance.PAPresetList.Any(p => p.name == node.GetValue("name")))
-                    instance.PAPresetList.Add(new PresetPA(gains, node.GetValue("name")));
+                    instance.PAPresetList.Add(new AsstPreset(gains, node.GetValue("name")));
                 else
-                    asst = new PresetPA(gains, node.GetValue("name"));
+                    asst = new AsstPreset(gains, node.GetValue("name"));
             }
 
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes("SASPreset"))
@@ -81,13 +87,13 @@ namespace PilotAssistant
                 gains.Add(controllerSASGains(node.GetNode("ElevatorController")));
 
                 if ((node.GetValue("name") != "SSAS" && node.GetValue("name") != "stock") && !instance.SASPresetList.Any(p=> p.name == node.GetValue("name")))
-                    instance.SASPresetList.Add(new PresetSAS(gains, node.GetValue("name"), bool.Parse(node.GetValue("stock"))));
+                    instance.SASPresetList.Add(new SASPreset(gains, node.GetValue("name"), bool.Parse(node.GetValue("stock"))));
                 else
                 {
                     if (node.GetValue("name") == "SSAS")
-                        SSAS = new PresetSAS(gains, node.GetValue("name"), false);
+                        SSAS = new SASPreset(gains, node.GetValue("name"), false);
                     else
-                        stock = new PresetSAS(gains, node.GetValue("name"), true);
+                        stock = new SASPreset(gains, node.GetValue("name"), true);
                 }
             }
             
@@ -95,15 +101,19 @@ namespace PilotAssistant
             {
                 if (node == null || instance.craftPresetList.ContainsKey(node.GetValue("name")))
                     continue;
+                
+                bool bStock;
+                bool.TryParse(node.GetValue("StockSAS"), out bStock);
 
                 if (node.GetValue("name") == "default")
-                    instance.craftPresetList.Add("default", new CraftPreset("default", asst, SSAS, stock));
+                    instance.craftPresetList.Add("default", new CraftPreset("default", asst, SSAS, stock, bStock));
                 else
                 {
                     CraftPreset cP = new CraftPreset(node.GetValue("name"),
                                             instance.PAPresetList.FirstOrDefault(p => p.name == node.GetValue("pilot")),
                                             instance.SASPresetList.FirstOrDefault(p => p.name == node.GetValue("ssas")),
-                                            instance.SASPresetList.FirstOrDefault(p => p.name == node.GetValue("stock")));
+                                            instance.SASPresetList.FirstOrDefault(p => p.name == node.GetValue("stock")),
+                                            bStock);
 
                     instance.craftPresetList.Add(cP.Name, cP);
                 }
@@ -114,17 +124,17 @@ namespace PilotAssistant
         {
             ConfigNode node = new ConfigNode();
             node.AddValue("dummy", "do not delete me");
-            foreach (PresetPA p in instance.PAPresetList)
+            foreach (AsstPreset p in instance.PAPresetList)
             {
                 node.AddNode(PAPresetNode(p));
             }
-            foreach (PresetSAS p in instance.SASPresetList)
+            foreach (SASPreset p in instance.SASPresetList)
             {
                 node.AddNode(SASPresetNode(p));
             }
             foreach (KeyValuePair<string, CraftPreset> cP in instance.craftPresetList)
             {
-                if (cP.Value == null || cP.Key == "default" || cP.Value.dead)
+                if (cP.Value == null || cP.Key == "default" || cP.Value.Dead)
                     continue;
                 node.AddNode(CraftNode(cP.Value));
             }
@@ -137,12 +147,12 @@ namespace PilotAssistant
             ConfigNode node = new ConfigNode();
             CraftPreset cP = instance.craftPresetList["default"];
 
-            if (cP.PresetPA != null)
-                node.AddNode(PAPresetNode(cP.PresetPA));
-            if (cP.SSAS != null)
-                node.AddNode(SASPresetNode(cP.SSAS));
-            if (cP.Stock != null)
-                node.AddNode(SASPresetNode(cP.Stock));
+            if (cP.AsstPreset != null)
+                node.AddNode(PAPresetNode(cP.AsstPreset));
+            if (cP.SSASPreset != null)
+                node.AddNode(SASPresetNode(cP.SSASPreset));
+            if (cP.StockPreset != null)
+                node.AddNode(SASPresetNode(cP.StockPreset));
 
             node.AddNode(CraftNode(cP));
             node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + "GameData/Pilot Assistant/Defaults.cfg");
@@ -175,7 +185,7 @@ namespace PilotAssistant
             return gains;
         }
 
-        public static ConfigNode PAPresetNode(PresetPA preset)
+        public static ConfigNode PAPresetNode(AsstPreset preset)
         {
             ConfigNode node = new ConfigNode("PIDPreset");
             node.AddValue("name", preset.name);
@@ -190,7 +200,7 @@ namespace PilotAssistant
             return node;
         }
 
-        public static ConfigNode SASPresetNode(PresetSAS preset)
+        public static ConfigNode SASPresetNode(SASPreset preset)
         {
             ConfigNode node = new ConfigNode("SASPreset");
             node.AddValue("name", preset.name);
@@ -202,7 +212,7 @@ namespace PilotAssistant
             return node;
         }
 
-        public static ConfigNode PIDnode(string name, int index, PresetPA preset)
+        public static ConfigNode PIDnode(string name, int index, AsstPreset preset)
         {
             ConfigNode node = new ConfigNode(name);
             node.AddValue("PGain", preset.PIDGains[index][0]);
@@ -216,7 +226,7 @@ namespace PilotAssistant
             return node;
         }
 
-        public static ConfigNode PIDnode(string name, int index, PresetSAS preset)
+        public static ConfigNode PIDnode(string name, int index, SASPreset preset)
         {
             ConfigNode node = new ConfigNode(name);
             node.AddValue("PGain", preset.PIDGains[index, 0]);
@@ -232,12 +242,12 @@ namespace PilotAssistant
             ConfigNode node = new ConfigNode("CraftPreset");
             if (!string.IsNullOrEmpty(preset.Name))
                 node.AddValue("name", preset.Name);
-            if (preset.PresetPA != null && !string.IsNullOrEmpty(preset.PresetPA.name))
-                node.AddValue("pilot", preset.PresetPA.name);
-            if (preset.SSAS != null && !string.IsNullOrEmpty(preset.SSAS.name))
-                node.AddValue("ssas", preset.SSAS.name);
-            if (preset.Stock != null && !string.IsNullOrEmpty(preset.Stock.name))
-                node.AddValue("stock", preset.Stock.name);
+            if (preset.AsstPreset != null && !string.IsNullOrEmpty(preset.AsstPreset.name))
+                node.AddValue("pilot", preset.AsstPreset.name);
+            if (preset.SSASPreset != null && !string.IsNullOrEmpty(preset.SSASPreset.name))
+                node.AddValue("ssas", preset.SSASPreset.name);
+            if (preset.StockPreset != null && !string.IsNullOrEmpty(preset.StockPreset.name))
+                node.AddValue("stock", preset.StockPreset.name);
             return node;
         }
 
@@ -246,7 +256,7 @@ namespace PilotAssistant
             if (name == "")
                 return;
             
-            foreach (PresetPA p in Instance.PAPresetList)
+            foreach (AsstPreset p in Instance.PAPresetList)
             {
                 if (name == p.name)
                 {
@@ -256,20 +266,24 @@ namespace PilotAssistant
             }
 
             if (Instance.craftPresetList.ContainsKey(FlightData.thisVessel.vesselName))
-                Instance.craftPresetList[FlightData.thisVessel.vesselName].PresetPA = new PresetPA(controllers, name);
+                Instance.craftPresetList[FlightData.thisVessel.vesselName].AsstPreset = new AsstPreset(controllers, name);
             else
             {
                 Instance.craftPresetList.Add(FlightData.thisVessel.vesselName,
-                    new CraftPreset(FlightData.thisVessel.vesselName, new PresetPA(PilotAssistant.controllers, name), PresetManager.Instance.activeSASPreset, PresetManager.Instance.activeStockSASPreset));
+                                                new CraftPreset(FlightData.thisVessel.vesselName,
+                                                    new AsstPreset(PilotAssistant.controllers, name),
+                                                    Instance.activeSASPreset == Instance.craftPresetList["default"].SSASPreset ? null : Instance.activeSASPreset,
+                                                    Instance.activeStockSASPreset == Instance.craftPresetList["default"].StockPreset ? null : Instance.activeStockSASPreset,
+                                                    SurfSAS.Instance.bStockSAS));
             }
 
-            Instance.PAPresetList.Add(new PresetPA(PilotAssistant.controllers, name));
+            Instance.PAPresetList.Add(new AsstPreset(controllers, name));
             name = "";
-            Instance.activePAPreset = PresetManager.Instance.PAPresetList[PresetManager.Instance.PAPresetList.Count - 1];
+            Instance.activePAPreset = PresetManager.Instance.PAPresetList.Last();
             saveToFile();
         }
 
-        public static void loadPAPreset(PresetPA p)
+        public static void loadPAPreset(AsstPreset p)
         {
             PID_Controller[] c = PilotAssistant.controllers;
 
@@ -295,7 +309,7 @@ namespace PilotAssistant
             saveToFile();
         }
 
-        public static void deletePAPreset(PresetPA p)
+        public static void deletePAPreset(AsstPreset p)
         {
             Messaging.postMessage("Deleted preset " + p.name);
             if (Instance.activePAPreset == p)
@@ -311,14 +325,12 @@ namespace PilotAssistant
         {
             if (string.IsNullOrEmpty(name))
                 return;
-
-            foreach (PresetSAS p in Instance.SASPresetList)
-            {
-                if (name == p.name)
-                    return;
-            }
             
-            Instance.SASPresetList.Add(new PresetSAS(Utility.FlightData.thisVessel.Autopilot.SAS, name));
+            string nameTest = name;
+            if (Instance.SASPresetList.Any(p => p.name == nameTest))
+                return;
+            
+            Instance.SASPresetList.Add(new SASPreset(Utility.FlightData.thisVessel.Autopilot.SAS, name));
             Instance.activeStockSASPreset = Instance.SASPresetList.Last();
             saveToFile();
             name = "";
@@ -329,19 +341,19 @@ namespace PilotAssistant
             if (string.IsNullOrEmpty(name))
                 return;
 
-            foreach (PresetSAS p in Instance.SASPresetList)
+            foreach (SASPreset p in Instance.SASPresetList)
             {
                 if (name == p.name)
                     return;
             }
 
-            Instance.SASPresetList.Add(new PresetSAS(controllers, name));
+            Instance.SASPresetList.Add(new SASPreset(controllers, name));
             Instance.activeSASPreset = Instance.SASPresetList.Last();
             saveToFile();
             name = "";
         }
 
-        public static void loadSASPreset(PresetSAS p)
+        public static void loadSASPreset(SASPreset p)
         {
             PID_Controller[] c = SurfSAS.SASControllers;
 
@@ -357,7 +369,7 @@ namespace PilotAssistant
             Instance.activeSASPreset = p;
         }
 
-        public static void deleteSASPreset(PresetSAS p)
+        public static void deleteSASPreset(SASPreset p)
         {
             if (Instance.activeSASPreset == p && !p.bStockSAS)
                 Instance.activeSASPreset = null;
@@ -370,13 +382,13 @@ namespace PilotAssistant
             {
                 if (!p.bStockSAS)
                 {
-                    if (cp.Value != null && cp.Value.SSAS == p)
-                        cp.Value.SSAS = null;
+                    if (cp.Value != null && cp.Value.SSASPreset == p)
+                        cp.Value.SSASPreset = null;
                 }
                 else
                 {
-                    if (cp.Value != null && cp.Value.Stock == p)
-                        cp.Value.Stock = null;
+                    if (cp.Value != null && cp.Value.StockPreset == p)
+                        cp.Value.StockPreset = null;
                 }
             }
 
@@ -392,7 +404,7 @@ namespace PilotAssistant
             saveToFile();
         }
 
-        public static void loadStockSASPreset(PresetSAS p)
+        public static void loadStockSASPreset(SASPreset p)
         {
             FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[(int)SASList.Pitch, 0];
             FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[(int)SASList.Pitch, 1];
@@ -414,26 +426,38 @@ namespace PilotAssistant
 
         public static void loadCraftAsstPreset()
         {
-            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].PresetPA != null)
-                loadPAPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].PresetPA);
+            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].AsstPreset != null)
+                loadPAPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].AsstPreset);
             else
-                loadPAPreset(instance.craftPresetList["default"].PresetPA);
+                loadPAPreset(instance.craftPresetList["default"].AsstPreset);
         }
 
         public static void loadCraftSSASPreset()
         {
-            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SSAS != null)
-                loadSASPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SSAS);
+            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SSASPreset != null)
+                loadSASPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SSASPreset);
             else
-                loadSASPreset(instance.craftPresetList["default"].SSAS);
+                loadSASPreset(instance.craftPresetList["default"].SSASPreset);
+
+            // sas mode
+            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName))
+                SurfSAS.Instance.bStockSAS = instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SASMode;
+            else
+                SurfSAS.Instance.bStockSAS = instance.craftPresetList["default"].SASMode;
         }
 
         public static void loadCraftStockPreset()
         {
-            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].Stock != null)
-                loadStockSASPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].Stock);
+            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].StockPreset != null)
+                loadStockSASPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].StockPreset);
             else
-                loadStockSASPreset(instance.craftPresetList["default"].Stock);
+                loadStockSASPreset(instance.craftPresetList["default"].StockPreset);
+
+            // sas mode
+            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName))
+                SurfSAS.Instance.bStockSAS = instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SASMode;
+            else
+                SurfSAS.Instance.bStockSAS = instance.craftPresetList["default"].SASMode;
         }
     }
 }

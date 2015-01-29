@@ -5,13 +5,13 @@ using System.Text;
 
 namespace PilotAssistant.Presets
 {
-    class PresetSAS
+    class SASPreset
     {
         public string name;
         public double[,] PIDGains = new double[3,5];
         public bool bStockSAS = true;
 
-        public PresetSAS(List<PID.PID_Controller> controllers, string Name) // used for adding a new preset, can clone the current values
+        public SASPreset(List<PID.PID_Controller> controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
             bStockSAS = false;
@@ -26,7 +26,7 @@ namespace PilotAssistant.Presets
             }
         }
 
-        public PresetSAS(PID.PID_Controller[] controllers, string Name) // used for adding a new preset, can clone the current values
+        public SASPreset(PID.PID_Controller[] controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
             bStockSAS = false;
@@ -40,7 +40,7 @@ namespace PilotAssistant.Presets
             }
         }
 
-        public PresetSAS(VesselAutopilot.VesselSAS sas, string Name) // used for adding a new stock preset
+        public SASPreset(VesselAutopilot.VesselSAS sas, string Name) // used for adding a new stock preset
         {
             name = Name;
             bStockSAS = true;
@@ -59,7 +59,7 @@ namespace PilotAssistant.Presets
             }
         }
 
-        public PresetSAS(List<double[]> gains, string Name, bool stockSAS) // used for loading presets from file
+        public SASPreset(List<double[]> gains, string Name, bool stockSAS) // used for loading presets from file
         {
             name = Name;
             bStockSAS = stockSAS;

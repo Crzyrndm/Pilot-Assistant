@@ -76,6 +76,11 @@ namespace PilotAssistant
         string newPresetName = "";
         Rect presetWindow = new Rect(0, 0, 200, 10);
 
+        public void Awake()
+        {
+
+        }
+
         public void Start()
         {
             instance = this;
@@ -92,9 +97,6 @@ namespace PilotAssistant
             FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
 
-            // Init UI
-            GeneralUI.InitColors();
-
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
         }
 
@@ -107,7 +109,7 @@ namespace PilotAssistant
             controllers[(int)PIDList.Altitude] = new PID.PID_Controller(0.15, 0.01, 0, -50, 50, -0.01, 0.01);
             controllers[(int)PIDList.VertSpeed] = new PID.PID_Controller(2, 0.8, 2, -10, 10, -5, 5);
             controllers[(int)PIDList.Elevator] = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 1, -0.4, 0.4);
-            controllers[(int)PIDList.Throttle] = new PID.PID_Controller(0.05, 0.005, 0.1, -1, 0, -1, 0.4); // output is inverted, throttle can't go below zero
+            controllers[(int)PIDList.Throttle] = new PID.PID_Controller(0.2, 0.08, 0.1, -1, 0, -1, 0.4); // output is inverted, throttle can't go below zero
 
             // PID inits
             Utils.GetAsst(PIDList.Aileron).InMax = 180;
@@ -118,11 +120,11 @@ namespace PilotAssistant
             // Set up a default preset that can be easily returned to
             if (PresetManager.Instance.craftPresetList.ContainsKey("default"))
             {
-                if (PresetManager.Instance.craftPresetList["default"].PresetPA == null)
-                    PresetManager.Instance.craftPresetList["default"].PresetPA = new PresetPA(controllers, "default");
+                if (PresetManager.Instance.craftPresetList["default"].AsstPreset == null)
+                    PresetManager.Instance.craftPresetList["default"].AsstPreset = new AsstPreset(controllers, "default");
             }
             else
-                PresetManager.Instance.craftPresetList.Add("default", new CraftPreset("default", new PresetPA(controllers, "default"), null, null));
+                PresetManager.Instance.craftPresetList.Add("default", new CraftPreset("default", new AsstPreset(controllers, "default"), null, null, true));
 
             PresetManager.saveDefaults();
 
@@ -174,9 +176,6 @@ namespace PilotAssistant
         {
             if (!AppLauncherFlight.bDisplayAssistant)
                 return;
-
-            if (GeneralUI.UISkin == null)
-                GeneralUI.UISkin = UnityEngine.GUI.skin;
 
             Draw();
         }
@@ -336,6 +335,8 @@ namespace PilotAssistant
             {
                 bHdgWasActive = false; // reset heading/vert lock on unpausing
                 bVertWasActive = false;
+                bWasThrottleActive = false; // reset target speed on unpausing
+
                 bPause = !bPause;
                 if (!bPause)
                 {
@@ -358,10 +359,12 @@ namespace PilotAssistant
             if (mod && Input.GetKeyDown(KeyCode.X))
             {
                 Utils.GetAsst(PIDList.VertSpeed).SetPoint = 0;
+                Utils.GetAsst(PIDList.Throttle).SetPoint = FlightData.thisVessel.srfSpeed;
                 bAltitudeHold = false;
                 bWasAltitudeHold = false;
                 bWingLeveller = true;
                 targetVert = "0";
+                targetVelocity = FlightData.thisVessel.srfSpeed.ToString("G2");
                 Messaging.statusMessage(4);
             }
 
@@ -422,7 +425,7 @@ namespace PilotAssistant
                     else if (GameSettings.THROTTLE_DOWN.GetKey())
                         velocity -= bFineControl ? 0.4 / scale : 4 * scale;
 
-                    if (GameSettings.THROTTLE_CUTOFF.GetKeyDown())
+                    if (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey())
                         velocity = 0;
                     if (GameSettings.THROTTLE_FULL.GetKeyDown())
                         velocity = 2400;
@@ -683,7 +686,7 @@ namespace PilotAssistant
                 targetVelocity = GUILayout.TextField(targetVelocity, GUILayout.Width(78));
                 GUILayout.EndHorizontal();
 
-                drawPIDvalues(PIDList.Throttle, "Velocity", "m/s", FlightData.thisVessel.srfSpeed, 2, "Throttle", "", true, true, false);
+                drawPIDvalues(PIDList.Throttle, "Velocity", "m/s", FlightData.thisVessel.srfSpeed, 2, "Throttle", "", true);
                 // can't have people bugging things out now can we...
                 Utils.GetAsst(PIDList.Throttle).OutMin = Math.Min(Math.Max(Utils.GetAsst(PIDList.Throttle).OutMin, -1), 0);
                 Utils.GetAsst(PIDList.Throttle).OutMax = Math.Min(Utils.GetAsst(PIDList.Throttle).OutMax, 0);
@@ -770,11 +773,11 @@ namespace PilotAssistant
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
             if (GUILayout.Button("Reset to Defaults"))
-                PresetManager.loadPAPreset(PresetManager.Instance.craftPresetList["default"].PresetPA);
+                PresetManager.loadPAPreset(PresetManager.Instance.craftPresetList["default"].AsstPreset);
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
-            foreach (PresetPA p in PresetManager.Instance.PAPresetList)
+            foreach (AsstPreset p in PresetManager.Instance.PAPresetList)
             {
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(p.name))

@@ -9,24 +9,24 @@ namespace PilotAssistant.Presets
     /// <summary>
     /// Holds all the PID tuning values for the 7 (or more if required) controllers involved.
     /// </summary>
-    class PresetPA
+    class AsstPreset
     {
         public string name;
         public List<double[]> PIDGains = new List<double[]>();
 
-        public PresetPA(List<PID_Controller> controllers, string Name) // used for adding a new preset, can clone the current values
+        public AsstPreset(List<PID_Controller> controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
             Update(controllers);
         }
 
-        public PresetPA(PID_Controller[] controllers, string Name) // used for adding a new preset, can clone the current values
+        public AsstPreset(PID_Controller[] controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
             Update(controllers);
         }
 
-        public PresetPA(List<double[]> gains, string Name) // used for loading presets from file
+        public AsstPreset(List<double[]> gains, string Name) // used for loading presets from file
         {
             name = Name;
             PIDGains = gains;        
