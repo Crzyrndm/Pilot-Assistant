@@ -134,7 +134,6 @@ namespace PilotAssistant
                 if (ActivityCheck())
                 {
                     ActivitySwitch(false);
-                    setStockSAS(false);
                 }
             }
 
