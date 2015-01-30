@@ -368,6 +368,13 @@ namespace PilotAssistant
                 Messaging.statusMessage(4);
             }
 
+            if (Input.GetKeyDown(KeyCode.Keypad9))
+                bHdgActive = !bHdgActive;
+            if (Input.GetKeyDown(KeyCode.Keypad6))
+                bVertActive = !bVertActive;
+            if (Input.GetKeyDown(KeyCode.Keypad3))
+                bThrottleActive = !bThrottleActive;
+
             if (!IsPaused())
             {
                 double scale = mod ? 10 : 1;

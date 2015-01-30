@@ -130,6 +130,7 @@ namespace PilotAssistant
             if (mod && GameSettings.SAS_TOGGLE.GetKeyDown())
             {
                 bArmed = !bArmed;
+                bStockSAS = false;
                 if (ActivityCheck())
                 {
                     ActivitySwitch(false);
@@ -152,6 +153,9 @@ namespace PilotAssistant
                 ActivitySwitch(false);
                 setStockSAS(bStockSAS);
             }
+
+            if (GameSettings.SAS_HOLD.GetKeyDown())
+                updateTarget();
         }
 
         public void drawGUI()
