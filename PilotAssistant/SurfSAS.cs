@@ -215,7 +215,7 @@ namespace PilotAssistant
 
                 double rollRad = Math.PI / 180 * FlightData.roll;
 
-                if ((!bPause[(int)SASList.Pitch] && bActive[(int)SASList.Pitch]) && (!bPause[(int)SASList.Yaw] && bActive[(int)SASList.Yaw]))
+                if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Yaw]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Yaw]))
                 {                    
                     state.pitch = (vertResponse * (float)Math.Cos(rollRad) - hrztResponse * (float)Math.Sin(rollRad)) / activationFadePitch;
                     state.yaw = (vertResponse * (float)Math.Sin(rollRad) + hrztResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
@@ -244,10 +244,12 @@ namespace PilotAssistant
         private void pauseManager(FlightCtrlState state)
         {
             if (state.pitch != 0 && !bPause[(int)SASList.Pitch])
-                bPause[(int)SASList.Pitch] = true;
+                bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = true;
             else if (state.pitch == 0 && bPause[(int)SASList.Pitch])
             {
-                bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = false;
+                if (state.yaw == 0)
+                    bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = false;
+
                 if (bActive[(int)SASList.Pitch])
                 {
                     activationFadePitch = fadeReset[(int)SASList.Pitch];
@@ -270,10 +272,12 @@ namespace PilotAssistant
             }
 
             if (state.yaw != 0 && !bPause[(int)SASList.Yaw])
-                bPause[(int)SASList.Yaw] = true;
+                bPause[(int)SASList.Yaw] = bPause[(int)SASList.Pitch]= true;
             else if (state.yaw == 0 && bPause[(int)SASList.Yaw])
             {
-                bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = false;
+                if (state.pitch == 0)
+                    bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = false;
+
                 if (bActive[(int)SASList.Yaw])
                 {
                     activationFadeYaw = fadeReset[(int)SASList.Yaw];
@@ -469,7 +473,7 @@ namespace PilotAssistant
 
                 if (bArmed)
                 {
-                    Utils.GetSAS(SASList.Pitch).SetPoint = Utils.Clamp((float)GeneralUI.TogPlusNumBox("Pitch:", ref bActive[(int)SASList.Pitch], FlightData.pitch, Utils.GetSAS(SASList.Pitch).SetPoint, 80), -80, 80);
+                    Utils.GetSAS(SASList.Pitch).SetPoint = Utils.Clamp((float)GeneralUI.TogPlusNumBox("Pitch:", ref bActive[(int)SASList.Pitch], FlightData.pitch, Utils.GetSAS(SASList.Pitch).SetPoint, 80), -90, 90);
                     Utils.GetSAS(SASList.Yaw).SetPoint = GeneralUI.TogPlusNumBox("Heading:", ref bActive[(int)SASList.Yaw], FlightData.heading, Utils.GetSAS(SASList.Yaw).SetPoint, 80, 60, 360, 0);
                     if (!rollState) // editable
                         Utils.GetSAS(SASList.Roll).SetPoint = GeneralUI.TogPlusNumBox("Roll:", ref bActive[(int)SASList.Roll], FlightData.roll, Utils.GetSAS(SASList.Roll).SetPoint, 80, 60, 180, -180);
@@ -645,10 +649,5 @@ namespace PilotAssistant
                 fadeYawMult = Utils.Clamp(value, 0, 1);
             }
         }
-
-        //public bool stockDefault
-        //{
-
-        //}
     }
 }

@@ -119,9 +119,9 @@ namespace PilotAssistant
                     continue;
 
                 List<double[]> gains = new List<double[]>();
+                gains.Add(controllerSASGains(node.GetNode(elevCtrlr)));
                 gains.Add(controllerSASGains(node.GetNode(aileronCtrlr)));
                 gains.Add(controllerSASGains(node.GetNode(rudderCtrlr)));
-                gains.Add(controllerSASGains(node.GetNode(elevCtrlr)));
 
                 if ((node.GetValue("name") != ssasDefault && node.GetValue("name") != stockDefault) && !instance.SASPresetList.Any(p=> p.name == node.GetValue("name")))
                     instance.SASPresetList.Add(new SASPreset(gains, node.GetValue("name"), bool.Parse(node.GetValue("stock"))));

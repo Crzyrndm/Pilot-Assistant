@@ -63,9 +63,9 @@ namespace PilotAssistant
 
         string targetVert = "0";
         string targetHeading = "0";
-        string targetVelocity = "0";
+        string targetSpeed = "0";
 
-        bool bShowSettings = true;
+        bool bShowSettings = false;
         bool bShowHdg = true;
         bool bShowVert = true;
         bool bShowThrottle = true;
@@ -94,7 +94,7 @@ namespace PilotAssistant
             if (FlightData.thisVessel == null)
                 FlightData.thisVessel = FlightGlobals.ActiveVessel;
 
-            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(vesselController);
+            FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
 
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
@@ -133,9 +133,9 @@ namespace PilotAssistant
 
         private void vesselSwitch(Vessel v)
         {
-            FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(vesselController);
+            FlightData.thisVessel.OnPostAutopilotUpdate -= new FlightInputCallback(vesselController);
             FlightData.thisVessel = v;
-            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(vesselController);
+            FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(vesselController);
 
             PresetManager.loadCraftAsstPreset();
         }
@@ -189,9 +189,6 @@ namespace PilotAssistant
 
             FlightData.updateAttitude();
 
-            if (IsPaused())
-                return;
-            
             // Heading Control
             if (bHdgActive)
             {
@@ -221,7 +218,7 @@ namespace PilotAssistant
                     Utils.GetAsst(PIDList.Aileron).SetPoint = 0;
                     Utils.GetAsst(PIDList.Rudder).SetPoint = 0;
                 }
-                state.roll = (float)Utils.Clamp(Utils.GetAsst(PIDList.Aileron).ResponseF(FlightData.roll) + state.roll, -1, 1);
+                state.roll = Utils.GetAsst(PIDList.Aileron).ResponseF(FlightData.roll);
                 state.yaw = Utils.GetAsst(PIDList.Rudder).ResponseF(FlightData.yaw);
             }
 
@@ -241,7 +238,7 @@ namespace PilotAssistant
         }
 
 
-        public static bool IsPaused() { return Instance.bPause || SASMonitor(); }
+        public static bool IsPaused() { return Instance.bPause; }
 
         private void hdgToggle()
         {
@@ -320,7 +317,7 @@ namespace PilotAssistant
             if (bThrottleActive)
             {
                 Utils.GetAsst(PIDList.Throttle).SetPoint = FlightData.thisVessel.srfSpeed;
-                targetVelocity = Utils.GetAsst(PIDList.Throttle).SetPoint.ToString("N1");
+                targetSpeed = Utils.GetAsst(PIDList.Throttle).SetPoint.ToString("N1");
             }
         }
 
@@ -364,22 +361,22 @@ namespace PilotAssistant
                 bWasAltitudeHold = false;
                 bWingLeveller = true;
                 targetVert = "0";
-                targetVelocity = FlightData.thisVessel.srfSpeed.ToString("G2");
+                targetSpeed = FlightData.thisVessel.srfSpeed.ToString("G2");
                 Messaging.statusMessage(4);
             }
 
-            if (Input.GetKeyDown(KeyCode.Keypad9))
+            if (Input.GetKeyDown(KeyCode.Keypad9) && GameSettings.MODIFIER_KEY.GetKey())
                 bHdgActive = !bHdgActive;
-            if (Input.GetKeyDown(KeyCode.Keypad6))
+            if (Input.GetKeyDown(KeyCode.Keypad6) && GameSettings.MODIFIER_KEY.GetKey())
                 bVertActive = !bVertActive;
-            if (Input.GetKeyDown(KeyCode.Keypad3))
+            if (Input.GetKeyDown(KeyCode.Keypad3) && GameSettings.MODIFIER_KEY.GetKey())
                 bThrottleActive = !bThrottleActive;
 
             if (!IsPaused())
             {
                 double scale = mod ? 10 : 1;
                 bool bFineControl = FlightInputHandler.fetch.precisionMode;
-                if (bHdgActive)
+                if (bHdgActive && (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || !GameSettings.AXIS_YAW.IsNeutral()))
                 {
                     double hdg = double.Parse(targetHeading);
                     if (GameSettings.YAW_LEFT.GetKey())
@@ -388,18 +385,18 @@ namespace PilotAssistant
                         hdg += bFineControl ? 0.04 / scale : 0.4 * scale;
                     else if (!GameSettings.AXIS_YAW.IsNeutral())
                         hdg += (bFineControl ? 0.04 / scale : 0.4 * scale) * GameSettings.AXIS_YAW.GetAxis();
-                    
+
                     if (hdg < 0)
                         hdg += 360;
                     else if (hdg > 360)
                         hdg -= 360;
-                    
+
                     Utils.GetAsst(PIDList.HdgBank).SetPoint = hdg;
                     Utils.GetAsst(PIDList.HdgYaw).SetPoint = hdg;
                     targetHeading = hdg.ToString();
                 }
 
-                if (bVertActive)
+                if (bVertActive && (GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || !GameSettings.AXIS_PITCH.IsNeutral()))
                 {
                     double vert = double.Parse(targetVert);
                     if (bAltitudeHold)
@@ -423,9 +420,9 @@ namespace PilotAssistant
                     targetVert = vert.ToString();
                 }
 
-                if (bThrottleActive)
+                if (bThrottleActive && (GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey()) || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown())
                 {
-                    double velocity = double.Parse(targetVelocity);
+                    double velocity = double.Parse(targetSpeed);
 
                     if (GameSettings.THROTTLE_UP.GetKey())
                         velocity += bFineControl ? 0.4 / scale : 4 * scale;
@@ -439,7 +436,7 @@ namespace PilotAssistant
 
                     Utils.GetAsst(PIDList.Throttle).SetPoint = velocity;
 
-                    targetVelocity = Math.Max(velocity, 0).ToString();
+                    targetSpeed = Math.Max(velocity, 0).ToString();
                 }
             }
         }
@@ -506,7 +503,7 @@ namespace PilotAssistant
             if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
                 AppLauncherFlight.bDisplayAssistant = false;
 
-            if (bPause || SASMonitor())
+            if (IsPaused())
                 GUILayout.Box("CONTROL PAUSED", GeneralUI.labelAlertStyle);
 
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
@@ -558,10 +555,8 @@ namespace PilotAssistant
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button("Target Hdg: ", GUILayout.Width(98)))
                     {
-                        ScreenMessages.PostScreenMessage("Target Heading updated");
                         double newHdg;
-                        double.TryParse(targetHeading, out newHdg);
-                        if (newHdg >= 0 && newHdg <= 360)
+                        if (double.TryParse(targetHeading, out newHdg) && newHdg >= 0 && newHdg <= 360)
                         {
                             Utils.GetAsst(PIDList.HdgBank).SetPoint = newHdg;
                             Utils.GetAsst(PIDList.HdgYaw).SetPoint = newHdg;
@@ -685,12 +680,12 @@ namespace PilotAssistant
                     ScreenMessages.PostScreenMessage("Target Velocity updated");
 
                     double newVal;
-                    double.TryParse(targetVelocity, out newVal);
+                    double.TryParse(targetSpeed, out newVal);
                     Utils.GetAsst(PIDList.Throttle).SetPoint = newVal;
 
                     bThrottleActive = bWasThrottleActive = true; // skip the toggle check so value isn't overwritten
                 }
-                targetVelocity = GUILayout.TextField(targetVelocity, GUILayout.Width(78));
+                targetSpeed = GUILayout.TextField(targetSpeed, GUILayout.Width(78));
                 GUILayout.EndHorizontal();
 
                 drawPIDvalues(PIDList.Throttle, "Velocity", "m/s", FlightData.thisVessel.srfSpeed, 2, "Throttle", "", true);
