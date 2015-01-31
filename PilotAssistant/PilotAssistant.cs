@@ -189,6 +189,9 @@ namespace PilotAssistant
 
             FlightData.updateAttitude();
 
+            if (IsPaused())
+                return;
+
             // Heading Control
             if (bHdgActive)
             {
