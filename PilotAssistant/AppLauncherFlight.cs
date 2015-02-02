@@ -11,17 +11,15 @@ namespace PilotAssistant
     {
         private ApplicationLauncherButton btnLauncher;
         private Rect window;
-        private Rect settingRect;
 
         public static bool bDisplayOptions = false;
         public static bool bDisplayAssistant = false;
         public static bool bDisplaySAS = false;
-        public static bool bDisplaySettings = false;
 
         void Awake()
         {
             GameEvents.onGUIApplicationLauncherReady.Add(this.OnAppLauncherReady);
-            window = new Rect(Screen.width - 180, 40, 30, 30);
+            window = new Rect(10, 50, 30, 30);
         }
 
         void OnDestroy()
@@ -58,30 +56,30 @@ namespace PilotAssistant
         private void OnGUI()
         {
             GeneralUI.Styles();
+
+            print(btnLauncher.transform.position);
+
             if (bDisplayOptions)
                 window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
         }
 
         private void optionsWindow(int id)
         {
+            if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
+                btnLauncher.SetFalse();
+
             bool temp = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", Utility.GeneralUI.toggleButton);
             if (temp != bDisplayAssistant)
             {
                 bDisplayAssistant = temp;
-                btnLauncher.toggleButton.SetFalse();
             }
             temp = GUILayout.Toggle(bDisplaySAS, "SAS Systems", Utility.GeneralUI.toggleButton);
             if (temp != bDisplaySAS)
             {
                 bDisplaySAS = temp;
-                btnLauncher.toggleButton.SetFalse();
             }
-            //temp = GUILayout.Toggle(bDisplaySettings, "Settings", Utility.GeneralUI.toggleButton);
-            //if (temp != bDisplaySettings)
-            //{
-            //    bDisplaySettings = temp;
-            //    btnLauncher.toggleButton.SetFalse();
-            //}
+
+            GUI.DragWindow();
         }
     }
 }

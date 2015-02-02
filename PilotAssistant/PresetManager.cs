@@ -133,7 +133,7 @@ namespace PilotAssistant
                         stock = new SASPreset(gains, node.GetValue("name"), true);
                 }
             }
-            
+
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(craftPreset))
             {
                 if (node == null || instance.craftPresetList.ContainsKey(node.GetValue("name")))
@@ -149,7 +149,7 @@ namespace PilotAssistant
                     CraftPreset cP = new CraftPreset(node.GetValue("name"),
                                             instance.PAPresetList.FirstOrDefault(p => p.name == node.GetValue(craftAsst)),
                                             instance.SASPresetList.FirstOrDefault(p => p.name == node.GetValue(craftSSAS)),
-                                            instance.SASPresetList.FirstOrDefault(p => p.name == node.GetValue(craftSSAS)),
+                                            instance.SASPresetList.FirstOrDefault(p => p.name == node.GetValue(craftStock)),
                                             bStock);
 
                     instance.craftPresetList.Add(cP.Name, cP);
@@ -341,6 +341,19 @@ namespace PilotAssistant
 
             Instance.activePAPreset = p;
             Messaging.postMessage("Loaded preset " + p.name);
+
+            if (Instance.craftPresetList.ContainsKey(FlightData.thisVessel.vesselName) && Instance.activePAPreset != Instance.craftPresetList[craftDefault].AsstPreset)
+                Instance.craftPresetList[FlightData.thisVessel.vesselName].AsstPreset = Instance.activePAPreset;
+            else if (!Instance.craftPresetList.ContainsKey(FlightData.thisVessel.vesselName) && Instance.activePAPreset != Instance.craftPresetList[craftDefault].AsstPreset)
+            {
+                Instance.craftPresetList.Add(FlightData.thisVessel.vesselName,
+                                                new CraftPreset(FlightData.thisVessel.vesselName,
+                                                    Instance.activePAPreset == Instance.craftPresetList[craftDefault].AsstPreset ? null : Instance.activePAPreset,
+                                                    Instance.activeSASPreset == Instance.craftPresetList[craftDefault].SSASPreset ? null : Instance.activeSASPreset,
+                                                    Instance.activeStockSASPreset == Instance.craftPresetList[craftDefault].StockPreset ? null : Instance.activeStockSASPreset,
+                                                    SurfSAS.Instance.bStockSAS));
+            }
+            saveToFile();
         }
 
         public static void updatePAPreset(PID_Controller[] controllers)
@@ -407,6 +420,19 @@ namespace PilotAssistant
             }
 
             Instance.activeSASPreset = p;
+
+            if (Instance.craftPresetList.ContainsKey(FlightData.thisVessel.vesselName) && Instance.activeSASPreset != Instance.craftPresetList[craftDefault].SSASPreset)
+                Instance.craftPresetList[FlightData.thisVessel.vesselName].SSASPreset = Instance.activeSASPreset;
+            else if (!Instance.craftPresetList.ContainsKey(FlightData.thisVessel.vesselName) && Instance.activeSASPreset != Instance.craftPresetList[craftDefault].SSASPreset)
+            {
+                Instance.craftPresetList.Add(FlightData.thisVessel.vesselName,
+                                                new CraftPreset(FlightData.thisVessel.vesselName,
+                                                    Instance.activePAPreset == Instance.craftPresetList[craftDefault].AsstPreset ? null : Instance.activePAPreset,
+                                                    Instance.activeSASPreset == Instance.craftPresetList[craftDefault].SSASPreset ? null : Instance.activeSASPreset,
+                                                    Instance.activeStockSASPreset == Instance.craftPresetList[craftDefault].StockPreset ? null : Instance.activeStockSASPreset,
+                                                    SurfSAS.Instance.bStockSAS));
+            }
+            saveToFile();
         }
 
         public static void deleteSASPreset(SASPreset p)
@@ -462,6 +488,19 @@ namespace PilotAssistant
             FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)SASList.Yaw, 3];
 
             Instance.activeStockSASPreset = p;
+
+            if (Instance.craftPresetList.ContainsKey(FlightData.thisVessel.vesselName) && Instance.activeStockSASPreset != Instance.craftPresetList[craftDefault].StockPreset)
+                Instance.craftPresetList[FlightData.thisVessel.vesselName].StockPreset = Instance.activeStockSASPreset;
+            else if (!Instance.craftPresetList.ContainsKey(FlightData.thisVessel.vesselName) && Instance.activeStockSASPreset != Instance.craftPresetList[craftDefault].StockPreset)
+            {
+                Instance.craftPresetList.Add(FlightData.thisVessel.vesselName,
+                                                new CraftPreset(FlightData.thisVessel.vesselName,
+                                                    Instance.activePAPreset == Instance.craftPresetList[craftDefault].AsstPreset ? null : Instance.activePAPreset,
+                                                    Instance.activeSASPreset == Instance.craftPresetList[craftDefault].SSASPreset ? null : Instance.activeSASPreset,
+                                                    Instance.activeStockSASPreset == Instance.craftPresetList[craftDefault].StockPreset ? null : Instance.activeStockSASPreset,
+                                                    SurfSAS.Instance.bStockSAS));
+            }
+            saveToFile();
         }
 
         public static void loadCraftAsstPreset()

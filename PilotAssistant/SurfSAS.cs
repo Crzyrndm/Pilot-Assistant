@@ -46,7 +46,7 @@ namespace PilotAssistant
 
         bool rollState = false; // false = surface mode, true = vector mode
 
-        Rect SASwindow = new Rect(350, 50, 200, 30);
+        Rect SASwindow = new Rect(10, 505, 200, 30);
 
         bool[] stockPIDDisplay = { true, false, false };
 
@@ -86,7 +86,6 @@ namespace PilotAssistant
             
             bPause[0] = bPause[1] = bPause[2] = false;
             ActivitySwitch(false);
-            fadeReset[0] = fadeReset[1] = fadeReset[2] = 10;
 
             if (!bInit)
             {

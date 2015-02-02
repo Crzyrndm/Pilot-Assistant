@@ -52,7 +52,7 @@ namespace PilotAssistant
         bool bThrottleActive = false;
         bool bWasThrottleActive = false;
 
-        Rect window = new Rect(10, 50, 10, 10);
+        Rect window = new Rect(10, 130, 10, 10);
 
         Vector2 scrollbarHdg = Vector2.zero;
         Vector2 scrollbarVert = Vector2.zero;
@@ -78,7 +78,7 @@ namespace PilotAssistant
 
         public void Awake()
         {
-
+            
         }
 
         public void Start()
