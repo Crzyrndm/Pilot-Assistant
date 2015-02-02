@@ -57,8 +57,6 @@ namespace PilotAssistant
         {
             GeneralUI.Styles();
 
-            print(btnLauncher.transform.position);
-
             if (bDisplayOptions)
                 window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
         }
