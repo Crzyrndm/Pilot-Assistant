@@ -76,10 +76,14 @@ namespace PilotAssistant
         string newPresetName = "";
         Rect presetWindow = new Rect(0, 0, 200, 10);
 
-        public void Awake()
-        {
-            
-        }
+        public static double[] defaultHdgBankGains = { 2, 0.1, 0, -30, 30, -0.5, 0.5, 1 };
+        public static double[] defaultHdgYawGains = { 0, 0, 0.01, -2, 2, -0.5, 0.5, 1 };
+        public static double[] defaultAileronGains = { 0.02, 0.005, 0.01, -1, 1, -0.4, 0.4, 1 };
+        public static double[] defaultRudderGains = { 0.1, 0.08, 0.05, -1, 1, -0.4, 0.4, 1 };
+        public static double[] defaultAltitudeGains = { 0.15, 0.01, 0, -50, 50, -0.01, 0.01, 1 };
+        public static double[] defaultVSpeedGains = { 2, 0.8, 2, -10, 10, -5, 5, 1 };
+        public static double[] defaultElevatorGains = { 0.05, 0.01, 0.1, -1, 1, -0.4, 0.4, 1 };
+        public static double[] defaultThrottleGains = { 0.2, 0.08, 0.1, -1, 0, -1, 0.4, 1 };
 
         public void Start()
         {
@@ -88,11 +92,16 @@ namespace PilotAssistant
             if (!init)
                 Initialise();
 
-            PresetManager.loadCraftAsstPreset();
-            
             // register vessel
             if (FlightData.thisVessel == null)
                 FlightData.thisVessel = FlightGlobals.ActiveVessel;
+
+            PresetManager.loadCraftAsstPreset();
+
+            Utils.GetAsst(PIDList.Aileron).InMax = 180;
+            Utils.GetAsst(PIDList.Aileron).InMin = -180;
+            Utils.GetAsst(PIDList.Altitude).InMin = 0;
+            Utils.GetAsst(PIDList.Throttle).InMin = 0;
 
             FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
@@ -102,20 +111,14 @@ namespace PilotAssistant
 
         void Initialise()
         {
-            controllers[(int)PIDList.HdgBank] = new PID.PID_Controller(2, 0.1, 0, -30, 30, -0.5, 0.5);
-            controllers[(int)PIDList.HdgYaw] = new PID.PID_Controller(0, 0, 0.01, -2, 2, -0.5, 0.5);
-            controllers[(int)PIDList.Aileron] = new PID.PID_Controller(0.02, 0.005, 0.01, -1, 1, -0.4, 0.4);
-            controllers[(int)PIDList.Rudder] = new PID.PID_Controller(0.1, 0.08, 0.05, -1, 1, -0.4, 0.4);
-            controllers[(int)PIDList.Altitude] = new PID.PID_Controller(0.15, 0.01, 0, -50, 50, -0.01, 0.01);
-            controllers[(int)PIDList.VertSpeed] = new PID.PID_Controller(2, 0.8, 2, -10, 10, -5, 5);
-            controllers[(int)PIDList.Elevator] = new PID.PID_Controller(0.05, 0.01, 0.1, -1, 1, -0.4, 0.4);
-            controllers[(int)PIDList.Throttle] = new PID.PID_Controller(0.2, 0.08, 0.1, -1, 0, -1, 0.4); // output is inverted, throttle can't go below zero
-
-            // PID inits
-            Utils.GetAsst(PIDList.Aileron).InMax = 180;
-            Utils.GetAsst(PIDList.Aileron).InMin = -180;
-            Utils.GetAsst(PIDList.Altitude).InMin = 0;
-            Utils.GetAsst(PIDList.Throttle).InMin = 0;
+            controllers[(int)PIDList.HdgBank] = new PID_Controller(defaultHdgBankGains);
+            controllers[(int)PIDList.HdgYaw] = new PID_Controller(defaultHdgYawGains);
+            controllers[(int)PIDList.Aileron] = new PID_Controller(defaultAileronGains);
+            controllers[(int)PIDList.Rudder] = new PID_Controller(defaultRudderGains);
+            controllers[(int)PIDList.Altitude] = new PID_Controller(defaultAltitudeGains);
+            controllers[(int)PIDList.VertSpeed] = new PID_Controller(defaultVSpeedGains);
+            controllers[(int)PIDList.Elevator] = new PID_Controller(defaultElevatorGains);
+            controllers[(int)PIDList.Throttle] = new PID_Controller(defaultThrottleGains);
 
             // Set up a default preset that can be easily returned to
             if (PresetManager.Instance.craftPresetList.ContainsKey("default"))
@@ -428,9 +431,9 @@ namespace PilotAssistant
                     double velocity = double.Parse(targetSpeed);
 
                     if (GameSettings.THROTTLE_UP.GetKey())
-                        velocity += bFineControl ? 0.4 / scale : 4 * scale;
+                        velocity += bFineControl ? 0.1 / scale : 1 * scale;
                     else if (GameSettings.THROTTLE_DOWN.GetKey())
-                        velocity -= bFineControl ? 0.4 / scale : 4 * scale;
+                        velocity -= bFineControl ? 0.1 / scale : 1 * scale;
 
                     if (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey())
                         velocity = 0;
@@ -582,6 +585,12 @@ namespace PilotAssistant
                     drawPIDvalues(PIDList.Rudder, "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0", false, true, false);
                 }
                 GUILayout.EndScrollView();
+
+                Utils.GetAsst(PIDList.Aileron).OutMin = Math.Min(Math.Max(Utils.GetAsst(PIDList.Aileron).OutMin, -1), 1);
+                Utils.GetAsst(PIDList.Aileron).OutMax = Math.Min(Math.Max(Utils.GetAsst(PIDList.Aileron).OutMax, -1), 1);
+
+                Utils.GetAsst(PIDList.Rudder).OutMin = Math.Min(Math.Max(Utils.GetAsst(PIDList.Rudder).OutMin, -1), 1);
+                Utils.GetAsst(PIDList.Rudder).OutMax = Math.Min(Math.Max(Utils.GetAsst(PIDList.Rudder).OutMax, -1), 1);
             }
             #endregion
 
@@ -643,6 +652,9 @@ namespace PilotAssistant
                 if (showControlSurfaces)
                     drawPIDvalues(PIDList.Elevator, "Angle of Attack", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0", true, true, false);
 
+                Utils.GetAsst(PIDList.Elevator).OutMin = Math.Min(Math.Max(Utils.GetAsst(PIDList.Elevator).OutMin, -1), 1);
+                Utils.GetAsst(PIDList.Elevator).OutMax = Math.Min(Math.Max(Utils.GetAsst(PIDList.Elevator).OutMax, -1), 1);
+
                 GUILayout.EndScrollView();
             }
             #endregion
@@ -694,7 +706,7 @@ namespace PilotAssistant
                 drawPIDvalues(PIDList.Throttle, "Velocity", "m/s", FlightData.thisVessel.srfSpeed, 2, "Throttle", "", true);
                 // can't have people bugging things out now can we...
                 Utils.GetAsst(PIDList.Throttle).OutMin = Math.Min(Math.Max(Utils.GetAsst(PIDList.Throttle).OutMin, -1), 0);
-                Utils.GetAsst(PIDList.Throttle).OutMax = Math.Min(Utils.GetAsst(PIDList.Throttle).OutMax, 0);
+                Utils.GetAsst(PIDList.Throttle).OutMax = Math.Min(Math.Max(Utils.GetAsst(PIDList.Throttle).OutMax, -1), 0);
             }
 
             #endregion

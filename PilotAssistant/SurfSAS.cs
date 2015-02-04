@@ -54,6 +54,14 @@ namespace PilotAssistant
         Rect SASPresetwindow = new Rect(550, 50, 50, 50);
         bool bShowPresets = false;
 
+        public static double[] defaultPitchGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3 };
+        public static double[] defaultRollGains = { 0.1, 0.0, 0.06, -1, 1, -1, 1, 3 };
+        public static double[] defaultYawGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3 };
+
+        public static double[] defaultPresetPitchGains = { 0.15, 0.0, 0.06, 3, 10 };
+        public static double[] defaultPresetRollGains = { 0.1, 0.0, 0.06, 3, 10 };
+        public static double[] defaultPresetYawGains = { 0.15, 0.0, 0.06, 3, 10 };
+
         public void Start()
         {
             instance = this;
@@ -89,9 +97,9 @@ namespace PilotAssistant
 
             if (!bInit)
             {
-                SASControllers[(int)SASList.Pitch] = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -1, 1, 3);
-                SASControllers[(int)SASList.Roll] = new PID.PID_Controller(0.1, 0.0, 0.06, -1, 1, -1, 1, 3);
-                SASControllers[(int)SASList.Yaw] = new PID.PID_Controller(0.15, 0.0, 0.06, -1, 1, -1, 1, 3);
+                SASControllers[(int)SASList.Pitch] = new PID_Controller(defaultPitchGains);
+                SASControllers[(int)SASList.Roll] = new PID_Controller(defaultRollGains);
+                SASControllers[(int)SASList.Yaw] = new PID_Controller(defaultYawGains);
 
                 if (!PresetManager.Instance.craftPresetList.ContainsKey("default"))
                     PresetManager.Instance.craftPresetList.Add("default", new CraftPreset("default", null, new SASPreset(SASControllers, "SSAS"), new SASPreset(FlightData.thisVessel.Autopilot.SAS, "stock"), bStockSAS));

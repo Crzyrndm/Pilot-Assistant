@@ -47,6 +47,18 @@ namespace PilotAssistant.PID
             scale = scalar;
         }
 
+        public PID_Controller(double[] gains)
+        {
+            k_proportional = gains[0];
+            k_integral = gains[1];
+            k_derivative = gains[2];
+            outMin = gains[3];
+            outMax = gains[4];
+            integralClampLower = gains[5];
+            integralClampUpper = gains[6];
+            scale = gains[7];
+        }
+
         public double ResponseD(double input)
         {
             input = Clamp(input, inMin, inMax);

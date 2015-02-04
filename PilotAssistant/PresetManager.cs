@@ -98,18 +98,18 @@ namespace PilotAssistant
                     continue;
 
                 List<double[]> gains = new List<double[]>();
-                gains.Add(controllerGains(node.GetNode(hdgCtrlr)));
-                gains.Add(controllerGains(node.GetNode(yawCtrlr)));
-                gains.Add(controllerGains(node.GetNode(aileronCtrlr)));
-                gains.Add(controllerGains(node.GetNode(rudderCtrlr)));
-                gains.Add(controllerGains(node.GetNode(altCtrlr)));
-                gains.Add(controllerGains(node.GetNode(vertCtrlr)));
-                gains.Add(controllerGains(node.GetNode(elevCtrlr)));
-                gains.Add(controllerGains(node.GetNode(throttleCtrlr)));
+                gains.Add(controllerGains(node.GetNode(hdgCtrlr), PIDList.HdgBank));
+                gains.Add(controllerGains(node.GetNode(yawCtrlr), PIDList.HdgYaw));
+                gains.Add(controllerGains(node.GetNode(aileronCtrlr), PIDList.Aileron));
+                gains.Add(controllerGains(node.GetNode(rudderCtrlr), PIDList.Rudder));
+                gains.Add(controllerGains(node.GetNode(altCtrlr), PIDList.Altitude));
+                gains.Add(controllerGains(node.GetNode(vertCtrlr), PIDList.VertSpeed));
+                gains.Add(controllerGains(node.GetNode(elevCtrlr), PIDList.Elevator));
+                gains.Add(controllerGains(node.GetNode(throttleCtrlr), PIDList.Throttle));
 
                 if (node.GetValue("name") != craftDefault && !instance.PAPresetList.Any(p => p.name == node.GetValue("name")))
                     instance.PAPresetList.Add(new AsstPreset(gains, node.GetValue("name")));
-                else
+                else if (node.GetValue("name") == asstDefault)
                     asst = new AsstPreset(gains, node.GetValue("name"));
             }
 
@@ -119,9 +119,9 @@ namespace PilotAssistant
                     continue;
 
                 List<double[]> gains = new List<double[]>();
-                gains.Add(controllerSASGains(node.GetNode(elevCtrlr)));
-                gains.Add(controllerSASGains(node.GetNode(aileronCtrlr)));
-                gains.Add(controllerSASGains(node.GetNode(rudderCtrlr)));
+                gains.Add(controllerSASGains(node.GetNode(elevCtrlr), SASList.Pitch));
+                gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), SASList.Roll));
+                gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), SASList.Yaw));
 
                 if ((node.GetValue("name") != ssasDefault && node.GetValue("name") != stockDefault) && !instance.SASPresetList.Any(p=> p.name == node.GetValue("name")))
                     instance.SASPresetList.Add(new SASPreset(gains, node.GetValue("name"), bool.Parse(node.GetValue("stock"))));
@@ -129,7 +129,7 @@ namespace PilotAssistant
                 {
                     if (node.GetValue("name") == ssasDefault)
                         SSAS = new SASPreset(gains, node.GetValue("name"), false);
-                    else
+                    else if (node.GetValue("name") == stockDefault)
                         stock = new SASPreset(gains, node.GetValue("name"), true);
                 }
             }
@@ -195,9 +195,13 @@ namespace PilotAssistant
             node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + defaultsPath);
         }
 
-        public static double[] controllerGains(ConfigNode node)
+        public static double[] controllerGains(ConfigNode node, PIDList type)
         {
             double[] gains = new double[8];
+
+            if (node == null)
+                return defaultControllerGains(type);
+
             double.TryParse(node.GetValue(pGain), out gains[0]);
             double.TryParse(node.GetValue(iGain), out gains[1]);
             double.TryParse(node.GetValue(dGain), out gains[2]);
@@ -210,9 +214,38 @@ namespace PilotAssistant
             return gains;
         }
 
-        public static double[] controllerSASGains(ConfigNode node)
+        public static double[] defaultControllerGains(PIDList type)
+        {
+            switch(type)
+            {
+                case PIDList.HdgBank:
+                    return PilotAssistant.defaultHdgBankGains;
+                case PIDList.HdgYaw:
+                    return PilotAssistant.defaultHdgYawGains;
+                case PIDList.Aileron:
+                    return PilotAssistant.defaultAileronGains;
+                case PIDList.Rudder:
+                    return PilotAssistant.defaultRudderGains;
+                case PIDList.Altitude:
+                    return PilotAssistant.defaultAltitudeGains;
+                case PIDList.VertSpeed:
+                    return PilotAssistant.defaultVSpeedGains;
+                case PIDList.Elevator:
+                    return PilotAssistant.defaultElevatorGains;
+                case PIDList.Throttle:
+                    return PilotAssistant.defaultThrottleGains;
+                default:
+                    return PilotAssistant.defaultAileronGains;
+            }
+        }
+
+        public static double[] controllerSASGains(ConfigNode node, SASList type)
         {
             double[] gains = new double[5];
+
+            if (node == null)
+                return defaultControllerGains(type);
+
             double.TryParse(node.GetValue(pGain), out gains[0]);
             double.TryParse(node.GetValue(iGain), out gains[1]);
             double.TryParse(node.GetValue(dGain), out gains[2]);
@@ -220,6 +253,21 @@ namespace PilotAssistant
             double.TryParse(node.GetValue(slide), out gains[4]);
 
             return gains;
+        }
+
+        public static double[] defaultControllerGains(SASList type)
+        {
+            switch (type)
+            {
+                case SASList.Pitch:
+                    return SurfSAS.defaultPresetPitchGains;
+                case SASList.Roll:
+                    return SurfSAS.defaultPresetRollGains;
+                case SASList.Yaw:
+                    return SurfSAS.defaultPresetYawGains;
+                default:
+                    return SurfSAS.defaultPresetPitchGains;
+            }
         }
 
         public static ConfigNode PAPresetNode(AsstPreset preset)
