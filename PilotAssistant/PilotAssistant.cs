@@ -341,11 +341,6 @@ namespace PilotAssistant
                 bWasThrottleActive = false; // reset target speed on unpausing
 
                 bPause = !bPause;
-                if (!bPause)
-                {
-                    SurfSAS.setStockSAS(false);
-                    SurfSAS.ActivitySwitch(false);
-                }
                 
                 if (bPause)
                     Messaging.statusMessage(0);
@@ -546,8 +541,6 @@ namespace PilotAssistant
             {
                 bHdgActive = toggleCheck;
                 bPause = false;
-                SurfSAS.setStockSAS(false);
-                SurfSAS.ActivitySwitch(false);
             }
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
@@ -615,8 +608,6 @@ namespace PilotAssistant
                 bVertActive = toggleCheck;
                 if (!toggleCheck)
                     bPause = false;
-                SurfSAS.setStockSAS(false);
-                SurfSAS.ActivitySwitch(false);
             }
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
@@ -680,8 +671,6 @@ namespace PilotAssistant
                 bThrottleActive = toggleCheck;
                 if (!toggleCheck)
                     bPause = false;
-                SurfSAS.setStockSAS(false);
-                SurfSAS.ActivitySwitch(false);
             }
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;

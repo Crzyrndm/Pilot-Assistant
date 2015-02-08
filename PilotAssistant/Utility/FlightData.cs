@@ -38,7 +38,7 @@ namespace PilotAssistant.Utility
             // Vessel forward and right vetors, parallel to the surface
             surfVesRight = Vector3d.Cross(planetUp, thisVessel.ReferenceTransform.up).normalized;
             surfVesForward = Vector3d.Cross(planetUp, surfVesRight).normalized;
-            
+
             pitch = 90 - Vector3d.Angle(planetUp, thisVessel.ReferenceTransform.up);
             heading = -1 * Vector3d.Angle(surfVesForward, planetNorth) * Math.Sign(Vector3d.Dot(surfVesForward, planetEast));
             if (heading < 0)

@@ -76,6 +76,10 @@ namespace PilotAssistant
             {
                 bDisplaySAS = temp;
             }
+            if (GUILayout.Button("Update Defaults"))
+            {
+                PresetManager.updateDefaults();
+            }
 
             GUI.DragWindow();
         }

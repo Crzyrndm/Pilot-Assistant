@@ -195,6 +195,16 @@ namespace PilotAssistant
             node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + defaultsPath);
         }
 
+        public static void updateDefaults()
+        {
+            instance.craftPresetList[craftDefault].AsstPreset.PIDGains = instance.activePAPreset.PIDGains;
+            instance.craftPresetList[craftDefault].SSASPreset.PIDGains = instance.activeSASPreset.PIDGains;
+            instance.craftPresetList[craftDefault].StockPreset.PIDGains = instance.activeStockSASPreset.PIDGains;
+            instance.craftPresetList[craftDefault].SASMode = SurfSAS.Instance.bStockSAS;
+
+            saveDefaults();
+        }
+
         public static double[] controllerGains(ConfigNode node, PIDList type)
         {
             double[] gains = new double[8];
@@ -464,7 +474,7 @@ namespace PilotAssistant
                 c[(int)s].IGain = p.PIDGains[(int)s, 1];
                 c[(int)s].DGain = p.PIDGains[(int)s, 2];
                 c[(int)s].Scalar = p.PIDGains[(int)s, 3];
-                SurfSAS.Instance.fadeReset[(int)s] = (float)p.PIDGains[(int)s, 4];
+                SurfSAS.Instance.fadeReset[(int)s] = Math.Max((float)p.PIDGains[(int)s, 4],1);
             }
 
             Instance.activeSASPreset = p;

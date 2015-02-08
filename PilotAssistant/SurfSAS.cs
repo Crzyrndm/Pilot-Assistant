@@ -71,6 +71,7 @@ namespace PilotAssistant
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
             FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
             GameEvents.onVesselChange.Add(vesselSwitch);
+            GameEvents.onTimeWarpRateChanged.Add(warpHandler);
         }
 
         private void vesselSwitch(Vessel v)
@@ -80,6 +81,12 @@ namespace PilotAssistant
             FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
 
             StartCoroutine(Initialise());
+        }
+
+        private void warpHandler()
+        {
+            //if (!FlightGlobals.warpDriveActive)
+            //    updateTarget();
         }
 
         // need to wait for Stock SAS to be ready, hence the Coroutine
@@ -93,6 +100,7 @@ namespace PilotAssistant
                 yield return null;
             
             bPause[0] = bPause[1] = bPause[2] = false;
+            fadeReset[0] = fadeReset[1] = fadeReset[2] = 2;
             ActivitySwitch(false);
 
             if (!bInit)
@@ -128,6 +136,7 @@ namespace PilotAssistant
             RenderingManager.RemoveFromPostDrawQueue(5, drawGUI);
             FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(SurfaceSAS);
             GameEvents.onVesselChange.Remove(vesselSwitch);
+            GameEvents.onTimeWarpRateChanged.Remove(warpHandler);
         }
 
         public void Update()
@@ -200,6 +209,8 @@ namespace PilotAssistant
                 FlightData.updateAttitude();
 
                 pauseManager(state);
+                
+                Debug.Log(activationFadePitch);
 
                 float vertResponse = 0;
                 if (bActive[(int)SASList.Pitch])
@@ -262,6 +273,8 @@ namespace PilotAssistant
                     activationFadePitch = fadeReset[(int)SASList.Pitch];
                     if (!pitchEnum)
                         StartCoroutine(FadeInPitch());
+
+                    Debug.Log("we're supposed to be updating");
                 }
             }
             
@@ -298,6 +311,10 @@ namespace PilotAssistant
         IEnumerator FadeInPitch()
         {
             pitchEnum = true;
+
+            Utils.GetSAS(SASList.Yaw).SetPoint = FlightData.heading;
+            Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
+
             while (activationFadePitch > 1)
             {
                 yield return new WaitForFixedUpdate();
@@ -319,6 +336,11 @@ namespace PilotAssistant
         IEnumerator FadeInRoll()
         {
             rollEnum = true;
+            if (rollState)
+                rollTarget = FlightData.thisVessel.ReferenceTransform.right;
+            else
+                Utils.GetSAS(SASList.Roll).SetPoint = FlightData.roll;
+
             while (activationFadeRoll > 1)
             {
                 yield return new WaitForFixedUpdate();
@@ -342,6 +364,10 @@ namespace PilotAssistant
         IEnumerator FadeInYaw()
         {
             yawEnum = true;
+
+            Utils.GetSAS(SASList.Yaw).SetPoint = FlightData.heading;
+            Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
+
             while (activationFadeYaw > 1)
             {
                 yield return new WaitForFixedUpdate();
