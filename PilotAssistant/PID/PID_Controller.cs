@@ -77,18 +77,7 @@ namespace PilotAssistant.PID
 
         public float ResponseF(double input)
         {
-            input = Clamp(input, inMin, inMax);
-            dt = TimeWarp.fixedDeltaTime;
-            error = input - setpoint;
-
-            if (skipDerivative)
-            {
-                skipDerivative = false;
-                previous = input;
-            }
-
-            double response = proportionalError(error) + integralError(error) + derivativeError(input);
-            return (float)Clamp(response, outMin, outMax);
+            return (float)ResponseD(input);
         }
 
         private double proportionalError(double input)

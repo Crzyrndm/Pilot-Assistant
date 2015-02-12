@@ -26,34 +26,33 @@ namespace PilotAssistant
             get { return instance; }
         }
 
-        public static PID_Controller[] SASControllers = new PID_Controller[3];
+        public static PID_Controller[] SASControllers = new PID_Controller[3]; // controller per axis
 
-        static bool bInit = false;
-        bool bArmed = false;
+        static bool bInit = false; // if initialisation fails for any reason, things shouldn't run
+        bool bArmed = false; // if armed, SAS toggles activate/deactivate SSAS
         bool[] bActive = new bool[3]; // activate on per axis basis
         bool[] bPause = new bool[3]; // pause on a per axis basis
         public bool bStockSAS = true;
 
-        public float[] fadeReset = new float[3];
+        // unpause control authority scaling. Helps reduce the jump of SSAS gaining control of an axis
+        public float[] fadeCurrent = { 1, 1, 1 }; // these are the current axis control factors
+        public float[] timeElapsed = new float[3];
+        float[] fadeSetpoint = { 10, 10, 10 }; // these are the values that get assigned every time control is unlocked
+        const float fadeMult = 0.97f; // this is the decay rate. 0.97 < 1 after 0.75s starting from 10
 
-        float activationFadeRoll = 1;
-        float activationFadePitch = 1;
-        float activationFadeYaw = 1;
-
-        float fadeRollMult = 0.98f;
-        float fadePitchMult = 0.98f;
-        float fadeYawMult = 0.98f;
+        // unpause delay
+        public float[] delayEngage = new float[3];
 
         bool rollState = false; // false = surface mode, true = vector mode
 
-        Rect SASwindow = new Rect(10, 505, 200, 30);
-
-        bool[] stockPIDDisplay = { true, false, false };
+        Rect SASwindow = new Rect(10, 505, 200, 30); // gui window rect
+        bool[] stockPIDDisplay = { true, false, false }; // which stock PID axes are visible
 
         string newPresetName = "";
         Rect SASPresetwindow = new Rect(550, 50, 50, 50);
         bool bShowPresets = false;
 
+        // initialisation and default presets stuff
         public static double[] defaultPitchGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3 };
         public static double[] defaultRollGains = { 0.1, 0.0, 0.06, -1, 1, -1, 1, 3 };
         public static double[] defaultYawGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3 };
@@ -65,10 +64,12 @@ namespace PilotAssistant
         public void Start()
         {
             instance = this;
-
+            // Have to wait for stock SAS to be ready
             StartCoroutine(Initialise());
-
+            // hide/show with KSP hide UI
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
+
+            // events and callbacks
             FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
             GameEvents.onVesselChange.Add(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Add(warpHandler);
@@ -99,9 +100,9 @@ namespace PilotAssistant
             if (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch == null)
                 yield return null;
             
-            bPause[0] = bPause[1] = bPause[2] = false;
-            fadeReset[0] = fadeReset[1] = fadeReset[2] = 2;
+            bPause.Initialize();
             ActivitySwitch(false);
+            delayEngage[0] = delayEngage[1] = delayEngage[2] = 20; // delay engagement by 0.2s
 
             if (!bInit)
             {
@@ -146,9 +147,10 @@ namespace PilotAssistant
             if (mod && GameSettings.SAS_TOGGLE.GetKeyDown())
             {
                 bArmed = !bArmed;
-                bStockSAS = false;
-                if (ActivityCheck())
-                {
+                if (bArmed) // if we are armed, switch to SSAS
+                    bStockSAS = false;
+                
+                if (ActivityCheck()) {
                     ActivitySwitch(false);
                 }
             }
@@ -169,7 +171,8 @@ namespace PilotAssistant
                 setStockSAS(bStockSAS);
             }
 
-            if (GameSettings.SAS_HOLD.GetKeyDown())
+            // lets target slide while key is down, effectively temporary deactivation
+            if (GameSettings.SAS_HOLD.GetKey())
                 updateTarget();
         }
 
@@ -179,6 +182,7 @@ namespace PilotAssistant
             GeneralUI.Styles();
 
             // SAS toggle button
+            // is before the bDisplay check so it can be up without the GUI
             if (bArmed)
             {
                 if (SurfSAS.ActivityCheck())
@@ -209,8 +213,6 @@ namespace PilotAssistant
                 FlightData.updateAttitude();
 
                 pauseManager(state);
-                
-                Debug.Log(activationFadePitch);
 
                 float vertResponse = 0;
                 if (bActive[(int)SASList.Pitch])
@@ -234,9 +236,9 @@ namespace PilotAssistant
                 double rollRad = Math.PI / 180 * FlightData.roll;
 
                 if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Yaw]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Yaw]))
-                {                    
-                    state.pitch = (vertResponse * (float)Math.Cos(rollRad) - hrztResponse * (float)Math.Sin(rollRad)) / activationFadePitch;
-                    state.yaw = (vertResponse * (float)Math.Sin(rollRad) + hrztResponse * (float)Math.Cos(rollRad)) / activationFadeYaw;
+                {
+                    state.pitch = (vertResponse * (float)Math.Cos(rollRad) - hrztResponse * (float)Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
+                    state.yaw = (vertResponse * (float)Math.Sin(rollRad) + hrztResponse * (float)Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Yaw];
                 }
                 rollResponse();
             }
@@ -254,13 +256,16 @@ namespace PilotAssistant
 
             rollTarget = FlightData.thisVessel.ReferenceTransform.right;
 
-            activationFadeRoll = fadeReset[(int)SASList.Roll];
-            activationFadePitch = fadeReset[(int)SASList.Pitch];
-            activationFadeYaw = fadeReset[(int)SASList.Yaw];
+            StartCoroutine(FadeInPitch());
+            StartCoroutine(FadeInRoll());
+            StartCoroutine(FadeInYaw());
         }
 
         private void pauseManager(FlightCtrlState state)
         {
+            if (Utils.isFlightControlLocked())
+                return;
+
             if (state.pitch != 0 && !bPause[(int)SASList.Pitch])
                 bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = true;
             else if (state.pitch == 0 && bPause[(int)SASList.Pitch])
@@ -269,13 +274,7 @@ namespace PilotAssistant
                     bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = false;
 
                 if (bActive[(int)SASList.Pitch])
-                {
-                    activationFadePitch = fadeReset[(int)SASList.Pitch];
-                    if (!pitchEnum)
                         StartCoroutine(FadeInPitch());
-
-                    Debug.Log("we're supposed to be updating");
-                }
             }
             
             if (state.roll != 0 && !bPause[(int)SASList.Roll])
@@ -284,11 +283,7 @@ namespace PilotAssistant
             {
                 bPause[(int)SASList.Roll] = false;
                 if (bActive[(int)SASList.Roll])
-                {
-                    activationFadeRoll = fadeReset[(int)SASList.Roll];
-                    if (!rollEnum)
                         StartCoroutine(FadeInRoll());
-                }
             }
 
             if (state.yaw != 0 && !bPause[(int)SASList.Yaw])
@@ -299,92 +294,109 @@ namespace PilotAssistant
                     bPause[(int)SASList.Pitch] = bPause[(int)SASList.Yaw] = false;
 
                 if (bActive[(int)SASList.Yaw])
-                {
-                    activationFadeYaw = fadeReset[(int)SASList.Yaw];
-                    if (!yawEnum)
-                        StartCoroutine(FadeInYaw());
-                }
+                    StartCoroutine(FadeInYaw());
             }
         }
 
         bool pitchEnum = false;
         IEnumerator FadeInPitch()
         {
+            // initialse all relevant values
+            timeElapsed[(int)SASList.Pitch] = 0;
+            fadeCurrent[(int)SASList.Pitch] = fadeSetpoint[(int)SASList.Pitch]; // x to the power of 0 is 1
+
+            if (pitchEnum) // don't need multiple running at once
+                yield break;
             pitchEnum = true;
 
-            Utils.GetSAS(SASList.Yaw).SetPoint = FlightData.heading;
-            Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
-
-            while (activationFadePitch > 1)
+            while (fadeCurrent[(int)SASList.Pitch] > 1) // fadeCurrent only decreases after delay period finishes
             {
                 yield return new WaitForFixedUpdate();
-
-                float nextFade = activationFadePitch * 0.98f;
-                float thresh = Mathf.Floor(activationFadePitch);
-                if (nextFade < thresh)
+                timeElapsed[(int)SASList.Pitch] += Time.fixedDeltaTime * 100f; // 1 == 1/100th of a second
+                // handle both in the same while loop so if we pause/unpause again it just resets
+                if (timeElapsed[(int)SASList.Pitch] < delayEngage[(int)SASList.Pitch])
                 {
                     Utils.GetSAS(SASList.Yaw).SetPoint = FlightData.heading;
                     Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
                 }
-                activationFadePitch = nextFade;
+                else
+                    fadeCurrent[(int)SASList.Pitch] = Mathf.Max(fadeSetpoint[(int)SASList.Pitch] * Mathf.Pow(fadeMult, timeElapsed[(int)SASList.Pitch] - delayEngage[(int)SASList.Pitch]), 1);
             }
-            activationFadePitch = 1;
+
+            // make sure we are actually set to 1
+            fadeCurrent[(int)SASList.Pitch] = 1.0f;
+            // clear the lock
             pitchEnum = false;
         }
 
         bool rollEnum = false;
         IEnumerator FadeInRoll()
         {
-            rollEnum = true;
-            if (rollState)
-                rollTarget = FlightData.thisVessel.ReferenceTransform.right;
-            else
-                Utils.GetSAS(SASList.Roll).SetPoint = FlightData.roll;
+            // initialse all relevant values
+            timeElapsed[(int)SASList.Roll] = 0;
+            fadeCurrent[(int)SASList.Roll] = fadeSetpoint[(int)SASList.Roll]; // x to the power of 0 is 1
 
-            while (activationFadeRoll > 1)
+            if (rollEnum) // don't need multiple running at once
+                yield break;
+            rollEnum = true;
+
+            while (fadeCurrent[(int)SASList.Roll] > 1) // fadeCurrent only decreases after delay period finishes
             {
                 yield return new WaitForFixedUpdate();
-
-                float nextFade = activationFadeRoll * 0.98f;
-                float thresh = Mathf.Floor(activationFadeRoll);
-                if (nextFade < thresh)
+                timeElapsed[(int)SASList.Roll] += Time.fixedDeltaTime * 100f; // 1 == 1/100th of a second
+                // handle both in the same while loop so if we pause/unpause again it just resets
+                if (timeElapsed[(int)SASList.Roll] < delayEngage[(int)SASList.Roll])
                 {
                     if (rollState)
                         rollTarget = FlightData.thisVessel.ReferenceTransform.right;
                     else
                         Utils.GetSAS(SASList.Roll).SetPoint = FlightData.roll;
                 }
-                activationFadeRoll = nextFade;
+                else
+                    fadeCurrent[(int)SASList.Roll] = Mathf.Max(fadeSetpoint[(int)SASList.Roll] * Mathf.Pow(fadeMult, timeElapsed[(int)SASList.Roll]), 1);
             }
-            activationFadeRoll = 1;
+
+            // make sure we are actually at 1.0
+            fadeCurrent[(int)SASList.Roll] = 1.0f;
+            // clear the lock
             rollEnum = false;
         }
 
         bool yawEnum = false;
         IEnumerator FadeInYaw()
         {
+            // initialse all relevant values
+            timeElapsed[(int)SASList.Yaw] = 0;
+            fadeCurrent[(int)SASList.Yaw] = fadeSetpoint[(int)SASList.Yaw]; // x to the power of 0 is 1
+
+            if (yawEnum) // don't need multiple running at once
+                yield break;
             yawEnum = true;
 
-            Utils.GetSAS(SASList.Yaw).SetPoint = FlightData.heading;
-            Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
-
-            while (activationFadeYaw > 1)
+            while (fadeCurrent[(int)SASList.Yaw] > 1) // fadeCurrent only decreases after delay period finishes
             {
                 yield return new WaitForFixedUpdate();
-
-                float nextFade = activationFadeYaw * 0.98f;
-                float thresh = Mathf.Floor(activationFadeYaw);
-                if (nextFade < thresh)
+                timeElapsed[(int)SASList.Yaw] += Time.fixedDeltaTime * 100f; // 1 == 1/100th of a second
+                // handle both in the same while loop so if we pause/unpause again it just resets
+                if (timeElapsed[(int)SASList.Yaw] < delayEngage[(int)SASList.Yaw])
                 {
                     Utils.GetSAS(SASList.Yaw).SetPoint = FlightData.heading;
                     Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
                 }
-                activationFadeYaw = nextFade;
+                else
+                    fadeCurrent[(int)SASList.Yaw] = Mathf.Max(fadeSetpoint[(int)SASList.Yaw] * Mathf.Pow(fadeMult, timeElapsed[(int)SASList.Yaw] - delayEngage[(int)SASList.Yaw]), 1);
             }
-            activationFadeYaw = 1;
-            yawEnum = false;
+
+            // make sure we are actually set to 1
+            fadeCurrent[(int)SASList.Yaw] = 1.0f;
+            // clear the lock
+            pitchEnum = false;
         }
 
+        /// <summary>
+        /// Set SSAS mode
+        /// </summary>
+        /// <param name="enable"></param>
         internal static void ActivitySwitch(bool enable)
         {
             if (enable)
@@ -393,6 +405,10 @@ namespace PilotAssistant
                 instance.bActive[(int)SASList.Pitch] = instance.bActive[(int)SASList.Roll] = instance.bActive[(int)SASList.Yaw] = false;
         }
 
+        /// <summary>
+        /// returns true if SSAS is active
+        /// </summary>
+        /// <returns></returns>
         internal static bool ActivityCheck()
         {
             if (instance.bActive[(int)SASList.Pitch] || instance.bActive[(int)SASList.Roll] || instance.bActive[(int)SASList.Yaw])
@@ -401,6 +417,10 @@ namespace PilotAssistant
                 return false;
         }
 
+        /// <summary>
+        /// set stock SAS state
+        /// </summary>
+        /// <param name="state"></param>
         internal static void setStockSAS(bool state)
         {
             FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, state);
@@ -417,17 +437,17 @@ namespace PilotAssistant
                 // switch tracking modes
                 if (rollState) // currently in vector mode
                 {
-                    if (FlightData.pitch < 25 && FlightData.pitch > -25)
+                    if (FlightData.pitch < 35 && FlightData.pitch > -35)
                         rollState = false; // fall back to surface mode
                 }
                 else // surface mode
                 {
-                    if (FlightData.pitch > 30 || FlightData.pitch < -30)
+                    if (FlightData.pitch > 40 || FlightData.pitch < -40)
                         rollState = true; // go to vector mode
                 }
 
-                // Above 30 degrees pitch, rollTarget should always lie on the horizontal plane of the vessel
-                // Below 25 degrees pitch, use the surf roll logic
+                // Above 40 degrees pitch, rollTarget should always lie on the horizontal plane of the vessel
+                // Below 35 degrees pitch, use the surf roll logic
                 // hysteresis on the switch ensures it doesn't bounce back and forth and lose the lock
                 if (rollState)
                 {
@@ -442,7 +462,7 @@ namespace PilotAssistant
                         + FlightData.thisVessel.ReferenceTransform.right * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.right, rollTarget);
                     double roll = Vector3.Angle(proj, rollTarget) * Math.Sign(Vector3.Dot(FlightData.thisVessel.ReferenceTransform.forward, rollTarget));
 
-                    FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Roll).ResponseD(roll) / activationFadeRoll;
+                    FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Roll).ResponseD(roll) / fadeCurrent[(int)SASList.Roll];
                 }
                 else
                 {
@@ -453,17 +473,16 @@ namespace PilotAssistant
                     }
 
                     if (Utils.GetSAS(SASList.Roll).SetPoint - FlightData.roll >= -180 && Utils.GetSAS(SASList.Roll).SetPoint - FlightData.roll <= 180)
-                        FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Roll).ResponseD(FlightData.roll) / activationFadeRoll;
+                        FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Roll).ResponseD(FlightData.roll) / fadeCurrent[(int)SASList.Roll];
                     else if (Utils.GetSAS(SASList.Roll).SetPoint - FlightData.roll > 180)
-                        FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Roll).ResponseD(FlightData.roll + 360) / activationFadeRoll;
+                        FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Roll).ResponseD(FlightData.roll + 360) / fadeCurrent[(int)SASList.Roll];
                     else if (Utils.GetSAS(SASList.Roll).SetPoint - FlightData.roll < -180)
-                        FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Roll).ResponseD(FlightData.roll - 360) / activationFadeRoll;
+                        FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Roll).ResponseD(FlightData.roll - 360) / fadeCurrent[(int)SASList.Roll];
                 }
             }
         }
 
         #region GUI
-
         public void Draw()
         {
             if (AppLauncherFlight.bDisplaySAS)
@@ -539,7 +558,7 @@ namespace PilotAssistant
 
         private void drawPIDValues(SASList controllerID, string inputName)
         {
-            PID.PID_Controller controller = Utils.GetSAS(controllerID);
+            PID_Controller controller = Utils.GetSAS(controllerID);
             controller.bShow = GUILayout.Toggle(controller.bShow, inputName, GeneralUI.toggleButton);
 
             if (controller.bShow)
@@ -548,7 +567,7 @@ namespace PilotAssistant
                 controller.IGain = GeneralUI.labPlusNumBox("Ki:", controller.IGain.ToString("G3"), 45);
                 controller.DGain = GeneralUI.labPlusNumBox("Kd:", controller.DGain.ToString("G3"), 45);
                 controller.Scalar = GeneralUI.labPlusNumBox("Scalar:", controller.Scalar.ToString("G3"), 45);
-                fadeReset[(int)controllerID] = Math.Max((float)GeneralUI.labPlusNumBox("Slide:", fadeReset[(int)controllerID].ToString("G3"), 45), 1);
+                delayEngage[(int)controllerID] = Math.Max((float)GeneralUI.labPlusNumBox("Delay:", delayEngage[(int)controllerID].ToString("G3"), 45), 0);
             }
         }
 
@@ -658,29 +677,5 @@ namespace PilotAssistant
             }
         }
         #endregion
-
-        public float FadeRollMult
-        {
-            get { return fadeRollMult; }
-            set {
-                fadeRollMult = Utils.Clamp(value, 0, 1);
-            }
-        }
-
-        public float FadePitchMult
-        {
-            get { return fadePitchMult; }
-            set {
-                fadePitchMult = Utils.Clamp(value, 0, 1);
-            }
-        }
-
-        public float FadeYawMult
-        {
-            get { return fadeYawMult; }
-            set {
-                fadeYawMult = Utils.Clamp(value, 0, 1);
-            }
-        }
     }
 }

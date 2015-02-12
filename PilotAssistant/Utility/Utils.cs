@@ -28,5 +28,10 @@ namespace PilotAssistant.Utility
         {
             return SurfSAS.SASControllers[(int)id];
         }
+
+        public static bool isFlightControlLocked()
+        {
+            return InputLockManager.IsLocked(ControlTypes.PITCH) || InputLockManager.IsLocked(ControlTypes.ROLL) || InputLockManager.IsLocked(ControlTypes.YAW) || InputLockManager.IsLocked(ControlTypes.THROTTLE);
+        }
     }
 }

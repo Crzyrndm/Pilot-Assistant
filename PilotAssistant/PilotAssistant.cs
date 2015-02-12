@@ -329,7 +329,7 @@ namespace PilotAssistant
 
         private void keyPressChanges()
         {
-            if (InputLockManager.IsLocked(ControlTypes.ALL_SHIP_CONTROLS))
+            if (Utils.isFlightControlLocked())
                 return;
 
             bool mod = GameSettings.MODIFIER_KEY.GetKey();

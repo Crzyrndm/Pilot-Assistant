@@ -22,7 +22,7 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = controllers[(int)s].IGain;
                 PIDGains[(int)s, 2] = controllers[(int)s].DGain;
                 PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
-                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeReset[(int)s];
+                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeCurrent[(int)s];
             }
         }
 
@@ -36,7 +36,7 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = controllers[(int)s].IGain;
                 PIDGains[(int)s, 2] = controllers[(int)s].DGain;
                 PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
-                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeReset[(int)s];
+                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeCurrent[(int)s];
             }
         }
 
@@ -81,7 +81,7 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = controllers[(int)s].IGain;
                 PIDGains[(int)s, 2] = controllers[(int)s].DGain;
                 PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
-                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeReset[(int)s];
+                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeCurrent[(int)s];
             }
         }
 
@@ -93,7 +93,7 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = controllers[(int)s].IGain;
                 PIDGains[(int)s, 2] = controllers[(int)s].DGain;
                 PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
-                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeReset[(int)s];
+                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeCurrent[(int)s];
             }
         }
 

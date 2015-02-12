@@ -474,7 +474,7 @@ namespace PilotAssistant
                 c[(int)s].IGain = p.PIDGains[(int)s, 1];
                 c[(int)s].DGain = p.PIDGains[(int)s, 2];
                 c[(int)s].Scalar = p.PIDGains[(int)s, 3];
-                SurfSAS.Instance.fadeReset[(int)s] = Math.Max((float)p.PIDGains[(int)s, 4],1);
+                SurfSAS.Instance.fadeCurrent[(int)s] = Math.Max((float)p.PIDGains[(int)s, 4],1);
             }
 
             Instance.activeSASPreset = p;
