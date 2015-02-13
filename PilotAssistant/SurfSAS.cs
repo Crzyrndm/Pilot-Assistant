@@ -34,6 +34,8 @@ namespace PilotAssistant
         bool[] bPause = new bool[3]; // pause on a per axis basis
         public bool bStockSAS = true;
 
+        string[] targets = { "0", "0", "0" };
+
         // unpause control authority scaling. Helps reduce the jump of SSAS gaining control of an axis
         public float[] fadeCurrent = { 1, 1, 1 }; // these are the current axis control factors
         public float[] timeElapsed = new float[3];
@@ -317,7 +319,9 @@ namespace PilotAssistant
                 if (timeElapsed[(int)SASList.Pitch] < delayEngage[(int)SASList.Pitch])
                 {
                     Utils.GetSAS(SASList.Yaw).SetPoint = FlightData.heading;
+                    targets[(int)SASList.Yaw] = FlightData.heading.ToString("N2");
                     Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
+                    targets[(int)SASList.Pitch] = FlightData.pitch.ToString("N2");
                 }
                 else
                     fadeCurrent[(int)SASList.Pitch] = Mathf.Max(fadeSetpoint[(int)SASList.Pitch] * Mathf.Pow(fadeMult, timeElapsed[(int)SASList.Pitch] - delayEngage[(int)SASList.Pitch]), 1);
@@ -350,7 +354,10 @@ namespace PilotAssistant
                     if (rollState)
                         rollTarget = FlightData.thisVessel.ReferenceTransform.right;
                     else
+                    {
                         Utils.GetSAS(SASList.Roll).SetPoint = FlightData.roll;
+                        targets[(int)SASList.Roll] = FlightData.roll.ToString("N2");
+                    }
                 }
                 else
                     fadeCurrent[(int)SASList.Roll] = Mathf.Max(fadeSetpoint[(int)SASList.Roll] * Mathf.Pow(fadeMult, timeElapsed[(int)SASList.Roll]), 1);
@@ -381,7 +388,9 @@ namespace PilotAssistant
                 if (timeElapsed[(int)SASList.Yaw] < delayEngage[(int)SASList.Yaw])
                 {
                     Utils.GetSAS(SASList.Yaw).SetPoint = FlightData.heading;
+                    targets[(int)SASList.Yaw] = FlightData.heading.ToString("N2");
                     Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
+                    targets[(int)SASList.Pitch] = FlightData.pitch.ToString("N2");
                 }
                 else
                     fadeCurrent[(int)SASList.Yaw] = Mathf.Max(fadeSetpoint[(int)SASList.Yaw] * Mathf.Pow(fadeMult, timeElapsed[(int)SASList.Yaw] - delayEngage[(int)SASList.Yaw]), 1);
@@ -525,15 +534,15 @@ namespace PilotAssistant
 
                 if (bArmed)
                 {
-                    Utils.GetSAS(SASList.Pitch).SetPoint = Utils.Clamp((float)GeneralUI.TogPlusNumBox("Pitch:", ref bActive[(int)SASList.Pitch], FlightData.pitch, Utils.GetSAS(SASList.Pitch).SetPoint, 80), -90, 90);
-                    Utils.GetSAS(SASList.Yaw).SetPoint = GeneralUI.TogPlusNumBox("Heading:", ref bActive[(int)SASList.Yaw], FlightData.heading, Utils.GetSAS(SASList.Yaw).SetPoint, 80, 60, 360, 0);
+                    Utils.GetSAS(SASList.Pitch).SetPoint = Utils.Clamp((float)GeneralUI.TogPlusNumBox("Pitch:", ref bActive[(int)SASList.Pitch], ref targets[(int)SASList.Pitch], FlightData.pitch, Utils.GetSAS(SASList.Pitch).SetPoint, 80, 70), -90, 90);
+                    Utils.GetSAS(SASList.Yaw).SetPoint = GeneralUI.TogPlusNumBox("Heading:", ref bActive[(int)SASList.Yaw], ref targets[(int)SASList.Yaw], FlightData.heading, Utils.GetSAS(SASList.Yaw).SetPoint, 80, 70);
                     if (!rollState) // editable
-                        Utils.GetSAS(SASList.Roll).SetPoint = GeneralUI.TogPlusNumBox("Roll:", ref bActive[(int)SASList.Roll], FlightData.roll, Utils.GetSAS(SASList.Roll).SetPoint, 80, 60, 180, -180);
+                        Utils.GetSAS(SASList.Roll).SetPoint = GeneralUI.TogPlusNumBox("Roll:", ref bActive[(int)SASList.Roll], ref targets[(int)SASList.Roll], FlightData.roll, Utils.GetSAS(SASList.Roll).SetPoint, 80, 70);
                     else // not editable b/c vector mode
                     {
                         GUILayout.BeginHorizontal();
                         bActive[(int)SASList.Roll] = GUILayout.Toggle(bActive[(int)SASList.Roll], "Roll:", GeneralUI.toggleButton, GUILayout.Width(80));
-                        GUILayout.TextField(FlightData.roll.ToString("N2"), GUILayout.Width(60));
+                        GUILayout.TextField(FlightData.roll.ToString("N2"), GUILayout.Width(70));
                         GUILayout.EndHorizontal();
                     }
                     GUILayout.Box("", GUILayout.Height(10));
@@ -549,8 +558,6 @@ namespace PilotAssistant
                 drawPIDValues(sas.pidLockedPitch, "Pitch", SASList.Pitch);
                 drawPIDValues(sas.pidLockedRoll, "Roll", SASList.Roll);
                 drawPIDValues(sas.pidLockedYaw, "Yaw", SASList.Yaw);
-
-
             }
 
             GUI.DragWindow();

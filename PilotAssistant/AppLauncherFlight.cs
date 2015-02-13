@@ -20,10 +20,14 @@ namespace PilotAssistant
         {
             GameEvents.onGUIApplicationLauncherReady.Add(this.OnAppLauncherReady);
             window = new Rect(10, 50, 30, 30);
+
+            RenderingManager.AddToPostDrawQueue(5, Draw);
         }
 
         void OnDestroy()
         {
+            RenderingManager.RemoveFromPostDrawQueue(5, Draw);
+
             if (btnLauncher != null)
                 ApplicationLauncher.Instance.RemoveModApplication(btnLauncher);
             btnLauncher = null;
@@ -53,7 +57,7 @@ namespace PilotAssistant
             bDisplayOptions = false;
         }
 
-        private void OnGUI()
+        private void Draw()
         {
             GeneralUI.Styles();
 

@@ -127,53 +127,39 @@ namespace PilotAssistant.Utility
         }
 
         /// <summary>
-        /// Draws a toggle button and text box of specified widths with +/- 1 increment buttons. Returns the numeric value of the text box
+        /// Draws a toggle button and text box of specified widths with update button.
         /// </summary>
         /// <param name="toggleText"></param>
         /// <param name="boxVal"></param>
         /// <param name="toggleWidth"></param>
         /// <param name="boxWidth"></param>
-        /// <param name="upper">upper value to which input will be clamped, attempting to increase will roll value down to lower</param>
-        /// <param name="lower">lower value to which input will be clamped, attempting to decrease will roll value up to upper</param>
         /// <returns></returns>
-        internal static float TogPlusNumBox(string toggleText, ref bool toggleState, double currentVal, double boxVal, float toggleWidth = 100, float boxWidth = 60, float upper = 360, float lower = -360)
+        internal static float TogPlusNumBox(string toggleText, ref bool toggleState, ref string boxText, double currentVal, double setPoint, float toggleWidth, float boxWidth)
         {
             GUILayout.BeginHorizontal();
 
-            // state is returned by reference
             bool tempState = GUILayout.Toggle(toggleState, toggleText, toggleButton, GUILayout.Width(toggleWidth));
             if (tempState != toggleState)
             {
                 toggleState = tempState;
                 if (toggleState)
-                    boxVal = currentVal;
+                {
+                    setPoint = currentVal;
+                    boxText = currentVal.ToString("N2");
+                }
             }
 
-            string text = GUILayout.TextField(boxVal.ToString("N2"), numBoxTextStyle, GUILayout.Width(boxWidth));
-            //
-            try
+            boxText = GUILayout.TextField(boxText, numBoxTextStyle, GUILayout.Width(boxWidth));
+
+            if (GUILayout.Button("u"))
             {
-                boxVal = double.Parse(text);
+                double temp;
+                if (double.TryParse(boxText, out temp))
+                    setPoint = temp;
             }
-            catch {}
-            //
-            GUILayout.BeginVertical();
-            if (GUILayout.Button("+", btnStylePlus, GUILayout.Width(20), GUILayout.Height(13)))
-            {
-                boxVal += 1;
-                if (boxVal >= upper)
-                    boxVal = lower;
-            }
-            if (GUILayout.Button("-", btnStyleMinus, GUILayout.Width(20), GUILayout.Height(13)))
-            {
-                boxVal -= 1;
-                if (boxVal < lower)
-                    boxVal = upper - 1;
-            }
-            GUILayout.EndVertical();
             //
             GUILayout.EndHorizontal();
-            return Utils.Clamp((float)boxVal, (float)lower, (float)upper);
+            return (float)setPoint;
         }
     }
 }

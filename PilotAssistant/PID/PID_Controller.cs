@@ -71,8 +71,9 @@ namespace PilotAssistant.PID
                 previous = input;
             }
 
-            double response = proportionalError(error) + integralError(error) + derivativeError(input);
-            return Clamp(response, outMin, outMax);
+            double response = Clamp(proportionalError(error) + integralError(error) + derivativeError(input), outMin, outMax);
+
+            return response;
         }
 
         public float ResponseF(double input)

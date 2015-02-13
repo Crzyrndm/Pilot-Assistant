@@ -423,21 +423,21 @@ namespace PilotAssistant
 
                 if (bThrottleActive && (GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey()) || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown())
                 {
-                    double velocity = double.Parse(targetSpeed);
+                    double speed = double.Parse(targetSpeed);
 
                     if (GameSettings.THROTTLE_UP.GetKey())
-                        velocity += bFineControl ? 0.1 / scale : 1 * scale;
+                        speed += bFineControl ? 0.1 / scale : 1 * scale;
                     else if (GameSettings.THROTTLE_DOWN.GetKey())
-                        velocity -= bFineControl ? 0.1 / scale : 1 * scale;
+                        speed -= bFineControl ? 0.1 / scale : 1 * scale;
 
                     if (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey())
-                        velocity = 0;
+                        speed = 0;
                     if (GameSettings.THROTTLE_FULL.GetKeyDown())
-                        velocity = 2400;
+                        speed = 2400;
 
-                    Utils.GetAsst(PIDList.Throttle).SetPoint = velocity;
+                    Utils.GetAsst(PIDList.Throttle).SetPoint = speed;
 
-                    targetSpeed = Math.Max(velocity, 0).ToString();
+                    targetSpeed = Math.Max(speed, 0).ToString();
                 }
             }
         }
@@ -679,9 +679,9 @@ namespace PilotAssistant
             if (bShowThrottle)
             {
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Target Velocity:", GUILayout.Width(118)))
+                if (GUILayout.Button("Target Speed:", GUILayout.Width(118)))
                 {
-                    ScreenMessages.PostScreenMessage("Target Velocity updated");
+                    ScreenMessages.PostScreenMessage("Target Speed updated");
 
                     double newVal;
                     double.TryParse(targetSpeed, out newVal);
@@ -692,7 +692,7 @@ namespace PilotAssistant
                 targetSpeed = GUILayout.TextField(targetSpeed, GUILayout.Width(78));
                 GUILayout.EndHorizontal();
 
-                drawPIDvalues(PIDList.Throttle, "Velocity", "m/s", FlightData.thisVessel.srfSpeed, 2, "Throttle", "", true);
+                drawPIDvalues(PIDList.Throttle, "Speed", "m/s", FlightData.thisVessel.srfSpeed, 2, "Throttle", "", true);
                 // can't have people bugging things out now can we...
                 Utils.GetAsst(PIDList.Throttle).OutMin = Math.Min(Math.Max(Utils.GetAsst(PIDList.Throttle).OutMin, -1), 0);
                 Utils.GetAsst(PIDList.Throttle).OutMax = Math.Min(Math.Max(Utils.GetAsst(PIDList.Throttle).OutMax, -1), 0);

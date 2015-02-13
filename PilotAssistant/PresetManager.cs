@@ -66,7 +66,7 @@ namespace PilotAssistant
         const string iLower = "ClampLower";
         const string iUpper = "ClampUpper";
         const string scalar = "Scalar";
-        const string slide = "Slide";
+        const string delay = "Delay";
 
         public void Start()
         {
@@ -260,7 +260,7 @@ namespace PilotAssistant
             double.TryParse(node.GetValue(iGain), out gains[1]);
             double.TryParse(node.GetValue(dGain), out gains[2]);
             double.TryParse(node.GetValue(scalar), out gains[3]);
-            double.TryParse(node.GetValue(slide), out gains[4]);
+            double.TryParse(node.GetValue(delay), out gains[4]);
 
             return gains;
         }
@@ -329,7 +329,7 @@ namespace PilotAssistant
             node.AddValue(iGain, preset.PIDGains[index, 1]);
             node.AddValue(dGain, preset.PIDGains[index, 2]);
             node.AddValue(scalar, preset.PIDGains[index, 3]);
-            node.AddValue(slide, preset.PIDGains[index, 4]);
+            node.AddValue(delay, preset.PIDGains[index, 4]);
             return node;
         }
 
