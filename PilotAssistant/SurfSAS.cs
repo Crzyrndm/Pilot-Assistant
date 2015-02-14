@@ -9,7 +9,6 @@ namespace PilotAssistant
     using Utility;
     using Presets;
 
-    [Flags]
     public enum SASList
     {
         Pitch,
@@ -59,9 +58,9 @@ namespace PilotAssistant
         public static double[] defaultRollGains = { 0.1, 0.0, 0.06, -1, 1, -1, 1, 3 };
         public static double[] defaultYawGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3 };
 
-        public static double[] defaultPresetPitchGains = { 0.15, 0.0, 0.06, 3, 10 };
-        public static double[] defaultPresetRollGains = { 0.1, 0.0, 0.06, 3, 10 };
-        public static double[] defaultPresetYawGains = { 0.15, 0.0, 0.06, 3, 10 };
+        public static double[] defaultPresetPitchGains = { 0.15, 0.0, 0.06, 3, 20 }; // Kp/i/d, scalar, delay
+        public static double[] defaultPresetRollGains = { 0.1, 0.0, 0.06, 3, 20 };
+        public static double[] defaultPresetYawGains = { 0.15, 0.0, 0.06, 3, 20 };
 
         public void Start()
         {
@@ -126,8 +125,7 @@ namespace PilotAssistant
                 GeneralUI.InitColors();
                 bInit = true;
             }
-            PresetManager.loadCraftSSASPreset();
-            PresetManager.loadCraftStockPreset();
+            PresetManager.initSSASPreset();
         }
 
         public void OnDestroy()

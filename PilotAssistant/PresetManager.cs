@@ -569,22 +569,14 @@ namespace PilotAssistant
                 loadPAPreset(instance.craftPresetList[craftDefault].AsstPreset);
         }
 
-        public static void loadCraftSSASPreset()
+        // called on initialisation
+        public static void initSSASPreset()
         {
             if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SSASPreset != null)
                 loadSASPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SSASPreset);
             else
                 loadSASPreset(instance.craftPresetList[craftDefault].SSASPreset);
 
-            // sas mode
-            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName))
-                SurfSAS.Instance.bStockSAS = instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SASMode;
-            else
-                SurfSAS.Instance.bStockSAS = instance.craftPresetList[craftDefault].SASMode;
-        }
-
-        public static void loadCraftStockPreset()
-        {
             if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].StockPreset != null)
                 loadStockSASPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].StockPreset);
             else
