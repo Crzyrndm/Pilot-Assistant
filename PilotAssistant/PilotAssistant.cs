@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 using KSP.IO;
 
@@ -9,7 +10,6 @@ namespace PilotAssistant
     using Utility;
     using PID;
 
-    [Flags]
     public enum PIDList
     {
         HdgBank,
@@ -52,7 +52,7 @@ namespace PilotAssistant
         bool bThrottleActive = false;
         bool bWasThrottleActive = false;
 
-        Rect window = new Rect(10, 130, 10, 10);
+        public Rect window = new Rect(10, 130, 10, 10);
 
         Vector2 scrollbarHdg = Vector2.zero;
         Vector2 scrollbarVert = Vector2.zero;
@@ -76,14 +76,14 @@ namespace PilotAssistant
         string newPresetName = "";
         Rect presetWindow = new Rect(0, 0, 200, 10);
 
-        public static double[] defaultHdgBankGains = { 2, 0.1, 0, -30, 30, -0.5, 0.5, 1 };
-        public static double[] defaultHdgYawGains = { 0, 0, 0.01, -2, 2, -0.5, 0.5, 1 };
-        public static double[] defaultAileronGains = { 0.02, 0.005, 0.01, -1, 1, -0.4, 0.4, 1 };
-        public static double[] defaultRudderGains = { 0.1, 0.08, 0.05, -1, 1, -0.4, 0.4, 1 };
-        public static double[] defaultAltitudeGains = { 0.15, 0.01, 0, -50, 50, -0.01, 0.01, 1 };
-        public static double[] defaultVSpeedGains = { 2, 0.8, 2, -10, 10, -5, 5, 1 };
-        public static double[] defaultElevatorGains = { 0.05, 0.01, 0.1, -1, 1, -0.4, 0.4, 1 };
-        public static double[] defaultThrottleGains = { 0.2, 0.08, 0.1, -1, 0, -1, 0.4, 1 };
+        public static double[] defaultHdgBankGains = { 2, 0.1, 0, -30, 30, -0.5, 0.5, 1, 1 };
+        public static double[] defaultHdgYawGains = { 0, 0, 0.01, -2, 2, -0.5, 0.5, 1, 1 };
+        public static double[] defaultAileronGains = { 0.02, 0.005, 0.01, -1, 1, -0.4, 0.4, 1, 1 };
+        public static double[] defaultRudderGains = { 0.1, 0.08, 0.05, -1, 1, -0.4, 0.4, 1, 1 };
+        public static double[] defaultAltitudeGains = { 0.15, 0.01, 0, -50, 50, -0.01, 0.01, 1, 100 };
+        public static double[] defaultVSpeedGains = { 2, 0.8, 2, -10, 10, -5, 5, 1, 10 };
+        public static double[] defaultElevatorGains = { 0.05, 0.01, 0.1, -1, 1, -0.4, 0.4, 1, 1 };
+        public static double[] defaultThrottleGains = { 0.2, 0.08, 0.1, -1, 0, -1, 0.4, 1, 1 };
 
         public void Start()
         {
@@ -329,9 +329,6 @@ namespace PilotAssistant
 
         private void keyPressChanges()
         {
-            if (Utils.isFlightControlLocked())
-                return;
-
             bool mod = GameSettings.MODIFIER_KEY.GetKey();
 
             if (Input.GetKeyDown(KeyCode.Tab))
@@ -347,7 +344,8 @@ namespace PilotAssistant
                 else
                     Messaging.statusMessage(1);
             }
-
+            if (Utils.isFlightControlLocked())
+                return;
             if (GameSettings.SAS_TOGGLE.GetKeyDown())
             {
                 bHdgWasActive = false; // reset heading/vert lock on unpausing
@@ -516,7 +514,6 @@ namespace PilotAssistant
             if (bShowSettings)
             {
                 showPresets = GUILayout.Toggle(showPresets, showPresets ? "Hide Presets" : "Show Presets", GUILayout.Width(200));
-
                 showPIDLimits = GUILayout.Toggle(showPIDLimits, showPIDLimits ? "Hide PID Limits" : "Show PID Limits", GUILayout.Width(200));
                 showControlSurfaces = GUILayout.Toggle(showControlSurfaces, showControlSurfaces ? "Hide Control Surfaces" : "Show Control Surfaces", GUILayout.Width(200));
             }
@@ -557,8 +554,7 @@ namespace PilotAssistant
                         double newHdg;
                         if (double.TryParse(targetHeading, out newHdg) && newHdg >= 0 && newHdg <= 360)
                         {
-                            Utils.GetAsst(PIDList.HdgBank).SetPoint = newHdg;
-                            Utils.GetAsst(PIDList.HdgYaw).SetPoint = newHdg;
+                            Utils.GetAsst(PIDList.HdgBank).BumplessSetPoint = newHdg;
                             bHdgActive = bHdgWasActive = true; // skip toggle check to avoid being overwritten
                         }
                     }
@@ -569,13 +565,13 @@ namespace PilotAssistant
                 scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, GUILayout.Height(hdgScrollHeight));
                 if (!bWingLeveller)
                 {
-                    drawPIDvalues(PIDList.HdgBank, "Heading", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0", false, true, false);
-                    drawPIDvalues(PIDList.HdgYaw, "Bank => Yaw", "\u00B0", FlightData.yaw, 2, "Yaw", "\u00B0", true, false, false);
+                    drawPIDvalues(PIDList.HdgBank, "Heading", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0");
+                    drawPIDvalues(PIDList.HdgYaw, "Yaw", "\u00B0", FlightData.yaw, 2, "Yaw", "\u00B0", true, false);
                 }
                 if (showControlSurfaces)
                 {
-                    drawPIDvalues(PIDList.Aileron, "Bank", "\u00B0", FlightData.roll, 3, "Deflection", "\u00B0", false, true, false);
-                    drawPIDvalues(PIDList.Rudder, "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0", false, true, false);
+                    drawPIDvalues(PIDList.Aileron, "Bank", "\u00B0", FlightData.roll, 3, "Deflection", "\u00B0");
+                    drawPIDvalues(PIDList.Rudder, "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0");
                 }
                 GUILayout.EndScrollView();
 
@@ -625,9 +621,9 @@ namespace PilotAssistant
                     double newVal;
                     double.TryParse(targetVert, out newVal);
                     if (bAltitudeHold)
-                        Utils.GetAsst(PIDList.Altitude).SetPoint = newVal;
+                        Utils.GetAsst(PIDList.Altitude).BumplessSetPoint = newVal;
                     else
-                        Utils.GetAsst(PIDList.VertSpeed).SetPoint = newVal;
+                        Utils.GetAsst(PIDList.VertSpeed).BumplessSetPoint = newVal;
 
                     bVertActive = bVertWasActive = true; // skip the toggle check so value isn't overwritten
                 }
@@ -637,11 +633,11 @@ namespace PilotAssistant
                 scrollbarVert = GUILayout.BeginScrollView(scrollbarVert, GUILayout.Height(vertScrollHeight));
 
                 if (bAltitudeHold)
-                    drawPIDvalues(PIDList.Altitude, "Altitude", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true, true, false);
+                    drawPIDvalues(PIDList.Altitude, "Altitude", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true);
                 drawPIDvalues(PIDList.VertSpeed, "Vertical Speed", "m/s", FlightData.thisVessel.verticalSpeed, 2, "AoA", "\u00B0", true);
 
                 if (showControlSurfaces)
-                    drawPIDvalues(PIDList.Elevator, "Angle of Attack", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0", true, true, false);
+                    drawPIDvalues(PIDList.Elevator, "Angle of Attack", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0", true);
 
                 Utils.GetAsst(PIDList.Elevator).OutMin = Math.Min(Math.Max(Utils.GetAsst(PIDList.Elevator).OutMin, -1), 1);
                 Utils.GetAsst(PIDList.Elevator).OutMax = Math.Min(Math.Max(Utils.GetAsst(PIDList.Elevator).OutMax, -1), 1);
@@ -685,7 +681,7 @@ namespace PilotAssistant
 
                     double newVal;
                     double.TryParse(targetSpeed, out newVal);
-                    Utils.GetAsst(PIDList.Throttle).SetPoint = newVal;
+                    Utils.GetAsst(PIDList.Throttle).BumplessSetPoint = newVal;
 
                     bThrottleActive = bWasThrottleActive = true; // skip the toggle check so value isn't overwritten
                 }
@@ -702,7 +698,7 @@ namespace PilotAssistant
             GUI.DragWindow();
         }
 
-        private void drawPIDvalues(PIDList controllerid, string inputName, string inputUnits, double inputValue, int displayPrecision, string outputName, string outputUnits, bool invertOutput = false, bool showTarget = true, bool doublesided = true)
+        private void drawPIDvalues(PIDList controllerid, string inputName, string inputUnits, double inputValue, int displayPrecision, string outputName, string outputUnits, bool invertOutput = false, bool showTarget = true, bool doublesided = false)
         {
             PID_Controller controller = Utils.GetAsst(controllerid);
             controller.bShow = GUILayout.Toggle(controller.bShow, string.Format("{0}: {1}{2}", inputName, inputValue.ToString("N" + displayPrecision.ToString()), inputUnits), GeneralUI.toggleButton, GUILayout.Width(window.width - 50));
@@ -732,8 +728,13 @@ namespace PilotAssistant
                             controller.OutMin = GeneralUI.labPlusNumBox(string.Format("Min {0}{1}:", outputName, outputUnits), controller.OutMin.ToString("G3"));
                         else
                             controller.OutMin = -controller.OutMax;
-                        controller.ClampLower = GeneralUI.labPlusNumBox("I Clamp Lower:", controller.ClampLower.ToString("G3"));
-                        controller.ClampUpper = GeneralUI.labPlusNumBox("I Clamp Upper:", controller.ClampUpper.ToString("G3"));
+                        if (doublesided)
+                            controller.ClampLower = GeneralUI.labPlusNumBox("I Clamp Lower:", controller.ClampLower.ToString("G3"));
+                        else
+                            controller.ClampLower = -controller.ClampUpper;
+                        controller.ClampUpper = GeneralUI.labPlusNumBox("I Clamp:", controller.ClampUpper.ToString("G3"));
+
+                        controller.Easing = GeneralUI.labPlusNumBox("Easing:", controller.Easing.ToString("G3"));
                     }
                     else
                     { // used when response * -1 is used to get the correct output
@@ -743,8 +744,13 @@ namespace PilotAssistant
                         else
                             controller.OutMax = -controller.OutMin;
 
-                        controller.ClampUpper = -1 * GeneralUI.labPlusNumBox("I Clamp Lower:", (-controller.ClampUpper).ToString("G3"));
-                        controller.ClampLower = -1 * GeneralUI.labPlusNumBox("I Clamp Upper:", (-controller.ClampLower).ToString("G3"));
+                        if (doublesided)
+                            controller.ClampUpper = -1 * GeneralUI.labPlusNumBox("I Clamp Lower:", (-controller.ClampUpper).ToString("G3"));
+                        else
+                            controller.ClampUpper = -controller.ClampLower;
+                        controller.ClampLower = -1 * GeneralUI.labPlusNumBox("I Clamp:", (-controller.ClampLower).ToString("G3"));
+
+                        controller.Easing = GeneralUI.labPlusNumBox("Easing:", controller.Easing.ToString("G3"));
                     }
                 }
                 GUILayout.EndVertical();

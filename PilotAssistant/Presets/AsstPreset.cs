@@ -37,7 +37,7 @@ namespace PilotAssistant.Presets
             PIDGains.Clear();
             foreach (PID_Controller controller in controllers)
             {
-                double[] gains = new double[8];
+                double[] gains = new double[9];
                 gains[0] = controller.PGain;
                 gains[1] = controller.IGain;
                 gains[2] = controller.DGain;
@@ -46,6 +46,7 @@ namespace PilotAssistant.Presets
                 gains[5] = controller.ClampLower;
                 gains[6] = controller.ClampUpper;
                 gains[7] = controller.Scalar;
+                gains[8] = controller.Easing;
 
                 PIDGains.Add(gains);
             }
@@ -56,7 +57,7 @@ namespace PilotAssistant.Presets
             PIDGains.Clear();
             foreach (PID_Controller controller in controllers)
             {
-                double[] gains = new double[8];
+                double[] gains = new double[9];
                 gains[0] = controller.PGain;
                 gains[1] = controller.IGain;
                 gains[2] = controller.DGain;
@@ -65,6 +66,7 @@ namespace PilotAssistant.Presets
                 gains[5] = controller.ClampLower;
                 gains[6] = controller.ClampUpper;
                 gains[7] = controller.Scalar;
+                gains[8] = controller.Easing;
 
                 PIDGains.Add(gains);
             }

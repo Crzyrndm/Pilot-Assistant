@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 
 namespace PilotAssistant
@@ -16,12 +16,26 @@ namespace PilotAssistant
         public static bool bDisplayAssistant = false;
         public static bool bDisplaySAS = false;
 
+        public static KSP.IO.PluginConfiguration config;
         void Awake()
         {
             GameEvents.onGUIApplicationLauncherReady.Add(this.OnAppLauncherReady);
             window = new Rect(10, 50, 30, 30);
 
             RenderingManager.AddToPostDrawQueue(5, Draw);
+
+            StartCoroutine(LoadConfig());
+        }
+
+        IEnumerator LoadConfig()
+        {
+            yield return new WaitForEndOfFrame(); // Make sure PA and SSAS are running first
+
+            config = KSP.IO.PluginConfiguration.CreateForType<AppLauncherFlight>();
+            config.load();
+
+            PilotAssistant.Instance.window = config.GetValue("AsstWindow", new Rect());
+            SurfSAS.Instance.SASwindow = config.GetValue("SASWindow", new Rect());
         }
 
         void OnDestroy()
@@ -31,6 +45,15 @@ namespace PilotAssistant
             if (btnLauncher != null)
                 ApplicationLauncher.Instance.RemoveModApplication(btnLauncher);
             btnLauncher = null;
+
+            SaveConfig();
+        }
+
+        public void SaveConfig()
+        {
+            config.SetValue("AsstWindow", PilotAssistant.Instance.window);
+            config.SetValue("SASWindow", SurfSAS.Instance.SASwindow);
+            config.save();
         }
 
         private void OnAppLauncherReady()
@@ -60,6 +83,7 @@ namespace PilotAssistant
         private void Draw()
         {
             GeneralUI.Styles();
+            GUI.skin = GeneralUI.UISkin;
 
             if (bDisplayOptions)
                 window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));

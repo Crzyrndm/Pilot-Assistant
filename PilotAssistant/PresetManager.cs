@@ -66,6 +66,7 @@ namespace PilotAssistant
         const string iLower = "ClampLower";
         const string iUpper = "ClampUpper";
         const string scalar = "Scalar";
+        const string ease = "Ease";
         const string delay = "Delay";
 
         public void Start()
@@ -207,7 +208,7 @@ namespace PilotAssistant
 
         public static double[] controllerGains(ConfigNode node, PIDList type)
         {
-            double[] gains = new double[8];
+            double[] gains = new double[9];
 
             if (node == null)
                 return defaultControllerGains(type);
@@ -220,6 +221,7 @@ namespace PilotAssistant
             double.TryParse(node.GetValue(iLower), out gains[5]);
             double.TryParse(node.GetValue(iUpper), out gains[6]);
             double.TryParse(node.GetValue(scalar), out gains[7]);
+            double.TryParse(node.GetValue(ease), out gains[8]);
 
             return gains;
         }
@@ -319,6 +321,7 @@ namespace PilotAssistant
             node.AddValue(iLower, preset.PIDGains[index][5]);
             node.AddValue(iUpper, preset.PIDGains[index][6]);
             node.AddValue(scalar, preset.PIDGains[index][7]);
+            node.AddValue(ease, preset.PIDGains[index][8]);
             return node;
         }
 
@@ -395,6 +398,7 @@ namespace PilotAssistant
                 c[i].ClampLower = p.PIDGains[i][5];
                 c[i].ClampUpper = p.PIDGains[i][6];
                 c[i].Scalar = p.PIDGains[i][7];
+                c[i].Easing = p.PIDGains[i][8];
             }
 
             Instance.activePAPreset = p;
@@ -561,6 +565,7 @@ namespace PilotAssistant
             saveToFile();
         }
 
+        // called on vessel load
         public static void loadCraftAsstPreset()
         {
             if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].AsstPreset != null)
@@ -569,24 +574,29 @@ namespace PilotAssistant
                 loadPAPreset(instance.craftPresetList[craftDefault].AsstPreset);
         }
 
-        // called on initialisation
+        // called on vessel load
         public static void initSSASPreset()
         {
-            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SSASPreset != null)
-                loadSASPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SSASPreset);
-            else
-                loadSASPreset(instance.craftPresetList[craftDefault].SSASPreset);
-
-            if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].StockPreset != null)
-                loadStockSASPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].StockPreset);
-            else
-                loadStockSASPreset(instance.craftPresetList[craftDefault].StockPreset);
-
-            // sas mode
             if (instance.craftPresetList.ContainsKey(FlightGlobals.ActiveVessel.vesselName))
+            {
+                if (instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SSASPreset != null)
+                    loadSASPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SSASPreset);
+                else
+                    loadSASPreset(instance.craftPresetList[craftDefault].SSASPreset);
+
+                if (instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].StockPreset != null)
+                    loadStockSASPreset(instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].StockPreset);
+                else
+                    loadStockSASPreset(instance.craftPresetList[craftDefault].StockPreset);
+
                 SurfSAS.Instance.bStockSAS = instance.craftPresetList[FlightGlobals.ActiveVessel.vesselName].SASMode;
+            }
             else
+            {
+                loadStockSASPreset(instance.craftPresetList[craftDefault].StockPreset);
+                loadSASPreset(instance.craftPresetList[craftDefault].SSASPreset);
                 SurfSAS.Instance.bStockSAS = instance.craftPresetList[craftDefault].SASMode;
+            }
         }
     }
 }

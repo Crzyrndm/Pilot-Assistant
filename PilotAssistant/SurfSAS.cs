@@ -46,7 +46,7 @@ namespace PilotAssistant
 
         bool rollState = false; // false = surface mode, true = vector mode
 
-        Rect SASwindow = new Rect(10, 505, 200, 30); // gui window rect
+        public Rect SASwindow = new Rect(10, 505, 200, 30); // gui window rect
         bool[] stockPIDDisplay = { true, false, false }; // which stock PID axes are visible
 
         string newPresetName = "";
@@ -54,9 +54,9 @@ namespace PilotAssistant
         bool bShowPresets = false;
 
         // initialisation and default presets stuff
-        public static double[] defaultPitchGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3 };
-        public static double[] defaultRollGains = { 0.1, 0.0, 0.06, -1, 1, -1, 1, 3 };
-        public static double[] defaultYawGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3 };
+        public static double[] defaultPitchGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3, 200 };
+        public static double[] defaultRollGains = { 0.1, 0.0, 0.06, -1, 1, -1, 1, 3, 200 };
+        public static double[] defaultYawGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3, 200 };
 
         public static double[] defaultPresetPitchGains = { 0.15, 0.0, 0.06, 3, 20 }; // Kp/i/d, scalar, delay
         public static double[] defaultPresetRollGains = { 0.1, 0.0, 0.06, 3, 20 };
@@ -532,10 +532,10 @@ namespace PilotAssistant
 
                 if (bArmed)
                 {
-                    Utils.GetSAS(SASList.Pitch).SetPoint = Utils.Clamp((float)GeneralUI.TogPlusNumBox("Pitch:", ref bActive[(int)SASList.Pitch], ref targets[(int)SASList.Pitch], FlightData.pitch, Utils.GetSAS(SASList.Pitch).SetPoint, 80, 70), -90, 90);
-                    Utils.GetSAS(SASList.Yaw).SetPoint = GeneralUI.TogPlusNumBox("Heading:", ref bActive[(int)SASList.Yaw], ref targets[(int)SASList.Yaw], FlightData.heading, Utils.GetSAS(SASList.Yaw).SetPoint, 80, 70);
+                    Utils.GetSAS(SASList.Pitch).BumplessSetPoint = Utils.Clamp((float)GeneralUI.TogPlusNumBox("Pitch:", ref bActive[(int)SASList.Pitch], ref targets[(int)SASList.Pitch], FlightData.pitch, Utils.GetSAS(SASList.Pitch).SetPoint, 80, 70), -90, 90);
+                    Utils.GetSAS(SASList.Yaw).BumplessSetPoint = GeneralUI.TogPlusNumBox("Heading:", ref bActive[(int)SASList.Yaw], ref targets[(int)SASList.Yaw], FlightData.heading, Utils.GetSAS(SASList.Yaw).SetPoint, 80, 70);
                     if (!rollState) // editable
-                        Utils.GetSAS(SASList.Roll).SetPoint = GeneralUI.TogPlusNumBox("Roll:", ref bActive[(int)SASList.Roll], ref targets[(int)SASList.Roll], FlightData.roll, Utils.GetSAS(SASList.Roll).SetPoint, 80, 70);
+                        Utils.GetSAS(SASList.Roll).BumplessSetPoint = GeneralUI.TogPlusNumBox("Roll:", ref bActive[(int)SASList.Roll], ref targets[(int)SASList.Roll], FlightData.roll, Utils.GetSAS(SASList.Roll).SetPoint, 80, 70);
                     else // not editable b/c vector mode
                     {
                         GUILayout.BeginHorizontal();

@@ -7,35 +7,38 @@ namespace PilotAssistant.PID
 
     public class PID_Controller : MonoBehaviour
     {
-        private double setpoint = 0; // process setpoint
+        double target_setpoint = 0; // target setpoint
+        double active_setpoint = 0;
 
-        private double k_proportional; // Kp
-        private double k_integral; // Ki
-        private double k_derivative; // Kd
+        double k_proportional; // Kp
+        double k_integral; // Ki
+        double k_derivative; // Kd
 
-        private double sum = 0; // integral sum
-        private double previous = 0; // previous value stored for derivative action
-        private double rolling_diff = 0; // used for rolling average difference
-        private double rollingFactor = 0.5; // rolling average proportion. 0 = all new, 1 = never changes
-        private double error = 0; // error of current iteration
+        double sum = 0; // integral sum
+        double previous = 0; // previous value stored for derivative action
+        double rolling_diff = 0; // used for rolling average difference
+        double rollingFactor = 0.5; // rolling average proportion. 0 = all new, 1 = never changes
+        double error = 0; // error of current iteration
 
-        private double inMin = -1000000000; // Minimum input value
-        private double inMax = 1000000000; // Maximum input value
+        double inMin = -1000000000; // Minimum input value
+        double inMax = 1000000000; // Maximum input value
 
-        private double outMin; // Minimum output value
-        private double outMax; // Maximum output value
+        double outMin; // Minimum output value
+        double outMax; // Maximum output value
 
-        private double integralClampUpper; // AIW clamp
-        private double integralClampLower; // AIW clamp
+        double integralClampUpper; // AIW clamp
+        double integralClampLower;
 
-        private double dt = 1; // standardised response for any physics dt
+        double dt = 1; // standardised response for any physics dt
 
-        private double scale = 1;
+        double scale = 1;
+        double easing = 1;
+        double increment = 0;
 
-        internal bool bShow = false;
-        internal bool skipDerivative = false;
+        public bool bShow = false;
+        public bool skipDerivative = false;
 
-        public PID_Controller(double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1)
+        public PID_Controller(double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double easing = 1)
         {
             k_proportional = Kp;
             k_integral = Ki;
@@ -45,6 +48,7 @@ namespace PilotAssistant.PID
             integralClampLower = intClampLower;
             integralClampUpper = intClampUpper;
             scale = scalar;
+            this.easing = easing;
         }
 
         public PID_Controller(double[] gains)
@@ -57,13 +61,33 @@ namespace PilotAssistant.PID
             integralClampLower = gains[5];
             integralClampUpper = gains[6];
             scale = gains[7];
+            easing = gains[8];
         }
 
         public double ResponseD(double input)
         {
+            if (active_setpoint != target_setpoint)
+            {
+                increment += easing * TimeWarp.fixedDeltaTime * 0.01;
+                if (active_setpoint < target_setpoint)
+                {
+                    if (active_setpoint + increment > target_setpoint)
+                        active_setpoint = target_setpoint;
+                    else
+                        active_setpoint += increment;
+                }
+                else
+                {
+                    if (active_setpoint - increment < target_setpoint)
+                        active_setpoint = target_setpoint;
+                    else
+                        active_setpoint -= increment;
+                }
+            }
+
             input = Clamp(input, inMin, inMax);
             dt = TimeWarp.fixedDeltaTime;
-            error = input - setpoint;
+            error = input - active_setpoint;
 
             if (skipDerivative)
             {
@@ -71,9 +95,7 @@ namespace PilotAssistant.PID
                 previous = input;
             }
 
-            double response = Clamp(proportionalError(error) + integralError(error) + derivativeError(input), outMin, outMax);
-
-            return response;
+            return Clamp((proportionalError(error) + integralError(error) + derivativeError(input)), outMin, outMax);
         }
 
         public float ResponseF(double input)
@@ -81,14 +103,14 @@ namespace PilotAssistant.PID
             return (float)ResponseD(input);
         }
 
-        private double proportionalError(double input)
+        private double proportionalError(double error)
         {
             if (k_proportional == 0)
                 return 0;
-            return input * k_proportional / scale;
+            return error * k_proportional / scale;
         }
 
-        private double integralError(double input)
+        private double integralError(double error)
         {
             if (k_integral == 0 || FlightData.thisVessel.checkLanded() || !FlightData.thisVessel.IsControllable)
             {
@@ -96,10 +118,8 @@ namespace PilotAssistant.PID
                 return sum;
             }
 
-            sum += input * dt * k_integral / scale;
-            sum = Clamp(sum, integralClampLower, integralClampUpper); // AIW
-
-            return sum;
+            sum += error * dt * k_integral / scale;
+            return Clamp(sum, integralClampLower, integralClampUpper); // AIW
         }
 
         private double derivativeError(double input)
@@ -162,11 +182,22 @@ namespace PilotAssistant.PID
         {
             get
             {
-                return setpoint;
+                return target_setpoint;
             }
             set
             {
-                setpoint = value;
+                target_setpoint = value;
+                active_setpoint = value;
+            }
+        }
+
+        // let active setpoint move to match the target to smooth the transition
+        public double BumplessSetPoint
+        {
+            set
+            {
+                target_setpoint = value;
+                increment = 0;
             }
         }
 
@@ -285,6 +316,18 @@ namespace PilotAssistant.PID
             set
             {
                 scale = Math.Max(value, 0.01);
+            }
+        }
+
+        public double Easing
+        {
+            get
+            {
+                return easing;
+            }
+            set
+            {
+                easing = Math.Max(value, 0.01);
             }
         }
 
