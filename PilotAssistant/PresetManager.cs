@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace PilotAssistant
@@ -21,7 +20,6 @@ namespace PilotAssistant
                 return instance;
             }
         }
-
 
         public List<AsstPreset> PAPresetList = new List<AsstPreset>();
         public List<SASPreset> SASPresetList = new List<SASPreset>();
@@ -85,7 +83,9 @@ namespace PilotAssistant
         public void OnGUI()
         {
             if (GeneralUI.UISkin == null)
-                GeneralUI.UISkin = UnityEngine.GUI.skin;
+            {
+                GeneralUI.UISkin = (GUISkin)Instantiate(UnityEngine.GUI.skin);
+            }
         }
 
         public static void loadPresetsFromFile()

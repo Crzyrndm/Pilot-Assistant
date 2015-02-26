@@ -286,7 +286,6 @@ namespace PilotAssistant
             else
             {
                 Utils.GetAsst(PIDList.Altitude).Clear();
-                Utils.GetAsst(PIDList.HdgBank).Clear();
                 Utils.GetAsst(PIDList.Elevator).Clear();
             }
         }
@@ -312,7 +311,6 @@ namespace PilotAssistant
             if (!bWingLeveller)
             {
                 Utils.GetAsst(PIDList.HdgBank).SetPoint = FlightData.heading;
-                Utils.GetAsst(PIDList.HdgYaw).SetPoint = FlightData.heading;
                 targetHeading = Utils.GetAsst(PIDList.HdgBank).SetPoint.ToString("N2");
             }
         }
@@ -325,6 +323,8 @@ namespace PilotAssistant
                 Utils.GetAsst(PIDList.Throttle).SetPoint = FlightData.thisVessel.srfSpeed;
                 targetSpeed = Utils.GetAsst(PIDList.Throttle).SetPoint.ToString("N1");
             }
+            else
+                Utils.GetAsst(PIDList.Throttle).Clear();
         }
 
         private void keyPressChanges()
@@ -333,9 +333,9 @@ namespace PilotAssistant
 
             if (Input.GetKeyDown(KeyCode.Tab))
             {
-                bHdgWasActive = false; // reset heading/vert lock on unpausing
+                bHdgWasActive = false; // reset locks on unpausing
                 bVertWasActive = false;
-                bWasThrottleActive = false; // reset target speed on unpausing
+                bWasThrottleActive = false;
 
                 bPause = !bPause;
                 
@@ -346,9 +346,11 @@ namespace PilotAssistant
             }
             if (Utils.isFlightControlLocked())
                 return;
+            
+            // update targets
             if (GameSettings.SAS_TOGGLE.GetKeyDown())
             {
-                bHdgWasActive = false; // reset heading/vert lock on unpausing
+                bHdgWasActive = false;
                 bVertWasActive = false;
             }
 
@@ -360,7 +362,7 @@ namespace PilotAssistant
                 bWasAltitudeHold = false;
                 bWingLeveller = true;
                 targetVert = "0";
-                targetSpeed = FlightData.thisVessel.srfSpeed.ToString("G2");
+                targetSpeed = FlightData.thisVessel.srfSpeed.ToString("F2");
                 Messaging.statusMessage(4);
             }
 
@@ -521,24 +523,20 @@ namespace PilotAssistant
             #region Hdg GUI
 
             GUILayout.BeginHorizontal();
-            // button background colour
+
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            if (GUILayout.Button("Roll and Yaw Control", GUILayout.Width(186)))
-            {
-                bShowHdg = !bShowHdg;
-            }
-            // Toggle colour
+            bShowHdg = GUILayout.Toggle(bShowHdg, "", GeneralUI.toggleButton, GUILayout.Width(20));
+
             if (bHdgActive)
                 GUI.backgroundColor = GeneralUI.ActiveBackground;
             else
                 GUI.backgroundColor = GeneralUI.InActiveBackground;
-
-            bool toggleCheck = GUILayout.Toggle(bHdgActive, "");
-            if (toggleCheck != bHdgActive)
+            if (GUILayout.Button("Roll and Yaw Control", GUILayout.Width(186)))
             {
-                bHdgActive = toggleCheck;
+                bHdgActive = !bHdgActive;
                 bPause = false;
             }
+
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             GUILayout.EndHorizontal();
@@ -586,25 +584,20 @@ namespace PilotAssistant
             #region Pitch GUI
 
             GUILayout.BeginHorizontal();
-            // button background
+
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            if (GUILayout.Button("Vertical Control", GUILayout.Width(186)))
-            {
-                bShowVert = !bShowVert;
-            }
-            // Toggle colour
+            bShowVert = GUILayout.Toggle(bShowVert, "", GeneralUI.toggleButton, GUILayout.Width(20));
+
             if (bVertActive)
                 GUI.backgroundColor = GeneralUI.ActiveBackground;
             else
                 GUI.backgroundColor = GeneralUI.InActiveBackground;
-
-            toggleCheck = GUILayout.Toggle(bVertActive, "");
-            if (toggleCheck != bVertActive)
+            if (GUILayout.Button("Vertical Control", GUILayout.Width(186)))
             {
-                bVertActive = toggleCheck;
-                if (!toggleCheck)
-                    bPause = false;
+                bVertActive = !bVertActive;
+                bPause = false;
             }
+           
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             GUILayout.EndHorizontal();
@@ -651,23 +644,18 @@ namespace PilotAssistant
             GUILayout.BeginHorizontal();
             // button background
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            if (GUILayout.Button("Throttle Control", GUILayout.Width(186)))
-            {
-                bShowThrottle = !bShowThrottle;
-            }
-            // Toggle colour
+            bShowThrottle = GUILayout.Toggle(bShowThrottle, "", GeneralUI.toggleButton, GUILayout.Width(20));
             if (bThrottleActive)
                 GUI.backgroundColor = GeneralUI.ActiveBackground;
             else
                 GUI.backgroundColor = GeneralUI.InActiveBackground;
-
-            toggleCheck = GUILayout.Toggle(bThrottleActive, "");
-            if (toggleCheck != bThrottleActive)
+            if (GUILayout.Button("Throttle Control", GUILayout.Width(186)))
             {
-                bThrottleActive = toggleCheck;
-                if (!toggleCheck)
+                bThrottleActive = !bThrottleActive;
+                if (!bThrottleActive)
                     bPause = false;
             }
+            
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             GUILayout.EndHorizontal();

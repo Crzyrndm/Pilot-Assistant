@@ -36,6 +36,7 @@ namespace PilotAssistant
 
             PilotAssistant.Instance.window = config.GetValue("AsstWindow", new Rect());
             SurfSAS.Instance.SASwindow = config.GetValue("SASWindow", new Rect());
+            window = config.GetValue("AppWindow", new Rect());
         }
 
         void OnDestroy()
@@ -53,6 +54,7 @@ namespace PilotAssistant
         {
             config.SetValue("AsstWindow", PilotAssistant.Instance.window);
             config.SetValue("SASWindow", SurfSAS.Instance.SASwindow);
+            config.SetValue("AppWindow", window);
             config.save();
         }
 

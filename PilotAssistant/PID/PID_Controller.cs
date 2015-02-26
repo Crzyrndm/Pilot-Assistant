@@ -84,8 +84,8 @@ namespace PilotAssistant.PID
                         active_setpoint -= increment;
                 }
             }
-
             input = Clamp(input, inMin, inMax);
+
             dt = TimeWarp.fixedDeltaTime;
             error = input - active_setpoint;
 
@@ -94,7 +94,6 @@ namespace PilotAssistant.PID
                 skipDerivative = false;
                 previous = input;
             }
-
             return Clamp((proportionalError(error) + integralError(error) + derivativeError(input)), outMin, outMax);
         }
 
@@ -119,7 +118,8 @@ namespace PilotAssistant.PID
             }
 
             sum += error * dt * k_integral / scale;
-            return Clamp(sum, integralClampLower, integralClampUpper); // AIW
+            sum = Clamp(sum, integralClampLower, integralClampUpper); // AIW
+            return sum;
         }
 
         private double derivativeError(double input)
@@ -254,7 +254,7 @@ namespace PilotAssistant.PID
         }
 
         /// <summary>
-        /// Set output minimum and anti-integral windup to value
+        /// Set output minimum to value
         /// </summary>
         public double OutMin
         {
@@ -269,7 +269,7 @@ namespace PilotAssistant.PID
         }
 
         /// <summary>
-        /// Set output maximum and anti-integral windup to value
+        /// Set output maximum to value
         /// </summary>
         public double OutMax
         {
