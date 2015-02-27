@@ -224,8 +224,18 @@ namespace PilotAssistant
                     Utils.GetAsst(PIDList.Aileron).SetPoint = 0;
                     Utils.GetAsst(PIDList.Rudder).SetPoint = 0;
                 }
-                state.roll = Utils.GetAsst(PIDList.Aileron).ResponseF(FlightData.roll);
                 state.yaw = Utils.GetAsst(PIDList.Rudder).ResponseF(FlightData.yaw);
+
+                float rollInput = 0;
+                if (GameSettings.ROLL_LEFT.GetKey())
+                    rollInput = -1;
+                else if (GameSettings.ROLL_RIGHT.GetKey())
+                    rollInput = 1;
+                else if (!GameSettings.AXIS_ROLL.IsNeutral())
+                    rollInput = GameSettings.AXIS_ROLL.GetAxis();
+                if (FlightInputHandler.fetch.precisionMode)
+                    rollInput *= 0.33f;
+                state.roll = Mathf.Clamp(Utils.GetAsst(PIDList.Aileron).ResponseF(FlightData.roll) + rollInput, -1, 1);
             }
 
             if (bVertActive)

@@ -92,7 +92,7 @@ namespace PilotAssistant
         {
             AsstPreset asst = null;
             SASPreset SSAS = null, stock = null;
-
+            
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(asstPreset))
             {
                 if (node == null)
