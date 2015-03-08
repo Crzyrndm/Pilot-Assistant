@@ -203,7 +203,18 @@ namespace PilotAssistant
             // Main and preset window stuff
             if (!AppLauncherFlight.bDisplaySAS)
                 return;
-            Draw();
+
+            SASwindow = GUILayout.Window(78934856, SASwindow, drawSASWindow, "SAS Module", GUILayout.Height(0));
+
+            if (tooltip != "" && PilotAssistant.Instance.showTooltips)
+                GUILayout.Window(34246, new Rect(SASwindow.x + SASwindow.width, Screen.height - Input.mousePosition.y, 0, 0), tooltipWindow, "", GeneralUI.UISkin.label, GUILayout.Height(0), GUILayout.Width(300));
+
+            if (bShowPresets)
+            {
+                SASPresetwindow = GUILayout.Window(78934857, SASPresetwindow, drawPresetWindow, "SAS Presets", GUILayout.Height(0));
+                SASPresetwindow.x = SASwindow.x + SASwindow.width;
+                SASPresetwindow.y = SASwindow.y;
+            }
         }
 
         private void SurfaceSAS(FlightCtrlState state)
@@ -490,19 +501,6 @@ namespace PilotAssistant
         }
 
         #region GUI
-        public void Draw()
-        {
-            if (AppLauncherFlight.bDisplaySAS)
-                SASwindow = GUILayout.Window(78934856, SASwindow, drawSASWindow, "SAS Module", GUILayout.Height(0));
-
-            if (bShowPresets)
-            {
-                SASPresetwindow = GUILayout.Window(78934857, SASPresetwindow, drawPresetWindow, "SAS Presets", GUILayout.Height(0));
-                SASPresetwindow.x = SASwindow.x + SASwindow.width;
-                SASPresetwindow.y = SASwindow.y;
-            }
-        }
-
         private void drawSASWindow(int id)
         {
             if (GUI.Button(new Rect(SASwindow.width - 16, 2, 14, 14), ""))
@@ -559,6 +557,13 @@ namespace PilotAssistant
             }
 
             GUI.DragWindow();
+            tooltip = GUI.tooltip;
+        }
+
+        string tooltip;
+        private void tooltipWindow(int id)
+        {
+            GUILayout.Label(tooltip, GeneralUI.UISkin.textArea);
         }
 
         private void drawPIDValues(SASList controllerID, string inputName)
@@ -568,11 +573,11 @@ namespace PilotAssistant
 
             if (controller.bShow)
             {
-                controller.PGain = GeneralUI.labPlusNumBox("Kp:", controller.PGain.ToString("G3"), 45);
-                controller.IGain = GeneralUI.labPlusNumBox("Ki:", controller.IGain.ToString("G3"), 45);
-                controller.DGain = GeneralUI.labPlusNumBox("Kd:", controller.DGain.ToString("G3"), 45);
-                controller.Scalar = GeneralUI.labPlusNumBox("Scalar:", controller.Scalar.ToString("G3"), 45);
-                delayEngage[(int)controllerID] = Math.Max((float)GeneralUI.labPlusNumBox("Delay:", delayEngage[(int)controllerID].ToString("G3"), 45), 0);
+                controller.PGain = GeneralUI.labPlusNumBox(GeneralUI.KpLabel, controller.PGain.ToString("N3"), 45);
+                controller.IGain = GeneralUI.labPlusNumBox(GeneralUI.KiLabel, controller.IGain.ToString("N3"), 45);
+                controller.DGain = GeneralUI.labPlusNumBox(GeneralUI.KdLabel, controller.DGain.ToString("N3"), 45);
+                controller.Scalar = GeneralUI.labPlusNumBox(GeneralUI.ScalarLabel, controller.Scalar.ToString("N3"), 45);
+                delayEngage[(int)controllerID] = Math.Max((float)GeneralUI.labPlusNumBox("Delay:", delayEngage[(int)controllerID].ToString("N3"), 45), 0);
             }
         }
 
@@ -582,10 +587,10 @@ namespace PilotAssistant
 
             if (stockPIDDisplay[(int)controllerID])
             {
-                controller.kp = GeneralUI.labPlusNumBox("Kp:", controller.kp.ToString("G3"), 45);
-                controller.ki = GeneralUI.labPlusNumBox("Ki:", controller.ki.ToString("G3"), 45);
-                controller.kd = GeneralUI.labPlusNumBox("Kd:", controller.kd.ToString("G3"), 45);
-                controller.clamp = Math.Max(GeneralUI.labPlusNumBox("Scalar:", controller.clamp.ToString("G3"), 45), 0.01);
+                controller.kp = GeneralUI.labPlusNumBox(GeneralUI.KpLabel, controller.kp.ToString(), 45);
+                controller.ki = GeneralUI.labPlusNumBox(GeneralUI.KiLabel, controller.ki.ToString(), 45);
+                controller.kd = GeneralUI.labPlusNumBox(GeneralUI.KdLabel, controller.kd.ToString(), 45);
+                controller.clamp = Math.Max(GeneralUI.labPlusNumBox(GeneralUI.ScalarLabel, controller.clamp.ToString(), 45), 0.01);
             }
         }
 

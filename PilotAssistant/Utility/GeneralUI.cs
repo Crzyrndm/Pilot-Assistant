@@ -28,6 +28,14 @@ namespace PilotAssistant.Utility
 
         internal static bool styleInit = false;
 
+        internal static GUIContent KpLabel = new GUIContent("Kp", "Kp is the proportional response factor. The greater the error between the current state and the target, the greater the impact it has. \r\n\r\nP_res = Kp * error");
+        internal static GUIContent KiLabel = new GUIContent("Ki", "Ki is the integral response factor. The integral response is the sum of all previous errors and depends on both the magnitude and the duration for which the error remained.\r\n\r\nI_res = Ki * sumOf(error)");
+        internal static GUIContent KdLabel = new GUIContent("Kd", "Kd is the derivative response factor. The derivative response acts to prevent the output from changing and will dampen out oscillations when used in moderation.\r\n\r\nD_res = Kd * (error - prev_error)");
+        internal static GUIContent ScalarLabel = new GUIContent("Scalar", "The scalar factor increase/decrease the impact of Kp, Ki, and Kd. This is used to accomodate variations in flight conditions.\r\n\r\nOutput = (P_res + I_res + D_res) / Scalar");
+        internal static GUIContent IMaxLabel = new GUIContent("I Max", "The maximum value the integral sum can reach. This is mostly used to prevent excessive buildup when the setpoint is changed");
+        internal static GUIContent IMinLabel = new GUIContent("I Min", "The minimum value the integral sum can reach. This is mostly used to prevent excessive buildup when the setpoint is changed");
+        internal static GUIContent EasingLabel = new GUIContent("Easing", "The rate of change of the setpoint when a new target is set. Higher gives a faster change, lower gives a smoother change");
+
         internal static void InitColors()
         {
             stockBackgroundGUIColor = GUI.backgroundColor;
@@ -90,6 +98,43 @@ namespace PilotAssistant.Utility
         /// <param name="boxWidth"></param>
         /// <returns>edited value of the text box</returns>
         internal static double labPlusNumBox(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
+        {
+            double val;
+            GUILayout.BeginHorizontal();
+
+            GUILayout.Label(labelText, numBoxLabelStyle, GUILayout.Width(labelWidth));
+            val = double.Parse(boxText);
+            boxText = val.ToString(",0.0#####");
+            string text = GUILayout.TextField(boxText, numBoxTextStyle, GUILayout.Width(boxWidth));
+            //
+            try
+            {
+                val = double.Parse(text);
+            }
+            catch
+            {
+                val = double.Parse(boxText);
+            }
+            //
+            GUILayout.BeginVertical();
+            if (GUILayout.Button("+", btnStylePlus, GUILayout.Width(20), GUILayout.Height(13)))
+            {
+                if (val != 0)
+                    val *= 1.1;
+                else
+                    val = 0.01;
+            }
+            if (GUILayout.Button("-", btnStyleMinus, GUILayout.Width(20), GUILayout.Height(13)))
+            {
+                val /= 1.1;
+            }
+            GUILayout.EndVertical();
+            //
+            GUILayout.EndHorizontal();
+            return val;
+        }
+
+        internal static double labPlusNumBox(GUIContent labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
         {
             double val;
             GUILayout.BeginHorizontal();

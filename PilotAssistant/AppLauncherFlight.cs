@@ -34,9 +34,14 @@ namespace PilotAssistant
             config = KSP.IO.PluginConfiguration.CreateForType<AppLauncherFlight>();
             config.load();
 
-            PilotAssistant.Instance.window = config.GetValue("AsstWindow", new Rect());
-            SurfSAS.Instance.SASwindow = config.GetValue("SASWindow", new Rect());
-            window = config.GetValue("AppWindow", new Rect());
+            PilotAssistant.Instance.window = config.GetValue("AsstWindow", new Rect(300, 300, 0, 0));
+            PilotAssistant.Instance.doublesided = config.GetValue("AsstDoublesided", false);
+            PilotAssistant.Instance.showTooltips = config.GetValue("AsstTooltips", true);
+            PilotAssistant.Instance.showPresets = config.GetValue("AsstPresetWindow", false);
+            PilotAssistant.Instance.showPIDLimits = config.GetValue("AsstLimits", false);
+            PilotAssistant.Instance.showControlSurfaces = config.GetValue("AsstControlSurfaces", false);
+            SurfSAS.Instance.SASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
+            window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
         }
 
         void OnDestroy()
@@ -52,9 +57,14 @@ namespace PilotAssistant
 
         public void SaveConfig()
         {
-            config.SetValue("AsstWindow", PilotAssistant.Instance.window);
-            config.SetValue("SASWindow", SurfSAS.Instance.SASwindow);
-            config.SetValue("AppWindow", window);
+            config["AsstWindow"] = PilotAssistant.Instance.window;
+            config["AsstDoublesided"] = PilotAssistant.Instance.doublesided;
+            config["AsstTooltips"] = PilotAssistant.Instance.showTooltips;
+            config["AsstPresetWindow"] = PilotAssistant.Instance.showPresets;
+            config["AsstLimits"] = PilotAssistant.Instance.showPIDLimits;
+            config["AsstControlSurfaces"] = PilotAssistant.Instance.showControlSurfaces;
+            config["SASWindow"] = SurfSAS.Instance.SASwindow;
+            config["AppWindow"] = window;
             config.save();
         }
 
