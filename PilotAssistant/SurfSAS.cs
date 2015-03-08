@@ -577,7 +577,7 @@ namespace PilotAssistant
                 controller.IGain = GeneralUI.labPlusNumBox(GeneralUI.KiLabel, controller.IGain.ToString("N3"), 45);
                 controller.DGain = GeneralUI.labPlusNumBox(GeneralUI.KdLabel, controller.DGain.ToString("N3"), 45);
                 controller.Scalar = GeneralUI.labPlusNumBox(GeneralUI.ScalarLabel, controller.Scalar.ToString("N3"), 45);
-                delayEngage[(int)controllerID] = Math.Max((float)GeneralUI.labPlusNumBox("Delay:", delayEngage[(int)controllerID].ToString("N3"), 45), 0);
+                delayEngage[(int)controllerID] = Math.Max((float)GeneralUI.labPlusNumBox(GeneralUI.DelayLabel, delayEngage[(int)controllerID].ToString("N3"), 45), 0);
             }
         }
 
