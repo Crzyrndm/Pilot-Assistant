@@ -255,21 +255,24 @@ namespace PilotAssistant
             {
                 if (!bWingLeveller && (FlightData.thisVessel.latitude < 88 && FlightData.thisVessel.latitude > -88))
                 {
-                    if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading >= -180 && Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading <= 180)
-                    {
-                        Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading);
-                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading);
-                    }
-                    else if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading < -180)
-                    {
-                        Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading - 360);
-                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading - 360);
-                    }
-                    else if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading > 180)
-                    {
-                        Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading + 360);
-                        Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading + 360);
-                    }
+                    //if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading >= -180 && Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading <= 180)
+                    //{
+                    //    Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading);
+                    //    //Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading);
+                    //}
+                    //else if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading < -180)
+                    //{
+                    //    Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading - 360);
+                    //    //Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading - 360);
+                    //}
+                    //else if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading > 180)
+                    //{
+                    //    Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading + 360);
+                    //    //Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading + 360);
+                    //}
+                    //Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading + 360);
+                    Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.Aileron).SetPoint =
+                                                Utils.GetAsst(PIDList.HdgBank).ResponseD(CurrentAngleTargetRel(FlightData.heading, Utils.GetAsst(PIDList.HdgYaw).SetPoint));
 
                     Utils.GetAsst(PIDList.Rudder).SetPoint = -Utils.GetAsst(PIDList.HdgYaw).ResponseD(FlightData.yaw);
                 }
@@ -308,8 +311,25 @@ namespace PilotAssistant
             }
         }
 
+        /// <summary>
+        /// calculates the angle to feed corrected for 0/360 crossings
+        /// eg. if the target is 350 and the current is 10, it will return 370 giving a diff of -20 degrees
+        /// else you get +ve 340 and the turn is in the wrong direction
+        /// </summary>
+        double CurrentAngleTargetRel(double current, double target)
+        {
+            if (target - current < -180)
+                return current - 360;
+            else if (target - current > 180)
+                return current + 360;
+            else
+                return current;
+        }
 
-        public static bool IsPaused() { return Instance.bPause; }
+        public static bool IsPaused()
+        {
+            return Instance.bPause;
+        }
 
         private void hdgToggle()
         {
