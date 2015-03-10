@@ -188,50 +188,54 @@ namespace PilotAssistant
             // Window resizing (scroll views dont work nicely with GUILayout)
             // Have to put the width changes before the draw so the close button is correctly placed
             float width;
-            if (showPIDLimits && controllers.Any(c => c.bShow))
+            if (showPIDLimits && controllers.Any(c => c.bShow)) // use two column view if show limits option and a controller is open
                 width = 370;
             else
                 width = 240;
 
             if (bShowHdg)
             {
-                hdgScrollHeight = 0;
+                hdgScrollHeight = 0; // no controllers visible when in wing lvl mode unless ctrl surf's are there
                 if (!bWingLeveller)
-                    hdgScrollHeight += 55;
+                    hdgScrollHeight += 55; // hdg & yaw headers
                 if ((Utils.GetAsst(PIDList.HdgBank).bShow || Utils.GetAsst(PIDList.HdgYaw).bShow) && !bWingLeveller)
-                    hdgScrollHeight += 150;
+                    hdgScrollHeight += 150; // open controller
                 else if (showControlSurfaces)
                 {
-                    hdgScrollHeight += 50;
+                    hdgScrollHeight += 50; // aileron and rudder headers
                     if (Utils.GetAsst(PIDList.Aileron).bShow || Utils.GetAsst(PIDList.Rudder).bShow)
-                        hdgScrollHeight += 100;
+                        hdgScrollHeight += 100; // open controller
                 }
             }
             if (bShowVert)
             {
-                vertScrollHeight = 38;
+                vertScrollHeight = 38; // Vspeed header
                 if (bAltitudeHold)
-                    vertScrollHeight += 27;
+                    vertScrollHeight += 27; // altitude header
                 if ((Utils.GetAsst(PIDList.Altitude).bShow && bAltitudeHold) || (Utils.GetAsst(PIDList.VertSpeed).bShow))
-                    vertScrollHeight += 150;
+                    vertScrollHeight += 150; // open  controller
                 else if (showControlSurfaces)
                 {
-                    vertScrollHeight += 27;
+                    vertScrollHeight += 27; // elevator header
                     if (Utils.GetAsst(PIDList.Elevator).bShow)
-                        vertScrollHeight += 123;
+                        vertScrollHeight += 123; // open controller
                 }
             }
-
+            // main window
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             window = GUILayout.Window(34244, window, displayWindow, "Pilot Assistant", GUILayout.Height(0), GUILayout.Width(width));
-
+            // tooltip window. Label skin is transparent so it's only drawing what's inside it
             if (tooltip != "" && showTooltips)
                 GUILayout.Window(34246, new Rect(window.x + window.width, Screen.height - Input.mousePosition.y, 0, 0), tooltipWindow, "", GeneralUI.UISkin.label, GUILayout.Height(0), GUILayout.Width(300));
 
-            presetWindow.x = window.x + window.width;
-            presetWindow.y = window.y;
             if (showPresets)
+            {
+                // move the preset window to sit to the right of the main window, with the tops level
+                presetWindow.x = window.x + window.width;
+                presetWindow.y = window.y;
+
                 presetWindow = GUILayout.Window(34245, presetWindow, displayPresetWindow, "Pilot Assistant Presets", GUILayout.Width(200), GUILayout.Height(0));
+            }
         }
 
         private void vesselController(FlightCtrlState state)
@@ -275,7 +279,7 @@ namespace PilotAssistant
                     Utils.GetAsst(PIDList.Aileron).SetPoint = 0;
                     Utils.GetAsst(PIDList.Rudder).SetPoint = 0;
                 }
-                state.yaw = Utils.GetAsst(PIDList.Rudder).ResponseF(FlightData.yaw);
+                state.yaw = Mathf.Clamp(Utils.GetAsst(PIDList.Rudder).ResponseF(FlightData.yaw), -1, 1);
 
                 float rollInput = 0;
                 if (GameSettings.ROLL_LEFT.GetKey())
@@ -296,11 +300,11 @@ namespace PilotAssistant
                     Utils.GetAsst(PIDList.VertSpeed).SetPoint = -Utils.GetAsst(PIDList.Altitude).ResponseD(FlightData.thisVessel.altitude);
 
                 Utils.GetAsst(PIDList.Elevator).SetPoint = -Utils.GetAsst(PIDList.VertSpeed).ResponseD(FlightData.thisVessel.verticalSpeed);
-                state.pitch = -Utils.GetAsst(PIDList.Elevator).ResponseF(FlightData.AoA);
+                state.pitch = Mathf.Clamp(-Utils.GetAsst(PIDList.Elevator).ResponseF(FlightData.AoA), -1, 1);
             }
             if (bThrottleActive)
             {
-                state.mainThrottle = -Utils.GetAsst(PIDList.Throttle).ResponseF(FlightData.thisVessel.srfSpeed);
+                state.mainThrottle = Mathf.Clamp(-Utils.GetAsst(PIDList.Throttle).ResponseF(FlightData.thisVessel.srfSpeed), 0, 1);
             }
         }
 

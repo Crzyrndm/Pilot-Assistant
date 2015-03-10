@@ -80,7 +80,8 @@ namespace PilotAssistant.Utility
             UISkin.customStyles[(int)myStyles.btnToggle].normal.textColor = UISkin.customStyles[(int)myStyles.btnToggle].focused.textColor = Color.white;
             UISkin.customStyles[(int)myStyles.btnToggle].onNormal.textColor = UISkin.customStyles[(int)myStyles.btnToggle].onFocused.textColor = UISkin.customStyles[(int)myStyles.btnToggle].onHover.textColor
                 = UISkin.customStyles[(int)myStyles.btnToggle].active.textColor = UISkin.customStyles[(int)myStyles.btnToggle].hover.textColor = UISkin.customStyles[(int)myStyles.btnToggle].onActive.textColor = Color.green;
-            UISkin.customStyles[(int)myStyles.btnToggle].onNormal.background = UISkin.customStyles[(int)myStyles.btnToggle].onHover.background = UISkin.customStyles[(int)myStyles.btnToggle].onActive.background = UISkin.customStyles[(int)myStyles.btnToggle].active.background = HighLogic.Skin.button.onNormal.background;
+            UISkin.customStyles[(int)myStyles.btnToggle].onNormal.background = UISkin.customStyles[(int)myStyles.btnToggle].onHover.background = UISkin.customStyles[(int)myStyles.btnToggle].onActive.background
+                = UISkin.customStyles[(int)myStyles.btnToggle].active.background = HighLogic.Skin.button.onNormal.background;
             UISkin.customStyles[(int)myStyles.btnToggle].hover.background = UISkin.customStyles[(int)myStyles.btnToggle].normal.background;
         }
 
