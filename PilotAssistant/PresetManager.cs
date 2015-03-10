@@ -99,7 +99,7 @@ namespace PilotAssistant
 
                 List<double[]> gains = new List<double[]>();
                 gains.Add(controllerGains(node.GetNode(hdgCtrlr), PIDList.HdgBank));
-                gains.Add(controllerGains(node.GetNode(yawCtrlr), PIDList.HdgYaw));
+                gains.Add(controllerGains(node.GetNode(yawCtrlr), PIDList.BankToYaw));
                 gains.Add(controllerGains(node.GetNode(aileronCtrlr), PIDList.Aileron));
                 gains.Add(controllerGains(node.GetNode(rudderCtrlr), PIDList.Rudder));
                 gains.Add(controllerGains(node.GetNode(altCtrlr), PIDList.Altitude));
@@ -231,8 +231,8 @@ namespace PilotAssistant
             {
                 case PIDList.HdgBank:
                     return PilotAssistant.defaultHdgBankGains;
-                case PIDList.HdgYaw:
-                    return PilotAssistant.defaultHdgYawGains;
+                case PIDList.BankToYaw:
+                    return PilotAssistant.defaultBankToYawGains;
                 case PIDList.Aileron:
                     return PilotAssistant.defaultAileronGains;
                 case PIDList.Rudder:
@@ -286,7 +286,7 @@ namespace PilotAssistant
             ConfigNode node = new ConfigNode(asstPreset);
             node.AddValue("name", preset.name);
             node.AddNode(PIDnode(hdgCtrlr, (int)PIDList.HdgBank, preset));
-            node.AddNode(PIDnode(yawCtrlr, (int)PIDList.HdgYaw, preset));
+            node.AddNode(PIDnode(yawCtrlr, (int)PIDList.BankToYaw, preset));
             node.AddNode(PIDnode(aileronCtrlr, (int)PIDList.Aileron, preset));
             node.AddNode(PIDnode(rudderCtrlr, (int)PIDList.Rudder, preset));
             node.AddNode(PIDnode(altCtrlr, (int)PIDList.Altitude, preset));

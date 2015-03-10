@@ -14,7 +14,7 @@ namespace PilotAssistant
     public enum PIDList
     {
         HdgBank,
-        HdgYaw,
+        BankToYaw,
         Aileron,
         Rudder,
         Altitude,
@@ -80,7 +80,7 @@ namespace PilotAssistant
         Rect presetWindow = new Rect(0, 0, 200, 10);
 
         public static double[] defaultHdgBankGains = { 2, 0.1, 0, -30, 30, -0.5, 0.5, 1, 1 };
-        public static double[] defaultHdgYawGains = { 0, 0, 0.01, -2, 2, -0.5, 0.5, 1, 1 };
+        public static double[] defaultBankToYawGains = { 0, 0, 0.01, -2, 2, -0.5, 0.5, 1, 1 };
         public static double[] defaultAileronGains = { 0.02, 0.005, 0.01, -1, 1, -0.4, 0.4, 1, 1 };
         public static double[] defaultRudderGains = { 0.1, 0.08, 0.05, -1, 1, -0.4, 0.4, 1, 1 };
         public static double[] defaultAltitudeGains = { 0.15, 0.01, 0, -50, 50, -0.01, 0.01, 1, 100 };
@@ -115,7 +115,7 @@ namespace PilotAssistant
         void Initialise()
         {
             controllers[(int)PIDList.HdgBank] = new PID_Controller(defaultHdgBankGains);
-            controllers[(int)PIDList.HdgYaw] = new PID_Controller(defaultHdgYawGains);
+            controllers[(int)PIDList.BankToYaw] = new PID_Controller(defaultBankToYawGains);
             controllers[(int)PIDList.Aileron] = new PID_Controller(defaultAileronGains);
             controllers[(int)PIDList.Rudder] = new PID_Controller(defaultRudderGains);
             controllers[(int)PIDList.Altitude] = new PID_Controller(defaultAltitudeGains);
@@ -198,7 +198,7 @@ namespace PilotAssistant
                 hdgScrollHeight = 0; // no controllers visible when in wing lvl mode unless ctrl surf's are there
                 if (!bWingLeveller)
                     hdgScrollHeight += 55; // hdg & yaw headers
-                if ((Utils.GetAsst(PIDList.HdgBank).bShow || Utils.GetAsst(PIDList.HdgYaw).bShow) && !bWingLeveller)
+                if ((Utils.GetAsst(PIDList.HdgBank).bShow || Utils.GetAsst(PIDList.BankToYaw).bShow) && !bWingLeveller)
                     hdgScrollHeight += 150; // open controller
                 else if (showControlSurfaces)
                 {
@@ -255,26 +255,11 @@ namespace PilotAssistant
             {
                 if (!bWingLeveller && (FlightData.thisVessel.latitude < 88 && FlightData.thisVessel.latitude > -88))
                 {
-                    //if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading >= -180 && Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading <= 180)
-                    //{
-                    //    Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading);
-                    //    //Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading);
-                    //}
-                    //else if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading < -180)
-                    //{
-                    //    Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading - 360);
-                    //    //Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading - 360);
-                    //}
-                    //else if (Utils.GetAsst(PIDList.HdgBank).SetPoint - FlightData.heading > 180)
-                    //{
-                    //    Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading + 360);
-                    //    //Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading + 360);
-                    //}
-                    //Utils.GetAsst(PIDList.Aileron).SetPoint = Utils.GetAsst(PIDList.HdgBank).ResponseD(FlightData.heading + 360);
-                    Utils.GetAsst(PIDList.HdgYaw).SetPoint = Utils.GetAsst(PIDList.Aileron).SetPoint =
-                                                Utils.GetAsst(PIDList.HdgBank).ResponseD(CurrentAngleTargetRel(FlightData.heading, Utils.GetAsst(PIDList.HdgYaw).SetPoint));
-
-                    Utils.GetAsst(PIDList.Rudder).SetPoint = -Utils.GetAsst(PIDList.HdgYaw).ResponseD(FlightData.yaw);
+                    // calculate the bank angle response based on the current heading
+                    double hdgBankResponse = Utils.GetAsst(PIDList.HdgBank).ResponseD(CurrentAngleTargetRel(FlightData.heading, Utils.GetAsst(PIDList.HdgBank).SetPoint));
+                    // aileron setpoint updated, bank angle also used for yaw calculations (don't go direct to rudder because we want yaw stabilisation *or* turn assistance)
+                    Utils.GetAsst(PIDList.BankToYaw).SetPoint = Utils.GetAsst(PIDList.Aileron).SetPoint = hdgBankResponse;
+                    Utils.GetAsst(PIDList.Rudder).SetPoint = -Utils.GetAsst(PIDList.BankToYaw).ResponseD(FlightData.yaw);
                 }
                 else
                 {
@@ -344,7 +329,7 @@ namespace PilotAssistant
             else
             {
                 Utils.GetAsst(PIDList.HdgBank).Clear();
-                Utils.GetAsst(PIDList.HdgYaw).Clear();
+                Utils.GetAsst(PIDList.BankToYaw).Clear();
                 Utils.GetAsst(PIDList.Aileron).Clear();
                 Utils.GetAsst(PIDList.Rudder).Clear();
             }
@@ -478,7 +463,7 @@ namespace PilotAssistant
                         hdg -= 360;
 
                     Utils.GetAsst(PIDList.HdgBank).SetPoint = hdg;
-                    Utils.GetAsst(PIDList.HdgYaw).SetPoint = hdg;
+                    Utils.GetAsst(PIDList.BankToYaw).SetPoint = hdg;
                     targetHeading = hdg.ToString();
                 }
 
@@ -600,7 +585,7 @@ namespace PilotAssistant
                 if (!bWingLeveller)
                 {
                     drawPIDvalues(PIDList.HdgBank, "Heading", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0");
-                    drawPIDvalues(PIDList.HdgYaw, "Yaw", "\u00B0", FlightData.yaw, 2, "Yaw", "\u00B0", true, false);
+                    drawPIDvalues(PIDList.BankToYaw, "Yaw", "\u00B0", FlightData.yaw, 2, "Yaw", "\u00B0", true, false);
                 }
                 if (showControlSurfaces)
                 {
