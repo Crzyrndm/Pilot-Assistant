@@ -4,29 +4,25 @@ using UnityEngine;
 
 namespace PilotAssistant.Utility
 {
+    enum myStyles
+    {
+        labelAlert,
+        numBoxLabel,
+        numBoxText,
+        btnPlus,
+        btnMinus,
+        btnToggle
+    }
+
     static class GeneralUI
     {
         internal static Color stockBackgroundGUIColor;
-        internal static Color ActiveBackground;
-        internal static Color InActiveBackground;
-        internal static Color HeaderButtonBackground;
+        internal static Color ActiveBackground = XKCDColors.BrightOrange;
+        internal static Color InActiveBackground = XKCDColors.BrightSkyBlue;
+        internal static Color HeaderButtonBackground = XKCDColors.BlueBlue;
 
         // save the skin so other windows can't interfere
         internal static GUISkin UISkin;
-
-        // used for the pause message
-        internal static GUIStyle labelAlertStyle;
-
-        // styles for the numbox functions
-        internal static GUIStyle numBoxLabelStyle; // label that sits before the textbox and increment/decrement buttons
-        internal static GUIStyle numBoxTextStyle; // textbox between label and increment/decrement buttons
-        internal static GUIStyle btnStylePlus; // increment button
-        internal static GUIStyle btnStyleMinus; // decrement button
-
-        // Toggle button
-        internal static GUIStyle toggleButton;
-
-        internal static bool styleInit = false;
 
         internal static GUIContent KpLabel = new GUIContent("Kp", "Kp is the proportional response factor. The greater the error between the current state and the target, the greater the impact it has. \r\n\r\nP_res = Kp * error");
         internal static GUIContent KiLabel = new GUIContent("Ki", "Ki is the integral response factor. The integral response is the sum of all previous errors and depends on both the magnitude and the duration for which the error remained.\r\n\r\nI_res = Ki * sumOf(error)");
@@ -39,55 +35,53 @@ namespace PilotAssistant.Utility
 
         internal static void InitColors()
         {
-            stockBackgroundGUIColor = GUI.backgroundColor;
-            ActiveBackground = XKCDColors.BrightOrange;
-            InActiveBackground = XKCDColors.BrightSkyBlue;
-            HeaderButtonBackground = XKCDColors.BlueBlue;
+            //ActiveBackground = XKCDColors.BrightOrange;
+            //InActiveBackground = XKCDColors.BrightSkyBlue;
+            //HeaderButtonBackground = XKCDColors.BlueBlue;
         }
 
-        internal static void Styles()
+        internal static void customSkin()
         {
-            if (styleInit)
-                return;
-            
+            UISkin = (GUISkin)MonoBehaviour.Instantiate(UnityEngine.GUI.skin);
+            UISkin.customStyles = new GUIStyle[Enum.GetValues(typeof(myStyles)).GetLength(0)];
+            stockBackgroundGUIColor = GUI.backgroundColor;
+
             // style for the paused message (big, bold, and red)
-            labelAlertStyle = new GUIStyle(GUI.skin.box);
-            labelAlertStyle.normal.textColor = XKCDColors.Red;
-            labelAlertStyle.fontSize = 21;
-            labelAlertStyle.fontStyle = FontStyle.Bold;
-            labelAlertStyle.alignment = TextAnchor.MiddleCenter;
-            
+            UISkin.customStyles[(int)myStyles.labelAlert] = new GUIStyle(GUI.skin.box);
+            UISkin.customStyles[(int)myStyles.labelAlert].normal.textColor = XKCDColors.Red;
+            UISkin.customStyles[(int)myStyles.labelAlert].fontSize = 21;
+            UISkin.customStyles[(int)myStyles.labelAlert].fontStyle = FontStyle.Bold;
+            UISkin.customStyles[(int)myStyles.labelAlert].alignment = TextAnchor.MiddleCenter;
+
             // style for label to align with increment buttons
-            numBoxLabelStyle = new GUIStyle(GUI.skin.label);
-            numBoxLabelStyle.alignment = TextAnchor.MiddleLeft;
-            numBoxLabelStyle.margin = new RectOffset(4, 4, 5, 3);
-            
+            UISkin.customStyles[(int)myStyles.numBoxLabel] = new GUIStyle(UISkin.label);
+            UISkin.customStyles[(int)myStyles.numBoxLabel].alignment = TextAnchor.MiddleLeft;
+            UISkin.customStyles[(int)myStyles.numBoxLabel].margin = new RectOffset(4, 4, 5, 3);
+
             // style for text box to align with increment buttons better
-            numBoxTextStyle = new GUIStyle(GUI.skin.textField);
-            numBoxTextStyle.alignment = TextAnchor.MiddleLeft;
-            numBoxTextStyle.margin = new RectOffset(4, 0, 5, 3);
-            
+            UISkin.customStyles[(int)myStyles.numBoxText] = new GUIStyle(UISkin.textField);
+            UISkin.customStyles[(int)myStyles.numBoxText].alignment = TextAnchor.MiddleLeft;
+            UISkin.customStyles[(int)myStyles.numBoxText].margin = new RectOffset(4, 0, 5, 3);
+
             // style for increment button
-            btnStylePlus = new GUIStyle(GUI.skin.button);
-            btnStylePlus.margin = new RectOffset(0, 4, 2, 0);
-            btnStylePlus.hover.textColor = Color.yellow;
-            btnStylePlus.onActive.textColor = Color.green;
+            UISkin.customStyles[(int)myStyles.btnPlus] = new GUIStyle(UISkin.button);
+            UISkin.customStyles[(int)myStyles.btnPlus].margin = new RectOffset(0, 4, 2, 0);
+            UISkin.customStyles[(int)myStyles.btnPlus].hover.textColor = Color.yellow;
+            UISkin.customStyles[(int)myStyles.btnPlus].onActive.textColor = Color.green;
 
             // style for derement button
-            btnStyleMinus = new GUIStyle(GUI.skin.button);
-            btnStyleMinus.margin = new RectOffset(0, 4, 0, 2);
-            btnStyleMinus.hover.textColor = Color.yellow;
-            btnStyleMinus.onActive.textColor = Color.green;
+            UISkin.customStyles[(int)myStyles.btnMinus] = new GUIStyle(UISkin.button);
+            UISkin.customStyles[(int)myStyles.btnMinus].margin = new RectOffset(0, 4, 0, 2);
+            UISkin.customStyles[(int)myStyles.btnMinus].hover.textColor = Color.yellow;
+            UISkin.customStyles[(int)myStyles.btnMinus].onActive.textColor = Color.green;
 
             // A toggle that looks like a button
-            toggleButton = new GUIStyle(GUI.skin.button);
-            toggleButton.normal.textColor = toggleButton.focused.textColor = Color.white;
-            toggleButton.onNormal.textColor = toggleButton.onFocused.textColor = toggleButton.onHover.textColor 
-                = toggleButton.active.textColor = toggleButton.hover.textColor = toggleButton.onActive.textColor = Color.green;
-            toggleButton.onNormal.background = toggleButton.onHover.background = toggleButton.onActive.background = toggleButton.active.background = HighLogic.Skin.button.onNormal.background;
-            toggleButton.hover.background = toggleButton.normal.background;
-            
-            styleInit = true;
+            UISkin.customStyles[(int)myStyles.btnToggle] = new GUIStyle(UISkin.button);
+            UISkin.customStyles[(int)myStyles.btnToggle].normal.textColor = UISkin.customStyles[(int)myStyles.btnToggle].focused.textColor = Color.white;
+            UISkin.customStyles[(int)myStyles.btnToggle].onNormal.textColor = UISkin.customStyles[(int)myStyles.btnToggle].onFocused.textColor = UISkin.customStyles[(int)myStyles.btnToggle].onHover.textColor
+                = UISkin.customStyles[(int)myStyles.btnToggle].active.textColor = UISkin.customStyles[(int)myStyles.btnToggle].hover.textColor = UISkin.customStyles[(int)myStyles.btnToggle].onActive.textColor = Color.green;
+            UISkin.customStyles[(int)myStyles.btnToggle].onNormal.background = UISkin.customStyles[(int)myStyles.btnToggle].onHover.background = UISkin.customStyles[(int)myStyles.btnToggle].onActive.background = UISkin.customStyles[(int)myStyles.btnToggle].active.background = HighLogic.Skin.button.onNormal.background;
+            UISkin.customStyles[(int)myStyles.btnToggle].hover.background = UISkin.customStyles[(int)myStyles.btnToggle].normal.background;
         }
 
         /// <summary>
@@ -103,10 +97,10 @@ namespace PilotAssistant.Utility
             double val;
             GUILayout.BeginHorizontal();
 
-            GUILayout.Label(labelText, numBoxLabelStyle, GUILayout.Width(labelWidth));
+            GUILayout.Label(labelText, UISkin.customStyles[(int)myStyles.numBoxLabel], GUILayout.Width(labelWidth));
             val = double.Parse(boxText);
             boxText = val.ToString(",0.0#####");
-            string text = GUILayout.TextField(boxText, numBoxTextStyle, GUILayout.Width(boxWidth));
+            string text = GUILayout.TextField(boxText, UISkin.customStyles[(int)myStyles.numBoxText], GUILayout.Width(boxWidth));
             //
             try
             {
@@ -118,14 +112,14 @@ namespace PilotAssistant.Utility
             }
             //
             GUILayout.BeginVertical();
-            if (GUILayout.Button("+", btnStylePlus, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("+", UISkin.customStyles[(int)myStyles.btnPlus], GUILayout.Width(20), GUILayout.Height(13)))
             {
                 if (val != 0)
                     val *= 1.1;
                 else
                     val = 0.01;
             }
-            if (GUILayout.Button("-", btnStyleMinus, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("-", UISkin.customStyles[(int)myStyles.btnMinus], GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val /= 1.1;
             }
@@ -140,10 +134,10 @@ namespace PilotAssistant.Utility
             double val;
             GUILayout.BeginHorizontal();
 
-            GUILayout.Label(labelText, numBoxLabelStyle, GUILayout.Width(labelWidth));
+            GUILayout.Label(labelText, UISkin.customStyles[(int)myStyles.numBoxLabel], GUILayout.Width(labelWidth));
             val = double.Parse(boxText);
             boxText = val.ToString(",0.0#####");
-            string text = GUILayout.TextField(boxText, numBoxTextStyle, GUILayout.Width(boxWidth));
+            string text = GUILayout.TextField(boxText, UISkin.customStyles[(int)myStyles.numBoxText], GUILayout.Width(boxWidth));
             //
             try
             {
@@ -155,14 +149,14 @@ namespace PilotAssistant.Utility
             }
             //
             GUILayout.BeginVertical();
-            if (GUILayout.Button("+", btnStylePlus, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("+", UISkin.customStyles[(int)myStyles.btnPlus], GUILayout.Width(20), GUILayout.Height(13)))
             {
                 if (val != 0)
                     val *= 1.1;
                 else
                     val = 0.01;
             }
-            if (GUILayout.Button("-", btnStyleMinus, GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("-", UISkin.customStyles[(int)myStyles.btnMinus], GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val /= 1.1;
             }
@@ -184,7 +178,7 @@ namespace PilotAssistant.Utility
         {
             GUILayout.BeginHorizontal();
 
-            bool tempState = GUILayout.Toggle(toggleState, toggleText, toggleButton, GUILayout.Width(toggleWidth));
+            bool tempState = GUILayout.Toggle(toggleState, toggleText, UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(toggleWidth));
             if (tempState != toggleState)
             {
                 toggleState = tempState;
@@ -195,7 +189,7 @@ namespace PilotAssistant.Utility
                 }
             }
 
-            boxText = GUILayout.TextField(boxText, numBoxTextStyle, GUILayout.Width(boxWidth));
+            boxText = GUILayout.TextField(boxText, UISkin.customStyles[(int)myStyles.numBoxText], GUILayout.Width(boxWidth));
 
             if (GUILayout.Button("u"))
             {

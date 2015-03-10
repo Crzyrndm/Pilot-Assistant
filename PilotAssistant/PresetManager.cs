@@ -82,10 +82,9 @@ namespace PilotAssistant
 
         public void OnGUI()
         {
+            // create the GUISkin
             if (GeneralUI.UISkin == null)
-            {
-                GeneralUI.UISkin = (GUISkin)Instantiate(UnityEngine.GUI.skin);
-            }
+                GeneralUI.customSkin();
         }
 
         public static void loadPresetsFromFile()

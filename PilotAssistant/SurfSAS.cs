@@ -121,8 +121,6 @@ namespace PilotAssistant
                         PresetManager.Instance.craftPresetList["default"].StockPreset = new SASPreset(FlightData.thisVessel.Autopilot.SAS, "stock");
                 }
                 PresetManager.saveDefaults();
-
-                GeneralUI.InitColors();
                 bInit = true;
             }
             PresetManager.initSSASPreset();
@@ -179,7 +177,6 @@ namespace PilotAssistant
         public void drawGUI()
         {
             GUI.skin = GeneralUI.UISkin;
-            GeneralUI.Styles();
 
             // SAS toggle button
             // is before the bDisplay check so it can be up without the GUI
@@ -537,7 +534,7 @@ namespace PilotAssistant
                     else // not editable b/c vector mode
                     {
                         GUILayout.BeginHorizontal();
-                        bActive[(int)SASList.Roll] = GUILayout.Toggle(bActive[(int)SASList.Roll], "Roll:", GeneralUI.toggleButton, GUILayout.Width(80));
+                        bActive[(int)SASList.Roll] = GUILayout.Toggle(bActive[(int)SASList.Roll], "Roll:", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(80));
                         GUILayout.TextField(FlightData.roll.ToString("N2"), GUILayout.Width(70));
                         GUILayout.EndHorizontal();
                     }
@@ -569,7 +566,7 @@ namespace PilotAssistant
         private void drawPIDValues(SASList controllerID, string inputName)
         {
             PID_Controller controller = Utils.GetSAS(controllerID);
-            controller.bShow = GUILayout.Toggle(controller.bShow, inputName, GeneralUI.toggleButton);
+            controller.bShow = GUILayout.Toggle(controller.bShow, inputName, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
 
             if (controller.bShow)
             {
@@ -583,7 +580,7 @@ namespace PilotAssistant
 
         private void drawPIDValues(PIDclamp controller, string inputName, SASList controllerID)
         {
-            stockPIDDisplay[(int)controllerID] = GUILayout.Toggle(stockPIDDisplay[(int)controllerID], inputName, GeneralUI.toggleButton);
+            stockPIDDisplay[(int)controllerID] = GUILayout.Toggle(stockPIDDisplay[(int)controllerID], inputName, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
 
             if (stockPIDDisplay[(int)controllerID])
             {

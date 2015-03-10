@@ -183,7 +183,6 @@ namespace PilotAssistant
                 return;
 
             GUI.skin = GeneralUI.UISkin;
-            GeneralUI.Styles();
 
             // Window resizing (scroll views dont work nicely with GUILayout)
             // Have to put the width changes before the draw so the close button is correctly placed
@@ -191,7 +190,7 @@ namespace PilotAssistant
             if (showPIDLimits)
                 width = 370;
             else
-                width = 238;
+                width = 240;
 
             if (bShowHdg)
             {
@@ -515,7 +514,7 @@ namespace PilotAssistant
                 AppLauncherFlight.bDisplayAssistant = false;
 
             if (IsPaused())
-                GUILayout.Box("CONTROL PAUSED", GeneralUI.labelAlertStyle);
+                GUILayout.Box("CONTROL PAUSED", GeneralUI.UISkin.customStyles[(int)myStyles.labelAlert]);
 
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
             if (GUILayout.Button("Options", GUILayout.Width(205)))
@@ -537,7 +536,7 @@ namespace PilotAssistant
             GUILayout.BeginHorizontal();
 
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            bShowHdg = GUILayout.Toggle(bShowHdg, "", GeneralUI.toggleButton, GUILayout.Width(20));
+            bShowHdg = GUILayout.Toggle(bShowHdg, "", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(20));
 
             if (bHdgActive)
                 GUI.backgroundColor = GeneralUI.ActiveBackground;
@@ -598,7 +597,7 @@ namespace PilotAssistant
             GUILayout.BeginHorizontal();
 
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            bShowVert = GUILayout.Toggle(bShowVert, "", GeneralUI.toggleButton, GUILayout.Width(20));
+            bShowVert = GUILayout.Toggle(bShowVert, "", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(20));
 
             if (bVertActive)
                 GUI.backgroundColor = GeneralUI.ActiveBackground;
@@ -656,7 +655,7 @@ namespace PilotAssistant
             GUILayout.BeginHorizontal();
             // button background
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            bShowThrottle = GUILayout.Toggle(bShowThrottle, "", GeneralUI.toggleButton, GUILayout.Width(20));
+            bShowThrottle = GUILayout.Toggle(bShowThrottle, "", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(20));
             if (bThrottleActive)
                 GUI.backgroundColor = GeneralUI.ActiveBackground;
             else
@@ -714,7 +713,7 @@ namespace PilotAssistant
         private void drawPIDvalues(PIDList controllerid, string inputName, string inputUnits, double inputValue, int displayPrecision, string outputName, string outputUnits, bool invertOutput = false, bool showTarget = true)
         {
             PID_Controller controller = Utils.GetAsst(controllerid);
-            controller.bShow = GUILayout.Toggle(controller.bShow, string.Format("{0}: {1}{2}", inputName, inputValue.ToString("N" + displayPrecision.ToString()), inputUnits), GeneralUI.toggleButton, GUILayout.Width(200));
+            controller.bShow = GUILayout.Toggle(controller.bShow, string.Format("{0}: {1}{2}", inputName, inputValue.ToString("N" + displayPrecision.ToString()), inputUnits), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
 
             if (controller.bShow)
             {

@@ -94,7 +94,6 @@ namespace PilotAssistant
 
         private void Draw()
         {
-            GeneralUI.Styles();
             GUI.skin = GeneralUI.UISkin;
 
             if (bDisplayOptions)
@@ -106,12 +105,12 @@ namespace PilotAssistant
             if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
                 btnLauncher.SetFalse();
 
-            bool temp = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", Utility.GeneralUI.toggleButton);
+            bool temp = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
             if (temp != bDisplayAssistant)
             {
                 bDisplayAssistant = temp;
             }
-            temp = GUILayout.Toggle(bDisplaySAS, "SAS Systems", Utility.GeneralUI.toggleButton);
+            temp = GUILayout.Toggle(bDisplaySAS, "SAS Systems", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
             if (temp != bDisplaySAS)
             {
                 bDisplaySAS = temp;
