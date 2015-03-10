@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections;
+using System.Linq;
 using UnityEngine;
 using KSP.IO;
 
@@ -187,7 +188,7 @@ namespace PilotAssistant
             // Window resizing (scroll views dont work nicely with GUILayout)
             // Have to put the width changes before the draw so the close button is correctly placed
             float width;
-            if (showPIDLimits)
+            if (showPIDLimits && controllers.Any(c => c.bShow))
                 width = 370;
             else
                 width = 240;
@@ -571,7 +572,7 @@ namespace PilotAssistant
                     GUILayout.EndHorizontal();
                 }
 
-                scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, GUILayout.Height(hdgScrollHeight));
+                scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(hdgScrollHeight));
                 if (!bWingLeveller)
                 {
                     drawPIDvalues(PIDList.HdgBank, "Heading", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0");
@@ -634,7 +635,7 @@ namespace PilotAssistant
                 targetVert = GUILayout.TextField(targetVert, GUILayout.Width(98));
                 GUILayout.EndHorizontal();
 
-                scrollbarVert = GUILayout.BeginScrollView(scrollbarVert, GUILayout.Height(vertScrollHeight));
+                scrollbarVert = GUILayout.BeginScrollView(scrollbarVert, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(vertScrollHeight));
 
                 if (bAltitudeHold)
                     drawPIDvalues(PIDList.Altitude, "Altitude", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true);
