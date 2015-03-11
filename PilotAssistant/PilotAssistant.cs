@@ -464,8 +464,11 @@ namespace PilotAssistant
                     else if (GameSettings.YAW_RIGHT.GetKey())
                         hdg += bFineControl ? 0.04 / scale : 0.4 * scale;
                     else if (!GameSettings.AXIS_YAW.IsNeutral())
-                        hdg += (bFineControl ? 0.04 / scale : 0.4 * scale) * GameSettings.AXIS_YAW.GetAxis();
-
+                    {
+                        float axisYaw = GameSettings.AXIS_YAW.GetAxis();
+                        if (Math.Abs(axisYaw) > 0.000001f)
+                            hdg += (bFineControl ? 0.04 / scale : 0.4 * scale) * axisYaw;
+                    }
                     if (hdg < 0)
                         hdg += 360;
                     else if (hdg > 360)
@@ -473,6 +476,7 @@ namespace PilotAssistant
 
                     Utils.GetAsst(PIDList.HdgBank).SetPoint = hdg;
                     Utils.GetAsst(PIDList.BankToYaw).SetPoint = hdg;
+                    hdg = Math.Round(hdg, 9);
                     targetHeading = hdg.ToString();
                 }
 
@@ -487,7 +491,13 @@ namespace PilotAssistant
                     else if (GameSettings.PITCH_UP.GetKey())
                         vert += bFineControl ? 0.04 / scale : 0.4 * scale;
                     else if (!GameSettings.AXIS_PITCH.IsNeutral())
-                        vert += (bFineControl ? 0.04 / scale : 0.4 * scale) * GameSettings.AXIS_PITCH.GetAxis();
+                    {
+                        float axisPitch = GameSettings.AXIS_PITCH.GetAxis();
+                        if (Math.Abs(axisPitch) > 0.000001f)
+                        {
+                            vert += (bFineControl ? 0.04 / scale : 0.4 * scale) * axisPitch;
+                        }
+                    }
 
                     if (bAltitudeHold)
                     {
@@ -497,6 +507,7 @@ namespace PilotAssistant
                     else
                         Utils.GetAsst(PIDList.VertSpeed).SetPoint = vert;
 
+                    vert = Math.Round(vert, 9);
                     targetVert = vert.ToString();
                 }
 
