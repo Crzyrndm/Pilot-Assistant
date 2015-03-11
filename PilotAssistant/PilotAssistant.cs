@@ -108,6 +108,7 @@ namespace PilotAssistant
 
             FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
+            GameEvents.onTimeWarpRateChanged.Add(warpHandler);
 
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
         }
@@ -146,10 +147,18 @@ namespace PilotAssistant
             PresetManager.loadCraftAsstPreset();
         }
 
+        private void warpHandler()
+        {
+            FlightData.updateAttitude();
+            if (TimeWarp.CurrentRateIndex == 0 && TimeWarp.CurrentRate != 1 && TimeWarp.WarpMode == TimeWarp.Modes.HIGH)
+                bHdgWasActive = bVertWasActive = bWasThrottleActive = false;
+        }
+
         public void OnDestroy()
         {
             RenderingManager.RemoveFromPostDrawQueue(5, drawGUI);
             GameEvents.onVesselChange.Remove(vesselSwitch);
+            GameEvents.onTimeWarpRateChanged.Remove(warpHandler);
             PresetManager.saveToFile();
             bHdgActive = false;
             bVertActive = false;

@@ -87,8 +87,9 @@ namespace PilotAssistant
 
         private void warpHandler()
         {
-            //if (!FlightGlobals.warpDriveActive)
-            //    updateTarget();
+            FlightData.updateAttitude();
+            if (TimeWarp.CurrentRateIndex == 0 && TimeWarp.CurrentRate != 1 && TimeWarp.WarpMode == TimeWarp.Modes.HIGH)
+                updateTarget();
         }
 
         // need to wait for Stock SAS to be ready, hence the Coroutine
@@ -320,7 +321,7 @@ namespace PilotAssistant
             while (fadeCurrent[(int)SASList.Pitch] > 1) // fadeCurrent only decreases after delay period finishes
             {
                 yield return new WaitForFixedUpdate();
-                timeElapsed[(int)SASList.Pitch] += Time.fixedDeltaTime * 100f; // 1 == 1/100th of a second
+                timeElapsed[(int)SASList.Pitch] += TimeWarp.fixedDeltaTime * 100f; // 1 == 1/100th of a second
                 // handle both in the same while loop so if we pause/unpause again it just resets
                 if (timeElapsed[(int)SASList.Pitch] < delayEngage[(int)SASList.Pitch])
                 {
@@ -353,7 +354,7 @@ namespace PilotAssistant
             while (fadeCurrent[(int)SASList.Roll] > 1) // fadeCurrent only decreases after delay period finishes
             {
                 yield return new WaitForFixedUpdate();
-                timeElapsed[(int)SASList.Roll] += Time.fixedDeltaTime * 100f; // 1 == 1/100th of a second
+                timeElapsed[(int)SASList.Roll] += TimeWarp.fixedDeltaTime * 100f; // 1 == 1/100th of a second
                 // handle both in the same while loop so if we pause/unpause again it just resets
                 if (timeElapsed[(int)SASList.Roll] < delayEngage[(int)SASList.Roll])
                 {
@@ -389,7 +390,7 @@ namespace PilotAssistant
             while (fadeCurrent[(int)SASList.Yaw] > 1) // fadeCurrent only decreases after delay period finishes
             {
                 yield return new WaitForFixedUpdate();
-                timeElapsed[(int)SASList.Yaw] += Time.fixedDeltaTime * 100f; // 1 == 1/100th of a second
+                timeElapsed[(int)SASList.Yaw] += TimeWarp.fixedDeltaTime * 100f; // 1 == 1/100th of a second
                 // handle both in the same while loop so if we pause/unpause again it just resets
                 if (timeElapsed[(int)SASList.Yaw] < delayEngage[(int)SASList.Yaw])
                 {
