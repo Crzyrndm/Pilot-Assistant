@@ -456,7 +456,7 @@ namespace PilotAssistant
             {
                 double scale = mod ? 10 : 1;
                 bool bFineControl = FlightInputHandler.fetch.precisionMode;
-                if (bHdgActive && (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || !GameSettings.AXIS_YAW.IsNeutral()))
+                if (bHdgActive && (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || (!GameSettings.AXIS_YAW.IsNeutral() && Math.Abs(GameSettings.AXIS_YAW.GetAxis()) > 0.000001f)))
                 {
                     double hdg = double.Parse(targetHeading);
                     if (GameSettings.YAW_LEFT.GetKey())
@@ -464,11 +464,8 @@ namespace PilotAssistant
                     else if (GameSettings.YAW_RIGHT.GetKey())
                         hdg += bFineControl ? 0.04 / scale : 0.4 * scale;
                     else if (!GameSettings.AXIS_YAW.IsNeutral())
-                    {
-                        float axisYaw = GameSettings.AXIS_YAW.GetAxis();
-                        if (Math.Abs(axisYaw) > 0.000001f)
-                            hdg += (bFineControl ? 0.04 / scale : 0.4 * scale) * axisYaw;
-                    }
+                        hdg += (bFineControl ? 0.04 / scale : 0.4 * scale) * GameSettings.AXIS_YAW.GetAxis();
+
                     if (hdg < 0)
                         hdg += 360;
                     else if (hdg > 360)
@@ -480,7 +477,7 @@ namespace PilotAssistant
                     targetHeading = hdg.ToString();
                 }
 
-                if (bVertActive && (GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || !GameSettings.AXIS_PITCH.IsNeutral()))
+                if (bVertActive && (GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || (!GameSettings.AXIS_PITCH.IsNeutral() && Math.Abs(GameSettings.AXIS_PITCH.GetAxis()) > 0.000001f)))
                 {
                     double vert = double.Parse(targetVert);
                     if (bAltitudeHold)
@@ -491,13 +488,7 @@ namespace PilotAssistant
                     else if (GameSettings.PITCH_UP.GetKey())
                         vert += bFineControl ? 0.04 / scale : 0.4 * scale;
                     else if (!GameSettings.AXIS_PITCH.IsNeutral())
-                    {
-                        float axisPitch = GameSettings.AXIS_PITCH.GetAxis();
-                        if (Math.Abs(axisPitch) > 0.000001f)
-                        {
-                            vert += (bFineControl ? 0.04 / scale : 0.4 * scale) * axisPitch;
-                        }
-                    }
+                        vert += (bFineControl ? 0.04 / scale : 0.4 * scale) * GameSettings.AXIS_PITCH.GetAxis();
 
                     if (bAltitudeHold)
                     {
