@@ -456,7 +456,7 @@ namespace PilotAssistant
             {
                 double scale = mod ? 10 : 1;
                 bool bFineControl = FlightInputHandler.fetch.precisionMode;
-                if (bHdgActive && (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || !GameSettings.AXIS_YAW.IsNeutral()))
+                if (bHdgActive && (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || (!GameSettings.AXIS_YAW.IsNeutral() && Math.Abs(GameSettings.AXIS_YAW.GetAxis()) > 0.000001f)))
                 {
                     double hdg = double.Parse(targetHeading);
                     if (GameSettings.YAW_LEFT.GetKey())
@@ -473,10 +473,11 @@ namespace PilotAssistant
 
                     Utils.GetAsst(PIDList.HdgBank).SetPoint = hdg;
                     Utils.GetAsst(PIDList.BankToYaw).SetPoint = hdg;
+                    hdg = Math.Round(hdg, 9);
                     targetHeading = hdg.ToString();
                 }
 
-                if (bVertActive && (GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || !GameSettings.AXIS_PITCH.IsNeutral()))
+                if (bVertActive && (GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || (!GameSettings.AXIS_PITCH.IsNeutral() && Math.Abs(GameSettings.AXIS_PITCH.GetAxis()) > 0.000001f)))
                 {
                     double vert = double.Parse(targetVert);
                     if (bAltitudeHold)
@@ -497,6 +498,7 @@ namespace PilotAssistant
                     else
                         Utils.GetAsst(PIDList.VertSpeed).SetPoint = vert;
 
+                    vert = Math.Round(vert, 9);
                     targetVert = vert.ToString();
                 }
 
