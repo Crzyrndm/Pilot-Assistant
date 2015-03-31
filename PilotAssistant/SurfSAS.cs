@@ -247,11 +247,14 @@ namespace PilotAssistant
                 if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Yaw]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Yaw]))
                 {
                     state.pitch = (vertResponse * (float)Math.Cos(rollRad) - hrztResponse * (float)Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
+                    pitchSet = state.pitch;
                     state.yaw = (vertResponse * (float)Math.Sin(rollRad) + hrztResponse * (float)Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Yaw];
                 }
                 rollResponse();
             }
         }
+
+        public float pitchSet { get; set; }
 
         private void updateTarget()
         {

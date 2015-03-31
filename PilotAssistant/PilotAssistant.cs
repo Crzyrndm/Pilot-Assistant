@@ -347,10 +347,19 @@ namespace PilotAssistant
         private void vertToggle()
         {
             bVertWasActive = bVertActive;
+
             if (bVertActive)
             {
+                Utils.GetAsst(PIDList.VertSpeed).Preset(-FlightData.AoA);
+                Utils.GetAsst(PIDList.Elevator).Preset(-SurfSAS.Instance.pitchSet);
+                Utils.GetAsst(PIDList.VertSpeed).skipDerivative = true;
+                Utils.GetAsst(PIDList.Elevator).skipDerivative = true;
+
                 if (bAltitudeHold)
                 {
+                    Utils.GetAsst(PIDList.Altitude).Preset(-FlightData.thisVessel.verticalSpeed);
+                    Utils.GetAsst(PIDList.Altitude).skipDerivative = true;
+
                     Utils.GetAsst(PIDList.Altitude).SetPoint = FlightData.thisVessel.altitude;
                     targetVert = Utils.GetAsst(PIDList.Altitude).SetPoint.ToString("N1");
                 }
@@ -359,12 +368,12 @@ namespace PilotAssistant
                     Utils.GetAsst(PIDList.VertSpeed).SetPoint = FlightData.thisVessel.verticalSpeed;
                     targetVert = Utils.GetAsst(PIDList.VertSpeed).SetPoint.ToString("N3");
                 }
-
                 bPause = false;
             }
             else
             {
                 Utils.GetAsst(PIDList.Altitude).Clear();
+                Utils.GetAsst(PIDList.VertSpeed).Clear();
                 Utils.GetAsst(PIDList.Elevator).Clear();
             }
         }
@@ -417,11 +426,7 @@ namespace PilotAssistant
                 bWasThrottleActive = false;
 
                 bPause = !bPause;
-                
-                if (bPause)
-                    Messaging.statusMessage(0);
-                else
-                    Messaging.statusMessage(1);
+                Messaging.statusMessage(bPause ? 0 : 1);
             }
             if (Utils.isFlightControlLocked())
                 return;

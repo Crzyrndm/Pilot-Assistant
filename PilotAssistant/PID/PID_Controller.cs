@@ -104,8 +104,6 @@ namespace PilotAssistant.PID
 
         private double proportionalError(double error)
         {
-            if (k_proportional == 0)
-                return 0;
             return error * k_proportional / scale;
         }
 
@@ -139,6 +137,11 @@ namespace PilotAssistant.PID
             sum = 0;
         }
 
+        public void Preset(double target)
+        {
+            sum = target;
+        }
+
         #region utility functions
 
         /// <summary>
@@ -156,23 +159,6 @@ namespace PilotAssistant.PID
                 return max;
             else
                 return val;
-        }
-
-        /// <summary>
-        /// Linear interpolation between two points
-        /// </summary>
-        /// <param name="pct">fraction of travel from the minimum to maximum. Can be less than 0 or greater than 1</param>
-        /// <param name="lower">reference point treated as the base (pct = 0)</param>
-        /// <param name="upper">reference point treated as the target (pct = 1)</param>
-        /// <param name="clamp">clamp pct input between 0 and 1?</param>
-        /// <returns></returns>
-        internal static double Lerp(double pct, double lower, double upper, bool clamp = true)
-        {
-            if (clamp)
-            {
-                pct = Clamp(pct, 0, 1);
-            }
-            return (1 - pct) * lower + pct * upper;
         }
 
         #endregion
@@ -330,15 +316,6 @@ namespace PilotAssistant.PID
                 easing = Math.Max(value, 0.01);
             }
         }
-
-        public double RollingFactor
-        {
-            set
-            {
-                rollingFactor = Clamp(value, 0, 1);
-            }
-        }
-
         #endregion
     }
 }
