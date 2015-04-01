@@ -101,10 +101,10 @@ namespace PilotAssistant
 
             PresetManager.loadCraftAsstPreset();
 
-            Utils.GetAsst(PIDList.Aileron).InMax = 180;
-            Utils.GetAsst(PIDList.Aileron).InMin = -180;
-            Utils.GetAsst(PIDList.Altitude).InMin = 0;
-            Utils.GetAsst(PIDList.Throttle).InMin = 0;
+            PIDList.Aileron.GetAsst().InMax = 180;
+            PIDList.Aileron.GetAsst().InMin = -180;
+            PIDList.Altitude.GetAsst().InMin = 0;
+            PIDList.Throttle.GetAsst().InMin = 0;
 
             FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
@@ -188,12 +188,10 @@ namespace PilotAssistant
 
             if (bHdgActive)
             {
-                Utils.GetAsst(PIDList.HdgBank).SetPoint = calculateTargetHeading();
-                float textVal;
-                float.TryParse(targetHeading, out textVal);
+                PIDList.HdgBank.GetAsst().SetPoint = calculateTargetHeading();
 
-                if (Math.Abs(Utils.GetAsst(PIDList.HdgBank).SetPoint - textVal) > 1 && !headingEdit)
-                    targetHeading = Utils.GetAsst(PIDList.HdgBank).SetPoint.ToString("N2");
+                if (!headingEdit)
+                    targetHeading = PIDList.HdgBank.GetAsst().SetPoint.ToString("N2");
             }
         }
 
@@ -217,12 +215,12 @@ namespace PilotAssistant
                 hdgScrollHeight = 0; // no controllers visible when in wing lvl mode unless ctrl surf's are there
                 if (!bWingLeveller)
                     hdgScrollHeight += 55; // hdg & yaw headers
-                if ((Utils.GetAsst(PIDList.HdgBank).bShow || Utils.GetAsst(PIDList.BankToYaw).bShow) && !bWingLeveller)
+                if ((PIDList.HdgBank.GetAsst().bShow || PIDList.BankToYaw.GetAsst().bShow) && !bWingLeveller)
                     hdgScrollHeight += 150; // open controller
                 else if (showControlSurfaces)
                 {
                     hdgScrollHeight += 50; // aileron and rudder headers
-                    if (Utils.GetAsst(PIDList.Aileron).bShow || Utils.GetAsst(PIDList.Rudder).bShow)
+                    if (PIDList.Aileron.GetAsst().bShow || PIDList.Rudder.GetAsst().bShow)
                         hdgScrollHeight += 100; // open controller
                 }
             }
@@ -231,12 +229,12 @@ namespace PilotAssistant
                 vertScrollHeight = 38; // Vspeed header
                 if (bAltitudeHold)
                     vertScrollHeight += 27; // altitude header
-                if ((Utils.GetAsst(PIDList.Altitude).bShow && bAltitudeHold) || (Utils.GetAsst(PIDList.VertSpeed).bShow))
+                if ((PIDList.Altitude.GetAsst().bShow && bAltitudeHold) || PIDList.VertSpeed.GetAsst().bShow)
                     vertScrollHeight += 150; // open  controller
                 else if (showControlSurfaces)
                 {
                     vertScrollHeight += 27; // elevator header
-                    if (Utils.GetAsst(PIDList.Elevator).bShow)
+                    if (PIDList.Elevator.GetAsst().bShow)
                         vertScrollHeight += 123; // open controller
                 }
             }
@@ -275,18 +273,18 @@ namespace PilotAssistant
                 if (!bWingLeveller)
                 {
                     // calculate the bank angle response based on the current heading
-                    double hdgBankResponse = Utils.GetAsst(PIDList.HdgBank).ResponseD(CurrentAngleTargetRel(FlightData.heading, Utils.GetAsst(PIDList.HdgBank).SetPoint));
+                    double hdgBankResponse = PIDList.HdgBank.GetAsst().ResponseD(CurrentAngleTargetRel(FlightData.heading, Utils.GetAsst(PIDList.HdgBank).SetPoint));
                     // aileron setpoint updated, bank angle also used for yaw calculations (don't go direct to rudder because we want yaw stabilisation *or* turn assistance)
-                    Utils.GetAsst(PIDList.BankToYaw).SetPoint = Utils.GetAsst(PIDList.Aileron).SetPoint = hdgBankResponse;
-                    Utils.GetAsst(PIDList.Rudder).SetPoint = -Utils.GetAsst(PIDList.BankToYaw).ResponseD(FlightData.yaw);
+                    PIDList.BankToYaw.GetAsst().SetPoint = PIDList.Aileron.GetAsst().SetPoint = hdgBankResponse;
+                    PIDList.Rudder.GetAsst().SetPoint = -PIDList.BankToYaw.GetAsst().ResponseD(FlightData.yaw);
                 }
                 else
                 {
                     bWasWingLeveller = true;
-                    Utils.GetAsst(PIDList.Aileron).SetPoint = 0;
-                    Utils.GetAsst(PIDList.Rudder).SetPoint = 0;
+                    PIDList.Aileron.GetAsst().SetPoint = 0;
+                    PIDList.Rudder.GetAsst().SetPoint = 0;
                 }
-                state.yaw = Mathf.Clamp(Utils.GetAsst(PIDList.Rudder).ResponseF(FlightData.yaw), -1, 1);
+                state.yaw = Mathf.Clamp(PIDList.Rudder.GetAsst().ResponseF(FlightData.yaw), -1, 1);
 
                 float rollInput = 0;
                 if (GameSettings.ROLL_LEFT.GetKey())
@@ -297,21 +295,21 @@ namespace PilotAssistant
                     rollInput = GameSettings.AXIS_ROLL.GetAxis();
                 if (FlightInputHandler.fetch.precisionMode)
                     rollInput *= 0.33f;
-                state.roll = Mathf.Clamp(Utils.GetAsst(PIDList.Aileron).ResponseF(FlightData.roll) + rollInput, -1, 1);
+                state.roll = Mathf.Clamp(PIDList.Aileron.GetAsst().ResponseF(FlightData.roll) + rollInput, -1, 1);
             }
 
             if (bVertActive)
             {
                 // Set requested vertical speed
                 if (bAltitudeHold)
-                    Utils.GetAsst(PIDList.VertSpeed).SetPoint = -Utils.GetAsst(PIDList.Altitude).ResponseD(FlightData.thisVessel.altitude);
+                    PIDList.VertSpeed.GetAsst().SetPoint = -PIDList.Altitude.GetAsst().ResponseD(FlightData.thisVessel.altitude);
 
-                Utils.GetAsst(PIDList.Elevator).SetPoint = -Utils.GetAsst(PIDList.VertSpeed).ResponseD(FlightData.thisVessel.verticalSpeed);
-                state.pitch = Mathf.Clamp(-Utils.GetAsst(PIDList.Elevator).ResponseF(FlightData.AoA), -1, 1);
+                PIDList.Elevator.GetAsst().SetPoint = -PIDList.VertSpeed.GetAsst().ResponseD(FlightData.vertSpeed);
+                state.pitch = Mathf.Clamp(-PIDList.Elevator.GetAsst().ResponseF(FlightData.AoA), -1, 1);
             }
             if (bThrottleActive)
             {
-                state.mainThrottle = Mathf.Clamp(-Utils.GetAsst(PIDList.Throttle).ResponseF(FlightData.thisVessel.srfSpeed), 0, 1);
+                state.mainThrottle = Mathf.Clamp(-PIDList.Throttle.GetAsst().ResponseF(FlightData.thisVessel.srfSpeed), 0, 1);
             }
         }
 
@@ -368,15 +366,15 @@ namespace PilotAssistant
             }
             else
             {
-                Utils.GetAsst(PIDList.HdgBank).Clear();
-                Utils.GetAsst(PIDList.BankToYaw).Clear();
-                Utils.GetAsst(PIDList.Aileron).Clear();
-                Utils.GetAsst(PIDList.Rudder).Clear();
+                PIDList.HdgBank.GetAsst().Clear();
+                PIDList.BankToYaw.GetAsst().Clear();
+                PIDList.Aileron.GetAsst().Clear();
+                PIDList.Rudder.GetAsst().Clear();
 
-                Utils.GetAsst(PIDList.HdgBank).skipDerivative = true;
-                Utils.GetAsst(PIDList.BankToYaw).skipDerivative = true;
-                Utils.GetAsst(PIDList.Aileron).skipDerivative = true;
-                Utils.GetAsst(PIDList.Rudder).skipDerivative = true;
+                PIDList.HdgBank.GetAsst().skipDerivative = true;
+                PIDList.BankToYaw.GetAsst().skipDerivative = true;
+                PIDList.Aileron.GetAsst().skipDerivative = true;
+                PIDList.Rudder.GetAsst().skipDerivative = true;
             }
         }
 
@@ -386,32 +384,32 @@ namespace PilotAssistant
 
             if (bVertActive)
             {
-                Utils.GetAsst(PIDList.VertSpeed).Preset(-FlightData.AoA);
-                Utils.GetAsst(PIDList.Elevator).Preset(-SurfSAS.Instance.pitchSet);
+                PIDList.VertSpeed.GetAsst().Preset(-FlightData.AoA);
+                PIDList.Elevator.GetAsst().Preset(-SurfSAS.Instance.pitchSet);
 
                 if (bAltitudeHold)
                 {
-                    Utils.GetAsst(PIDList.Altitude).Preset(-FlightData.thisVessel.verticalSpeed);
-                    Utils.GetAsst(PIDList.Altitude).skipDerivative = true;
+                    PIDList.Altitude.GetAsst().Preset(-FlightData.vertSpeed);
+                    PIDList.Altitude.GetAsst().skipDerivative = true;
 
-                    Utils.GetAsst(PIDList.Altitude).SetPoint = FlightData.thisVessel.altitude;
-                    targetVert = Utils.GetAsst(PIDList.Altitude).SetPoint.ToString("N1");
+                    PIDList.Altitude.GetAsst().SetPoint = FlightData.thisVessel.altitude;
+                    targetVert = FlightData.thisVessel.altitude.ToString("N1");
                 }
                 else
                 {
-                    Utils.GetAsst(PIDList.VertSpeed).SetPoint = FlightData.thisVessel.verticalSpeed;
-                    targetVert = Utils.GetAsst(PIDList.VertSpeed).SetPoint.ToString("N3");
+                    PIDList.VertSpeed.GetAsst().SetPoint = FlightData.vertSpeed;
+                    targetVert = FlightData.vertSpeed.ToString("N3");
                 }
                 bPause = false;
             }
             else
             {
-                Utils.GetAsst(PIDList.Altitude).Clear();
-                Utils.GetAsst(PIDList.VertSpeed).Clear();
-                Utils.GetAsst(PIDList.Elevator).Clear();
+                PIDList.Altitude.GetAsst().Clear();
+                PIDList.VertSpeed.GetAsst().Clear();
+                PIDList.Elevator.GetAsst().Clear();
 
-                Utils.GetAsst(PIDList.VertSpeed).skipDerivative = true;
-                Utils.GetAsst(PIDList.Elevator).skipDerivative = true;
+                PIDList.VertSpeed.GetAsst().skipDerivative = true;
+                PIDList.Elevator.GetAsst().skipDerivative = true;
             }
         }
 
@@ -420,13 +418,13 @@ namespace PilotAssistant
             bWasAltitudeHold = bAltitudeHold;
             if (bAltitudeHold)
             {
-                Utils.GetAsst(PIDList.Altitude).SetPoint = FlightData.thisVessel.altitude;
-                targetVert = Utils.GetAsst(PIDList.Altitude).SetPoint.ToString("N1");
+                PIDList.Altitude.GetAsst().SetPoint = FlightData.thisVessel.altitude;
+                targetVert = FlightData.thisVessel.altitude.ToString("N1");
             }
             else
             {
-                Utils.GetAsst(PIDList.VertSpeed).SetPoint = FlightData.thisVessel.verticalSpeed;
-                targetVert = Utils.GetAsst(PIDList.VertSpeed).SetPoint.ToString("N2");
+                PIDList.VertSpeed.GetAsst().SetPoint = FlightData.vertSpeed;
+                targetVert = FlightData.vertSpeed.ToString("N2");
             }
         }
 
@@ -436,7 +434,7 @@ namespace PilotAssistant
             if (!bWingLeveller)
             {
                 setAxisLock(FlightData.heading);
-                targetHeading = Utils.GetAsst(PIDList.HdgBank).SetPoint.ToString("N2");
+                targetHeading = PIDList.HdgBank.GetAsst().SetPoint.ToString("N2");
                 headingEdit = false;
             }
         }
@@ -446,11 +444,11 @@ namespace PilotAssistant
             bWasThrottleActive = bThrottleActive;
             if (bThrottleActive)
             {
-                Utils.GetAsst(PIDList.Throttle).SetPoint = FlightData.thisVessel.srfSpeed;
-                targetSpeed = Utils.GetAsst(PIDList.Throttle).SetPoint.ToString("N1");
+                PIDList.Throttle.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed;
+                targetSpeed = FlightData.thisVessel.srfSpeed.ToString("N1");
             }
             else
-                Utils.GetAsst(PIDList.Throttle).Clear();
+                PIDList.Throttle.GetAsst().Clear();
         }
 
         private void keyPressChanges()
@@ -478,8 +476,8 @@ namespace PilotAssistant
 
             if (mod && Input.GetKeyDown(KeyCode.X))
             {
-                Utils.GetAsst(PIDList.VertSpeed).SetPoint = 0;
-                Utils.GetAsst(PIDList.Throttle).SetPoint = FlightData.thisVessel.srfSpeed;
+                PIDList.VertSpeed.GetAsst().SetPoint = 0;
+                PIDList.Throttle.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed;
                 bAltitudeHold = false;
                 bWasAltitudeHold = false;
                 bWingLeveller = true;
@@ -538,10 +536,10 @@ namespace PilotAssistant
                     if (bAltitudeHold)
                     {
                         vert = Math.Max(vert * 10, 0);
-                        Utils.GetAsst(PIDList.Altitude).SetPoint = vert;
+                        PIDList.Altitude.GetAsst().SetPoint = vert;
                     }
                     else
-                        Utils.GetAsst(PIDList.VertSpeed).SetPoint = vert;
+                        PIDList.VertSpeed.GetAsst().SetPoint = vert;
 
                     vert = Math.Round(vert, 9);
                     targetVert = vert.ToString("N3");
@@ -561,7 +559,7 @@ namespace PilotAssistant
                     if (GameSettings.THROTTLE_FULL.GetKeyDown())
                         speed = 2400;
 
-                    Utils.GetAsst(PIDList.Throttle).SetPoint = speed;
+                    PIDList.Throttle.GetAsst().SetPoint = speed;
 
                     targetSpeed = Math.Max(speed, 0).ToString("N3");
                 }
@@ -659,11 +657,11 @@ namespace PilotAssistant
                 }
                 GUILayout.EndScrollView();
 
-                Utils.GetAsst(PIDList.Aileron).OutMin = Math.Min(Math.Max(Utils.GetAsst(PIDList.Aileron).OutMin, -1), 1);
-                Utils.GetAsst(PIDList.Aileron).OutMax = Math.Min(Math.Max(Utils.GetAsst(PIDList.Aileron).OutMax, -1), 1);
+                PIDList.Aileron.GetAsst().OutMin = Math.Min(Math.Max(PIDList.Aileron.GetAsst().OutMin, -1), 1);
+                PIDList.Aileron.GetAsst().OutMax = Math.Min(Math.Max(PIDList.Aileron.GetAsst().OutMax, -1), 1);
 
-                Utils.GetAsst(PIDList.Rudder).OutMin = Math.Min(Math.Max(Utils.GetAsst(PIDList.Rudder).OutMin, -1), 1);
-                Utils.GetAsst(PIDList.Rudder).OutMax = Math.Min(Math.Max(Utils.GetAsst(PIDList.Rudder).OutMax, -1), 1);
+                PIDList.Rudder.GetAsst().OutMin = Math.Min(Math.Max(PIDList.Rudder.GetAsst().OutMin, -1), 1);
+                PIDList.Rudder.GetAsst().OutMax = Math.Min(Math.Max(PIDList.Rudder.GetAsst().OutMax, -1), 1);
             }
             #endregion
 
@@ -700,9 +698,9 @@ namespace PilotAssistant
                     double newVal;
                     double.TryParse(targetVert, out newVal);
                     if (bAltitudeHold)
-                        Utils.GetAsst(PIDList.Altitude).BumplessSetPoint = newVal;
+                        PIDList.Altitude.GetAsst().BumplessSetPoint = newVal;
                     else
-                        Utils.GetAsst(PIDList.VertSpeed).BumplessSetPoint = newVal;
+                        PIDList.VertSpeed.GetAsst().BumplessSetPoint = newVal;
 
                     bVertActive = bVertWasActive = true; // skip the toggle check so value isn't overwritten
                 }
@@ -713,13 +711,13 @@ namespace PilotAssistant
 
                 if (bAltitudeHold)
                     drawPIDvalues(PIDList.Altitude, "Altitude", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true);
-                drawPIDvalues(PIDList.VertSpeed, "Vertical Speed", "m/s", FlightData.thisVessel.verticalSpeed, 2, "AoA", "\u00B0", true);
+                drawPIDvalues(PIDList.VertSpeed, "Vertical Speed", "m/s", FlightData.vertSpeed, 2, "AoA", "\u00B0", true);
 
                 if (showControlSurfaces)
                     drawPIDvalues(PIDList.Elevator, "Angle of Attack", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0", true);
 
-                Utils.GetAsst(PIDList.Elevator).OutMin = Math.Min(Math.Max(Utils.GetAsst(PIDList.Elevator).OutMin, -1), 1);
-                Utils.GetAsst(PIDList.Elevator).OutMax = Math.Min(Math.Max(Utils.GetAsst(PIDList.Elevator).OutMax, -1), 1);
+                PIDList.Elevator.GetAsst().OutMin = Math.Min(Math.Max(PIDList.Elevator.GetAsst().OutMin, -1), 1);
+                PIDList.Elevator.GetAsst().OutMax = Math.Min(Math.Max(PIDList.Elevator.GetAsst().OutMax, -1), 1);
 
                 GUILayout.EndScrollView();
             }
@@ -787,7 +785,7 @@ namespace PilotAssistant
 
         private void drawPIDvalues(PIDList controllerid, string inputName, string inputUnits, double inputValue, int displayPrecision, string outputName, string outputUnits, bool invertOutput = false, bool showTarget = true)
         {
-            PID_Controller controller = Utils.GetAsst(controllerid);
+            PID_Controller controller = controllerid.GetAsst();
             controller.bShow = GUILayout.Toggle(controller.bShow, string.Format("{0}: {1}{2}", inputName, inputValue.ToString("N" + displayPrecision.ToString()), inputUnits), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
 
             if (controller.bShow)

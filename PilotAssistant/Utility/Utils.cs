@@ -19,12 +19,12 @@ namespace PilotAssistant.Utility
                 return val;
         }
 
-        public static PID_Controller GetAsst(PIDList id)
+        public static PID_Controller GetAsst(this PIDList id)
         {
             return PilotAssistant.controllers[(int)id];
         }
 
-        public static PID_Controller GetSAS(SASList id)
+        public static PID_Controller GetSAS(this SASList id)
         {
             return SurfSAS.SASControllers[(int)id];
         }

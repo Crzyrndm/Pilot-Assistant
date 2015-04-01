@@ -13,6 +13,9 @@ namespace PilotAssistant.Utility
         internal static double yaw = 0;
         internal static double AoA = 0;
         internal static double heading = 0;
+        internal static double vertSpeed = 0;
+
+        private static double lastAltitude = 0;
 
         internal static Vector3d planetUp = Vector3d.zero;
         internal static Vector3d planetNorth = Vector3d.zero;
@@ -52,6 +55,9 @@ namespace PilotAssistant.Utility
             Vector3d yawVec = (Vector3d)thisVessel.ReferenceTransform.up * Vector3d.Dot(thisVessel.ReferenceTransform.up, thisVessel.srf_velocity.normalized) +
                 (Vector3d)thisVessel.ReferenceTransform.right * Vector3d.Dot(thisVessel.ReferenceTransform.right, thisVessel.srf_velocity.normalized);     //velocity vector projected onto the vehicle-horizontal plane
             yaw = Vector3d.Angle(yawVec, thisVessel.ReferenceTransform.up) * Math.Sign(Vector3d.Dot(yawVec, thisVessel.ReferenceTransform.right));
+
+            vertSpeed = (thisVessel.altitude - lastAltitude) / TimeWarp.fixedDeltaTime;
+            lastAltitude = thisVessel.altitude;
         }
     }
 }
