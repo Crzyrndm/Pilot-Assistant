@@ -252,6 +252,9 @@ namespace PilotAssistant
                 }
                 rollResponse();
             }
+
+            if (!bActive[(int)SASList.Pitch] || !bArmed)
+                pitchSet = 0;
         }
 
         public float pitchSet { get; set; }
