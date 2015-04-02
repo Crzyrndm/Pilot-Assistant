@@ -156,7 +156,6 @@ namespace PilotAssistant
 
         private void warpHandler()
         {
-            FlightData.updateAttitude();
             if (TimeWarp.CurrentRateIndex == 0 && TimeWarp.CurrentRate != 1 && TimeWarp.WarpMode == TimeWarp.Modes.HIGH)
                 bHdgWasActive = bVertWasActive = bThrottleWasActive = false;
         }
@@ -310,6 +309,7 @@ namespace PilotAssistant
                     rollInput = GameSettings.AXIS_ROLL.GetAxis();
                 if (FlightInputHandler.fetch.precisionMode)
                     rollInput *= 0.33f;
+
                 if (!FlightData.thisVessel.checkLanded())
                     state.roll = (PIDList.Aileron.GetAsst().ResponseF(FlightData.roll) + rollInput).Clamp(-1, 1);
                 else

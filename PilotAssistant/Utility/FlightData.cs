@@ -16,8 +16,7 @@ namespace PilotAssistant.Utility
         internal static double progradeHeading = 0;
         internal static double vertSpeed = 0;
 
-        private static double lastAltitude = 0;
-
+        internal static Vector3d lastPlanetUp = Vector3d.zero;
         internal static Vector3d planetUp = Vector3d.zero;
         internal static Vector3d planetNorth = Vector3d.zero;
         internal static Vector3d planetEast = Vector3d.zero;
@@ -28,12 +27,15 @@ namespace PilotAssistant.Utility
         internal static Vector3d surfVesForward = Vector3d.zero;
         internal static Vector3d surfVesRight = Vector3d.zero;
 
+        internal static Vector3d velocity = Vector3d.zero;
+
         internal static void updateAttitude()
         {
             // 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
 
             // surface vectors
-            planetUp = (thisVessel.findWorldCenterOfMass() - thisVessel.mainBody.position).normalized;
+            lastPlanetUp = planetUp;
+            planetUp = (thisVessel.rootPart.transform.position - thisVessel.mainBody.position).normalized;
             planetEast = thisVessel.mainBody.getRFrmVel(thisVessel.findWorldCenterOfMass()).normalized;
             planetNorth = Vector3d.Cross(planetUp, planetEast).normalized;
             // Velocity forward and right parallel to the surface
@@ -62,8 +64,8 @@ namespace PilotAssistant.Utility
                 (Vector3d)thisVessel.ReferenceTransform.right * Vector3d.Dot(thisVessel.ReferenceTransform.right, thisVessel.srf_velocity.normalized);     //velocity vector projected onto the vehicle-horizontal plane
             yaw = Vector3d.Angle(yawVec, thisVessel.ReferenceTransform.up) * Math.Sign(Vector3d.Dot(yawVec, thisVessel.ReferenceTransform.right));
 
-            vertSpeed = (thisVessel.altitude - lastAltitude) / TimeWarp.fixedDeltaTime;
-            lastAltitude = thisVessel.altitude;
+            velocity = thisVessel.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
+            vertSpeed = Vector3d.Dot((planetUp + lastPlanetUp) / 2, velocity);
         }
     }
 }

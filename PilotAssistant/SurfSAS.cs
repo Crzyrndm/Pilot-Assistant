@@ -87,7 +87,6 @@ namespace PilotAssistant
 
         private void warpHandler()
         {
-            FlightData.updateAttitude();
             if (TimeWarp.CurrentRateIndex == 0 && TimeWarp.CurrentRate != 1 && TimeWarp.WarpMode == TimeWarp.Modes.HIGH)
                 updateTarget();
         }
