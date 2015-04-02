@@ -279,7 +279,7 @@ namespace PilotAssistant
             if (FlightData.thisVessel == null)
                 return;
 
-            if (IsPaused())
+            if (IsPaused() || FlightData.thisVessel.srfSpeed < 3)
                 return;            
 
             // Heading Control
@@ -299,7 +299,7 @@ namespace PilotAssistant
                     PIDList.Aileron.GetAsst().SetPoint = 0;
                     PIDList.Rudder.GetAsst().SetPoint = 0;
                 }
-                state.yaw = Mathf.Clamp(PIDList.Rudder.GetAsst().ResponseF(FlightData.yaw), -1, 1);
+                state.yaw = PIDList.Rudder.GetAsst().ResponseF(FlightData.yaw).Clamp(-1, 1);
 
                 float rollInput = 0;
                 if (GameSettings.ROLL_LEFT.GetKey())
@@ -310,7 +310,10 @@ namespace PilotAssistant
                     rollInput = GameSettings.AXIS_ROLL.GetAxis();
                 if (FlightInputHandler.fetch.precisionMode)
                     rollInput *= 0.33f;
-                state.roll = Mathf.Clamp(PIDList.Aileron.GetAsst().ResponseF(FlightData.roll) + rollInput, -1, 1);
+                if (!FlightData.thisVessel.checkLanded())
+                    state.roll = (PIDList.Aileron.GetAsst().ResponseF(FlightData.roll) + rollInput).Clamp(-1, 1);
+                else
+                    state.roll = rollInput.Clamp(-1, 1);
             }
 
             if (bVertActive)
@@ -320,11 +323,11 @@ namespace PilotAssistant
                     PIDList.VertSpeed.GetAsst().SetPoint = -PIDList.Altitude.GetAsst().ResponseD(FlightData.thisVessel.altitude);
 
                 PIDList.Elevator.GetAsst().SetPoint = -PIDList.VertSpeed.GetAsst().ResponseD(FlightData.vertSpeed);
-                state.pitch = Mathf.Clamp(-PIDList.Elevator.GetAsst().ResponseF(FlightData.AoA), -1, 1);
+                state.pitch = -PIDList.Elevator.GetAsst().ResponseF(FlightData.AoA).Clamp(-1, 1);
             }
             if (bThrottleActive)
             {
-                state.mainThrottle = Mathf.Clamp(-PIDList.Throttle.GetAsst().ResponseF(FlightData.thisVessel.srfSpeed), 0, 1);
+                state.mainThrottle = (-PIDList.Throttle.GetAsst().ResponseF(FlightData.thisVessel.srfSpeed)).Clamp(0, 1);
             }
         }
 
