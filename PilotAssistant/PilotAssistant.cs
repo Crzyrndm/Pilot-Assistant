@@ -355,34 +355,40 @@ namespace PilotAssistant
         private void hdgToggle()
         {
             bHdgWasActive = bHdgActive;
-            stop = true;
+
+            PIDList.HdgBank.GetAsst().skipDerivative = true;
+            PIDList.BankToYaw.GetAsst().skipDerivative = true;
+            PIDList.Aileron.GetAsst().skipDerivative = true;
+            PIDList.Rudder.GetAsst().skipDerivative = true;
+
             if (bHdgActive)
             {
-                setAxisLock(FlightData.heading);
-                targetHeading = FlightData.heading.ToString("F2");
+                PIDList.HdgBank.GetAsst().SetPoint = FlightData.heading - (FlightData.roll / PIDList.HdgBank.GetAsst().PGain).Clamp(PIDList.HdgBank.GetAsst().OutMin, PIDList.HdgBank.GetAsst().OutMax);
+                stop = false;
+                StartCoroutine(shiftHeadingTarget(FlightData.heading));
+                // setAxisLock(FlightData.heading);
+                // targetHeading = FlightData.heading.ToString("F2");
 
                 bPause = false;
                 headingEdit = false;
 
-                setAxisLock(FlightData.heading);
+                //setAxisLock(FlightData.heading);
             }
             else
             {
+                stop = true;
                 PIDList.HdgBank.GetAsst().Clear();
                 PIDList.BankToYaw.GetAsst().Clear();
                 PIDList.Aileron.GetAsst().Clear();
                 PIDList.Rudder.GetAsst().Clear();
-
-                PIDList.HdgBank.GetAsst().skipDerivative = true;
-                PIDList.BankToYaw.GetAsst().skipDerivative = true;
-                PIDList.Aileron.GetAsst().skipDerivative = true;
-                PIDList.Rudder.GetAsst().skipDerivative = true;
             }
         }
 
         private void vertToggle()
         {
             bVertWasActive = bVertActive;
+            PIDList.VertSpeed.GetAsst().skipDerivative = true;
+            PIDList.Elevator.GetAsst().skipDerivative = true;
 
             if (bVertActive)
             {
@@ -409,9 +415,6 @@ namespace PilotAssistant
                 PIDList.Altitude.GetAsst().Clear();
                 PIDList.VertSpeed.GetAsst().Clear();
                 PIDList.Elevator.GetAsst().Clear();
-
-                PIDList.VertSpeed.GetAsst().skipDerivative = true;
-                PIDList.Elevator.GetAsst().skipDerivative = true;
             }
         }
 

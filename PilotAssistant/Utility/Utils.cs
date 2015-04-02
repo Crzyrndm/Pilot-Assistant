@@ -9,7 +9,17 @@ namespace PilotAssistant.Utility
 
     public static class Utils
     {
-        public static float Clamp(float val, float min, float max)
+        public static float Clamp(this float val, float min, float max)
+        {
+            if (val < min)
+                return min;
+            else if (val > max)
+                return max;
+            else
+                return val;
+        }
+
+        public static double Clamp(this double val, double min, double max)
         {
             if (val < min)
                 return min;
