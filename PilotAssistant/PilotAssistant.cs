@@ -325,10 +325,11 @@ namespace PilotAssistant
                 PIDList.Elevator.GetAsst().SetPoint = -PIDList.VertSpeed.GetAsst().ResponseD(FlightData.vertSpeed);
                 state.pitch = -PIDList.Elevator.GetAsst().ResponseF(FlightData.AoA).Clamp(-1, 1);
             }
-            if (bThrottleActive)
-            {
+
+            if (bThrottleActive && PIDList.Throttle.GetAsst().SetPoint != 0)
                 state.mainThrottle = (-PIDList.Throttle.GetAsst().ResponseF(FlightData.thisVessel.srfSpeed)).Clamp(0, 1);
-            }
+            else if (bThrottleActive && PIDList.Throttle.GetAsst().SetPoint == 0)
+                state.mainThrottle = 0;
         }
 
         /// <summary>
