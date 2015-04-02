@@ -13,6 +13,7 @@ namespace PilotAssistant.Utility
         internal static double yaw = 0;
         internal static double AoA = 0;
         internal static double heading = 0;
+        internal static double progradeHeading = 0;
         internal static double vertSpeed = 0;
 
         private static double lastAltitude = 0;
@@ -46,6 +47,11 @@ namespace PilotAssistant.Utility
             heading = -1 * Vector3d.Angle(surfVesForward, planetNorth) * Math.Sign(Vector3d.Dot(surfVesForward, planetEast));
             if (heading < 0)
                 heading = 360 + heading; // heading is -(0-180), so it's actually 360 - Abs(heading)
+
+            progradeHeading = -1 * Vector3d.Angle(-surfVelForward, planetNorth) * Math.Sign(Vector3d.Dot(-surfVelForward, planetEast));
+            if (progradeHeading < 0)
+                progradeHeading = 360 + progradeHeading; // heading is -(0-180), so it's actually 360 - Abs(heading)
+
             roll = Vector3d.Angle(surfVesRight, thisVessel.ReferenceTransform.right) * Math.Sign(Vector3d.Dot(surfVesRight, thisVessel.ReferenceTransform.forward));
 
             Vector3d AoAVec = (Vector3d)thisVessel.ReferenceTransform.up * Vector3d.Dot(thisVessel.ReferenceTransform.up, thisVessel.srf_velocity.normalized) +

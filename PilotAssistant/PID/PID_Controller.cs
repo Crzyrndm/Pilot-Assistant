@@ -180,6 +180,10 @@ namespace PilotAssistant.PID
         // let active setpoint move to match the target to smooth the transition
         public double BumplessSetPoint
         {
+            get
+            {
+                return active_setpoint;
+            }
             set
             {
                 target_setpoint = value;
