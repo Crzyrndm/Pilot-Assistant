@@ -219,8 +219,6 @@ namespace PilotAssistant
         {
             if (bArmed)
             {
-                FlightData.updateAttitude();
-
                 pauseManager(state);
 
                 float vertResponse = 0;

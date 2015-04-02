@@ -110,6 +110,7 @@ namespace PilotAssistant
             PIDList.Altitude.GetAsst().InMin = 0;
             PIDList.Throttle.GetAsst().InMin = 0;
 
+            FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(preAutoPilotEvent);
             FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Add(warpHandler);
@@ -144,9 +145,11 @@ namespace PilotAssistant
 
         private void vesselSwitch(Vessel v)
         {
+            FlightData.thisVessel.OnPreAutopilotUpdate -= new FlightInputCallback(preAutoPilotEvent);
             FlightData.thisVessel.OnPostAutopilotUpdate -= new FlightInputCallback(vesselController);
             FlightData.thisVessel = v;
             FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(vesselController);
+            FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(preAutoPilotEvent);
 
             PresetManager.loadCraftAsstPreset();
         }
@@ -259,7 +262,7 @@ namespace PilotAssistant
             }
         }
 
-        private void vesselController(FlightCtrlState state)
+        private void preAutoPilotEvent(FlightCtrlState state)
         {
             if (!HighLogic.LoadedSceneIsFlight)
                 return;
@@ -267,9 +270,17 @@ namespace PilotAssistant
                 return;
 
             FlightData.updateAttitude();
+        }
+
+        private void vesselController(FlightCtrlState state)
+        {
+            if (!HighLogic.LoadedSceneIsFlight)
+                return;
+            if (FlightData.thisVessel == null)
+                return;
 
             if (IsPaused())
-                return;
+                return;            
 
             // Heading Control
             if (bHdgActive)
@@ -366,13 +377,9 @@ namespace PilotAssistant
                 PIDList.HdgBank.GetAsst().SetPoint = FlightData.heading - (FlightData.roll / PIDList.HdgBank.GetAsst().PGain).Clamp(PIDList.HdgBank.GetAsst().OutMin, PIDList.HdgBank.GetAsst().OutMax);
                 stop = false;
                 StartCoroutine(shiftHeadingTarget(FlightData.heading));
-                // setAxisLock(FlightData.heading);
-                // targetHeading = FlightData.heading.ToString("F2");
 
                 bPause = false;
                 headingEdit = false;
-
-                //setAxisLock(FlightData.heading);
             }
             else
             {
@@ -665,6 +672,7 @@ namespace PilotAssistant
                         double newHdg;
                         if (double.TryParse(targetHeading, out newHdg) && newHdg >= 0 && newHdg <= 360)
                         {
+                            PIDList.HdgBank.GetAsst().SetPoint = FlightData.heading - (FlightData.roll / PIDList.HdgBank.GetAsst().PGain).Clamp(PIDList.HdgBank.GetAsst().OutMin, PIDList.HdgBank.GetAsst().OutMax);
                             stop = false;
                             StartCoroutine(shiftHeadingTarget(newHdg));
                             bHdgActive = bHdgWasActive = true; // skip toggle check to avoid being overwritten
