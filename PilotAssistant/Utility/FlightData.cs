@@ -58,13 +58,18 @@ namespace PilotAssistant.Utility
 
             roll = Vector3d.Angle(surfVesRight, thisVessel.ReferenceTransform.right) * Math.Sign(Vector3d.Dot(surfVesRight, thisVessel.ReferenceTransform.forward));
 
-            Vector3d AoAVec = (Vector3d)thisVessel.ReferenceTransform.up * Vector3d.Dot(thisVessel.ReferenceTransform.up, thisVessel.srf_velocity.normalized) +
-                (Vector3d)thisVessel.ReferenceTransform.forward * Vector3d.Dot(thisVessel.ReferenceTransform.forward, thisVessel.srf_velocity.normalized);   //velocity vector projected onto a plane that divides the airplane into left and right halves
-            AoA = Vector3d.Angle(AoAVec, thisVessel.ReferenceTransform.up) * Math.Sign(Vector3d.Dot(AoAVec, thisVessel.ReferenceTransform.forward));
+            if (thisVessel.srfSpeed > 1)
+            {
+                Vector3d AoAVec = (Vector3d)thisVessel.ReferenceTransform.up * Vector3d.Dot(thisVessel.ReferenceTransform.up, thisVessel.srf_velocity.normalized) +
+                    (Vector3d)thisVessel.ReferenceTransform.forward * Vector3d.Dot(thisVessel.ReferenceTransform.forward, thisVessel.srf_velocity.normalized);   //velocity vector projected onto a plane that divides the airplane into left and right halves
+                AoA = Vector3d.Angle(AoAVec, thisVessel.ReferenceTransform.up) * Math.Sign(Vector3d.Dot(AoAVec, thisVessel.ReferenceTransform.forward));
 
-            Vector3d yawVec = (Vector3d)thisVessel.ReferenceTransform.up * Vector3d.Dot(thisVessel.ReferenceTransform.up, thisVessel.srf_velocity.normalized) +
-                (Vector3d)thisVessel.ReferenceTransform.right * Vector3d.Dot(thisVessel.ReferenceTransform.right, thisVessel.srf_velocity.normalized);     //velocity vector projected onto the vehicle-horizontal plane
-            yaw = Vector3d.Angle(yawVec, thisVessel.ReferenceTransform.up) * Math.Sign(Vector3d.Dot(yawVec, thisVessel.ReferenceTransform.right));
+                Vector3d yawVec = (Vector3d)thisVessel.ReferenceTransform.up * Vector3d.Dot(thisVessel.ReferenceTransform.up, thisVessel.srf_velocity.normalized) +
+                    (Vector3d)thisVessel.ReferenceTransform.right * Vector3d.Dot(thisVessel.ReferenceTransform.right, thisVessel.srf_velocity.normalized);     //velocity vector projected onto the vehicle-horizontal plane
+                yaw = Vector3d.Angle(yawVec, thisVessel.ReferenceTransform.up) * Math.Sign(Vector3d.Dot(yawVec, thisVessel.ReferenceTransform.right));
+            }
+            else
+                AoA = yaw = 0;
 
             velocity = thisVessel.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
             vertSpeed = Vector3d.Dot((planetUp + lastPlanetUp) / 2, velocity);

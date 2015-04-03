@@ -280,7 +280,7 @@ namespace PilotAssistant
             if (FlightData.thisVessel == null)
                 return;
 
-            if (IsPaused() || FlightData.thisVessel.srfSpeed < 3)
+            if (IsPaused() || FlightData.thisVessel.srfSpeed < 1)
                 return;            
 
             // Heading Control
@@ -354,27 +354,6 @@ namespace PilotAssistant
             return Instance.bPause;
         }
 
-        private double calculateTargetHeading(Vector3 axisLock)
-        {
-            Vector3 fwd = Vector3.Cross(FlightData.planetUp, axisLock);
-            double heading = -1 * Vector3.Angle(fwd, FlightData.planetNorth) * Math.Sign(Vector3.Dot(fwd, FlightData.planetEast));
-            if (heading < 0)
-                heading += 360;
-            return heading;
-        }
-
-        private void setAxisLock(double heading)
-        {
-            double diff = heading - FlightData.heading;
-            axisLock = Quaternion.AngleAxis((float)(diff - 90), (Vector3)FlightData.planetUp) * FlightData.surfVesForward; ;
-        }
-
-        private Vector3 vecHeading(double heading)
-        {
-            double angleDiff = heading - FlightData.heading;
-            return Quaternion.AngleAxis((float)(angleDiff - 90), (Vector3)FlightData.planetUp) * FlightData.surfVesForward;
-        }
-
         private void hdgToggle()
         {
             bHdgWasActive = bHdgActive;
@@ -420,11 +399,13 @@ namespace PilotAssistant
                     PIDList.Altitude.GetAsst().skipDerivative = true;
 
                     PIDList.Altitude.GetAsst().SetPoint = FlightData.thisVessel.altitude + FlightData.vertSpeed / PIDList.Altitude.GetAsst().PGain;
+                    PIDList.Altitude.GetAsst().BumplessSetPoint = FlightData.thisVessel.altitude;
                     targetVert = PIDList.Altitude.GetAsst().SetPoint.ToString("0.0");
                 }
                 else
                 {
                     PIDList.VertSpeed.GetAsst().SetPoint = FlightData.vertSpeed + FlightData.AoA / PIDList.VertSpeed.GetAsst().PGain;
+                    PIDList.VertSpeed.GetAsst().BumplessSetPoint = FlightData.vertSpeed;
                     targetVert = PIDList.VertSpeed.GetAsst().SetPoint.ToString("0.00");
                 }
                 bPause = false;
@@ -443,12 +424,14 @@ namespace PilotAssistant
             if (bAltitudeHold)
             {
                 PIDList.Altitude.GetAsst().SetPoint = FlightData.thisVessel.altitude + FlightData.vertSpeed / PIDList.Altitude.GetAsst().PGain;
-                targetVert = FlightData.thisVessel.altitude.ToString("0.0");
+                PIDList.Altitude.GetAsst().BumplessSetPoint = FlightData.thisVessel.altitude;
+                targetVert = PIDList.Altitude.GetAsst().SetPoint.ToString("0.0");
             }
             else
             {
                 PIDList.VertSpeed.GetAsst().SetPoint = FlightData.vertSpeed + FlightData.AoA / PIDList.VertSpeed.GetAsst().PGain;
-                targetVert = FlightData.vertSpeed.ToString("0.00");
+                PIDList.VertSpeed.GetAsst().BumplessSetPoint = FlightData.vertSpeed;
+                targetVert = PIDList.VertSpeed.GetAsst().SetPoint.ToString("0.00");
             }
         }
 
@@ -468,8 +451,8 @@ namespace PilotAssistant
             bThrottleWasActive = bThrottleActive;
             if (bThrottleActive)
             {
-                PIDList.Throttle.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed + FlightData.thisVessel.acceleration.magnitude / PIDList.Throttle.GetAsst().PGain;
-                targetSpeed = FlightData.thisVessel.srfSpeed.ToString("F2");
+                PIDList.Throttle.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed;
+                targetSpeed = PIDList.Throttle.GetAsst().SetPoint.ToString("0.00");
             }
             else
                 PIDList.Throttle.GetAsst().Clear();
@@ -574,11 +557,42 @@ namespace PilotAssistant
             return (FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] || SurfSAS.ActivityCheck());
         }
 
+        /// <summary>
+        /// calculate current heading from target vector
+        /// </summary>
+        private double calculateTargetHeading(Vector3 axisLock)
+        {
+            Vector3 fwd = Vector3.Cross(FlightData.planetUp, axisLock);
+            double heading = -1 * Vector3.Angle(fwd, FlightData.planetNorth) * Math.Sign(Vector3.Dot(fwd, FlightData.planetEast));
+            if (heading < 0)
+                heading += 360;
+            return heading;
+        }
+
+        /// <summary>
+        /// set the target heading vector to a given heading
+        /// </summary>
+        private void setAxisLock(double heading)
+        {
+            double diff = heading - FlightData.heading;
+            axisLock = Quaternion.AngleAxis((float)(diff - 90), (Vector3)FlightData.planetUp) * FlightData.surfVesForward; ;
+        }
+
+        /// <summary>
+        /// Get the direction vector for a given heading
+        /// </summary>
+        private Vector3 vecHeading(double heading)
+        {
+            double angleDiff = heading - FlightData.heading;
+            return Quaternion.AngleAxis((float)(angleDiff - 90), (Vector3)FlightData.planetUp) * FlightData.surfVesForward;
+        }
+
         Vector3 currentTarget = Vector3.zero; // this is the vec the control is aimed at
         Vector3 newTarget = Vector3.zero; // this is the vec we are moving to
         double increment = 0; // this is the angle to shift per second
         bool running = false;
         bool stop = false;
+
         IEnumerator shiftHeadingTarget(double newHdg)
         {
             newTarget = vecHeading(newHdg);
@@ -593,17 +607,16 @@ namespace PilotAssistant
             {
                 double finalTarget = calculateTargetHeading(newTarget);
                 double target = calculateTargetHeading(currentTarget);
-
                 increment += PIDList.HdgBank.GetAsst().Easing * TimeWarp.fixedDeltaTime * 0.01;
 
                 double remainder = finalTarget - CurrentAngleTargetRel(target, finalTarget);
 
                 if (remainder < 0)
-                    target -= Math.Min(increment, -1 * remainder);
+                    target += Math.Min(-1 * increment, remainder);
                 else
                     target += Math.Min(increment, remainder);
-                setAxisLock(target);
 
+                setAxisLock(target);
                 currentTarget = vecHeading(target);
                 yield return new WaitForFixedUpdate();
             }
@@ -611,6 +624,60 @@ namespace PilotAssistant
                 axisLock = newTarget;
             running = false;
         }
+
+        public double commitDelay = 0;
+        double headingChangeToCommit; // The amount of heading change to commit when the timer expires
+        double headingTimeToCommit; // update heading target when <= 0
+        bool headingRelative = true;
+
+        IEnumerator headingKeyboardResponse()
+        {
+            while (HighLogic.LoadedSceneIsFlight)
+            {
+                yield return null;
+
+                if (!IsPaused())
+                {
+                    double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1;
+                    bool bFineControl = FlightInputHandler.fetch.precisionMode;
+                    if (bHdgActive && (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || (!GameSettings.AXIS_YAW.IsNeutral() && Math.Abs(GameSettings.AXIS_YAW.GetAxis()) > 0.000001f)))
+                    {
+                        if (GameSettings.YAW_LEFT.GetKey())
+                            headingChangeToCommit -= bFineControl ? 0.04 / scale : 0.4 * scale;
+                        else if (GameSettings.YAW_RIGHT.GetKey())
+                            headingChangeToCommit += bFineControl ? 0.04 / scale : 0.4 * scale;
+                        else if (!GameSettings.AXIS_YAW.IsNeutral())
+                            headingChangeToCommit += (bFineControl ? 0.04 / scale : 0.4 * scale) * GameSettings.AXIS_YAW.GetAxis();
+
+                        if (headingChangeToCommit < -180)
+                            headingChangeToCommit += 360;
+                        else if (headingChangeToCommit > 180)
+                            headingChangeToCommit -= 360;
+
+                        headingTimeToCommit = commitDelay;
+                    }
+
+                    if (headingTimeToCommit <= 0 && headingChangeToCommit != 0)
+                    {
+                        if (running)
+                        {
+                            newTarget = vecHeading(calculateTargetHeading(newTarget) + headingChangeToCommit);
+                        }
+                        else
+                        {
+                            stop = false;
+                            StartCoroutine(shiftHeadingTarget(calculateTargetHeading(newTarget) + headingChangeToCommit));
+                            headingEdit = false;
+                        }
+
+                        headingChangeToCommit = 0;
+                    }
+                    else if (headingTimeToCommit > 0)
+                        headingTimeToCommit -= TimeWarp.deltaTime;
+                }
+            }
+        }
+
 
         #region GUI
         private void displayWindow(int id)
@@ -964,71 +1031,6 @@ namespace PilotAssistant
                 GUILayout.EndHorizontal();
             }
         }
-
-        private void headingTooltip(int id)
-        {
-            GUIStyle textStyle = new GUIStyle(GeneralUI.UISkin.textArea);
-            textStyle.active.textColor = textStyle.hover.textColor = textStyle.focused.textColor = textStyle.normal.textColor
-                = textStyle.onActive.textColor = textStyle.onHover.textColor = textStyle.onFocused.textColor = textStyle.onNormal.textColor = XKCDColors.ReddishOrange;
-            GUILayout.Label(headingChangeToCommit.ToString("0.##"), textStyle);
-        }
-        #endregion
-
-        #region WASD control
-        public double commitDelay = 0;
-
-        double headingChangeToCommit; // The amount of heading change to commit when the timer expires
-        double headingTimeToCommit; // update heading target when <= 0
-        bool headingRelative = true;
-
-        IEnumerator headingKeyboardResponse()
-        {
-            while (HighLogic.LoadedSceneIsFlight)
-            {
-                yield return null;
-
-                if (!IsPaused())
-                {
-                    double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1;
-                    bool bFineControl = FlightInputHandler.fetch.precisionMode;
-                    if (bHdgActive && (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || (!GameSettings.AXIS_YAW.IsNeutral() && Math.Abs(GameSettings.AXIS_YAW.GetAxis()) > 0.000001f)))
-                    {
-                        if (GameSettings.YAW_LEFT.GetKey())
-                            headingChangeToCommit -= bFineControl ? 0.04 / scale : 0.4 * scale;
-                        else if (GameSettings.YAW_RIGHT.GetKey())
-                            headingChangeToCommit += bFineControl ? 0.04 / scale : 0.4 * scale;
-                        else if (!GameSettings.AXIS_YAW.IsNeutral())
-                            headingChangeToCommit  += (bFineControl ? 0.04 / scale : 0.4 * scale) * GameSettings.AXIS_YAW.GetAxis();
-
-                        if (headingChangeToCommit < -180)
-                            headingChangeToCommit += 360;
-                        else if (headingChangeToCommit > 180)
-                            headingChangeToCommit -= 360;
-
-                        headingTimeToCommit = commitDelay;
-                    }
-
-                    if (headingTimeToCommit <= 0 && headingChangeToCommit != 0)
-                    {
-                        if (running)
-                        {
-                            newTarget = vecHeading(calculateTargetHeading(newTarget) + headingChangeToCommit);
-                        }
-                        else
-                        {
-                            stop = false;
-                            StartCoroutine(shiftHeadingTarget(calculateTargetHeading(newTarget) + headingChangeToCommit));
-                            headingEdit = false;
-                        }
-
-                        headingChangeToCommit = 0;
-                    }
-                    else if (headingTimeToCommit > 0)
-                        headingTimeToCommit -= TimeWarp.deltaTime;
-                }
-            }
-        }
-
         #endregion
     }
 }
