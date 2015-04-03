@@ -220,32 +220,31 @@ namespace PilotAssistant
             {
                 pauseManager(state);
 
-                float vertResponse = 0;
+                double vertResponse = 0;
                 if (bActive[(int)SASList.Pitch])
-                    vertResponse = -1 * (float)Utils.GetSAS(SASList.Pitch).ResponseD(FlightData.pitch);
+                    vertResponse = -1 * SASList.Pitch.GetSAS().ResponseD(FlightData.pitch);
 
-                float hrztResponse = 0;
+                double hrztResponse = 0;
                 if (bActive[(int)SASList.Yaw] && (FlightData.thisVessel.latitude < 88 && FlightData.thisVessel.latitude > -88))
                 {
                     if (Utils.GetSAS(SASList.Yaw).SetPoint - FlightData.heading >= -180 && Utils.GetSAS(SASList.Yaw).SetPoint - FlightData.heading <= 180)
-                        hrztResponse = -1 * (float)Utils.GetSAS(SASList.Yaw).ResponseD(FlightData.heading);
+                        hrztResponse = -1 * Utils.GetSAS(SASList.Yaw).ResponseD(FlightData.heading);
                     else if (Utils.GetSAS(SASList.Yaw).SetPoint - FlightData.heading < -180)
-                        hrztResponse = -1 * (float)Utils.GetSAS(SASList.Yaw).ResponseD(FlightData.heading - 360);
+                        hrztResponse = -1 * Utils.GetSAS(SASList.Yaw).ResponseD(FlightData.heading - 360);
                     else if (Utils.GetSAS(SASList.Yaw).SetPoint - FlightData.heading > 180)
-                        hrztResponse = -1 * (float)Utils.GetSAS(SASList.Yaw).ResponseD(FlightData.heading + 360);
+                        hrztResponse = -1 * Utils.GetSAS(SASList.Yaw).ResponseD(FlightData.heading + 360);
                 }
                 else
                 {
                     Utils.GetSAS(SASList.Yaw).SetPoint = FlightData.heading;
                 }
 
-                double rollRad = Math.PI / 180 * FlightData.roll;
+                double rollRad = Mathf.Deg2Rad * FlightData.roll;
 
                 if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Yaw]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Yaw]))
                 {
-                    state.pitch = (vertResponse * (float)Math.Cos(rollRad) - hrztResponse * (float)Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
-                    pitchSet = state.pitch;
-                    state.yaw = (vertResponse * (float)Math.Sin(rollRad) + hrztResponse * (float)Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Yaw];
+                    pitchSet = state.pitch = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
+                    state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Yaw];
                 }
                 rollResponse();
             }

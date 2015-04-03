@@ -109,7 +109,7 @@ namespace PilotAssistant.PID
 
         private double integralError(double error)
         {
-            if (k_integral == 0 || FlightData.thisVessel.checkLanded() || !FlightData.thisVessel.IsControllable)
+            if (k_integral == 0 || FlightData.thisVessel.checkLanded()|| !FlightData.thisVessel.IsControllable)
             {
                 sum = 0;
                 return sum;

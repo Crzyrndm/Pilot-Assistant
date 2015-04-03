@@ -11,7 +11,8 @@ namespace PilotAssistant.Utility
         numBoxText,
         btnPlus,
         btnMinus,
-        btnToggle
+        btnToggle,
+        greenTextBox
     }
 
     static class GeneralUI
@@ -76,6 +77,10 @@ namespace PilotAssistant.Utility
             UISkin.customStyles[(int)myStyles.btnToggle].onNormal.background = UISkin.customStyles[(int)myStyles.btnToggle].onHover.background = UISkin.customStyles[(int)myStyles.btnToggle].onActive.background
                 = UISkin.customStyles[(int)myStyles.btnToggle].active.background = HighLogic.Skin.button.onNormal.background;
             UISkin.customStyles[(int)myStyles.btnToggle].hover.background = UISkin.customStyles[(int)myStyles.btnToggle].normal.background;
+
+            UISkin.customStyles[(int)myStyles.greenTextBox] = new GUIStyle(UISkin.textArea);
+            UISkin.customStyles[(int)myStyles.greenTextBox].active.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].hover.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].focused.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].normal.textColor
+                = UISkin.customStyles[(int)myStyles.greenTextBox].onActive.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].onHover.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].onFocused.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].onNormal.textColor = XKCDColors.Green;
         }
 
         /// <summary>
