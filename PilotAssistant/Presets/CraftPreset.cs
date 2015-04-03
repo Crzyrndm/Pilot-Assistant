@@ -5,7 +5,7 @@ using System.Text;
 
 namespace PilotAssistant.Presets
 {
-    class CraftPreset
+    public class CraftPreset
     {
         string name;
         AsstPreset pa;

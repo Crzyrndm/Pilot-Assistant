@@ -10,7 +10,7 @@ namespace PilotAssistant
     using Presets;
 
     [KSPAddon(KSPAddon.Startup.MainMenu, true)]
-    internal class PresetManager : MonoBehaviour
+    public class PresetManager : MonoBehaviour
     {
         private static PresetManager instance;
         public static PresetManager Instance

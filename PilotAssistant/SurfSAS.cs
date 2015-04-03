@@ -416,7 +416,7 @@ namespace PilotAssistant
         /// Set SSAS mode
         /// </summary>
         /// <param name="enable"></param>
-        internal static void ActivitySwitch(bool enable)
+        public static void ActivitySwitch(bool enable)
         {
             if (enable)
                 instance.bActive[(int)SASList.Pitch] = instance.bActive[(int)SASList.Roll] = instance.bActive[(int)SASList.Yaw] = true;
@@ -428,7 +428,7 @@ namespace PilotAssistant
         /// returns true if SSAS is active
         /// </summary>
         /// <returns></returns>
-        internal static bool ActivityCheck()
+        public static bool ActivityCheck()
         {
             if (instance.bActive[(int)SASList.Pitch] || instance.bActive[(int)SASList.Roll] || instance.bActive[(int)SASList.Yaw])
                 return true;
@@ -440,7 +440,7 @@ namespace PilotAssistant
         /// set stock SAS state
         /// </summary>
         /// <param name="state"></param>
-        internal static void setStockSAS(bool state)
+        public static void setStockSAS(bool state)
         {
             FlightData.thisVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, state);
             FlightData.thisVessel.ctrlState.killRot = state; // incase anyone checks the ctrl state (should be using checking vessel.ActionGroup[KSPActionGroup.SAS])

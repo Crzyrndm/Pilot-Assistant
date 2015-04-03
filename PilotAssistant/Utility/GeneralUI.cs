@@ -16,31 +16,24 @@ namespace PilotAssistant.Utility
 
     static class GeneralUI
     {
-        internal static Color stockBackgroundGUIColor;
-        internal static Color ActiveBackground = XKCDColors.BrightOrange;
-        internal static Color InActiveBackground = XKCDColors.BrightSkyBlue;
-        internal static Color HeaderButtonBackground = XKCDColors.BlueBlue;
+        public static Color stockBackgroundGUIColor;
+        public static Color ActiveBackground = XKCDColors.BrightOrange;
+        public static Color InActiveBackground = XKCDColors.BrightSkyBlue;
+        public static Color HeaderButtonBackground = XKCDColors.BlueBlue;
 
         // save the skin so other windows can't interfere
-        internal static GUISkin UISkin;
+        public static GUISkin UISkin;
 
-        internal static GUIContent KpLabel = new GUIContent("Kp", "Kp is the proportional response factor. The greater the error between the current state and the target, the greater the impact it has. \r\n\r\nP_res = Kp * error");
-        internal static GUIContent KiLabel = new GUIContent("Ki", "Ki is the integral response factor. The integral response is the sum of all previous errors and depends on both the magnitude and the duration for which the error remained.\r\n\r\nI_res = Ki * sumOf(error)");
-        internal static GUIContent KdLabel = new GUIContent("Kd", "Kd is the derivative response factor. The derivative response acts to prevent the output from changing and will dampen out oscillations when used in moderation.\r\n\r\nD_res = Kd * (error - prev_error)");
-        internal static GUIContent ScalarLabel = new GUIContent("Scalar", "The scalar factor increase/decrease the impact of Kp, Ki, and Kd. This is used to accomodate variations in flight conditions.\r\n\r\nOutput = (P_res + I_res + D_res) / Scalar");
-        internal static GUIContent IMaxLabel = new GUIContent("I Max", "The maximum value the integral sum can reach. This is mostly used to prevent excessive buildup when the setpoint is changed");
-        internal static GUIContent IMinLabel = new GUIContent("I Min", "The minimum value the integral sum can reach. This is mostly used to prevent excessive buildup when the setpoint is changed");
-        internal static GUIContent EasingLabel = new GUIContent("Easing", "The rate of change of the setpoint when a new target is set. Higher gives a faster change, lower gives a smoother change");
-        internal static GUIContent DelayLabel = new GUIContent("Delay", "The time in ms between there being no input on the axis and the axis attitude being locked");
+        public static GUIContent KpLabel = new GUIContent("Kp", "Kp is the proportional response factor. The greater the error between the current state and the target, the greater the impact it has. \r\n\r\nP_res = Kp * error");
+        public static GUIContent KiLabel = new GUIContent("Ki", "Ki is the integral response factor. The integral response is the sum of all previous errors and depends on both the magnitude and the duration for which the error remained.\r\n\r\nI_res = Ki * sumOf(error)");
+        public static GUIContent KdLabel = new GUIContent("Kd", "Kd is the derivative response factor. The derivative response acts to prevent the output from changing and will dampen out oscillations when used in moderation.\r\n\r\nD_res = Kd * (error - prev_error)");
+        public static GUIContent ScalarLabel = new GUIContent("Scalar", "The scalar factor increase/decrease the impact of Kp, Ki, and Kd. This is used to accomodate variations in flight conditions.\r\n\r\nOutput = (P_res + I_res + D_res) / Scalar");
+        public static GUIContent IMaxLabel = new GUIContent("I Max", "The maximum value the integral sum can reach. This is mostly used to prevent excessive buildup when the setpoint is changed");
+        public static GUIContent IMinLabel = new GUIContent("I Min", "The minimum value the integral sum can reach. This is mostly used to prevent excessive buildup when the setpoint is changed");
+        public static GUIContent EasingLabel = new GUIContent("Easing", "The rate of change of the setpoint when a new target is set. Higher gives a faster change, lower gives a smoother change");
+        public static GUIContent DelayLabel = new GUIContent("Delay", "The time in ms between there being no input on the axis and the axis attitude being locked");
 
-        internal static void InitColors()
-        {
-            //ActiveBackground = XKCDColors.BrightOrange;
-            //InActiveBackground = XKCDColors.BrightSkyBlue;
-            //HeaderButtonBackground = XKCDColors.BlueBlue;
-        }
-
-        internal static void customSkin()
+        public static void customSkin()
         {
             UISkin = (GUISkin)MonoBehaviour.Instantiate(UnityEngine.GUI.skin);
             UISkin.customStyles = new GUIStyle[Enum.GetValues(typeof(myStyles)).GetLength(0)];
@@ -93,7 +86,7 @@ namespace PilotAssistant.Utility
         /// <param name="labelWidth"></param>
         /// <param name="boxWidth"></param>
         /// <returns>edited value of the text box</returns>
-        internal static double labPlusNumBox(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
+        public static double labPlusNumBox(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
         {
             double val;
             GUILayout.BeginHorizontal();
@@ -130,7 +123,7 @@ namespace PilotAssistant.Utility
             return val;
         }
 
-        internal static double labPlusNumBox(GUIContent labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
+        public static double labPlusNumBox(GUIContent labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
         {
             double val;
             GUILayout.BeginHorizontal();
@@ -175,7 +168,7 @@ namespace PilotAssistant.Utility
         /// <param name="toggleWidth"></param>
         /// <param name="boxWidth"></param>
         /// <returns></returns>
-        internal static float TogPlusNumBox(string toggleText, ref bool toggleState, ref string boxText, double currentVal, double setPoint, float toggleWidth, float boxWidth)
+        public static float TogPlusNumBox(string toggleText, ref bool toggleState, ref string boxText, double currentVal, double setPoint, float toggleWidth, float boxWidth)
         {
             GUILayout.BeginHorizontal();
 

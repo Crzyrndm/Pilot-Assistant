@@ -151,7 +151,7 @@ namespace PilotAssistant.PID
         /// <param name="min">minimum output value of the variable</param>
         /// <param name="max">maximum output value of the variable</param>
         /// <returns>val clamped between max and min</returns>
-        internal static double Clamp(double val, double min, double max)
+        public static double Clamp(double val, double min, double max)
         {
             if (val < min)
                 return min;

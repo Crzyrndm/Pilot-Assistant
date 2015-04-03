@@ -44,13 +44,13 @@ namespace PilotAssistant
         public bool bVertActive = false;
         bool bVertWasActive = false;
         // Altitude / vertical speed
-        bool bAltitudeHold = false;
+        public bool bAltitudeHold = false;
         bool bWasAltitudeHold = false;
         // Wing leveller / Heading control
-        bool bWingLeveller = false;
+        public bool bWingLeveller = false;
         bool bWasWingLeveller = false;
         // Throttle control
-        bool bThrottleActive = false;
+        public bool bThrottleActive = false;
         bool bThrottleWasActive = false;
 
         public Rect window = new Rect(10, 130, 10, 10);
@@ -58,11 +58,11 @@ namespace PilotAssistant
         Vector2 scrollbarHdg = Vector2.zero;
         Vector2 scrollbarVert = Vector2.zero;
 
-        internal bool showPresets = false;
-        internal bool showPIDLimits = false;
-        internal bool showControlSurfaces = false;
-        internal bool doublesided = false;
-        internal bool showTooltips = true;
+        public bool showPresets = false;
+        public bool showPIDLimits = false;
+        public bool showControlSurfaces = false;
+        public bool doublesided = false;
+        public bool showTooltips = true;
 
         string targetVert = "0.00";
         string targetHeading = "0.00";
@@ -116,6 +116,8 @@ namespace PilotAssistant
             GameEvents.onTimeWarpRateChanged.Add(warpHandler);
 
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
+
+            StartCoroutine(headingKeyboardResponse());
         }
 
         void Initialise()
@@ -194,7 +196,7 @@ namespace PilotAssistant
 
             if (bHdgActive)
             {
-                PIDList.HdgBank.GetAsst().SetPoint = calculateTargetHeading();
+                PIDList.HdgBank.GetAsst().SetPoint = calculateTargetHeading(axisLock);
 
                 if (!headingEdit)
                     targetHeading = PIDList.HdgBank.GetAsst().SetPoint.ToString("F2");
@@ -257,7 +259,7 @@ namespace PilotAssistant
                 presetWindow.x = window.x + window.width;
                 presetWindow.y = window.y;
 
-                presetWindow = GUILayout.Window(34245, presetWindow, displayPresetWindow, "Pilot Assistant Presets", GUILayout.Width(200), GUILayout.Height(0));
+                GUILayout.Window(34245, presetWindow, displayPresetWindow, "Pilot Assistant Presets", GUILayout.Width(200), GUILayout.Height(0));
             }
         }
 
@@ -352,7 +354,7 @@ namespace PilotAssistant
             return Instance.bPause;
         }
 
-        private double calculateTargetHeading()
+        private double calculateTargetHeading(Vector3 axisLock)
         {
             Vector3 fwd = Vector3.Cross(FlightData.planetUp, axisLock);
             double heading = -1 * Vector3.Angle(fwd, FlightData.planetNorth) * Math.Sign(Vector3.Dot(fwd, FlightData.planetEast));
@@ -364,7 +366,13 @@ namespace PilotAssistant
         private void setAxisLock(double heading)
         {
             double diff = heading - FlightData.heading;
-            axisLock = Quaternion.AngleAxis((float)(diff - 90), (Vector3)FlightData.planetUp) * FlightData.surfVesForward;
+            axisLock = Quaternion.AngleAxis((float)(diff - 90), (Vector3)FlightData.planetUp) * FlightData.surfVesForward; ;
+        }
+
+        private Vector3 vecHeading(double heading)
+        {
+            double angleDiff = heading - FlightData.heading;
+            return Quaternion.AngleAxis((float)(angleDiff - 90), (Vector3)FlightData.planetUp) * FlightData.surfVesForward;
         }
 
         private void hdgToggle()
@@ -411,13 +419,13 @@ namespace PilotAssistant
                     PIDList.Altitude.GetAsst().Preset(-FlightData.vertSpeed);
                     PIDList.Altitude.GetAsst().skipDerivative = true;
 
-                    PIDList.Altitude.GetAsst().SetPoint = FlightData.thisVessel.altitude;
-                    targetVert = FlightData.thisVessel.altitude.ToString("F1");
+                    PIDList.Altitude.GetAsst().SetPoint = FlightData.thisVessel.altitude + FlightData.vertSpeed / PIDList.Altitude.GetAsst().PGain;
+                    targetVert = PIDList.Altitude.GetAsst().SetPoint.ToString("0.0");
                 }
                 else
                 {
-                    PIDList.VertSpeed.GetAsst().SetPoint = FlightData.vertSpeed;
-                    targetVert = FlightData.vertSpeed.ToString("F2");
+                    PIDList.VertSpeed.GetAsst().SetPoint = FlightData.vertSpeed + FlightData.AoA / PIDList.VertSpeed.GetAsst().PGain;
+                    targetVert = PIDList.VertSpeed.GetAsst().SetPoint.ToString("0.00");
                 }
                 bPause = false;
             }
@@ -434,13 +442,13 @@ namespace PilotAssistant
             bWasAltitudeHold = bAltitudeHold;
             if (bAltitudeHold)
             {
-                PIDList.Altitude.GetAsst().SetPoint = FlightData.thisVessel.altitude;
-                targetVert = FlightData.thisVessel.altitude.ToString("F1");
+                PIDList.Altitude.GetAsst().SetPoint = FlightData.thisVessel.altitude + FlightData.vertSpeed / PIDList.Altitude.GetAsst().PGain;
+                targetVert = FlightData.thisVessel.altitude.ToString("0.0");
             }
             else
             {
-                PIDList.VertSpeed.GetAsst().SetPoint = FlightData.vertSpeed;
-                targetVert = FlightData.vertSpeed.ToString("F2");
+                PIDList.VertSpeed.GetAsst().SetPoint = FlightData.vertSpeed + FlightData.AoA / PIDList.VertSpeed.GetAsst().PGain;
+                targetVert = FlightData.vertSpeed.ToString("0.00");
             }
         }
 
@@ -450,7 +458,7 @@ namespace PilotAssistant
             if (!bWingLeveller)
             {
                 setAxisLock(FlightData.heading);
-                targetHeading = PIDList.HdgBank.GetAsst().SetPoint.ToString("F2");
+                targetHeading = PIDList.HdgBank.GetAsst().SetPoint.ToString("0.00");
                 headingEdit = false;
             }
         }
@@ -460,7 +468,7 @@ namespace PilotAssistant
             bThrottleWasActive = bThrottleActive;
             if (bThrottleActive)
             {
-                PIDList.Throttle.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed;
+                PIDList.Throttle.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed + FlightData.thisVessel.acceleration.magnitude / PIDList.Throttle.GetAsst().PGain;
                 targetSpeed = FlightData.thisVessel.srfSpeed.ToString("F2");
             }
             else
@@ -513,27 +521,6 @@ namespace PilotAssistant
             {
                 double scale = mod ? 10 : 1;
                 bool bFineControl = FlightInputHandler.fetch.precisionMode;
-                if (bHdgActive && (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || (!GameSettings.AXIS_YAW.IsNeutral() && Math.Abs(GameSettings.AXIS_YAW.GetAxis()) > 0.000001f)))
-                {
-                    double hdg = double.Parse(targetHeading);
-                    if (GameSettings.YAW_LEFT.GetKey())
-                        hdg -= bFineControl ? 0.04 / scale : 0.4 * scale;
-                    else if (GameSettings.YAW_RIGHT.GetKey())
-                        hdg += bFineControl ? 0.04 / scale : 0.4 * scale;
-                    else if (!GameSettings.AXIS_YAW.IsNeutral())
-                        hdg += (bFineControl ? 0.04 / scale : 0.4 * scale) * GameSettings.AXIS_YAW.GetAxis();
-
-                    if (hdg < 0)
-                        hdg += 360;
-                    else if (hdg > 360)
-                        hdg -= 360;
-                    
-                    stop = true;
-                    setAxisLock(hdg);
-                    hdg = Math.Round(hdg, 9);
-                    targetHeading = hdg.ToString("F2");
-                    headingEdit = false;
-                }
 
                 if (bVertActive && (GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || (!GameSettings.AXIS_PITCH.IsNeutral() && Math.Abs(GameSettings.AXIS_PITCH.GetAxis()) > 0.000001f)))
                 {
@@ -552,12 +539,13 @@ namespace PilotAssistant
                     {
                         vert = Math.Max(vert * 10, 0);
                         PIDList.Altitude.GetAsst().SetPoint = vert;
+                        targetVert = vert.ToString("0.0");
                     }
                     else
+                    {
                         PIDList.VertSpeed.GetAsst().SetPoint = vert;
-
-                    vert = Math.Round(vert, 9);
-                    targetVert = vert.ToString("F2");
+                        targetVert = vert.ToString("0.00");
+                    }
                 }
 
                 if (bThrottleActive && ((GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey()) || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown()))
@@ -581,41 +569,46 @@ namespace PilotAssistant
             }
         }
 
-        internal static bool SASMonitor()
+        public static bool SASMonitor()
         {
             return (FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] || SurfSAS.ActivityCheck());
         }
 
-        double currentTarget = 0;
-        double newTarget = 0;
-        double easing = 0;
-        double increment = 0;
+        Vector3 currentTarget = Vector3.zero; // this is the vec the control is aimed at
+        Vector3 newTarget = Vector3.zero; // this is the vec we are moving to
+        double increment = 0; // this is the angle to shift per second
         bool running = false;
         bool stop = false;
         IEnumerator shiftHeadingTarget(double newHdg)
         {
-            newTarget = newHdg;
-            currentTarget = PIDList.HdgBank.GetAsst().BumplessSetPoint;
-            easing = PIDList.HdgBank.GetAsst().Easing;
+            newTarget = vecHeading(newHdg);
+            currentTarget = vecHeading(PIDList.HdgBank.GetAsst().BumplessSetPoint);
             increment = 0;
 
             if (running)
                 yield break;
             running = true;
 
-            while (!stop && Math.Abs(currentTarget - newTarget) > 1 && Math.Abs(currentTarget - newTarget) < 359)
+            while (!stop && Math.Abs(Vector3.Angle(currentTarget, newTarget)) > 0.01)
             {
-                increment += easing * TimeWarp.fixedDeltaTime * 0.01;
-                double remainder = newTarget - CurrentAngleTargetRel(currentTarget, newTarget);
+                double finalTarget = calculateTargetHeading(newTarget);
+                double target = calculateTargetHeading(currentTarget);
+
+                increment += PIDList.HdgBank.GetAsst().Easing * TimeWarp.fixedDeltaTime * 0.01;
+
+                double remainder = finalTarget - CurrentAngleTargetRel(target, finalTarget);
+
                 if (remainder < 0)
-                    currentTarget -= Math.Min(increment, -1*remainder);
+                    target -= Math.Min(increment, -1 * remainder);
                 else
-                    currentTarget += Math.Min(increment, remainder);
-                setAxisLock(currentTarget);
+                    target += Math.Min(increment, remainder);
+                setAxisLock(target);
+
+                currentTarget = vecHeading(target);
                 yield return new WaitForFixedUpdate();
             }
             if (!stop)
-                setAxisLock(newTarget);
+                axisLock = newTarget;
             running = false;
         }
 
@@ -627,21 +620,6 @@ namespace PilotAssistant
 
             if (IsPaused())
                 GUILayout.Box("CONTROL PAUSED", GeneralUI.UISkin.customStyles[(int)myStyles.labelAlert]);
-
-            GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            if (GUILayout.Button("Options", GUILayout.Width(205)))
-            {
-                bShowSettings = !bShowSettings;
-            }
-            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
-            if (bShowSettings)
-            {
-                showPresets = GUILayout.Toggle(showPresets, showPresets ? "Hide Presets" : "Show Presets", GUILayout.Width(200));
-                showPIDLimits = GUILayout.Toggle(showPIDLimits, showPIDLimits ? "Hide PID Limits" : "Show PID Limits", GUILayout.Width(200));
-                showControlSurfaces = GUILayout.Toggle(showControlSurfaces, showControlSurfaces ? "Hide Control Surfaces" : "Show Control Surfaces", GUILayout.Width(200));
-                doublesided = GUILayout.Toggle(doublesided, "Separate Min and Max limits", GUILayout.Width(200));
-                showTooltips = GUILayout.Toggle(showTooltips, "Show Tooltips", GUILayout.Width(200));
-            }
 
             #region Hdg GUI
 
@@ -670,11 +648,12 @@ namespace PilotAssistant
                 if (!bWingLeveller)
                 {
                     GUILayout.BeginHorizontal();
+                    double newHdg;
+                    bool valid = double.TryParse(targetHeading, out newHdg);
                     if (GUILayout.Button("Target Hdg: ", GUILayout.Width(98)))
                     {
                         headingEdit = false;
-                        double newHdg;
-                        if (double.TryParse(targetHeading, out newHdg) && newHdg >= 0 && newHdg <= 360)
+                        if (valid && newHdg >= 0 && newHdg <= 360)
                         {
                             PIDList.HdgBank.GetAsst().SetPoint = FlightData.heading - (FlightData.roll / PIDList.HdgBank.GetAsst().PGain).Clamp(PIDList.HdgBank.GetAsst().OutMin, PIDList.HdgBank.GetAsst().OutMax);
                             stop = false;
@@ -682,12 +661,35 @@ namespace PilotAssistant
                             bHdgActive = bHdgWasActive = true; // skip toggle check to avoid being overwritten
                         }
                     }
-                    string newString = GUILayout.TextField(targetHeading, GUILayout.Width(98));
+                    string newString = GUILayout.TextField(targetHeading, GUILayout.Width(47));
                     if (targetHeading != newString)
                     {
                         targetHeading = newString;
                         headingEdit = true;
                     }
+                    GUIStyle textStyle = new GUIStyle(GeneralUI.UISkin.textArea);
+                    textStyle.active.textColor = textStyle.hover.textColor = textStyle.focused.textColor = textStyle.normal.textColor
+                        = textStyle.onActive.textColor = textStyle.onHover.textColor = textStyle.onFocused.textColor = textStyle.onNormal.textColor = XKCDColors.Green;
+                    double displayTarget;
+                    if (headingChangeToCommit != 0)
+                    {
+                        if (headingRelative)
+                            displayTarget = newHdg + headingChangeToCommit;
+                        else
+                            displayTarget = headingChangeToCommit;
+
+                        if (displayTarget < 0)
+                            displayTarget += 360;
+                        else if (displayTarget > 360)
+                            displayTarget -= 360;
+                    }
+                    else if (running)
+                        displayTarget = calculateTargetHeading(newTarget);
+                    else
+                        displayTarget = PIDList.HdgBank.GetAsst().SetPoint;
+
+                    GUILayout.Label(displayTarget.ToString("0.00"), textStyle, GUILayout.Width(47));
+
                     GUILayout.EndHorizontal();
                 }
 
@@ -745,9 +747,15 @@ namespace PilotAssistant
                     double newVal;
                     double.TryParse(targetVert, out newVal);
                     if (bAltitudeHold)
+                    {
+                        PIDList.Altitude.GetAsst().SetPoint = FlightData.thisVessel.altitude + FlightData.vertSpeed / PIDList.Altitude.GetAsst().PGain;
                         PIDList.Altitude.GetAsst().BumplessSetPoint = newVal;
+                    }
                     else
+                    {
+                        PIDList.VertSpeed.GetAsst().SetPoint = FlightData.thisVessel.verticalSpeed + FlightData.AoA / PIDList.VertSpeed.GetAsst().PGain;
                         PIDList.VertSpeed.GetAsst().BumplessSetPoint = newVal;
+                    }
 
                     bVertActive = bVertWasActive = true; // skip the toggle check so value isn't overwritten
                 }
@@ -786,7 +794,6 @@ namespace PilotAssistant
                 if (!bThrottleActive)
                     bPause = false;
             }
-            
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             GUILayout.EndHorizontal();
@@ -800,7 +807,8 @@ namespace PilotAssistant
 
                     double newVal;
                     double.TryParse(targetSpeed, out newVal);
-                    Utils.GetAsst(PIDList.Throttle).BumplessSetPoint = newVal;
+                    PIDList.Throttle.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed + FlightData.thisVessel.acceleration.magnitude / PIDList.Throttle.GetAsst().PGain;
+                    PIDList.Throttle.GetAsst().BumplessSetPoint = newVal;
 
                     bThrottleActive = bThrottleWasActive = true; // skip the toggle check so value isn't overwritten
                 }
@@ -814,6 +822,31 @@ namespace PilotAssistant
             }
 
             #endregion
+
+            GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
+            if (GUILayout.Button("Options", GUILayout.Width(205)))
+            {
+                bShowSettings = !bShowSettings;
+            }
+            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+            if (bShowSettings)
+            {
+                showPresets = GUILayout.Toggle(showPresets, showPresets ? "Hide Presets" : "Show Presets", GUILayout.Width(200));
+                showPIDLimits = GUILayout.Toggle(showPIDLimits, showPIDLimits ? "Hide PID Limits" : "Show PID Limits", GUILayout.Width(200));
+                showControlSurfaces = GUILayout.Toggle(showControlSurfaces, showControlSurfaces ? "Hide Control Surfaces" : "Show Control Surfaces", GUILayout.Width(200));
+                doublesided = GUILayout.Toggle(doublesided, "Separate Min and Max limits", GUILayout.Width(200));
+                showTooltips = GUILayout.Toggle(showTooltips, "Show Tooltips", GUILayout.Width(200));
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Input delay", GUILayout.Width(98));
+                string text = GUILayout.TextField(commitDelay.ToString("0.0"), GUILayout.Width(98));
+                try
+                {
+                    commitDelay = double.Parse(text);
+                }
+                catch { } // if the conversion fails it just reverts to the last good value. No need for further action
+                GUILayout.EndHorizontal();
+            }
 
             GUI.DragWindow();
             if (Event.current.type == EventType.Repaint)
@@ -931,6 +964,71 @@ namespace PilotAssistant
                 GUILayout.EndHorizontal();
             }
         }
+
+        private void headingTooltip(int id)
+        {
+            GUIStyle textStyle = new GUIStyle(GeneralUI.UISkin.textArea);
+            textStyle.active.textColor = textStyle.hover.textColor = textStyle.focused.textColor = textStyle.normal.textColor
+                = textStyle.onActive.textColor = textStyle.onHover.textColor = textStyle.onFocused.textColor = textStyle.onNormal.textColor = XKCDColors.ReddishOrange;
+            GUILayout.Label(headingChangeToCommit.ToString("0.##"), textStyle);
+        }
+        #endregion
+
+        #region WASD control
+        public double commitDelay = 0;
+
+        double headingChangeToCommit; // The amount of heading change to commit when the timer expires
+        double headingTimeToCommit; // update heading target when <= 0
+        bool headingRelative = true;
+
+        IEnumerator headingKeyboardResponse()
+        {
+            while (HighLogic.LoadedSceneIsFlight)
+            {
+                yield return null;
+
+                if (!IsPaused())
+                {
+                    double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1;
+                    bool bFineControl = FlightInputHandler.fetch.precisionMode;
+                    if (bHdgActive && (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || (!GameSettings.AXIS_YAW.IsNeutral() && Math.Abs(GameSettings.AXIS_YAW.GetAxis()) > 0.000001f)))
+                    {
+                        if (GameSettings.YAW_LEFT.GetKey())
+                            headingChangeToCommit -= bFineControl ? 0.04 / scale : 0.4 * scale;
+                        else if (GameSettings.YAW_RIGHT.GetKey())
+                            headingChangeToCommit += bFineControl ? 0.04 / scale : 0.4 * scale;
+                        else if (!GameSettings.AXIS_YAW.IsNeutral())
+                            headingChangeToCommit  += (bFineControl ? 0.04 / scale : 0.4 * scale) * GameSettings.AXIS_YAW.GetAxis();
+
+                        if (headingChangeToCommit < -180)
+                            headingChangeToCommit += 360;
+                        else if (headingChangeToCommit > 180)
+                            headingChangeToCommit -= 360;
+
+                        headingTimeToCommit = commitDelay;
+                    }
+
+                    if (headingTimeToCommit <= 0 && headingChangeToCommit != 0)
+                    {
+                        if (running)
+                        {
+                            newTarget = vecHeading(calculateTargetHeading(newTarget) + headingChangeToCommit);
+                        }
+                        else
+                        {
+                            stop = false;
+                            StartCoroutine(shiftHeadingTarget(calculateTargetHeading(newTarget) + headingChangeToCommit));
+                            headingEdit = false;
+                        }
+
+                        headingChangeToCommit = 0;
+                    }
+                    else if (headingTimeToCommit > 0)
+                        headingTimeToCommit -= TimeWarp.deltaTime;
+                }
+            }
+        }
+
         #endregion
     }
 }

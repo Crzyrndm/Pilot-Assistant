@@ -5,7 +5,7 @@ using System.Text;
 
 namespace PilotAssistant.Presets
 {
-    class SASPreset
+    public class SASPreset
     {
         public string name;
         public double[,] PIDGains = new double[3,5];

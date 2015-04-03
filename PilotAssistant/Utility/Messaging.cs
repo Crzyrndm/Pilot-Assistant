@@ -17,7 +17,7 @@ namespace PilotAssistant.Utility
         static ScreenMessage SSASDisArmedMessage = new ScreenMessage("Surface SAS Disarmed and Deactivated", 3, ScreenMessageStyle.UPPER_RIGHT);
         static ScreenMessage derpMessage = new ScreenMessage("Idiot, this isn't a valid number", 3, ScreenMessageStyle.UPPER_RIGHT);
 
-        internal static void statusMessage(int messageNumber)
+        public static void statusMessage(int messageNumber)
         {
             switch (messageNumber)
             {
@@ -60,14 +60,14 @@ namespace PilotAssistant.Utility
             }
         }
 
-        internal static void postMessage(string message)
+        public static void postMessage(string message)
         {
             ScreenMessages.PostScreenMessage(message);
         }
 
-        static bool checkAssistantActive()
+        public static bool checkAssistantActive()
         {
-            return (PilotAssistant.Instance.bHdgActive || PilotAssistant.Instance.bVertActive);
+            return (PilotAssistant.Instance.bHdgActive || PilotAssistant.Instance.bVertActive || PilotAssistant.Instance.bThrottleActive);
         }
     }
 }

@@ -9,7 +9,7 @@ namespace PilotAssistant.Presets
     /// <summary>
     /// Holds all the PID tuning values for the 7 (or more if required) controllers involved.
     /// </summary>
-    class AsstPreset
+    public class AsstPreset
     {
         public string name;
         public List<double[]> PIDGains = new List<double[]>();
