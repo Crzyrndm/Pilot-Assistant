@@ -175,7 +175,7 @@ namespace PilotAssistant
                 updateTarget();
 
             if (bActive[(int)SASList.Hdg])
-                SASList.Hdg.GetSAS().SetPoint = calculateTargetHeading(axisLock);
+                SASList.Hdg.GetSAS().SetPoint = Utils.calculateTargetHeading(axisLock);
         }
 
         public void drawGUI()
@@ -230,18 +230,11 @@ namespace PilotAssistant
 
                 double hrztResponse = 0;
                 if (bActive[(int)SASList.Hdg])
-                {
-                    if (Utils.GetSAS(SASList.Hdg).SetPoint - FlightData.heading >= -180 && Utils.GetSAS(SASList.Hdg).SetPoint - FlightData.heading <= 180)
-                        hrztResponse = -1 * Utils.GetSAS(SASList.Hdg).ResponseD(FlightData.heading);
-                    else if (Utils.GetSAS(SASList.Hdg).SetPoint - FlightData.heading < -180)
-                        hrztResponse = -1 * Utils.GetSAS(SASList.Hdg).ResponseD(FlightData.heading - 360);
-                    else if (Utils.GetSAS(SASList.Hdg).SetPoint - FlightData.heading > 180)
-                        hrztResponse = -1 * Utils.GetSAS(SASList.Hdg).ResponseD(FlightData.heading + 360);
-                }
+                    hrztResponse = -1 * SASList.Hdg.GetSAS().ResponseD(Utils.CurrentAngleTargetRel(FlightData.heading, SASList.Hdg.GetSAS().SetPoint, 180));
 
-                double rollRad = Mathf.Deg2Rad * FlightData.roll;
+                double rollRad = Mathf.Deg2Rad * FlightData.bank;
 
-                if (Math.Abs(FlightData.roll) > rollAngleSynch)
+                if (Math.Abs(FlightData.bank) > rollAngleSynch)
                 {
                     if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Hdg]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Hdg]))
                     {
@@ -256,7 +249,7 @@ namespace PilotAssistant
                     if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
                         state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
                 }
-                rollResponse();
+                rollResponse(state);
             }
 
             if (!bActive[(int)SASList.Pitch] || !bArmed)
@@ -278,10 +271,10 @@ namespace PilotAssistant
                 return;
 
             // if the pitch control is not paused, and there is pitch input or there is yaw input and the bank angle is greater than 5 degrees, pause the pitch lock
-            if (!bPause[(int)SASList.Pitch] && (state.pitch != 0 || (state.yaw != 0 && Math.Abs(FlightData.roll) > rollAngleSynch)))
+            if (!bPause[(int)SASList.Pitch] && (state.pitch != 0 || (state.yaw != 0 && Math.Abs(FlightData.bank) > rollAngleSynch)))
                 bPause[(int)SASList.Pitch] = true;
             // if the pitch control is paused, and there is no pitch input, and there is no yaw input or the bank angle is less than 5 degrees, unpause the pitch lock
-            else if (bPause[(int)SASList.Pitch] && state.pitch == 0 && (state.yaw == 0 || Math.Abs(FlightData.roll) <= rollAngleSynch))
+            else if (bPause[(int)SASList.Pitch] && state.pitch == 0 && (state.yaw == 0 || Math.Abs(FlightData.bank) <= rollAngleSynch))
             {
                 bPause[(int)SASList.Pitch] = false;
                 if (bActive[(int)SASList.Pitch])
@@ -289,10 +282,10 @@ namespace PilotAssistant
             }
 
             // if the heading control is not paused, and there is yaw input input or there is pitch input and the bank angle is greater than 5 degrees, pause the heading lock
-            if (!bPause[(int)SASList.Hdg] && (state.yaw != 0 || (state.pitch != 0 && Math.Abs(FlightData.roll) > rollAngleSynch)))
+            if (!bPause[(int)SASList.Hdg] && (state.yaw != 0 || (state.pitch != 0 && Math.Abs(FlightData.bank) > rollAngleSynch)))
                 bPause[(int)SASList.Hdg] = true;
             // if the heading control is paused, and there is no yaw input, and there is no pitch input or the bank angle is less than 5 degrees, unpause the pitch lock
-            else if (bPause[(int)SASList.Hdg] && state.yaw == 0 && (state.pitch == 0 || Math.Abs(FlightData.roll) <= rollAngleSynch))
+            else if (bPause[(int)SASList.Hdg] && state.yaw == 0 && (state.pitch == 0 || Math.Abs(FlightData.bank) <= rollAngleSynch))
             {
                 bPause[(int)SASList.Hdg] = false;
                 if (bActive[(int)SASList.Hdg])
@@ -346,7 +339,7 @@ namespace PilotAssistant
         IEnumerator FadeInRoll()
         {
             SASList.Bank.GetSAS().skipDerivative = true;
-            SASList.Bank.GetSAS().SetPoint = rollState ? 0 : FlightData.roll;
+            SASList.Bank.GetSAS().SetPoint = rollState ? 0 : FlightData.bank;
             rollTarget = FlightData.thisVessel.ReferenceTransform.right;
 
             // initialse all relevant values
@@ -368,8 +361,8 @@ namespace PilotAssistant
                         rollTarget = FlightData.thisVessel.ReferenceTransform.right;
                     else
                     {
-                        Utils.GetSAS(SASList.Bank).SetPoint = FlightData.roll;
-                        targets[(int)SASList.Bank] = FlightData.roll.ToString("0.00");
+                        Utils.GetSAS(SASList.Bank).SetPoint = FlightData.bank;
+                        targets[(int)SASList.Bank] = FlightData.bank.ToString("0.00");
                     }
                 }
                 else
@@ -405,7 +398,7 @@ namespace PilotAssistant
                     
                     stop = true;
                     headingEdit = false;
-                    axisLock = vecHeading(FlightData.heading);
+                    axisLock = Utils.vecHeading(FlightData.heading);
                     SASList.Hdg.GetSAS().skipDerivative = true;
                 }
                 else
@@ -415,7 +408,7 @@ namespace PilotAssistant
             {
                 stop = true;
                 headingEdit = false;
-                axisLock = vecHeading(FlightData.heading);
+                axisLock = Utils.vecHeading(FlightData.heading);
                 SASList.Hdg.GetSAS().skipDerivative = true;
             }
 
@@ -462,7 +455,7 @@ namespace PilotAssistant
 
 
         static Vector3d rollTarget = Vector3d.zero;
-        private void rollResponse()
+        private void rollResponse(FlightCtrlState state)
         {
             if (!bPause[(int)SASList.Bank] && bActive[(int)SASList.Bank])
             {
@@ -495,60 +488,19 @@ namespace PilotAssistant
                         + FlightData.thisVessel.ReferenceTransform.right * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.right, rollTarget);
                     double roll = Vector3.Angle(proj, rollTarget) * Math.Sign(Vector3.Dot(FlightData.thisVessel.ReferenceTransform.forward, rollTarget));
 
-                    FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Bank).ResponseD(roll) / fadeCurrent[(int)SASList.Bank];
+                    state.roll = SASList.Bank.GetSAS().ResponseF(roll) / fadeCurrent[(int)SASList.Bank];
                 }
                 else
                 {
                     if (rollStateWas)
                     {
-                        Utils.GetSAS(SASList.Bank).SetPoint = FlightData.roll;
-                        Utils.GetSAS(SASList.Bank).skipDerivative = true;
+                        SASList.Bank.GetSAS().SetPoint = FlightData.bank;
+                        SASList.Bank.GetSAS().skipDerivative = true;
                     }
 
-                    if (Utils.GetSAS(SASList.Bank).SetPoint - FlightData.roll >= -180 && Utils.GetSAS(SASList.Bank).SetPoint - FlightData.roll <= 180)
-                        FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Bank).ResponseD(FlightData.roll) / fadeCurrent[(int)SASList.Bank];
-                    else if (Utils.GetSAS(SASList.Bank).SetPoint - FlightData.roll > 180)
-                        FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Bank).ResponseD(FlightData.roll + 360) / fadeCurrent[(int)SASList.Bank];
-                    else if (Utils.GetSAS(SASList.Bank).SetPoint - FlightData.roll < -180)
-                        FlightData.thisVessel.ctrlState.roll = (float)Utils.GetSAS(SASList.Bank).ResponseD(FlightData.roll - 360) / fadeCurrent[(int)SASList.Bank];
+                    state.roll = SASList.Bank.GetSAS().ResponseF(Utils.CurrentAngleTargetRel(FlightData.bank, SASList.Bank.GetSAS().SetPoint, 180)) / fadeCurrent[(int)SASList.Bank];
                 }
             }
-        }
-
-        /// <summary>
-        /// calculate current heading from target vector
-        /// </summary>
-        public double calculateTargetHeading(Vector3 axisLock)
-        {
-            Vector3 fwd = Vector3.Cross(FlightData.planetUp, axisLock);
-            double heading = -1 * Vector3.Angle(fwd, FlightData.planetNorth) * Math.Sign(Vector3.Dot(fwd, FlightData.planetEast));
-            if (heading < 0)
-                heading += 360;
-            return heading;
-        }
-
-        /// <summary>
-        /// Get the direction vector for a given heading
-        /// </summary>
-        public Vector3 vecHeading(double heading)
-        {
-            double angleDiff = heading - FlightData.heading;
-            return Quaternion.AngleAxis((float)(angleDiff - 90), (Vector3)FlightData.planetUp) * FlightData.surfVesForward;
-        }
-
-        /// <summary>
-        /// calculates the angle to feed corrected for 0/360 crossings
-        /// eg. if the target is 350 and the current is 10, it will return 370 giving a diff of -20 degrees
-        /// else you get +ve 340 and the turn is in the wrong direction
-        /// </summary>
-        double CurrentAngleTargetRel(double current, double target)
-        {
-            if (target - current < -180)
-                return current - 360;
-            else if (target - current > 180)
-                return current + 360;
-            else
-                return current;
         }
 
         public Vector3 currentTarget = Vector3.zero; // this is the vec the Ienumerator is moving
@@ -560,8 +512,8 @@ namespace PilotAssistant
         bool headingEdit = false;
         public IEnumerator shiftHeadingTarget(double newHdg)
         {
-            newTarget = vecHeading(newHdg);
-            currentTarget = vecHeading(SASList.Hdg.GetSAS().BumplessSetPoint);
+            newTarget = Utils.vecHeading(newHdg);
+            currentTarget = Utils.vecHeading(SASList.Hdg.GetSAS().BumplessSetPoint);
             increment = 0;
 
             if (running)
@@ -570,18 +522,18 @@ namespace PilotAssistant
 
             while (!stop && Math.Abs(Vector3.Angle(currentTarget, newTarget)) > 0.01)
             {
-                double finalTarget = calculateTargetHeading(newTarget);
-                double target = calculateTargetHeading(currentTarget);
+                double finalTarget = Utils.calculateTargetHeading(newTarget);
+                double target = Utils.calculateTargetHeading(currentTarget);
                 increment += SASList.Hdg.GetSAS().Easing * TimeWarp.fixedDeltaTime * 0.01;
 
-                double remainder = finalTarget - CurrentAngleTargetRel(target, finalTarget);
+                double remainder = finalTarget - Utils.CurrentAngleTargetRel(target, finalTarget, 180);
                 if (remainder < 0)
                     target += Math.Max(-1 * increment, remainder);
                 else
                     target += Math.Min(increment, remainder);
 
-                axisLock = vecHeading(target);
-                currentTarget = vecHeading(target);
+                axisLock = Utils.vecHeading(target);
+                currentTarget = Utils.vecHeading(target);
                 yield return new WaitForFixedUpdate();
             }
             if (!stop)
@@ -618,7 +570,7 @@ namespace PilotAssistant
                 {
                     Utils.GetSAS(SASList.Pitch).BumplessSetPoint = Utils.Clamp(TogPlusNumBox("Pitch:", SASList.Pitch, FlightData.pitch, 80, 70), -90, 90);
                     TogPlusNumBox("Heading:", SASList.Hdg, FlightData.heading, 80, 70);
-                    Utils.GetSAS(SASList.Bank).BumplessSetPoint = TogPlusNumBox("Roll:", SASList.Bank, FlightData.roll, 80, 70);
+                    Utils.GetSAS(SASList.Bank).BumplessSetPoint = TogPlusNumBox("Roll:", SASList.Bank, FlightData.bank, 80, 70);
                     
                     GUILayout.Box("", GUILayout.Height(10)); // seperator
 
@@ -791,7 +743,7 @@ namespace PilotAssistant
                     targets[(int)controllerID] = currentVal.ToString("0.00");
 
                     if (controllerID == SASList.Hdg)
-                        axisLock = vecHeading(FlightData.heading);
+                        axisLock = Utils.vecHeading(FlightData.heading);
                     controllerID.GetSAS().skipDerivative = true;
                 }
             }
@@ -801,9 +753,9 @@ namespace PilotAssistant
                 if (controllerID == SASList.Hdg && !headingEdit)
                 {
                     if (running)
-                        targets[(int)controllerID] = calculateTargetHeading(newTarget).ToString("0.00");
+                        targets[(int)controllerID] = Utils.calculateTargetHeading(newTarget).ToString("0.00");
                     else
-                        targets[(int)controllerID] = calculateTargetHeading(axisLock).ToString("0.00");
+                        targets[(int)controllerID] = Utils.calculateTargetHeading(axisLock).ToString("0.00");
                 }
                 string tempText = GUILayout.TextField(targets[(int)controllerID], GeneralUI.UISkin.customStyles[(int)myStyles.numBoxText], GUILayout.Width(boxWidth));
                 if (controllerID == SASList.Hdg && targets[(int)controllerID] != tempText)

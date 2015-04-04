@@ -9,7 +9,7 @@ namespace PilotAssistant.Utility
         public static Vessel thisVessel;
 
         public static double pitch = 0;
-        public static double roll = 0;
+        public static double bank = 0;
         public static double yaw = 0;
         public static double AoA = 0;
         public static double heading = 0;
@@ -56,7 +56,7 @@ namespace PilotAssistant.Utility
             if (progradeHeading < 0)
                 progradeHeading += 360; // offset -ve heading by 360 degrees
 
-            roll = Vector3d.Angle(surfVesRight, thisVessel.ReferenceTransform.right) * Math.Sign(Vector3d.Dot(surfVesRight, thisVessel.ReferenceTransform.forward));
+            bank = Vector3d.Angle(surfVesRight, thisVessel.ReferenceTransform.right) * Math.Sign(Vector3d.Dot(surfVesRight, thisVessel.ReferenceTransform.forward));
 
             if (thisVessel.srfSpeed > 1)
             {
