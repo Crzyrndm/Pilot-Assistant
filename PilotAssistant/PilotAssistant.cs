@@ -68,6 +68,11 @@ namespace PilotAssistant
         string targetHeading = "0.00";
         string targetSpeed = "0.00";
 
+        // rate values for keyboard input
+        double hrztScale = 0.04;
+        double vertScale = 0.04; // altitude rate is x10
+        double throttleScale = 0.04;
+
         bool headingEdit = false;
 
         bool bShowSettings = false;
@@ -145,23 +150,6 @@ namespace PilotAssistant
             init = true;
         }
 
-        private void vesselSwitch(Vessel v)
-        {
-            FlightData.thisVessel.OnPreAutopilotUpdate -= new FlightInputCallback(preAutoPilotEvent);
-            FlightData.thisVessel.OnPostAutopilotUpdate -= new FlightInputCallback(vesselController);
-            FlightData.thisVessel = v;
-            FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(vesselController);
-            FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(preAutoPilotEvent);
-
-            PresetManager.loadCraftAsstPreset();
-        }
-
-        private void warpHandler()
-        {
-            if (TimeWarp.CurrentRateIndex == 0 && TimeWarp.CurrentRate != 1 && TimeWarp.WarpMode == TimeWarp.Modes.HIGH)
-                bHdgWasActive = bVertWasActive = bThrottleWasActive = false;
-        }
-
         public void OnDestroy()
         {
             RenderingManager.RemoveFromPostDrawQueue(5, drawGUI);
@@ -197,13 +185,30 @@ namespace PilotAssistant
             if (bHdgActive)
             {
                 if (!FlightData.thisVessel.checkLanded())
-                    PIDList.HdgBank.GetAsst().SetPoint = calculateTargetHeading(axisLock);
+                    PIDList.HdgBank.GetAsst().SetPoint = Utils.calculateTargetHeading(axisLock);
                 else
                     PIDList.HdgBank.GetAsst().SetPoint = FlightData.heading;
 
                 if (!headingEdit)
                     targetHeading = PIDList.HdgBank.GetAsst().SetPoint.ToString("0.00");
             }
+        }
+
+        private void vesselSwitch(Vessel v)
+        {
+            FlightData.thisVessel.OnPreAutopilotUpdate -= new FlightInputCallback(preAutoPilotEvent);
+            FlightData.thisVessel.OnPostAutopilotUpdate -= new FlightInputCallback(vesselController);
+            FlightData.thisVessel = v;
+            FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(vesselController);
+            FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(preAutoPilotEvent);
+
+            PresetManager.loadCraftAsstPreset();
+        }
+
+        private void warpHandler()
+        {
+            if (TimeWarp.CurrentRateIndex == 0 && TimeWarp.CurrentRate != 1 && TimeWarp.WarpMode == TimeWarp.Modes.HIGH)
+                bHdgWasActive = bVertWasActive = bThrottleWasActive = false;
         }
 
         public void drawGUI()
@@ -292,7 +297,7 @@ namespace PilotAssistant
                 if (!bWingLeveller)
                 {
                     // calculate the bank angle response based on the current heading
-                    double hdgBankResponse = PIDList.HdgBank.GetAsst().ResponseD(CurrentAngleTargetRel(FlightData.progradeHeading, PIDList.HdgBank.GetAsst().SetPoint));
+                    double hdgBankResponse = PIDList.HdgBank.GetAsst().ResponseD(Utils.CurrentAngleTargetRel(FlightData.progradeHeading, PIDList.HdgBank.GetAsst().SetPoint, 180));
                     // aileron setpoint updated, bank angle also used for yaw calculations (don't go direct to rudder because we want yaw stabilisation *or* turn assistance)
                     PIDList.BankToYaw.GetAsst().SetPoint = PIDList.Aileron.GetAsst().SetPoint = hdgBankResponse;
                     PIDList.Rudder.GetAsst().SetPoint = -PIDList.BankToYaw.GetAsst().ResponseD(FlightData.yaw);
@@ -316,7 +321,7 @@ namespace PilotAssistant
 
                 if (!FlightData.thisVessel.checkLanded())
                 {
-                    state.roll = (PIDList.Aileron.GetAsst().ResponseF(FlightData.roll) + rollInput).Clamp(-1, 1);
+                    state.roll = (PIDList.Aileron.GetAsst().ResponseF(FlightData.bank) + rollInput).Clamp(-1, 1);
                     state.yaw = PIDList.Rudder.GetAsst().ResponseF(FlightData.yaw).Clamp(-1, 1);
                 }
             }
@@ -337,21 +342,6 @@ namespace PilotAssistant
                 state.mainThrottle = 0;
         }
 
-        /// <summary>
-        /// calculates the angle to feed corrected for 0/360 crossings
-        /// eg. if the target is 350 and the current is 10, it will return 370 giving a diff of -20 degrees
-        /// else you get +ve 340 and the turn is in the wrong direction
-        /// </summary>
-        double CurrentAngleTargetRel(double current, double target)
-        {
-            if (target - current < -180)
-                return current - 360;
-            else if (target - current > 180)
-                return current + 360;
-            else
-                return current;
-        }
-
         public static bool IsPaused()
         {
             return Instance.bPause;
@@ -368,7 +358,7 @@ namespace PilotAssistant
 
             if (bHdgActive)
             {
-                PIDList.HdgBank.GetAsst().SetPoint = FlightData.heading - (FlightData.roll / PIDList.HdgBank.GetAsst().PGain).Clamp(PIDList.HdgBank.GetAsst().OutMin, PIDList.HdgBank.GetAsst().OutMax);
+                PIDList.HdgBank.GetAsst().SetPoint = FlightData.heading - (FlightData.bank / PIDList.HdgBank.GetAsst().PGain).Clamp(PIDList.HdgBank.GetAsst().OutMin, PIDList.HdgBank.GetAsst().OutMax);
                 stop = false;
                 StartCoroutine(shiftHeadingTarget(FlightData.heading));
 
@@ -443,7 +433,7 @@ namespace PilotAssistant
             bWasWingLeveller = bWingLeveller;
             if (!bWingLeveller)
             {
-                setAxisLock(FlightData.heading);
+                axisLock = Utils.vecHeading(FlightData.heading);
                 targetHeading = PIDList.HdgBank.GetAsst().SetPoint.ToString("0.00");
                 headingEdit = false;
             }
@@ -511,15 +501,16 @@ namespace PilotAssistant
                 if (bVertActive && (GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || (!GameSettings.AXIS_PITCH.IsNeutral() && Math.Abs(GameSettings.AXIS_PITCH.GetAxis()) > 0.000001f)))
                 {
                     double vert = double.Parse(targetVert);
+
                     if (bAltitudeHold)
-                        vert /= 10;
+                        vert /= 10; // saves having to specify the rates seperately
 
                     if (GameSettings.PITCH_DOWN.GetKey())
-                        vert -= bFineControl ? 0.04 / scale : 0.4 * scale;
+                        vert -= bFineControl ? vertScale / scale : vertScale * 10 * scale;
                     else if (GameSettings.PITCH_UP.GetKey())
-                        vert += bFineControl ? 0.04 / scale : 0.4 * scale;
+                        vert += bFineControl ? vertScale / scale : vertScale * 10 * scale;
                     else if (!GameSettings.AXIS_PITCH.IsNeutral())
-                        vert += (bFineControl ? 0.04 / scale : 0.4 * scale) * GameSettings.AXIS_PITCH.GetAxis();
+                        vert += (bFineControl ? vertScale / scale : vertScale * 10 * scale) * GameSettings.AXIS_PITCH.GetAxis();
 
                     if (bAltitudeHold)
                     {
@@ -537,11 +528,10 @@ namespace PilotAssistant
                 if (bThrottleActive && ((GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey()) || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown()))
                 {
                     double speed = double.Parse(targetSpeed);
-
                     if (GameSettings.THROTTLE_UP.GetKey())
-                        speed += bFineControl ? 0.1 / scale : 1 * scale;
+                        speed += bFineControl ? throttleScale / scale : throttleScale * 10 * scale;
                     else if (GameSettings.THROTTLE_DOWN.GetKey())
-                        speed -= bFineControl ? 0.1 / scale : 1 * scale;
+                        speed -= bFineControl ? throttleScale / scale : throttleScale * 10 * scale;
 
                     if (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey())
                         speed = 0;
@@ -553,77 +543,6 @@ namespace PilotAssistant
                     targetSpeed = Math.Max(speed, 0).ToString("0.00");
                 }
             }
-        }
-
-        public static bool SASMonitor()
-        {
-            return (FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] || SurfSAS.ActivityCheck());
-        }
-
-        /// <summary>
-        /// calculate current heading from target vector
-        /// </summary>
-        private double calculateTargetHeading(Vector3 axisLock)
-        {
-            Vector3 fwd = Vector3.Cross(FlightData.planetUp, axisLock);
-            double heading = -1 * Vector3.Angle(fwd, FlightData.planetNorth) * Math.Sign(Vector3.Dot(fwd, FlightData.planetEast));
-            if (heading < 0)
-                heading += 360;
-            return heading;
-        }
-
-        /// <summary>
-        /// set the target heading vector to a given heading
-        /// </summary>
-        private void setAxisLock(double heading)
-        {
-            double diff = heading - FlightData.heading;
-            axisLock = Quaternion.AngleAxis((float)(diff - 90), (Vector3)FlightData.planetUp) * FlightData.surfVesForward;
-        }
-
-        /// <summary>
-        /// Get the direction vector for a given heading
-        /// </summary>
-        private Vector3 vecHeading(double heading)
-        {
-            double angleDiff = heading - FlightData.heading;
-            return Quaternion.AngleAxis((float)(angleDiff - 90), (Vector3)FlightData.planetUp) * FlightData.surfVesForward;
-        }
-
-        Vector3 currentTarget = Vector3.zero; // this is the vec the control is aimed at
-        Vector3 newTarget = Vector3.zero; // this is the vec we are moving to
-        double increment = 0; // this is the angle to shift per second
-        bool running = false;
-        bool stop = false;
-        IEnumerator shiftHeadingTarget(double newHdg)
-        {
-            newTarget = vecHeading(newHdg);
-            currentTarget = vecHeading(PIDList.HdgBank.GetAsst().BumplessSetPoint);
-            increment = 0;
-
-            if (running)
-                yield break;
-            running = true;
-
-            while (!stop && Math.Abs(Vector3.Angle(currentTarget, newTarget)) > 0.01)
-            {
-                double finalTarget = calculateTargetHeading(newTarget);
-                double target = calculateTargetHeading(currentTarget);
-                increment += PIDList.HdgBank.GetAsst().Easing * TimeWarp.fixedDeltaTime * 0.01;
-
-                double remainder = finalTarget - CurrentAngleTargetRel(target, finalTarget);
-                if (remainder < 0)
-                    target += Math.Max(-1 * increment, remainder);
-                else
-                    target += Math.Min(increment, remainder);
-
-                setAxisLock(target);
-                currentTarget = vecHeading(target);
-                yield return new WaitForFixedUpdate();
-            }
-            if (!stop)
-                axisLock = newTarget;
-            running = false;
         }
 
         public double commitDelay = 0;
@@ -641,16 +560,13 @@ namespace PilotAssistant
                     if (bHdgActive && (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || (!GameSettings.AXIS_YAW.IsNeutral() && Math.Abs(GameSettings.AXIS_YAW.GetAxis()) > 0.000001f)))
                     {
                         if (GameSettings.YAW_LEFT.GetKey())
-                            headingChangeToCommit -= bFineControl ? 0.04 / scale : 0.4 * scale;
+                            headingChangeToCommit -= bFineControl ? hrztScale / scale : hrztScale * 10 * scale;
                         else if (GameSettings.YAW_RIGHT.GetKey())
-                            headingChangeToCommit += bFineControl ? 0.04 / scale : 0.4 * scale;
+                            headingChangeToCommit += bFineControl ? hrztScale / scale : hrztScale * 10 * scale;
                         else if (!GameSettings.AXIS_YAW.IsNeutral())
-                            headingChangeToCommit += (bFineControl ? 0.04 / scale : 0.4 * scale) * GameSettings.AXIS_YAW.GetAxis();
+                            headingChangeToCommit += (bFineControl ? hrztScale / scale : hrztScale * 10 * scale) * GameSettings.AXIS_YAW.GetAxis();
 
-                        if (headingChangeToCommit < -180)
-                            headingChangeToCommit += 360;
-                        else if (headingChangeToCommit > 180)
-                            headingChangeToCommit -= 360;
+                        headingChangeToCommit = headingChangeToCommit.headingClamp(180);
 
                         headingTimeToCommit = commitDelay;
                     }
@@ -658,14 +574,12 @@ namespace PilotAssistant
                     if (headingTimeToCommit <= 0 && headingChangeToCommit != 0)
                     {
                         if (running)
-                        {
-                            newTarget = vecHeading(calculateTargetHeading(newTarget) + headingChangeToCommit);
-                        }
+                            newTarget = Utils.vecHeading(Utils.calculateTargetHeading(newTarget) + headingChangeToCommit);
                         else
                         {
                             stop = false;
-                            setAxisLock(FlightData.heading + FlightData.roll / PIDList.HdgBank.GetAsst().PGain);
-                            StartCoroutine(shiftHeadingTarget(calculateTargetHeading(newTarget) + headingChangeToCommit));
+                            axisLock = Utils.vecHeading(FlightData.heading + FlightData.bank / PIDList.HdgBank.GetAsst().PGain);
+                            StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newTarget) + headingChangeToCommit));
                             headingEdit = false;
                         }
 
@@ -679,7 +593,46 @@ namespace PilotAssistant
             }
         }
 
+        public static bool SASMonitor()
+        {
+            return (FlightData.thisVessel.ActionGroups[KSPActionGroup.SAS] || SurfSAS.ActivityCheck());
+        }
 
+        Vector3 currentTarget = Vector3.zero; // this is the vec the control is aimed at
+        Vector3 newTarget = Vector3.zero; // this is the vec we are moving to
+        double increment = 0; // this is the angle to shift per second
+        bool running = false;
+        bool stop = false;
+        IEnumerator shiftHeadingTarget(double newHdg)
+        {
+            newTarget = Utils.vecHeading(newHdg);
+            currentTarget = Utils.vecHeading(PIDList.HdgBank.GetAsst().BumplessSetPoint);
+            increment = 0;
+
+            if (running)
+                yield break;
+            running = true;
+
+            while (!stop && Math.Abs(Vector3.Angle(currentTarget, newTarget)) > 0.01)
+            {
+                double finalTarget = Utils.calculateTargetHeading(newTarget);
+                double target = Utils.calculateTargetHeading(currentTarget);
+                increment += PIDList.HdgBank.GetAsst().Easing * TimeWarp.fixedDeltaTime * 0.01;
+
+                double remainder = finalTarget - Utils.CurrentAngleTargetRel(target, finalTarget, 180);
+                if (remainder < 0)
+                    target += Math.Max(-1 * increment, remainder);
+                else
+                    target += Math.Min(increment, remainder);
+
+                currentTarget = axisLock = Utils.vecHeading(target);
+                yield return new WaitForFixedUpdate();
+            }
+            if (!stop)
+                axisLock = newTarget;
+            running = false;
+        }
+        
         #region GUI
         private void displayWindow(int id)
         {
@@ -721,11 +674,11 @@ namespace PilotAssistant
                     if (GUILayout.Button("Target Hdg: ", GUILayout.Width(90)))
                     {
                         headingEdit = false;
-                        if (valid && newHdg >= 0 && newHdg <= 360)
+                        if (valid)
                         {
-                            PIDList.HdgBank.GetAsst().SetPoint = FlightData.heading - (FlightData.roll / PIDList.HdgBank.GetAsst().PGain).Clamp(PIDList.HdgBank.GetAsst().OutMin, PIDList.HdgBank.GetAsst().OutMax);
+                            PIDList.HdgBank.GetAsst().SetPoint = FlightData.heading - (FlightData.bank / PIDList.HdgBank.GetAsst().PGain).Clamp(PIDList.HdgBank.GetAsst().OutMin, PIDList.HdgBank.GetAsst().OutMax);
                             stop = false;
-                            StartCoroutine(shiftHeadingTarget(newHdg));
+                            StartCoroutine(shiftHeadingTarget(newHdg.headingClamp(360)));
                             bHdgActive = bHdgWasActive = true; // skip toggle check to avoid being overwritten
 
                             GUI.FocusControl("Target Hdg: ");
@@ -734,7 +687,7 @@ namespace PilotAssistant
                     }
 
                     double displayTargetDelta = 0; // active setpoint or absolute value to change (yaw L/R input)
-                    string displayTarget = "0"; // target setpoint or setpoint to commit as target setpoint
+                    string displayTarget = "0.00"; // target setpoint or setpoint to commit as target setpoint
 
                     if (headingChangeToCommit != 0)
                         displayTargetDelta = headingChangeToCommit;
@@ -743,26 +696,17 @@ namespace PilotAssistant
                         if (!running)
                             displayTargetDelta = PIDList.HdgBank.GetAsst().SetPoint - FlightData.heading;
                         else
-                            displayTargetDelta = calculateTargetHeading(newTarget) - FlightData.heading;
-                        if (displayTargetDelta > 180)
-                            displayTargetDelta -= 360;
-                        else if (displayTargetDelta < -180)
-                            displayTargetDelta += 360;
+                            displayTargetDelta = Utils.calculateTargetHeading(newTarget) - FlightData.heading;
+
+                        displayTargetDelta = displayTargetDelta.headingClamp(180);
                     }
 
                     if (headingEdit)
                         displayTarget = targetHeading;
                     else if (headingChangeToCommit == 0 || FlightData.thisVessel.checkLanded())
-                        displayTarget = calculateTargetHeading(newTarget).ToString("0.00");
+                        displayTarget = Utils.calculateTargetHeading(newTarget).ToString("0.00");
                     else
-                    {
-                        double val = calculateTargetHeading(newTarget) + headingChangeToCommit;
-                        if (val > 360)
-                            val -= 360;
-                        else if (val < 0)
-                            val += 360;
-                        displayTarget = val.ToString("0.00");
-                    }
+                        displayTarget = (Utils.calculateTargetHeading(newTarget) + headingChangeToCommit).headingClamp(360).ToString("0.00");
 
                     targetHeading = GUILayout.TextField(displayTarget, GUILayout.Width(51));
                     if (targetHeading != displayTarget)
@@ -779,7 +723,7 @@ namespace PilotAssistant
                 }
                 if (showControlSurfaces)
                 {
-                    drawPIDvalues(PIDList.Aileron, "Bank", "\u00B0", FlightData.roll, 3, "Deflection", "\u00B0");
+                    drawPIDvalues(PIDList.Aileron, "Bank", "\u00B0", FlightData.bank, 3, "Deflection", "\u00B0");
                     drawPIDvalues(PIDList.Rudder, "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0");
                 }
                 GUILayout.EndScrollView();
