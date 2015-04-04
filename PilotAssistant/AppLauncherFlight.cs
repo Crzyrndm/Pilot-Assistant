@@ -42,7 +42,7 @@ namespace PilotAssistant
             PilotAssistant.Instance.showControlSurfaces = config.GetValue("AsstControlSurfaces", false);
             SurfSAS.Instance.SASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
             window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
-            PilotAssistant.Instance.commitDelay = double.Parse(config.GetValue("commitDelay", "0.1"));
+            PilotAssistant.Instance.commitDelay = double.Parse(config.GetValue("commitDelay", "0.0"));
         }
 
         void OnDestroy()

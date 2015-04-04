@@ -634,7 +634,7 @@ namespace PilotAssistant
             while (HighLogic.LoadedSceneIsFlight)
             {
                 yield return null;
-                if (!IsPaused())
+                if (!IsPaused() && bHdgActive && !FlightData.thisVessel.checkLanded())
                 {
                     double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1;
                     bool bFineControl = FlightInputHandler.fetch.precisionMode;
@@ -674,6 +674,8 @@ namespace PilotAssistant
                     else if (headingTimeToCommit > 0)
                         headingTimeToCommit -= TimeWarp.deltaTime;
                 }
+                else
+                    headingChangeToCommit = 0;
             }
         }
 
@@ -692,7 +694,7 @@ namespace PilotAssistant
             GUILayout.BeginHorizontal();
 
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            bShowHdg = GUILayout.Toggle(bShowHdg, "", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(20));
+            bShowHdg = GUILayout.Toggle(bShowHdg, bShowHdg ? "-" : "+", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(20));
 
             if (bHdgActive)
                 GUI.backgroundColor = GeneralUI.ActiveBackground;
@@ -725,6 +727,9 @@ namespace PilotAssistant
                             stop = false;
                             StartCoroutine(shiftHeadingTarget(newHdg));
                             bHdgActive = bHdgWasActive = true; // skip toggle check to avoid being overwritten
+
+                            GUI.FocusControl("Target Hdg: ");
+                            GUI.UnfocusWindow();
                         }
                     }
 
@@ -733,14 +738,23 @@ namespace PilotAssistant
 
                     if (headingChangeToCommit != 0)
                         displayTargetDelta = headingChangeToCommit;
-                    else if (running)
-                        displayTargetDelta = calculateTargetHeading(currentTarget);
                     else
-                        displayTargetDelta = PIDList.HdgBank.GetAsst().SetPoint;
+                    {
+                        if (!running)
+                            displayTargetDelta = PIDList.HdgBank.GetAsst().SetPoint - FlightData.heading;
+                        else
+                            displayTargetDelta = calculateTargetHeading(newTarget) - FlightData.heading;
+                        if (displayTargetDelta > 180)
+                            displayTargetDelta -= 360;
+                        else if (displayTargetDelta < -180)
+                            displayTargetDelta += 360;
+                    }
 
                     if (headingEdit)
                         displayTarget = targetHeading;
-                    else if (headingChangeToCommit != 0)
+                    else if (headingChangeToCommit == 0 || FlightData.thisVessel.checkLanded())
+                        displayTarget = calculateTargetHeading(newTarget).ToString("0.00");
+                    else
                     {
                         double val = calculateTargetHeading(newTarget) + headingChangeToCommit;
                         if (val > 360)
@@ -749,14 +763,11 @@ namespace PilotAssistant
                             val += 360;
                         displayTarget = val.ToString("0.00");
                     }
-                    else
-                        displayTarget = calculateTargetHeading(newTarget).ToString("0.00");
 
-                    GUILayout.Label(displayTargetDelta.ToString("0.00"), GeneralUI.UISkin.customStyles[(int)myStyles.greenTextBox], GUILayout.Width(55));
                     targetHeading = GUILayout.TextField(displayTarget, GUILayout.Width(47));
                     if (targetHeading != displayTarget)
                         headingEdit = true;
-
+                    GUILayout.Label(displayTargetDelta.ToString("0.00"), GeneralUI.UISkin.customStyles[(int)myStyles.greenTextBox], GUILayout.Width(55));
                     GUILayout.EndHorizontal();
                 }
 
@@ -786,7 +797,7 @@ namespace PilotAssistant
             GUILayout.BeginHorizontal();
 
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            bShowVert = GUILayout.Toggle(bShowVert, "", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(20));
+            bShowVert = GUILayout.Toggle(bShowVert, bShowVert ? "-" : "+", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(20));
 
             if (bVertActive)
                 GUI.backgroundColor = GeneralUI.ActiveBackground;
@@ -825,6 +836,9 @@ namespace PilotAssistant
                     }
 
                     bVertActive = bVertWasActive = true; // skip the toggle check so value isn't overwritten
+
+                    GUI.FocusControl("Target Hdg: ");
+                    GUI.UnfocusWindow();
                 }
                 targetVert = GUILayout.TextField(targetVert, GUILayout.Width(98));
                 GUILayout.EndHorizontal();
@@ -850,7 +864,7 @@ namespace PilotAssistant
             GUILayout.BeginHorizontal();
             // button background
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            bShowThrottle = GUILayout.Toggle(bShowThrottle, "", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(20));
+            bShowThrottle = GUILayout.Toggle(bShowThrottle, bShowThrottle ? "-" : "+", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(20));
             if (bThrottleActive)
                 GUI.backgroundColor = GeneralUI.ActiveBackground;
             else
@@ -878,6 +892,9 @@ namespace PilotAssistant
                     PIDList.Throttle.GetAsst().BumplessSetPoint = newVal;
 
                     bThrottleActive = bThrottleWasActive = true; // skip the toggle check so value isn't overwritten
+
+                    GUI.FocusControl("Target Hdg: ");
+                    GUI.UnfocusWindow();
                 }
                 targetSpeed = GUILayout.TextField(targetSpeed, GUILayout.Width(78));
                 GUILayout.EndHorizontal();
