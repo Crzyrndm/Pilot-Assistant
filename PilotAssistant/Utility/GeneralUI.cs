@@ -164,41 +164,5 @@ namespace PilotAssistant.Utility
             GUILayout.EndHorizontal();
             return val;
         }
-
-        /// <summary>
-        /// Draws a toggle button and text box of specified widths with update button.
-        /// </summary>
-        /// <param name="toggleText"></param>
-        /// <param name="boxVal"></param>
-        /// <param name="toggleWidth"></param>
-        /// <param name="boxWidth"></param>
-        /// <returns></returns>
-        public static float TogPlusNumBox(string toggleText, ref bool toggleState, ref string boxText, double currentVal, double setPoint, float toggleWidth, float boxWidth)
-        {
-            GUILayout.BeginHorizontal();
-
-            bool tempState = GUILayout.Toggle(toggleState, toggleText, UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(toggleWidth));
-            if (tempState != toggleState)
-            {
-                toggleState = tempState;
-                if (toggleState)
-                {
-                    setPoint = currentVal;
-                    boxText = currentVal.ToString("N2");
-                }
-            }
-
-            boxText = GUILayout.TextField(boxText, UISkin.customStyles[(int)myStyles.numBoxText], GUILayout.Width(boxWidth));
-
-            if (GUILayout.Button("u"))
-            {
-                double temp;
-                if (double.TryParse(boxText, out temp))
-                    setPoint = temp;
-            }
-            //
-            GUILayout.EndHorizontal();
-            return (float)setPoint;
-        }
     }
 }

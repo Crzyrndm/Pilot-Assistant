@@ -733,12 +733,12 @@ namespace PilotAssistant
                         }
                     }
 
-                    double displayTargetDelta; // active setpoint or absolute value to change (yaw L/R input)
-                    string displayTarget; // target setpoint or setpoint to commit as target setpoint
+                    double displayTargetDelta = 0; // active setpoint or absolute value to change (yaw L/R input)
+                    string displayTarget = "0"; // target setpoint or setpoint to commit as target setpoint
 
                     if (headingChangeToCommit != 0)
                         displayTargetDelta = headingChangeToCommit;
-                    else
+                    else if (bHdgActive)
                     {
                         if (!running)
                             displayTargetDelta = PIDList.HdgBank.GetAsst().SetPoint - FlightData.heading;
@@ -764,10 +764,10 @@ namespace PilotAssistant
                         displayTarget = val.ToString("0.00");
                     }
 
-                    targetHeading = GUILayout.TextField(displayTarget, GUILayout.Width(47));
+                    targetHeading = GUILayout.TextField(displayTarget, GUILayout.Width(51));
                     if (targetHeading != displayTarget)
                         headingEdit = true;
-                    GUILayout.Label(displayTargetDelta.ToString("0.00"), GeneralUI.UISkin.customStyles[(int)myStyles.greenTextBox], GUILayout.Width(55));
+                    GUILayout.Label(displayTargetDelta.ToString("0.00"), GeneralUI.UISkin.customStyles[(int)myStyles.greenTextBox], GUILayout.Width(51));
                     GUILayout.EndHorizontal();
                 }
 

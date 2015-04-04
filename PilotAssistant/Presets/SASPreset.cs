@@ -47,8 +47,8 @@ namespace PilotAssistant.Presets
 
             PIDclamp[] sasPID = new PIDclamp[3];
             sasPID[(int)SASList.Pitch] = sas.pidLockedPitch;
-            sasPID[(int)SASList.Roll] = sas.pidLockedRoll;
-            sasPID[(int)SASList.Yaw] = sas.pidLockedYaw;
+            sasPID[(int)SASList.Bank] = sas.pidLockedRoll;
+            sasPID[(int)SASList.Hdg] = sas.pidLockedYaw;
 
             foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {
@@ -101,8 +101,8 @@ namespace PilotAssistant.Presets
         {
             PIDclamp[] sasPID = new PIDclamp[3];
             sasPID[(int)SASList.Pitch] = sas.pidLockedPitch;
-            sasPID[(int)SASList.Roll] = sas.pidLockedRoll;
-            sasPID[(int)SASList.Yaw] = sas.pidLockedYaw;
+            sasPID[(int)SASList.Bank] = sas.pidLockedRoll;
+            sasPID[(int)SASList.Hdg] = sas.pidLockedYaw;
 
             foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {
