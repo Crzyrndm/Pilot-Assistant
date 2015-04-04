@@ -240,10 +240,20 @@ namespace PilotAssistant
 
                 double rollRad = Mathf.Deg2Rad * FlightData.roll;
 
-                if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Hdg]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Hdg]))
+                if (Math.Abs(FlightData.roll) > 5)
                 {
-                    state.pitch = pitchSet = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
-                    state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
+                    if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Hdg]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Hdg]))
+                    {
+                        state.pitch = pitchSet = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
+                        state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
+                    }
+                }
+                else
+                {
+                    if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
+                        state.pitch = pitchSet = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
+                    if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
+                        state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
                 }
                 rollResponse();
             }
@@ -266,12 +276,26 @@ namespace PilotAssistant
             if (Utils.isFlightControlLocked())
                 return;
 
+            if (!bPause[(int)SASList.Pitch])
+            {
+                Debug.Log("pitch pause check");
+                Debug.Log(bPause[(int)SASList.Pitch]);
+                Debug.Log(state.pitch);
+                Debug.Log(state.yaw);
+                Debug.Log(Math.Abs(FlightData.roll) > 5);
+                Debug.Log(!bPause[(int)SASList.Pitch] && (state.pitch != 0 || (state.yaw != 0 && Math.Abs(FlightData.roll) > 5)));
+            }
+
             // if the pitch control is not paused, and there is pitch input or there is yaw input and the bank angle is greater than 5 degrees, pause the pitch lock
             if (!bPause[(int)SASList.Pitch] && (state.pitch != 0 || (state.yaw != 0 && Math.Abs(FlightData.roll) > 5)))
+            {
+                Debug.Log("PAUSED");
                 bPause[(int)SASList.Pitch] = true;
+            }
             // if the pitch control is paused, and there is no pitch input, and there is no yaw input or the bank angle is less than 5 degrees, unpause the pitch lock
             else if (bPause[(int)SASList.Pitch] && state.pitch == 0 && (state.yaw == 0 || Math.Abs(FlightData.roll) <= 5))
             {
+                Debug.Log("UNPAUSED");
                 bPause[(int)SASList.Pitch] = false;
                 if (bActive[(int)SASList.Pitch])
                     StartCoroutine(FadeInPitch());
@@ -318,7 +342,6 @@ namespace PilotAssistant
                 // handle both in the same while loop so if we pause/unpause again it just resets
                 if (timeElapsed[(int)SASList.Pitch] < delayEngage[(int)SASList.Pitch])
                 {
-                    Utils.GetSAS(SASList.Hdg).SetPoint = FlightData.heading;
                     Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
                     targets[(int)SASList.Pitch] = FlightData.pitch.ToString("0.00");
                 }
@@ -392,8 +415,6 @@ namespace PilotAssistant
                 if (timeElapsed[(int)SASList.Hdg] < delayEngage[(int)SASList.Hdg])
                 {
                     updated = true;
-                    Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
-                    targets[(int)SASList.Pitch] = FlightData.pitch.ToString("0.00");
                     
                     stop = true;
                     headingEdit = false;
@@ -405,9 +426,6 @@ namespace PilotAssistant
             }
             if (!updated)
             {
-                Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
-                targets[(int)SASList.Pitch] = FlightData.pitch.ToString("0.00");
-
                 stop = true;
                 headingEdit = false;
                 axisLock = vecHeading(FlightData.heading);
