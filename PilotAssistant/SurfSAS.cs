@@ -33,7 +33,7 @@ namespace PilotAssistant
         public bool[] bPause = new bool[3]; // pause on a per axis basis
         public bool bStockSAS = true;
 
-        public string[] targets = { "0", "0", "0" };
+        public string[] targets = { "0.00", "0.00", "0.00" };
 
         // unpause control authority scaling. Helps reduce the jump of SSAS gaining control of an axis
         public float[] fadeCurrent = { 1, 1, 1 }; // these are the current axis control factors
@@ -174,9 +174,7 @@ namespace PilotAssistant
                 updateTarget();
 
             if (bActive[(int)SASList.Hdg])
-            {
                 SASList.Hdg.GetSAS().SetPoint = calculateTargetHeading(axisLock);
-            }
         }
 
         public void drawGUI()
@@ -221,7 +219,7 @@ namespace PilotAssistant
 
         private void SurfaceSAS(FlightCtrlState state)
         {
-            if (bArmed)
+            if (bArmed && ActivityCheck())
             {
                 pauseManager(state);
 
@@ -268,19 +266,26 @@ namespace PilotAssistant
             if (Utils.isFlightControlLocked())
                 return;
 
-            if (state.pitch != 0 && !bPause[(int)SASList.Pitch])
-                bPause[(int)SASList.Pitch] = bPause[(int)SASList.Hdg] = true;
-            else if (state.pitch == 0 && bPause[(int)SASList.Pitch])
+            // if the pitch control is not paused, and there is pitch input or there is yaw input and the bank angle is greater than 5 degrees, pause the pitch lock
+            if (!bPause[(int)SASList.Pitch] && (state.pitch != 0 || (state.yaw != 0 && Math.Abs(FlightData.roll) > 5)))
+                bPause[(int)SASList.Pitch] = true;
+            // if the pitch control is paused, and there is no pitch input, and there is no yaw input or the bank angle is less than 5 degrees, unpause the pitch lock
+            else if (bPause[(int)SASList.Pitch] && state.pitch == 0 && (state.yaw == 0 || Math.Abs(FlightData.roll) <= 5))
             {
-                if (state.yaw == 0)
-                {
-                    bPause[(int)SASList.Pitch] = bPause[(int)SASList.Hdg] = false;
+                bPause[(int)SASList.Pitch] = false;
+                if (bActive[(int)SASList.Pitch])
+                    StartCoroutine(FadeInPitch());
+            }
 
-                    if (bActive[(int)SASList.Pitch])
-                        StartCoroutine(FadeInPitch());
-                    if (bActive[(int)SASList.Hdg])
-                        StartCoroutine(FadeInHdg());
-                }
+            // if the heading control is not paused, and there is yaw input input or there is pitch input and the bank angle is greater than 5 degrees, pause the heading lock
+            if (!bPause[(int)SASList.Hdg] && (state.yaw != 0 || (state.pitch != 0 && Math.Abs(FlightData.roll) > 5)))
+                bPause[(int)SASList.Hdg] = true;
+            // if the heading control is paused, and there is no yaw input, and there is no pitch input or the bank angle is less than 5 degrees, unpause the pitch lock
+            else if (bPause[(int)SASList.Hdg] && state.yaw == 0 && (state.pitch == 0 || Math.Abs(FlightData.roll) <= 5))
+            {
+                bPause[(int)SASList.Hdg] = false;
+                if (bActive[(int)SASList.Hdg])
+                    StartCoroutine(FadeInHdg());
             }
             
             if (state.roll != 0 && !bPause[(int)SASList.Bank])
@@ -290,21 +295,6 @@ namespace PilotAssistant
                 bPause[(int)SASList.Bank] = false;
                 if (bActive[(int)SASList.Bank])
                         StartCoroutine(FadeInRoll());
-            }
-
-            if (state.yaw != 0 && !bPause[(int)SASList.Hdg])
-                bPause[(int)SASList.Hdg] = bPause[(int)SASList.Pitch] = true;
-            else if (state.yaw == 0 && bPause[(int)SASList.Hdg])
-            {
-                if (state.pitch == 0)
-                {
-                    bPause[(int)SASList.Pitch] = bPause[(int)SASList.Hdg] = false;
-
-                    if (bActive[(int)SASList.Pitch])
-                        StartCoroutine(FadeInPitch());
-                    if (bActive[(int)SASList.Hdg])
-                        StartCoroutine(FadeInHdg());
-                }
             }
         }
 
@@ -330,7 +320,7 @@ namespace PilotAssistant
                 {
                     Utils.GetSAS(SASList.Hdg).SetPoint = FlightData.heading;
                     Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
-                    targets[(int)SASList.Pitch] = FlightData.pitch.ToString("N2");
+                    targets[(int)SASList.Pitch] = FlightData.pitch.ToString("0.00");
                 }
                 else
                     fadeCurrent[(int)SASList.Pitch] = Mathf.Max(fadeSetpoint[(int)SASList.Pitch] * Mathf.Pow(fadeMult, timeElapsed[(int)SASList.Pitch] - delayEngage[(int)SASList.Pitch]), 1);
@@ -369,7 +359,7 @@ namespace PilotAssistant
                     else
                     {
                         Utils.GetSAS(SASList.Bank).SetPoint = FlightData.roll;
-                        targets[(int)SASList.Bank] = FlightData.roll.ToString("N2");
+                        targets[(int)SASList.Bank] = FlightData.roll.ToString("0.00");
                     }
                 }
                 else
