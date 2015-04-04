@@ -276,26 +276,12 @@ namespace PilotAssistant
             if (Utils.isFlightControlLocked())
                 return;
 
-            if (!bPause[(int)SASList.Pitch])
-            {
-                Debug.Log("pitch pause check");
-                Debug.Log(bPause[(int)SASList.Pitch]);
-                Debug.Log(state.pitch);
-                Debug.Log(state.yaw);
-                Debug.Log(Math.Abs(FlightData.roll) > 5);
-                Debug.Log(!bPause[(int)SASList.Pitch] && (state.pitch != 0 || (state.yaw != 0 && Math.Abs(FlightData.roll) > 5)));
-            }
-
             // if the pitch control is not paused, and there is pitch input or there is yaw input and the bank angle is greater than 5 degrees, pause the pitch lock
             if (!bPause[(int)SASList.Pitch] && (state.pitch != 0 || (state.yaw != 0 && Math.Abs(FlightData.roll) > 5)))
-            {
-                Debug.Log("PAUSED");
                 bPause[(int)SASList.Pitch] = true;
-            }
             // if the pitch control is paused, and there is no pitch input, and there is no yaw input or the bank angle is less than 5 degrees, unpause the pitch lock
             else if (bPause[(int)SASList.Pitch] && state.pitch == 0 && (state.yaw == 0 || Math.Abs(FlightData.roll) <= 5))
             {
-                Debug.Log("UNPAUSED");
                 bPause[(int)SASList.Pitch] = false;
                 if (bActive[(int)SASList.Pitch])
                     StartCoroutine(FadeInPitch());
