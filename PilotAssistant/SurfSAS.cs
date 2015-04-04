@@ -40,6 +40,7 @@ namespace PilotAssistant
         public float[] timeElapsed = new float[3];
         float[] fadeSetpoint = { 10, 10, 10 }; // these are the values that get assigned every time control is unlocked
         const float fadeMult = 0.97f; // this is the decay rate. 0.97 < 1 after 0.75s starting from 10
+        double rollAngleSynch = 5;
 
         // unpause delay
         public float[] delayEngage = new float[3];
@@ -240,7 +241,7 @@ namespace PilotAssistant
 
                 double rollRad = Mathf.Deg2Rad * FlightData.roll;
 
-                if (Math.Abs(FlightData.roll) > 5)
+                if (Math.Abs(FlightData.roll) > rollAngleSynch)
                 {
                     if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Hdg]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Hdg]))
                     {
@@ -277,10 +278,10 @@ namespace PilotAssistant
                 return;
 
             // if the pitch control is not paused, and there is pitch input or there is yaw input and the bank angle is greater than 5 degrees, pause the pitch lock
-            if (!bPause[(int)SASList.Pitch] && (state.pitch != 0 || (state.yaw != 0 && Math.Abs(FlightData.roll) > 5)))
+            if (!bPause[(int)SASList.Pitch] && (state.pitch != 0 || (state.yaw != 0 && Math.Abs(FlightData.roll) > rollAngleSynch)))
                 bPause[(int)SASList.Pitch] = true;
             // if the pitch control is paused, and there is no pitch input, and there is no yaw input or the bank angle is less than 5 degrees, unpause the pitch lock
-            else if (bPause[(int)SASList.Pitch] && state.pitch == 0 && (state.yaw == 0 || Math.Abs(FlightData.roll) <= 5))
+            else if (bPause[(int)SASList.Pitch] && state.pitch == 0 && (state.yaw == 0 || Math.Abs(FlightData.roll) <= rollAngleSynch))
             {
                 bPause[(int)SASList.Pitch] = false;
                 if (bActive[(int)SASList.Pitch])
@@ -288,19 +289,19 @@ namespace PilotAssistant
             }
 
             // if the heading control is not paused, and there is yaw input input or there is pitch input and the bank angle is greater than 5 degrees, pause the heading lock
-            if (!bPause[(int)SASList.Hdg] && (state.yaw != 0 || (state.pitch != 0 && Math.Abs(FlightData.roll) > 5)))
+            if (!bPause[(int)SASList.Hdg] && (state.yaw != 0 || (state.pitch != 0 && Math.Abs(FlightData.roll) > rollAngleSynch)))
                 bPause[(int)SASList.Hdg] = true;
             // if the heading control is paused, and there is no yaw input, and there is no pitch input or the bank angle is less than 5 degrees, unpause the pitch lock
-            else if (bPause[(int)SASList.Hdg] && state.yaw == 0 && (state.pitch == 0 || Math.Abs(FlightData.roll) <= 5))
+            else if (bPause[(int)SASList.Hdg] && state.yaw == 0 && (state.pitch == 0 || Math.Abs(FlightData.roll) <= rollAngleSynch))
             {
                 bPause[(int)SASList.Hdg] = false;
                 if (bActive[(int)SASList.Hdg])
                     StartCoroutine(FadeInHdg());
             }
             
-            if (state.roll != 0 && !bPause[(int)SASList.Bank])
+            if (!bPause[(int)SASList.Bank] && state.roll != 0)
                 bPause[(int)SASList.Bank] = true;
-            else if (state.roll == 0 && bPause[(int)SASList.Bank])
+            else if (bPause[(int)SASList.Bank] && state.roll == 0)
             {
                 bPause[(int)SASList.Bank] = false;
                 if (bActive[(int)SASList.Bank])
