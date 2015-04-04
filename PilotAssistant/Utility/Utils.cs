@@ -31,12 +31,12 @@ namespace PilotAssistant.Utility
 
         public static PID_Controller GetAsst(this PIDList id)
         {
-            return PilotAssistant.controllers[(int)id];
+            return PilotAssistant.Instance.controllers[(int)id];
         }
 
         public static PID_Controller GetSAS(this SASList id)
         {
-            return SurfSAS.SASControllers[(int)id];
+            return SurfSAS.Instance.SASControllers[(int)id];
         }
 
         public static bool isFlightControlLocked()
@@ -89,6 +89,16 @@ namespace PilotAssistant.Utility
                 return current + 360;
             else
                 return current;
+        }
+
+        public static bool AsstIsPaused()
+        {
+            return PilotAssistant.Instance.bPause;
+        }
+
+        public static bool IsNeutral(AxisBinding axis)
+        {
+            return axis.IsNeutral() && Math.Abs(axis.GetAxis()) > 0.00001;
         }
     }
 }

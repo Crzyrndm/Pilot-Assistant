@@ -19,15 +19,15 @@ namespace PilotAssistant
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class SurfSAS : MonoBehaviour
     {
+        #region Globals
         private static SurfSAS instance;
         public static SurfSAS Instance
         {
             get { return instance; }
         }
 
-        public static PID_Controller[] SASControllers = new PID_Controller[3]; // controller per axis
+        public PID_Controller[] SASControllers = new PID_Controller[3]; // controller per axis
 
-        static bool bInit = false; // if initialisation fails for any reason, things shouldn't run
         public bool bArmed = false; // if armed, SAS toggles activate/deactivate SSAS
         public bool[] bActive = new bool[3]; // activate on per axis basis
         public bool[] bPause = new bool[3]; // pause on a per axis basis
@@ -40,7 +40,7 @@ namespace PilotAssistant
         public float[] timeElapsed = new float[3];
         float[] fadeSetpoint = { 10, 10, 10 }; // these are the values that get assigned every time control is unlocked
         const float fadeMult = 0.97f; // this is the decay rate. 0.97 < 1 after 0.75s starting from 10
-        double rollAngleSynch = 5;
+        double bankAngleSynch = 5; // the bank angle below which pitch and yaw unlock seperately
 
         // unpause delay
         public float[] delayEngage = new float[3];
@@ -55,13 +55,22 @@ namespace PilotAssistant
         bool bShowPresets = false;
 
         // initialisation and default presets stuff
-        public static double[] defaultPitchGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3, 200 };
-        public static double[] defaultRollGains = { 0.1, 0.0, 0.06, -1, 1, -1, 1, 3, 200 };
-        public static double[] defaultHdgGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3, 1 };
+        public double[] defaultPitchGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3, 200 };
+        public double[] defaultRollGains = { 0.1, 0.0, 0.06, -1, 1, -1, 1, 3, 200 };
+        public double[] defaultHdgGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3, 1 };
 
-        public static double[] defaultPresetPitchGains = { 0.15, 0.0, 0.06, 3, 20 }; // Kp/i/d, scalar, delay
-        public static double[] defaultPresetRollGains = { 0.1, 0.0, 0.06, 3, 20 };
-        public static double[] defaultPresetHdgGains = { 0.15, 0.0, 0.06, 3, 20 };
+        public float pitchSet = 0; // when Asst vert control engages, this is used to preset the elevator controller. Can't use ctrl State because smoothing is done in Update
+
+        public Vector3 currentDirectionTarget = Vector3.zero; // this is the vec the Ienumerator is moving
+        public Vector3 newDirectionTarget = Vector3.zero; // this is the vec we are moving to
+        double increment = 0; // this is the angle to shift per second
+        bool hdgShiftIsRunning = false;
+        bool stopHdgShift = false;
+        bool headingEdit = false;
+
+        Vector3d rollTarget = Vector3d.zero;
+
+        #endregion
 
         public void Start()
         {
@@ -106,30 +115,26 @@ namespace PilotAssistant
             ActivitySwitch(false);
             delayEngage[0] = delayEngage[1] = delayEngage[2] = 20; // delay engagement by 0.2s
 
-            if (!bInit)
-            {
-                SASControllers[(int)SASList.Pitch] = new PID_Controller(defaultPitchGains);
-                SASControllers[(int)SASList.Bank] = new PID_Controller(defaultRollGains);
-                SASControllers[(int)SASList.Hdg] = new PID_Controller(defaultHdgGains);
+            SASControllers[(int)SASList.Pitch] = new PID_Controller(defaultPitchGains);
+            SASControllers[(int)SASList.Bank] = new PID_Controller(defaultRollGains);
+            SASControllers[(int)SASList.Hdg] = new PID_Controller(defaultHdgGains);
 
-                if (!PresetManager.Instance.craftPresetList.ContainsKey("default"))
-                    PresetManager.Instance.craftPresetList.Add("default", new CraftPreset("default", null, new SASPreset(SASControllers, "SSAS"), new SASPreset(FlightData.thisVessel.Autopilot.SAS, "stock"), bStockSAS));
-                else
-                {
-                    if (PresetManager.Instance.craftPresetList["default"].SSASPreset == null)
-                        PresetManager.Instance.craftPresetList["default"].SSASPreset = new SASPreset(SASControllers, "SSAS");
-                    if (PresetManager.Instance.craftPresetList["default"].StockPreset == null)
-                        PresetManager.Instance.craftPresetList["default"].StockPreset = new SASPreset(FlightData.thisVessel.Autopilot.SAS, "stock");
-                }
-                PresetManager.saveDefaults();
-                bInit = true;
+            if (!PresetManager.Instance.craftPresetList.ContainsKey("default"))
+                PresetManager.Instance.craftPresetList.Add("default", new CraftPreset("default", null, new SASPreset(SASControllers, "SSAS"), new SASPreset(FlightData.thisVessel.Autopilot.SAS, "stock"), bStockSAS));
+            else
+            {
+                if (PresetManager.Instance.craftPresetList["default"].SSASPreset == null)
+                    PresetManager.Instance.craftPresetList["default"].SSASPreset = new SASPreset(SASControllers, "SSAS");
+                if (PresetManager.Instance.craftPresetList["default"].StockPreset == null)
+                    PresetManager.Instance.craftPresetList["default"].StockPreset = new SASPreset(FlightData.thisVessel.Autopilot.SAS, "stock");
             }
+
+            PresetManager.saveDefaults();
             PresetManager.initSSASPreset();
         }
 
         public void OnDestroy()
         {
-            bInit = false;
             bArmed = false;
             ActivitySwitch(false);
 
@@ -137,8 +142,11 @@ namespace PilotAssistant
             FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(SurfaceSAS);
             GameEvents.onVesselChange.Remove(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Remove(warpHandler);
+
+            instance = null;
         }
 
+        #region Update / Input monitoring
         public void Update()
         {
             bool mod = GameSettings.MODIFIER_KEY.GetKey();
@@ -175,49 +183,11 @@ namespace PilotAssistant
                 updateTarget();
 
             if (bActive[(int)SASList.Hdg])
-                SASList.Hdg.GetSAS().SetPoint = Utils.calculateTargetHeading(axisLock);
+                SASList.Hdg.GetSAS().SetPoint = Utils.calculateTargetHeading(currentDirectionTarget);
         }
+        #endregion
 
-        public void drawGUI()
-        {
-            GUI.skin = GeneralUI.UISkin;
-
-            // SAS toggle button
-            // is before the bDisplay check so it can be up without the GUI
-            if (bArmed)
-            {
-                if (SurfSAS.ActivityCheck())
-                    GUI.backgroundColor = GeneralUI.ActiveBackground;
-                else
-                    GUI.backgroundColor = GeneralUI.InActiveBackground;
-
-                if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
-                {
-                    ActivitySwitch(!ActivityCheck());
-                    updateTarget();
-                    if (ActivityCheck())
-                        setStockSAS(false);
-                }
-                GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
-            }
-            
-            // Main and preset window stuff
-            if (!AppLauncherFlight.bDisplaySAS)
-                return;
-
-            SASwindow = GUILayout.Window(78934856, SASwindow, drawSASWindow, "SAS Module", GUILayout.Height(0));
-
-            if (tooltip != "" && PilotAssistant.Instance.showTooltips)
-                GUILayout.Window(34246, new Rect(SASwindow.x + SASwindow.width, Screen.height - Input.mousePosition.y, 0, 0), tooltipWindow, "", GeneralUI.UISkin.label, GUILayout.Height(0), GUILayout.Width(300));
-
-            if (bShowPresets)
-            {
-                SASPresetwindow = GUILayout.Window(78934857, SASPresetwindow, drawPresetWindow, "SAS Presets", GUILayout.Height(0));
-                SASPresetwindow.x = SASwindow.x + SASwindow.width;
-                SASPresetwindow.y = SASwindow.y;
-            }
-        }
-
+        #region Fixed Update / Control
         private void SurfaceSAS(FlightCtrlState state)
         {
             if (bArmed && ActivityCheck())
@@ -230,11 +200,11 @@ namespace PilotAssistant
 
                 double hrztResponse = 0;
                 if (bActive[(int)SASList.Hdg])
-                    hrztResponse = -1 * SASList.Hdg.GetSAS().ResponseD(Utils.CurrentAngleTargetRel(FlightData.heading, SASList.Hdg.GetSAS().SetPoint, 180));
+                    hrztResponse = -1 * SASList.Hdg.GetSAS().ResponseD(Utils.CurrentAngleTargetRel(FlightData.progradeHeading, SASList.Hdg.GetSAS().SetPoint, 180));
 
                 double rollRad = Mathf.Deg2Rad * FlightData.bank;
 
-                if (Math.Abs(FlightData.bank) > rollAngleSynch)
+                if (Math.Abs(FlightData.bank) > bankAngleSynch)
                 {
                     if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Hdg]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Hdg]))
                     {
@@ -256,13 +226,84 @@ namespace PilotAssistant
                 pitchSet = 0;
         }
 
-        public float pitchSet { get; set; }
-
-        private void updateTarget()
+        private void rollResponse(FlightCtrlState state)
         {
-            StartCoroutine(FadeInPitch());
-            StartCoroutine(FadeInRoll());
-            StartCoroutine(FadeInHdg());
+            if (!bPause[(int)SASList.Bank] && bActive[(int)SASList.Bank])
+            {
+                bool rollStateWas = rollState;
+                // switch tracking modes
+                if (rollState) // currently in vector mode
+                {
+                    if (FlightData.pitch < 35 && FlightData.pitch > -35)
+                        rollState = false; // fall back to surface mode
+                }
+                else // surface mode
+                {
+                    if (FlightData.pitch > 40 || FlightData.pitch < -40)
+                        rollState = true; // go to vector mode
+                }
+
+                // Above 40 degrees pitch, rollTarget should always lie on the horizontal plane of the vessel
+                // Below 35 degrees pitch, use the surf roll logic
+                // hysteresis on the switch ensures it doesn't bounce back and forth and lose the lock
+                if (rollState)
+                {
+                    if (!rollStateWas)
+                    {
+                        Utils.GetSAS(SASList.Bank).SetPoint = 0;
+                        Utils.GetSAS(SASList.Bank).skipDerivative = true;
+                        rollTarget = FlightData.thisVessel.ReferenceTransform.right;
+                    }
+
+                    Vector3 proj = FlightData.thisVessel.ReferenceTransform.up * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.up, rollTarget)
+                        + FlightData.thisVessel.ReferenceTransform.right * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.right, rollTarget);
+                    double roll = Vector3.Angle(proj, rollTarget) * Math.Sign(Vector3.Dot(FlightData.thisVessel.ReferenceTransform.forward, rollTarget));
+
+                    state.roll = SASList.Bank.GetSAS().ResponseF(roll) / fadeCurrent[(int)SASList.Bank];
+                }
+                else
+                {
+                    if (rollStateWas)
+                    {
+                        SASList.Bank.GetSAS().SetPoint = FlightData.bank;
+                        SASList.Bank.GetSAS().skipDerivative = true;
+                    }
+
+                    state.roll = SASList.Bank.GetSAS().ResponseF(Utils.CurrentAngleTargetRel(FlightData.bank, SASList.Bank.GetSAS().SetPoint, 180)) / fadeCurrent[(int)SASList.Bank];
+                }
+            }
+        }
+
+        public IEnumerator shiftHeadingTarget(double newHdg)
+        {
+            stopHdgShift = false;
+            headingEdit = false;
+            newDirectionTarget = Utils.vecHeading(newHdg);
+            currentDirectionTarget = Utils.vecHeading(SASList.Hdg.GetSAS().BumplessSetPoint);
+            increment = 0;
+
+            if (hdgShiftIsRunning)
+                yield break;
+            hdgShiftIsRunning = true;
+
+            while (!stopHdgShift && Math.Abs(Vector3.Angle(currentDirectionTarget, newDirectionTarget)) > 0.01)
+            {
+                double finalTarget = Utils.calculateTargetHeading(newDirectionTarget);
+                double target = Utils.calculateTargetHeading(currentDirectionTarget);
+                increment += SASList.Hdg.GetSAS().Easing * TimeWarp.fixedDeltaTime * 0.01;
+
+                double remainder = finalTarget - Utils.CurrentAngleTargetRel(target, finalTarget, 180);
+                if (remainder < 0)
+                    target += Math.Max(-1 * increment, remainder);
+                else
+                    target += Math.Min(increment, remainder);
+
+                currentDirectionTarget = Utils.vecHeading(target);
+                yield return new WaitForFixedUpdate();
+            }
+            if (!stopHdgShift)
+                currentDirectionTarget = newDirectionTarget;
+            hdgShiftIsRunning = false;
         }
 
         private void pauseManager(FlightCtrlState state)
@@ -271,10 +312,10 @@ namespace PilotAssistant
                 return;
 
             // if the pitch control is not paused, and there is pitch input or there is yaw input and the bank angle is greater than 5 degrees, pause the pitch lock
-            if (!bPause[(int)SASList.Pitch] && (state.pitch != 0 || (state.yaw != 0 && Math.Abs(FlightData.bank) > rollAngleSynch)))
+            if (!bPause[(int)SASList.Pitch] && (state.pitch != 0 || (state.yaw != 0 && Math.Abs(FlightData.bank) > bankAngleSynch)))
                 bPause[(int)SASList.Pitch] = true;
             // if the pitch control is paused, and there is no pitch input, and there is no yaw input or the bank angle is less than 5 degrees, unpause the pitch lock
-            else if (bPause[(int)SASList.Pitch] && state.pitch == 0 && (state.yaw == 0 || Math.Abs(FlightData.bank) <= rollAngleSynch))
+            else if (bPause[(int)SASList.Pitch] && state.pitch == 0 && (state.yaw == 0 || Math.Abs(FlightData.bank) <= bankAngleSynch))
             {
                 bPause[(int)SASList.Pitch] = false;
                 if (bActive[(int)SASList.Pitch])
@@ -282,24 +323,31 @@ namespace PilotAssistant
             }
 
             // if the heading control is not paused, and there is yaw input input or there is pitch input and the bank angle is greater than 5 degrees, pause the heading lock
-            if (!bPause[(int)SASList.Hdg] && (state.yaw != 0 || (state.pitch != 0 && Math.Abs(FlightData.bank) > rollAngleSynch)))
+            if (!bPause[(int)SASList.Hdg] && (state.yaw != 0 || (state.pitch != 0 && Math.Abs(FlightData.bank) > bankAngleSynch)))
                 bPause[(int)SASList.Hdg] = true;
             // if the heading control is paused, and there is no yaw input, and there is no pitch input or the bank angle is less than 5 degrees, unpause the pitch lock
-            else if (bPause[(int)SASList.Hdg] && state.yaw == 0 && (state.pitch == 0 || Math.Abs(FlightData.bank) <= rollAngleSynch))
+            else if (bPause[(int)SASList.Hdg] && state.yaw == 0 && (state.pitch == 0 || Math.Abs(FlightData.bank) <= bankAngleSynch))
             {
                 bPause[(int)SASList.Hdg] = false;
                 if (bActive[(int)SASList.Hdg])
                     StartCoroutine(FadeInHdg());
             }
-            
+
             if (!bPause[(int)SASList.Bank] && state.roll != 0)
                 bPause[(int)SASList.Bank] = true;
             else if (bPause[(int)SASList.Bank] && state.roll == 0)
             {
                 bPause[(int)SASList.Bank] = false;
                 if (bActive[(int)SASList.Bank])
-                        StartCoroutine(FadeInRoll());
+                    StartCoroutine(FadeInRoll());
             }
+        }
+
+        private void updateTarget()
+        {
+            StartCoroutine(FadeInPitch());
+            StartCoroutine(FadeInRoll());
+            StartCoroutine(FadeInHdg());
         }
 
         bool pitchEnum = false;
@@ -396,9 +444,9 @@ namespace PilotAssistant
                 {
                     updated = true;
                     
-                    stop = true;
+                    stopHdgShift = true;
                     headingEdit = false;
-                    axisLock = Utils.vecHeading(FlightData.heading);
+                    currentDirectionTarget = Utils.vecHeading(FlightData.heading);
                     SASList.Hdg.GetSAS().skipDerivative = true;
                 }
                 else
@@ -406,9 +454,9 @@ namespace PilotAssistant
             }
             if (!updated)
             {
-                stop = true;
+                stopHdgShift = true;
                 headingEdit = false;
-                axisLock = Utils.vecHeading(FlightData.heading);
+                currentDirectionTarget = Utils.vecHeading(FlightData.heading);
                 SASList.Hdg.GetSAS().skipDerivative = true;
             }
 
@@ -418,6 +466,7 @@ namespace PilotAssistant
             // clear the lock
             yawEnum = false;
         }
+        #endregion
 
         /// <summary>
         /// Set SSAS mode
@@ -453,95 +502,47 @@ namespace PilotAssistant
             FlightData.thisVessel.ctrlState.killRot = state; // incase anyone checks the ctrl state (should be using checking vessel.ActionGroup[KSPActionGroup.SAS])
         }
 
-
-        static Vector3d rollTarget = Vector3d.zero;
-        private void rollResponse(FlightCtrlState state)
-        {
-            if (!bPause[(int)SASList.Bank] && bActive[(int)SASList.Bank])
-            {
-                bool rollStateWas = rollState;
-                // switch tracking modes
-                if (rollState) // currently in vector mode
-                {
-                    if (FlightData.pitch < 35 && FlightData.pitch > -35)
-                        rollState = false; // fall back to surface mode
-                }
-                else // surface mode
-                {
-                    if (FlightData.pitch > 40 || FlightData.pitch < -40)
-                        rollState = true; // go to vector mode
-                }
-
-                // Above 40 degrees pitch, rollTarget should always lie on the horizontal plane of the vessel
-                // Below 35 degrees pitch, use the surf roll logic
-                // hysteresis on the switch ensures it doesn't bounce back and forth and lose the lock
-                if (rollState)
-                {
-                    if (!rollStateWas)
-                    {
-                        Utils.GetSAS(SASList.Bank).SetPoint = 0;
-                        Utils.GetSAS(SASList.Bank).skipDerivative = true;
-                        rollTarget = FlightData.thisVessel.ReferenceTransform.right;
-                    }
-
-                    Vector3 proj = FlightData.thisVessel.ReferenceTransform.up * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.up, rollTarget)
-                        + FlightData.thisVessel.ReferenceTransform.right * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.right, rollTarget);
-                    double roll = Vector3.Angle(proj, rollTarget) * Math.Sign(Vector3.Dot(FlightData.thisVessel.ReferenceTransform.forward, rollTarget));
-
-                    state.roll = SASList.Bank.GetSAS().ResponseF(roll) / fadeCurrent[(int)SASList.Bank];
-                }
-                else
-                {
-                    if (rollStateWas)
-                    {
-                        SASList.Bank.GetSAS().SetPoint = FlightData.bank;
-                        SASList.Bank.GetSAS().skipDerivative = true;
-                    }
-
-                    state.roll = SASList.Bank.GetSAS().ResponseF(Utils.CurrentAngleTargetRel(FlightData.bank, SASList.Bank.GetSAS().SetPoint, 180)) / fadeCurrent[(int)SASList.Bank];
-                }
-            }
-        }
-
-        public Vector3 currentTarget = Vector3.zero; // this is the vec the Ienumerator is moving
-        public Vector3 newTarget = Vector3.zero; // this is the vec we are moving to
-        public Vector3 axisLock = Vector3.zero; // this is our controlVec
-        double increment = 0; // this is the angle to shift per second
-        bool running = false;
-        bool stop = false;
-        bool headingEdit = false;
-        public IEnumerator shiftHeadingTarget(double newHdg)
-        {
-            newTarget = Utils.vecHeading(newHdg);
-            currentTarget = Utils.vecHeading(SASList.Hdg.GetSAS().BumplessSetPoint);
-            increment = 0;
-
-            if (running)
-                yield break;
-            running = true;
-
-            while (!stop && Math.Abs(Vector3.Angle(currentTarget, newTarget)) > 0.01)
-            {
-                double finalTarget = Utils.calculateTargetHeading(newTarget);
-                double target = Utils.calculateTargetHeading(currentTarget);
-                increment += SASList.Hdg.GetSAS().Easing * TimeWarp.fixedDeltaTime * 0.01;
-
-                double remainder = finalTarget - Utils.CurrentAngleTargetRel(target, finalTarget, 180);
-                if (remainder < 0)
-                    target += Math.Max(-1 * increment, remainder);
-                else
-                    target += Math.Min(increment, remainder);
-
-                axisLock = Utils.vecHeading(target);
-                currentTarget = Utils.vecHeading(target);
-                yield return new WaitForFixedUpdate();
-            }
-            if (!stop)
-                axisLock = newTarget;
-            running = false;
-        }
-
         #region GUI
+        public void drawGUI()
+        {
+            GUI.skin = GeneralUI.UISkin;
+
+            // SAS toggle button
+            // is before the bDisplay check so it can be up without the GUI
+            if (bArmed)
+            {
+                if (SurfSAS.ActivityCheck())
+                    GUI.backgroundColor = GeneralUI.ActiveBackground;
+                else
+                    GUI.backgroundColor = GeneralUI.InActiveBackground;
+
+                if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
+                {
+                    ActivitySwitch(!ActivityCheck());
+                    updateTarget();
+                    if (ActivityCheck())
+                        setStockSAS(false);
+                }
+                GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+            }
+
+            // Main and preset window stuff
+            if (!AppLauncherFlight.bDisplaySAS)
+                return;
+
+            SASwindow = GUILayout.Window(78934856, SASwindow, drawSASWindow, "SAS Module", GUILayout.Height(0));
+
+            if (tooltip != "" && PilotAssistant.Instance.showTooltips)
+                GUILayout.Window(34246, new Rect(SASwindow.x + SASwindow.width, Screen.height - Input.mousePosition.y, 0, 0), tooltipWindow, "", GeneralUI.UISkin.label, GUILayout.Height(0), GUILayout.Width(300));
+
+            if (bShowPresets)
+            {
+                SASPresetwindow = GUILayout.Window(78934857, SASPresetwindow, drawPresetWindow, "SAS Presets", GUILayout.Height(0));
+                SASPresetwindow.x = SASwindow.x + SASwindow.width;
+                SASPresetwindow.y = SASwindow.y;
+            }
+        }
+
         private void drawSASWindow(int id)
         {
             if (GUI.Button(new Rect(SASwindow.width - 16, 2, 14, 14), ""))
@@ -743,7 +744,7 @@ namespace PilotAssistant
                     targets[(int)controllerID] = currentVal.ToString("0.00");
 
                     if (controllerID == SASList.Hdg)
-                        axisLock = Utils.vecHeading(FlightData.heading);
+                        currentDirectionTarget = Utils.vecHeading(FlightData.heading);
                     controllerID.GetSAS().skipDerivative = true;
                 }
             }
@@ -752,10 +753,10 @@ namespace PilotAssistant
             {
                 if (controllerID == SASList.Hdg && !headingEdit)
                 {
-                    if (running)
-                        targets[(int)controllerID] = Utils.calculateTargetHeading(newTarget).ToString("0.00");
+                    if (hdgShiftIsRunning)
+                        targets[(int)controllerID] = Utils.calculateTargetHeading(newDirectionTarget).ToString("0.00");
                     else
-                        targets[(int)controllerID] = Utils.calculateTargetHeading(axisLock).ToString("0.00");
+                        targets[(int)controllerID] = Utils.calculateTargetHeading(currentDirectionTarget).ToString("0.00");
                 }
                 string tempText = GUILayout.TextField(targets[(int)controllerID], GeneralUI.UISkin.customStyles[(int)myStyles.numBoxText], GUILayout.Width(boxWidth));
                 if (controllerID == SASList.Hdg && targets[(int)controllerID] != tempText)
@@ -770,11 +771,8 @@ namespace PilotAssistant
                         setPoint = temp;
 
                     if (controllerID == SASList.Hdg)
-                    {
-                        stop = false;
                         StartCoroutine(shiftHeadingTarget(setPoint));
-                        targets[(int)controllerID] = setPoint.ToString("0.00");
-                    }
+
                     bActive[(int)controllerID] = true;
                     controllerID.GetSAS().skipDerivative = true;
                 }

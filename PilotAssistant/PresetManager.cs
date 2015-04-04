@@ -67,6 +67,10 @@ namespace PilotAssistant
         const string ease = "Ease";
         const string delay = "Delay";
 
+        double[] defaultPresetPitchGains = { 0.15, 0.0, 0.06, 3, 20 }; // Kp/i/d, scalar, delay
+        double[] defaultPresetRollGains = { 0.1, 0.0, 0.06, 3, 20 };
+        double[] defaultPresetHdgGains = { 0.15, 0.0, 0.06, 3, 20 };
+
         public void Start()
         {
             instance = this;
@@ -271,13 +275,13 @@ namespace PilotAssistant
             switch (type)
             {
                 case SASList.Pitch:
-                    return SurfSAS.defaultPresetPitchGains;
+                    return Instance.defaultPresetPitchGains;
                 case SASList.Bank:
-                    return SurfSAS.defaultPresetRollGains;
+                    return Instance.defaultPresetRollGains;
                 case SASList.Hdg:
-                    return SurfSAS.defaultPresetHdgGains;
+                    return Instance.defaultPresetHdgGains;
                 default:
-                    return SurfSAS.defaultPresetPitchGains;
+                    return Instance.defaultPresetPitchGains;
             }
         }
 
@@ -371,7 +375,7 @@ namespace PilotAssistant
             {
                 Instance.craftPresetList.Add(FlightData.thisVessel.vesselName,
                                                 new CraftPreset(FlightData.thisVessel.vesselName,
-                                                    new AsstPreset(PilotAssistant.controllers, name),
+                                                    new AsstPreset(PilotAssistant.Instance.controllers, name),
                                                     Instance.activeSASPreset == Instance.craftPresetList[craftDefault].SSASPreset ? null : Instance.activeSASPreset,
                                                     Instance.activeStockSASPreset == Instance.craftPresetList[craftDefault].StockPreset ? null : Instance.activeStockSASPreset,
                                                     SurfSAS.Instance.bStockSAS));
@@ -385,7 +389,7 @@ namespace PilotAssistant
 
         public static void loadPAPreset(AsstPreset p)
         {
-            PID_Controller[] c = PilotAssistant.controllers;
+            PID_Controller[] c = PilotAssistant.Instance.controllers;
 
             for (int i = 0; i < 8; i++)
             {
@@ -469,7 +473,7 @@ namespace PilotAssistant
 
         public static void loadSASPreset(SASPreset p)
         {
-            PID_Controller[] c = SurfSAS.SASControllers;
+            PID_Controller[] c = SurfSAS.Instance.SASControllers;
 
             foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {
