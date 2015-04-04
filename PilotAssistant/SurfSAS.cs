@@ -222,7 +222,7 @@ namespace PilotAssistant
                 rollResponse(state);
             }
 
-            if (!bActive[(int)SASList.Pitch] || !bArmed)
+            if (!bActive[(int)SASList.Pitch] || bPause[(int)SASList.Pitch] || !bArmed)
                 pitchSet = 0;
         }
 
