@@ -98,7 +98,7 @@ namespace PilotAssistant.Utility
 
         public static bool IsNeutral(AxisBinding axis)
         {
-            return axis.IsNeutral() && Math.Abs(axis.GetAxis()) > 0.00001;
+            return axis.IsNeutral() && Math.Abs(axis.GetAxis()) < 0.00001;
         }
     }
 }

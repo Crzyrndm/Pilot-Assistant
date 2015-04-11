@@ -69,9 +69,9 @@ namespace PilotAssistant
         string targetSpeed = "0.00";
 
         // rate values for keyboard input
-        double hrztScale = 0.04;
-        double vertScale = 0.04; // altitude rate is x10
-        double throttleScale = 0.04;
+        double hrztScale = 0.4;
+        double vertScale = 0.4; // altitude rate is x10
+        double throttleScale = 0.4;
 
         // Direction control vars
         Vector3 currentDirectionTarget = Vector3.zero; // this is the vec the control is aimed at
@@ -99,6 +99,9 @@ namespace PilotAssistant
         string newPresetName = "";
         Rect presetWindow = new Rect(0, 0, 200, 10);
 
+        float pitchSet = 0;
+
+        // Kp, Ki, Kd, Min Out, Max Out, I Min, I Max, Scalar, Easing
         public static double[] defaultHdgBankGains = { 2, 0.1, 0, -30, 30, -0.5, 0.5, 1, 1 };
         public static double[] defaultBankToYawGains = { 0, 0, 0.01, -2, 2, -0.5, 0.5, 1, 1 };
         public static double[] defaultAileronGains = { 0.02, 0.005, 0.01, -1, 1, -0.4, 0.4, 1, 1 };
@@ -113,7 +116,6 @@ namespace PilotAssistant
         public void Start()
         {
             instance = this;
-            
             Initialise();
 
             // register vessel
@@ -122,18 +124,22 @@ namespace PilotAssistant
 
             PresetManager.loadCraftAsstPreset();
 
+            // Input clamps aren't part of the presets (there's no reason for them to be...). Just some sanity checking
             PIDList.Aileron.GetAsst().InMax = 180;
             PIDList.Aileron.GetAsst().InMin = -180;
             PIDList.Altitude.GetAsst().InMin = 0;
             PIDList.Throttle.GetAsst().InMin = 0;
 
+            // events
             FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(preAutoPilotEvent);
             FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Add(warpHandler);
 
+            // add GUI callback
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
 
+            // start the WASD monitor
             StartCoroutine(InputResponse());
         }
 
@@ -143,10 +149,8 @@ namespace PilotAssistant
             GameEvents.onVesselChange.Remove(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Remove(warpHandler);
             PresetManager.saveToFile();
-            bHdgActive = false;
-            bVertActive = false;
 
-            instance = null;
+            instance = null; // static object is only for easy referencing between modules. Don't need to keep hold of it
         }
 
         void Initialise()
@@ -174,6 +178,7 @@ namespace PilotAssistant
 
         private void vesselSwitch(Vessel v)
         {
+            // kill the old events, switch vessels, add the new events, load the correct presets
             FlightData.thisVessel.OnPreAutopilotUpdate -= new FlightInputCallback(preAutoPilotEvent);
             FlightData.thisVessel.OnPostAutopilotUpdate -= new FlightInputCallback(vesselController);
             FlightData.thisVessel = v;
@@ -185,6 +190,7 @@ namespace PilotAssistant
 
         private void warpHandler()
         {
+            // reset any setpoints on leaving warp
             if (TimeWarp.CurrentRateIndex == 0 && TimeWarp.CurrentRate != 1 && TimeWarp.WarpMode == TimeWarp.Modes.HIGH)
                 bHdgWasActive = bVertWasActive = bThrottleWasActive = false;
         }
@@ -198,6 +204,7 @@ namespace PilotAssistant
             if (Utils.AsstIsPaused())
                 return;
 
+            // toggle monitoring
             if (bHdgActive != bHdgWasActive)
                 hdgToggle();
             if (bVertActive != bVertWasActive)
@@ -209,6 +216,7 @@ namespace PilotAssistant
             if (bThrottleActive != bThrottleWasActive)
                 throttleToggle();
 
+            // Heading setpoint updates
             if (bHdgActive)
             {
                 if (!FlightData.thisVessel.checkLanded())
@@ -228,25 +236,23 @@ namespace PilotAssistant
                 yield return null;
                 if (!Utils.AsstIsPaused())
                 {
-                    double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1;
-                    bool bFineControl = FlightInputHandler.fetch.precisionMode;
+                    double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1; // normally *1, with alt is *10
+                    if (FlightInputHandler.fetch.precisionMode)
+                        scale = 0.1 / scale; // normally *0.1, with alt is *0.01
 
                     // ============================================================ Hrzt Controls ============================================================
                     if (bHdgActive && !FlightData.thisVessel.checkLanded())
                     {
-                        if (GameSettings.YAW_LEFT.GetKey() 
-                            || GameSettings.YAW_RIGHT.GetKey() 
-                            || !Utils.IsNeutral(GameSettings.AXIS_YAW))
+                        if (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_YAW))
                         {
                             if (GameSettings.YAW_LEFT.GetKey())
-                                headingChangeToCommit -= bFineControl ? hrztScale / scale : hrztScale * 10 * scale;
+                                headingChangeToCommit -= hrztScale * scale;
                             else if (GameSettings.YAW_RIGHT.GetKey())
-                                headingChangeToCommit += bFineControl ? hrztScale / scale : hrztScale * 10 * scale;
+                                headingChangeToCommit += hrztScale * scale;
                             else
-                                headingChangeToCommit += (bFineControl ? hrztScale / scale : hrztScale * 10 * scale) * GameSettings.AXIS_YAW.GetAxis();
+                                headingChangeToCommit += hrztScale * scale * GameSettings.AXIS_YAW.GetAxis();
 
                             headingChangeToCommit = headingChangeToCommit.headingClamp(180);
-
                             headingTimeToCommit = commitDelay;
                         }
 
@@ -263,9 +269,7 @@ namespace PilotAssistant
                         headingChangeToCommit = 0;
 
                     // ============================================================ Vertical Controls ============================================================
-                    if (bVertActive && (GameSettings.PITCH_DOWN.GetKey()
-                                        || GameSettings.PITCH_UP.GetKey()
-                                        || !Utils.IsNeutral(GameSettings.AXIS_PITCH)))
+                    if (bVertActive && (GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_PITCH)))
                     {
                         double vert = double.Parse(targetVert);
 
@@ -273,35 +277,31 @@ namespace PilotAssistant
                             vert /= 10; // saves having to specify the rates seperately
 
                         if (GameSettings.PITCH_DOWN.GetKey())
-                            vert -= bFineControl ? vertScale / scale : vertScale * 10 * scale;
+                            vert -= vertScale * scale;
                         else if (GameSettings.PITCH_UP.GetKey())
-                            vert += bFineControl ? vertScale / scale : vertScale * 10 * scale;
+                            vert += vertScale * scale;
                         else if (!Utils.IsNeutral(GameSettings.AXIS_PITCH))
-                            vert += (bFineControl ? vertScale / scale : vertScale * 10 * scale) * GameSettings.AXIS_PITCH.GetAxis();
+                            vert += vertScale * scale * GameSettings.AXIS_PITCH.GetAxis();
 
                         if (bAltitudeHold)
                         {
                             vert = Math.Max(vert * 10, 0);
                             PIDList.Altitude.GetAsst().SetPoint = vert;
-                            targetVert = vert.ToString("0.00");
                         }
                         else
-                        {
                             PIDList.VertSpeed.GetAsst().SetPoint = vert;
-                            targetVert = vert.ToString("0.00");
-                        }
+                        targetVert = vert.ToString("0.00");
                     }
 
                     // ============================================================ Throttle Controls ============================================================
-                    if (bThrottleActive && ((GameSettings.THROTTLE_UP.GetKey()
-                                            || GameSettings.THROTTLE_DOWN.GetKey())
+                    if (bThrottleActive && ((GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey())
                                             || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown()))
                     {
                         double speed = double.Parse(targetSpeed);
                         if (GameSettings.THROTTLE_UP.GetKey())
-                            speed += bFineControl ? throttleScale / scale : throttleScale * 10 * scale;
+                            speed += throttleScale * scale;
                         else if (GameSettings.THROTTLE_DOWN.GetKey())
-                            speed -= bFineControl ? throttleScale / scale : throttleScale * 10 * scale;
+                            speed -= throttleScale * scale;
 
                         if (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey())
                             speed = 0;
@@ -316,6 +316,7 @@ namespace PilotAssistant
             }
         }
 
+        // stuff that isn't directly control related
         private void keyMonitor()
         {
             if (Input.GetKeyDown(KeyCode.Tab))
@@ -369,7 +370,6 @@ namespace PilotAssistant
             if (bHdgActive)
             {
                 StartCoroutine(shiftHeadingTarget(FlightData.heading));
-
                 bPause = false;
             }
             else
@@ -391,7 +391,7 @@ namespace PilotAssistant
             if (bVertActive)
             {
                 PIDList.VertSpeed.GetAsst().Preset(-FlightData.AoA);
-                PIDList.Elevator.GetAsst().Preset(-SurfSAS.Instance.pitchSet);
+                PIDList.Elevator.GetAsst().Preset(pitchSet);
 
                 if (bAltitudeHold)
                 {
@@ -438,11 +438,10 @@ namespace PilotAssistant
         private void wingToggle()
         {
             bWasWingLeveller = bWingLeveller;
+            headingEdit = false;
             if (!bWingLeveller)
-            {
                 currentDirectionTarget = Utils.vecHeading(FlightData.heading);
-                headingEdit = false;
-            }
+
         }
 
         private void throttleToggle()
@@ -476,6 +475,7 @@ namespace PilotAssistant
             if (FlightData.thisVessel == null)
                 return;
 
+            pitchSet = state.pitch; // last pitch ouput, used for presetting the elevator
             if (Utils.AsstIsPaused() || FlightData.thisVessel.srfSpeed < 1)
                 return;
 

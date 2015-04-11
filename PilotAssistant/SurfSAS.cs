@@ -59,8 +59,6 @@ namespace PilotAssistant
         public double[] defaultRollGains = { 0.1, 0.0, 0.06, -1, 1, -1, 1, 3, 200 };
         public double[] defaultHdgGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3, 1 };
 
-        public float pitchSet = 0; // when Asst vert control engages, this is used to preset the elevator controller. Can't use ctrl State because smoothing is done in Update
-
         public Vector3 currentDirectionTarget = Vector3.zero; // this is the vec the Ienumerator is moving
         public Vector3 newDirectionTarget = Vector3.zero; // this is the vec we are moving to
         double increment = 0; // this is the angle to shift per second
@@ -202,28 +200,30 @@ namespace PilotAssistant
                 if (bActive[(int)SASList.Hdg])
                     hrztResponse = -1 * SASList.Hdg.GetSAS().ResponseD(Utils.CurrentAngleTargetRel(FlightData.progradeHeading, SASList.Hdg.GetSAS().SetPoint, 180));
 
+                Debug.Log("frame");
+                Debug.Log(FlightData.progradeHeading);
+                Debug.Log(SASList.Hdg.GetSAS().SetPoint);
+                Debug.Log(Utils.CurrentAngleTargetRel(FlightData.progradeHeading, SASList.Hdg.GetSAS().SetPoint, 180));
+
                 double rollRad = Mathf.Deg2Rad * FlightData.bank;
 
                 if (Math.Abs(FlightData.bank) > bankAngleSynch)
                 {
                     if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Hdg]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Hdg]))
                     {
-                        state.pitch = pitchSet = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
+                        state.pitch = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
                         state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
                     }
                 }
                 else
                 {
                     if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
-                        state.pitch = pitchSet = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
+                        state.pitch = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
                     if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
                         state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
                 }
                 rollResponse(state);
             }
-
-            if (!bActive[(int)SASList.Pitch] || bPause[(int)SASList.Pitch] || !bArmed)
-                pitchSet = 0;
         }
 
         private void rollResponse(FlightCtrlState state)
