@@ -37,6 +37,7 @@ namespace PilotAssistant.PID
 
         public bool bShow = false;
         public bool skipDerivative = false;
+        public bool isHeadingControl = false;
 
         public PID_Controller(double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double easing = 1)
         {
@@ -122,10 +123,14 @@ namespace PilotAssistant.PID
 
         private double derivativeError(double input)
         {
-            if (k_derivative == 0)
-                return 0;
-
-            double difference = (input - previous) / dt;
+            double difference = 0;
+            if (!isHeadingControl)
+                difference = (input - previous) / dt;
+            else
+            {
+                double inputHeadingRounded = Utils.CurrentAngleTargetRel(input, previous, 180);
+                difference = (inputHeadingRounded - previous) / dt;
+            }
             rolling_diff = rolling_diff * rollingFactor + difference * (1 - rollingFactor); // rolling average sometimes helps smooth out a jumpy derivative response
             
             previous = input;

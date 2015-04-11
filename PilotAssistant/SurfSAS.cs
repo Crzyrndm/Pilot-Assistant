@@ -106,7 +106,7 @@ namespace PilotAssistant
                 FlightData.thisVessel = FlightGlobals.ActiveVessel;
 
             // wait for SAS to init
-            if (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch == null)
+            while (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch == null)
                 yield return null;
             
             bPause.Initialize();
@@ -129,6 +129,8 @@ namespace PilotAssistant
 
             PresetManager.saveDefaults();
             PresetManager.initSSASPreset();
+
+            SASList.Hdg.GetSAS().isHeadingControl = true;
         }
 
         public void OnDestroy()
@@ -193,17 +195,13 @@ namespace PilotAssistant
                 pauseManager(state);
 
                 double vertResponse = 0;
-                if (bActive[(int)SASList.Pitch])
+                double hrztResponse = 0;
+
+                if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
                     vertResponse = -1 * SASList.Pitch.GetSAS().ResponseD(FlightData.pitch);
 
-                double hrztResponse = 0;
-                if (bActive[(int)SASList.Hdg])
+                if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
                     hrztResponse = -1 * SASList.Hdg.GetSAS().ResponseD(Utils.CurrentAngleTargetRel(FlightData.progradeHeading, SASList.Hdg.GetSAS().SetPoint, 180));
-
-                Debug.Log("frame");
-                Debug.Log(FlightData.progradeHeading);
-                Debug.Log(SASList.Hdg.GetSAS().SetPoint);
-                Debug.Log(Utils.CurrentAngleTargetRel(FlightData.progradeHeading, SASList.Hdg.GetSAS().SetPoint, 180));
 
                 double rollRad = Mathf.Deg2Rad * FlightData.bank;
 

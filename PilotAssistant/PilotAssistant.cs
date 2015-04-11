@@ -129,6 +129,7 @@ namespace PilotAssistant
             PIDList.Aileron.GetAsst().InMin = -180;
             PIDList.Altitude.GetAsst().InMin = 0;
             PIDList.Throttle.GetAsst().InMin = 0;
+            PIDList.HdgBank.GetAsst().isHeadingControl = true; // fix for derivative freaking out when heading target flickers across 0/360
 
             // events
             FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(preAutoPilotEvent);
