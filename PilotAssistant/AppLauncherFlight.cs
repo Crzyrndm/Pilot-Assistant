@@ -19,7 +19,7 @@ namespace PilotAssistant
         public static KSP.IO.PluginConfiguration config;
         void Awake()
         {
-            GameEvents.onGUIApplicationLauncherReady.Add(this.OnAppLauncherReady);
+            //GameEvents.onGUIApplicationLauncherReady.Add(this.OnAppLauncherReady);
             window = new Rect(10, 50, 30, 30);
 
             RenderingManager.AddToPostDrawQueue(5, Draw);
@@ -43,6 +43,11 @@ namespace PilotAssistant
             SurfSAS.Instance.SASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
             window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
             PilotAssistant.Instance.commitDelay = double.Parse(config.GetValue("commitDelay", "0.0"));
+
+            for (int i = 0; i < 60; i++)
+                yield return null;
+
+            OnAppLauncherReady();
         }
 
         void OnDestroy()
