@@ -19,7 +19,6 @@ namespace PilotAssistant
         public static KSP.IO.PluginConfiguration config;
         void Awake()
         {
-            //GameEvents.onGUIApplicationLauncherReady.Add(this.OnAppLauncherReady);
             window = new Rect(10, 50, 30, 30);
 
             RenderingManager.AddToPostDrawQueue(5, Draw);
@@ -30,24 +29,30 @@ namespace PilotAssistant
         IEnumerator LoadConfig()
         {
             yield return new WaitForEndOfFrame(); // Make sure PA and SSAS are running first
+            try
+            {
+                if (config == null)
+                {
+                    config = KSP.IO.PluginConfiguration.CreateForType<AppLauncherFlight>();
+                    config.load();
+                }
 
-            config = KSP.IO.PluginConfiguration.CreateForType<AppLauncherFlight>();
-            config.load();
+                PilotAssistant.Instance.window = config.GetValue("AsstWindow", new Rect(300, 300, 0, 0));
+                PilotAssistant.Instance.doublesided = config.GetValue("AsstDoublesided", false);
+                PilotAssistant.Instance.showTooltips = config.GetValue("AsstTooltips", true);
+                PilotAssistant.Instance.showPresets = config.GetValue("AsstPresetWindow", false);
+                PilotAssistant.Instance.showPIDLimits = config.GetValue("AsstLimits", false);
+                PilotAssistant.Instance.showControlSurfaces = config.GetValue("AsstControlSurfaces", false);
+                SurfSAS.Instance.SASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
+                window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
+                PilotAssistant.Instance.commitDelay = double.Parse(config.GetValue("commitDelay", "0.0"));
 
-            PilotAssistant.Instance.window = config.GetValue("AsstWindow", new Rect(300, 300, 0, 0));
-            PilotAssistant.Instance.doublesided = config.GetValue("AsstDoublesided", false);
-            PilotAssistant.Instance.showTooltips = config.GetValue("AsstTooltips", true);
-            PilotAssistant.Instance.showPresets = config.GetValue("AsstPresetWindow", false);
-            PilotAssistant.Instance.showPIDLimits = config.GetValue("AsstLimits", false);
-            PilotAssistant.Instance.showControlSurfaces = config.GetValue("AsstControlSurfaces", false);
-            SurfSAS.Instance.SASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
-            window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
-            PilotAssistant.Instance.commitDelay = double.Parse(config.GetValue("commitDelay", "0.0"));
-
-            for (int i = 0; i < 60; i++)
-                yield return null;
-
-            OnAppLauncherReady();
+                OnAppLauncherReady();
+            }
+            catch
+            {
+                Debug.Log("Pilot Assistant: Config load failed");
+            }
         }
 
         void OnDestroy()
@@ -63,16 +68,28 @@ namespace PilotAssistant
 
         public void SaveConfig()
         {
-            config["AsstWindow"] = PilotAssistant.Instance.window;
-            config["AsstDoublesided"] = PilotAssistant.Instance.doublesided;
-            config["AsstTooltips"] = PilotAssistant.Instance.showTooltips;
-            config["AsstPresetWindow"] = PilotAssistant.Instance.showPresets;
-            config["AsstLimits"] = PilotAssistant.Instance.showPIDLimits;
-            config["AsstControlSurfaces"] = PilotAssistant.Instance.showControlSurfaces;
-            config["commitDelay"] = PilotAssistant.Instance.commitDelay.ToString("0.0");
-            config["SASWindow"] = SurfSAS.Instance.SASwindow;
-            config["AppWindow"] = window;
-            config.save();
+            try
+            {
+                if (config == null)
+                {
+                    config = KSP.IO.PluginConfiguration.CreateForType<AppLauncherFlight>();
+                    config.load();
+                }
+                config["AsstWindow"] = PilotAssistant.Instance.window;
+                config["AsstDoublesided"] = PilotAssistant.Instance.doublesided;
+                config["AsstTooltips"] = PilotAssistant.Instance.showTooltips;
+                config["AsstPresetWindow"] = PilotAssistant.Instance.showPresets;
+                config["AsstLimits"] = PilotAssistant.Instance.showPIDLimits;
+                config["AsstControlSurfaces"] = PilotAssistant.Instance.showControlSurfaces;
+                config["commitDelay"] = PilotAssistant.Instance.commitDelay.ToString("0.0");
+                config["SASWindow"] = SurfSAS.Instance.SASwindow;
+                config["AppWindow"] = window;
+                config.save();
+            }
+            catch
+            {
+                Debug.Log("Pilot Assistant: Save failed");
+            }
         }
 
         private void OnAppLauncherReady()

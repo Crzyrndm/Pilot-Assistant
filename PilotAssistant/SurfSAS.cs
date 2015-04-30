@@ -190,38 +190,38 @@ namespace PilotAssistant
         #region Fixed Update / Control
         private void SurfaceSAS(FlightCtrlState state)
         {
-            if (bArmed && ActivityCheck())
+            if (!bArmed || !ActivityCheck() || !FlightData.thisVessel.IsControllable)
+                return;
+
+            pauseManager(state);
+
+            double vertResponse = 0;
+            double hrztResponse = 0;
+
+            if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
+                vertResponse = -1 * SASList.Pitch.GetSAS().ResponseD(FlightData.pitch);
+
+            if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
+                hrztResponse = -1 * SASList.Hdg.GetSAS().ResponseD(Utils.CurrentAngleTargetRel(FlightData.progradeHeading, SASList.Hdg.GetSAS().SetPoint, 180));
+
+            double rollRad = Mathf.Deg2Rad * FlightData.bank;
+
+            if (Math.Abs(FlightData.bank) > bankAngleSynch)
             {
-                pauseManager(state);
-
-                double vertResponse = 0;
-                double hrztResponse = 0;
-
-                if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
-                    vertResponse = -1 * SASList.Pitch.GetSAS().ResponseD(FlightData.pitch);
-
-                if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
-                    hrztResponse = -1 * SASList.Hdg.GetSAS().ResponseD(Utils.CurrentAngleTargetRel(FlightData.progradeHeading, SASList.Hdg.GetSAS().SetPoint, 180));
-
-                double rollRad = Mathf.Deg2Rad * FlightData.bank;
-
-                if (Math.Abs(FlightData.bank) > bankAngleSynch)
+                if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Hdg]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Hdg]))
                 {
-                    if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Hdg]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Hdg]))
-                    {
-                        state.pitch = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
-                        state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
-                    }
+                    state.pitch = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
+                    state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
                 }
-                else
-                {
-                    if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
-                        state.pitch = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
-                    if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
-                        state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
-                }
-                rollResponse(state);
             }
+            else
+            {
+                if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
+                    state.pitch = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
+                if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
+                    state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
+            }
+            rollResponse(state);
         }
 
         private void rollResponse(FlightCtrlState state)

@@ -477,7 +477,7 @@ namespace PilotAssistant
                 return;
 
             pitchSet = state.pitch; // last pitch ouput, used for presetting the elevator
-            if (Utils.AsstIsPaused() || FlightData.thisVessel.srfSpeed < 1)
+            if (Utils.AsstIsPaused() || FlightData.thisVessel.srfSpeed < 1 || !FlightData.thisVessel.IsControllable)
                 return;
 
             // Heading Control

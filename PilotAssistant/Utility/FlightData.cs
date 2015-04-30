@@ -34,6 +34,8 @@ namespace PilotAssistant.Utility
             // 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
             // Called in PilotAssistant.OnPreAutoPilotUpdate. Do not call multiple times per physics frame or the "lastPlanetUp" vector will not be correct and VSpeed will not be calculated correctly
             // Can't just leave it to a Coroutine becuase it has to be called before anything else
+            velocity = thisVessel.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
+            vertSpeed = Vector3d.Dot((planetUp + lastPlanetUp) / 2, velocity);
 
             // surface vectors
             lastPlanetUp = planetUp;
@@ -70,9 +72,6 @@ namespace PilotAssistant.Utility
             }
             else
                 AoA = yaw = 0;
-
-            velocity = thisVessel.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
-            vertSpeed = Vector3d.Dot((planetUp + lastPlanetUp) / 2, velocity);
         }
     }
 }
