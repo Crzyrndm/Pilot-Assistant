@@ -166,13 +166,7 @@ namespace PilotAssistant
             controllers[(int)PIDList.Throttle] = new PID_Controller(defaultThrottleGains);
 
             // Set up a default preset that can be easily returned to
-            if (PresetManager.Instance.craftPresetList.ContainsKey("default"))
-            {
-                if (PresetManager.Instance.craftPresetList["default"].AsstPreset == null)
-                    PresetManager.Instance.craftPresetList["default"].AsstPreset = new AsstPreset(controllers, "default");
-            }
-            else
-                PresetManager.Instance.craftPresetList.Add("default", new CraftPreset("default", new AsstPreset(controllers, "default"), null, null, true));
+            PresetManager.initDefaultPresets(new AsstPreset(controllers, "default"));
 
             PresetManager.saveDefaults();
         }
@@ -272,7 +266,12 @@ namespace PilotAssistant
                     // ============================================================ Vertical Controls ============================================================
                     if (bVertActive && (GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_PITCH)))
                     {
-                        double vert = double.Parse(targetVert);
+                        double vert; // = double.Parse(targetVert);
+                        if (bAltitudeHold)
+                            vert = PIDList.Altitude.GetAsst().SetPoint;
+                        else
+                            vert = PIDList.VertSpeed.GetAsst().SetPoint;
+
 
                         if (bAltitudeHold)
                             vert /= 10; // saves having to specify the rates seperately
@@ -298,7 +297,7 @@ namespace PilotAssistant
                     if (bThrottleActive && ((GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey())
                                             || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown()))
                     {
-                        double speed = double.Parse(targetSpeed);
+                        double speed = PIDList.Throttle.GetAsst().SetPoint;
                         if (GameSettings.THROTTLE_UP.GetKey())
                             speed += throttleScale * scale;
                         else if (GameSettings.THROTTLE_DOWN.GetKey())
@@ -638,6 +637,8 @@ namespace PilotAssistant
             if (Utils.AsstIsPaused())
                 GUILayout.Box("CONTROL PAUSED", GeneralUI.UISkin.customStyles[(int)myStyles.labelAlert]);
 
+            showPresets = GUILayout.Toggle(showPresets, showPresets ? "Hide Presets" : "Show Presets", GUILayout.Width(200));
+
             #region Hdg GUI
 
             GUILayout.BeginHorizontal();
@@ -665,11 +666,10 @@ namespace PilotAssistant
                 if (!bWingLeveller)
                 {
                     GUILayout.BeginHorizontal();
-                    double newHdg;
-                    bool valid = double.TryParse(targetHeading, out newHdg);
                     if (GUILayout.Button("Target Hdg: ", GUILayout.Width(90)))
                     {
-                        if (valid)
+                        double newHdg;
+                        if (double.TryParse(targetHeading, out newHdg))
                         {
                             StartCoroutine(shiftHeadingTarget(newHdg.headingClamp(360)));
                             bHdgActive = bHdgWasActive = true; // skip toggle check to avoid being overwritten
@@ -852,7 +852,6 @@ namespace PilotAssistant
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             if (bShowSettings)
             {
-                showPresets = GUILayout.Toggle(showPresets, showPresets ? "Hide Presets" : "Show Presets", GUILayout.Width(200));
                 showPIDLimits = GUILayout.Toggle(showPIDLimits, showPIDLimits ? "Hide PID Limits" : "Show PID Limits", GUILayout.Width(200));
                 showControlSurfaces = GUILayout.Toggle(showControlSurfaces, showControlSurfaces ? "Hide Control Surfaces" : "Show Control Surfaces", GUILayout.Width(200));
                 doublesided = GUILayout.Toggle(doublesided, "Separate Min and Max limits", GUILayout.Width(200));
@@ -947,17 +946,15 @@ namespace PilotAssistant
         private void displayPresetWindow(int id)
         {
             if (GUI.Button(new Rect(presetWindow.width - 16, 2, 14, 14), ""))
-            {
                 showPresets = false;
-            }
 
-            if (PresetManager.Instance.activePAPreset != null)
+            if (PresetManager.Instance.activeAsstPreset != null) // preset will be null after deleting an active preset
             {
-                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.Instance.activePAPreset.name));
-                if (PresetManager.Instance.activePAPreset.name != "default")
+                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.Instance.activeAsstPreset.name));
+                if (PresetManager.Instance.activeAsstPreset.name != "default")
                 {
                     if (GUILayout.Button("Update Preset"))
-                        PresetManager.updatePAPreset(controllers);
+                        PresetManager.updateAsstPreset();
                 }
                 GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
             }
@@ -965,23 +962,23 @@ namespace PilotAssistant
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-                PresetManager.newPAPreset(ref newPresetName, controllers);
+                PresetManager.newAsstPreset(ref newPresetName, controllers);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
             if (GUILayout.Button("Reset to Defaults"))
-                PresetManager.loadPAPreset(PresetManager.Instance.craftPresetList["default"].AsstPreset);
+                PresetManager.loadAsstPreset(PresetManager.Instance.craftPresetDict["default"].AsstPreset);
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
-            foreach (AsstPreset p in PresetManager.Instance.PAPresetList)
+            foreach (AsstPreset p in PresetManager.Instance.AsstPresetList)
             {
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(p.name))
-                    PresetManager.loadPAPreset(p);
+                    PresetManager.loadAsstPreset(p);
                 else if (GUILayout.Button("x", GUILayout.Width(25)))
-                    PresetManager.deletePAPreset(p);
+                    PresetManager.deleteAsstPreset(p);
                 GUILayout.EndHorizontal();
             }
         }

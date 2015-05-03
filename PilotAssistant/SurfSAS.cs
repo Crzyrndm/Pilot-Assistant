@@ -47,12 +47,13 @@ namespace PilotAssistant
 
         public bool rollState = false; // false = surface mode, true = vector mode
 
-        public Rect SASwindow = new Rect(10, 505, 200, 30); // gui window rect
-        bool[] stockPIDDisplay = { true, false, false }; // which stock PID axes are visible
+        public Rect SSASwindow = new Rect(10, 505, 200, 30); // gui window rect
 
         string newPresetName = "";
-        Rect SASPresetwindow = new Rect(550, 50, 50, 50);
-        bool bShowPresets = false;
+
+        Rect SSASPresetwindow = new Rect(550, 50, 50, 50);
+        bool bShowSSASPresets = false;
+
 
         // initialisation and default presets stuff
         public double[] defaultPitchGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3, 200 };
@@ -74,41 +75,9 @@ namespace PilotAssistant
         {
             instance = this;
             // Have to wait for stock SAS to be ready
-            StartCoroutine(Initialise());
-            // hide/show with KSP hide UI
-            RenderingManager.AddToPostDrawQueue(5, drawGUI);
-
-            // events and callbacks
-            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
-            GameEvents.onVesselChange.Add(vesselSwitch);
-            GameEvents.onTimeWarpRateChanged.Add(warpHandler);
-        }
-
-        private void vesselSwitch(Vessel v)
-        {
-            FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(SurfaceSAS);
-            FlightData.thisVessel = v;
-            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
-
-            StartCoroutine(Initialise());
-        }
-
-        private void warpHandler()
-        {
-            if (TimeWarp.CurrentRateIndex == 0 && TimeWarp.CurrentRate != 1 && TimeWarp.WarpMode == TimeWarp.Modes.HIGH)
-                updateTarget();
-        }
-
-        // need to wait for Stock SAS to be ready, hence the Coroutine
-        IEnumerator Initialise()
-        {
             if (FlightData.thisVessel == null)
                 FlightData.thisVessel = FlightGlobals.ActiveVessel;
 
-            // wait for SAS to init
-            while (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch == null)
-                yield return null;
-            
             bPause.Initialize();
             ActivitySwitch(false);
             delayEngage[0] = delayEngage[1] = delayEngage[2] = 20; // delay engagement by 0.2s
@@ -117,20 +86,34 @@ namespace PilotAssistant
             SASControllers[(int)SASList.Bank] = new PID_Controller(defaultRollGains);
             SASControllers[(int)SASList.Hdg] = new PID_Controller(defaultHdgGains);
 
-            if (!PresetManager.Instance.craftPresetList.ContainsKey("default"))
-                PresetManager.Instance.craftPresetList.Add("default", new CraftPreset("default", null, new SASPreset(SASControllers, "SSAS"), new SASPreset(FlightData.thisVessel.Autopilot.SAS, "stock"), bStockSAS));
-            else
-            {
-                if (PresetManager.Instance.craftPresetList["default"].SSASPreset == null)
-                    PresetManager.Instance.craftPresetList["default"].SSASPreset = new SASPreset(SASControllers, "SSAS");
-                if (PresetManager.Instance.craftPresetList["default"].StockPreset == null)
-                    PresetManager.Instance.craftPresetList["default"].StockPreset = new SASPreset(FlightData.thisVessel.Autopilot.SAS, "stock");
-            }
-
-            PresetManager.saveDefaults();
+            PresetManager.initDefaultPresets(new SSASPreset(SASControllers, "SSAS"));
             PresetManager.initSSASPreset();
 
             SASList.Hdg.GetSAS().isHeadingControl = true;
+            // hide/show with KSP hide UI
+            RenderingManager.AddToPostDrawQueue(5, drawGUI);
+
+            // events and callbacks
+            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
+            GameEvents.onVesselChange.Add(vesselSwitch);
+            GameEvents.onTimeWarpRateChanged.Add(warpHandler);
+
+            tooltip = "";
+        }
+
+        private void vesselSwitch(Vessel v)
+        {
+            FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(SurfaceSAS);
+            FlightData.thisVessel = v;
+            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
+
+            PresetManager.initSSASPreset();
+        }
+
+        private void warpHandler()
+        {
+            if (TimeWarp.CurrentRateIndex == 0 && TimeWarp.CurrentRate != 1 && TimeWarp.WarpMode == TimeWarp.Modes.HIGH)
+                updateTarget();
         }
 
         public void OnDestroy()
@@ -150,17 +133,6 @@ namespace PilotAssistant
         public void Update()
         {
             bool mod = GameSettings.MODIFIER_KEY.GetKey();
-            // Arm Hotkey
-            if (mod && GameSettings.SAS_TOGGLE.GetKeyDown())
-            {
-                bArmed = !bArmed;
-                if (bArmed) // if we are armed, switch to SSAS
-                    bStockSAS = false;
-                
-                if (ActivityCheck()) {
-                    ActivitySwitch(false);
-                }
-            }
 
             // SAS activated by user
             if (bArmed && !ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown() && !mod)
@@ -525,73 +497,56 @@ namespace PilotAssistant
             }
 
             // Main and preset window stuff
-            if (!AppLauncherFlight.bDisplaySAS)
-                return;
+            if (AppLauncherFlight.bDisplaySSAS)
+                SSASwindow = GUILayout.Window(78934856, SSASwindow, drawSSASWindow, "SSAS", GUILayout.Height(0));
 
-            SASwindow = GUILayout.Window(78934856, SASwindow, drawSASWindow, "SAS Module", GUILayout.Height(0));
+            if (bShowSSASPresets)
+            {
+                SSASPresetwindow = GUILayout.Window(78934859, SSASPresetwindow, drawSSASPresetWindow, "SSAS Presets", GUILayout.Height(0));
+                SSASPresetwindow.x = SSASwindow.x + SSASwindow.width;
+                SSASPresetwindow.y = SSASwindow.y;
+            }
 
             if (tooltip != "" && PilotAssistant.Instance.showTooltips)
-                GUILayout.Window(34246, new Rect(SASwindow.x + SASwindow.width, Screen.height - Input.mousePosition.y, 0, 0), tooltipWindow, "", GeneralUI.UISkin.label, GUILayout.Height(0), GUILayout.Width(300));
-
-            if (bShowPresets)
-            {
-                SASPresetwindow = GUILayout.Window(78934857, SASPresetwindow, drawPresetWindow, "SAS Presets", GUILayout.Height(0));
-                SASPresetwindow.x = SASwindow.x + SASwindow.width;
-                SASPresetwindow.y = SASwindow.y;
-            }
+                GUILayout.Window(34246, new Rect(SSASwindow.x + SSASwindow.width, Screen.height - Input.mousePosition.y, 0, 0), tooltipWindow, "", GeneralUI.UISkin.label, GUILayout.Height(0), GUILayout.Width(300));
         }
 
-        private void drawSASWindow(int id)
+        private void drawSSASWindow(int id)
         {
-            if (GUI.Button(new Rect(SASwindow.width - 16, 2, 14, 14), ""))
+            if (GUI.Button(new Rect(SSASwindow.width - 16, 2, 14, 14), ""))
+                AppLauncherFlight.bDisplaySSAS = false;
+
+            bShowSSASPresets = GUILayout.Toggle(bShowSSASPresets, bShowSSASPresets ? "Hide SAS Presets" : "Show SAS Presets");
+
+            GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
+            if (GUILayout.Button(bArmed ? "Disarm SAS" : "Arm SAS"))
             {
-                AppLauncherFlight.bDisplaySAS = false;
+                bArmed = !bArmed;
+                if (!bArmed)
+                    ActivitySwitch(false);
+
+                Messaging.statusMessage(bArmed ? 8 : 9);
             }
+            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
 
-            bShowPresets = GUILayout.Toggle(bShowPresets, bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
-
-            bStockSAS = GUILayout.Toggle(bStockSAS, bStockSAS ? "Mode: Stock SAS" : "Mode: SSAS");
-
-            if (!bStockSAS)
+            if (bArmed)
             {
-                GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-                if (GUILayout.Button(bArmed ? "Disarm SAS" : "Arm SAS"))
-                {
-                    bArmed = !bArmed;
-                    if (!bArmed)
-                        ActivitySwitch(false);
+                Utils.GetSAS(SASList.Pitch).BumplessSetPoint = Utils.Clamp(TogPlusNumBox("Pitch:", SASList.Pitch, FlightData.pitch, 80, 70), -90, 90);
+                TogPlusNumBox("Heading:", SASList.Hdg, FlightData.heading, 80, 70);
+                Utils.GetSAS(SASList.Bank).BumplessSetPoint = TogPlusNumBox("Roll:", SASList.Bank, FlightData.bank, 80, 70);
 
-                    Messaging.statusMessage(bArmed ? 8 : 9);
-                }
-                GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+                GUILayout.Box("", GUILayout.Height(10)); // seperator
 
-                if (bArmed)
-                {
-                    Utils.GetSAS(SASList.Pitch).BumplessSetPoint = Utils.Clamp(TogPlusNumBox("Pitch:", SASList.Pitch, FlightData.pitch, 80, 70), -90, 90);
-                    TogPlusNumBox("Heading:", SASList.Hdg, FlightData.heading, 80, 70);
-                    Utils.GetSAS(SASList.Bank).BumplessSetPoint = TogPlusNumBox("Roll:", SASList.Bank, FlightData.bank, 80, 70);
-                    
-                    GUILayout.Box("", GUILayout.Height(10)); // seperator
-
-                    drawPIDValues(SASList.Pitch, "Pitch");
-                    drawPIDValues(SASList.Bank, "Roll");
-                    drawPIDValues(SASList.Hdg, "Yaw");
-                }
-            }
-            else
-            {
-                VesselAutopilot.VesselSAS sas = FlightData.thisVessel.Autopilot.SAS;
-
-                drawPIDValues(sas.pidLockedPitch, "Pitch", SASList.Pitch);
-                drawPIDValues(sas.pidLockedRoll, "Roll", SASList.Bank);
-                drawPIDValues(sas.pidLockedYaw, "Yaw", SASList.Hdg);
+                drawPIDValues(SASList.Pitch, "Pitch");
+                drawPIDValues(SASList.Bank, "Roll");
+                drawPIDValues(SASList.Hdg, "Yaw");
             }
 
             GUI.DragWindow();
             tooltip = GUI.tooltip;
         }
 
-        string tooltip;
+        string tooltip = "";
         private void tooltipWindow(int id)
         {
             GUILayout.Label(tooltip, GeneralUI.UISkin.textArea);
@@ -612,41 +567,18 @@ namespace PilotAssistant
             }
         }
 
-        private void drawPIDValues(PIDclamp controller, string inputName, SASList controllerID)
+        private void drawSSASPresetWindow(int id)
         {
-            stockPIDDisplay[(int)controllerID] = GUILayout.Toggle(stockPIDDisplay[(int)controllerID], inputName, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            if (GUI.Button(new Rect(SSASPresetwindow.width - 16, 2, 14, 14), ""))
+                bShowSSASPresets = false;
 
-            if (stockPIDDisplay[(int)controllerID])
+            if (PresetManager.Instance.activeSSASPreset != null)
             {
-                controller.kp = GeneralUI.labPlusNumBox(GeneralUI.KpLabel, controller.kp.ToString(), 45);
-                controller.ki = GeneralUI.labPlusNumBox(GeneralUI.KiLabel, controller.ki.ToString(), 45);
-                controller.kd = GeneralUI.labPlusNumBox(GeneralUI.KdLabel, controller.kd.ToString(), 45);
-                controller.clamp = Math.Max(GeneralUI.labPlusNumBox(GeneralUI.ScalarLabel, controller.clamp.ToString(), 45), 0.01);
-            }
-        }
-
-        private void drawPresetWindow(int id)
-        {
-            if (GUI.Button(new Rect(SASPresetwindow.width - 16, 2, 14, 14), ""))
-            {
-                bShowPresets = false;
-            }
-
-            if (bStockSAS)
-                drawStockPreset();
-            else
-                drawSurfPreset();
-        }
-
-        private void drawSurfPreset()
-        {
-            if (PresetManager.Instance.activeSASPreset != null)
-            {
-                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.Instance.activeSASPreset.name));
-                if (PresetManager.Instance.activeSASPreset.name != "SSAS")
+                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.Instance.activeSSASPreset.name));
+                if (PresetManager.Instance.activeSSASPreset.name != "SSAS")
                 {
                     if (GUILayout.Button("Update Preset"))
-                        PresetManager.updateSASPreset(false, SASControllers);
+                        PresetManager.UpdateSSASPreset();
                 }
                 GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
             }
@@ -654,66 +586,23 @@ namespace PilotAssistant
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-                PresetManager.newSASPreset(ref newPresetName, SASControllers);
+                PresetManager.newSSASPreset(ref newPresetName, SASControllers);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
             if (GUILayout.Button("Reset to Defaults"))
-                PresetManager.loadSASPreset(PresetManager.Instance.craftPresetList["default"].SSASPreset);
+                PresetManager.loadSSASPreset(PresetManager.Instance.craftPresetDict["default"].SSASPreset);
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
-            foreach (SASPreset p in PresetManager.Instance.SASPresetList)
+            foreach (SSASPreset p in PresetManager.Instance.SSASPresetList)
             {
-                if (p.bStockSAS)
-                    continue;
-
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(p.name))
-                    PresetManager.loadSASPreset(p);
+                    PresetManager.loadSSASPreset(p);
                 else if (GUILayout.Button("x", GUILayout.Width(25)))
-                    PresetManager.deleteSASPreset(p);
-                GUILayout.EndHorizontal();
-            }
-        }
-
-        private void drawStockPreset()
-        {
-            if (PresetManager.Instance.activeStockSASPreset != null)
-            {
-                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.Instance.activeStockSASPreset.name));
-                if (PresetManager.Instance.activeStockSASPreset.name != "stock")
-                {
-                    if (GUILayout.Button("Update Preset"))
-                        PresetManager.updateSASPreset(true);
-                }
-                GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
-            }
-
-            GUILayout.BeginHorizontal();
-            newPresetName = GUILayout.TextField(newPresetName);
-            if (GUILayout.Button("+", GUILayout.Width(25)))
-                PresetManager.newSASPreset(ref newPresetName);
-            GUILayout.EndHorizontal();
-
-            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
-
-            if (GUILayout.Button("Reset to Defaults"))
-                PresetManager.loadStockSASPreset(PresetManager.Instance.craftPresetList["default"].StockPreset);
-
-            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
-
-            foreach (SASPreset p in PresetManager.Instance.SASPresetList)
-            {
-                if (!p.bStockSAS)
-                    continue;
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button(p.name))
-                    PresetManager.loadStockSASPreset(p);
-                else if (GUILayout.Button("x", GUILayout.Width(25)))
-                    PresetManager.deleteSASPreset(p);
+                    PresetManager.deleteSSASPreset(p);
                 GUILayout.EndHorizontal();
             }
         }

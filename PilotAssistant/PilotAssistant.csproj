@@ -49,6 +49,9 @@
   <ItemGroup>
     <Compile Include="AppLauncherFlight.cs" />
     <Compile Include="Presets\CraftPreset.cs" />
+    <Compile Include="Presets\RSASPreset.cs" />
+    <Compile Include="Presets\SSASPreset.cs" />
+    <Compile Include="Stock SAS.cs" />
     <Compile Include="SurfSAS.cs" />
     <Compile Include="PID\PID_Controller.cs" />
     <Compile Include="PilotAssistant.cs" />

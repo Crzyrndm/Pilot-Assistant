@@ -15,6 +15,7 @@ namespace PilotAssistant
         public static bool bDisplayOptions = false;
         public static bool bDisplayAssistant = false;
         public static bool bDisplaySAS = false;
+        public static bool bDisplaySSAS = false;
 
         public static KSP.IO.PluginConfiguration config;
         void Awake()
@@ -43,7 +44,8 @@ namespace PilotAssistant
                 PilotAssistant.Instance.showPresets = config.GetValue("AsstPresetWindow", false);
                 PilotAssistant.Instance.showPIDLimits = config.GetValue("AsstLimits", false);
                 PilotAssistant.Instance.showControlSurfaces = config.GetValue("AsstControlSurfaces", false);
-                SurfSAS.Instance.SASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
+                SurfSAS.Instance.SSASwindow = config.GetValue("SSASWindow", new Rect(500, 300, 0, 0));
+                Stock_SAS.Instance.StockSASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
                 window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
                 PilotAssistant.Instance.commitDelay = double.Parse(config.GetValue("commitDelay", "0.0"));
 
@@ -82,7 +84,8 @@ namespace PilotAssistant
                 config["AsstLimits"] = PilotAssistant.Instance.showPIDLimits;
                 config["AsstControlSurfaces"] = PilotAssistant.Instance.showControlSurfaces;
                 config["commitDelay"] = PilotAssistant.Instance.commitDelay.ToString("0.0");
-                config["SASWindow"] = SurfSAS.Instance.SASwindow;
+                config["SSASWindow"] = SurfSAS.Instance.SSASwindow;
+                config["SASWindow"] = Stock_SAS.Instance.StockSASwindow;
                 config["AppWindow"] = window;
                 config.save();
             }
@@ -129,20 +132,12 @@ namespace PilotAssistant
             if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
                 btnLauncher.SetFalse();
 
-            bool temp = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            if (temp != bDisplayAssistant)
-            {
-                bDisplayAssistant = temp;
-            }
-            temp = GUILayout.Toggle(bDisplaySAS, "SAS Systems", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            if (temp != bDisplaySAS)
-            {
-                bDisplaySAS = temp;
-            }
+            bDisplayAssistant = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            bDisplaySAS = GUILayout.Toggle(bDisplaySAS, "Stock SAS", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            bDisplaySSAS = GUILayout.Toggle(bDisplaySSAS, "SSAS", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+
             if (GUILayout.Button("Update Defaults"))
-            {
                 PresetManager.updateDefaults();
-            }
 
             GUI.DragWindow();
         }
