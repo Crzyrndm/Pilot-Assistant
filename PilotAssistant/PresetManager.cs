@@ -215,7 +215,7 @@ namespace PilotAssistant
             node.AddValue("dummy", "do not delete me");
             foreach (AsstPreset p in instance.AsstPresetList)
             {
-                node.AddNode(PAPresetNode(p));
+                node.AddNode(AsstPresetNode(p));
             }
             foreach (SASPreset p in instance.SASPresetList)
             {
@@ -245,7 +245,7 @@ namespace PilotAssistant
             CraftPreset cP = instance.craftPresetDict[craftDefaultName];
 
             if (cP.AsstPreset != null)
-                node.AddNode(PAPresetNode(cP.AsstPreset));
+                node.AddNode(AsstPresetNode(cP.AsstPreset));
             if (cP.SSASPreset != null)
                 node.AddNode(SSASPresetNode(cP.SSASPreset));
             if (cP.SASPreset != null)
@@ -343,7 +343,7 @@ namespace PilotAssistant
             }
         }
 
-        public static ConfigNode PAPresetNode(AsstPreset preset)
+        public static ConfigNode AsstPresetNode(AsstPreset preset)
         {
             ConfigNode node = new ConfigNode(asstPresetNodeName);
             node.AddValue("name", preset.name);
@@ -450,7 +450,7 @@ namespace PilotAssistant
                 if (preset.SASPreset != null && !string.IsNullOrEmpty(preset.SASPreset.name))
                     node.AddValue(craftSASKey, preset.SASPreset.name);
                 if (preset.RSASPreset != null && !string.IsNullOrEmpty(preset.RSASPreset.name))
-                    node.AddValue(craftRSASKey, preset.SASPreset.name);
+                    node.AddValue(craftRSASKey, preset.RSASPreset.name);
             }
 
             return node;
