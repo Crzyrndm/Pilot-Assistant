@@ -525,7 +525,7 @@ namespace PilotAssistant
                 if (!bArmed)
                     ActivitySwitch(false);
 
-                Messaging.statusMessage(bArmed ? 8 : 9);
+                Messaging.postMessage(bArmed ? Messaging.SSASArmedMessage : Messaging.SSASDisArmedMessage);
             }
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
 
