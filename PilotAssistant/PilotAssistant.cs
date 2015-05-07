@@ -20,7 +20,8 @@ namespace PilotAssistant
         Altitude,
         VertSpeed,
         Elevator,
-        Throttle
+        Speed,
+        Acceleration
     }
 
     public enum VertMode
@@ -41,7 +42,7 @@ namespace PilotAssistant
     public enum ThrottleMode
     {
         Disabled = -1,
-        Velocity = 0,
+        Speed = 0,
         Acceleration = 1
     }
 
@@ -55,7 +56,7 @@ namespace PilotAssistant
             get { return instance; }
         }
 
-        public PID_Controller[] controllers = new PID_Controller[8];
+        public PID_Controller[] controllers = new PID_Controller[9];
 
         public bool bPause = false;
 
@@ -69,7 +70,7 @@ namespace PilotAssistant
 
         public ThrottleMode currentThrottleMode = ThrottleMode.Disabled;
         ThrottleMode lastThrottleMode = ThrottleMode.Disabled;
-        GUIContent[] throttleLabels = new GUIContent[1] { new GUIContent("Velocity", "Mode: Velocity Control") };
+        GUIContent[] throttleLabels = new GUIContent[2] { new GUIContent("Vel", "Mode: Velocity Control"), new GUIContent("Acc", "Mode: Acceleration Control") };
 
         public Rect window = new Rect(10, 130, 10, 10);
 
@@ -122,12 +123,13 @@ namespace PilotAssistant
         // Kp, Ki, Kd, Min Out, Max Out, I Min, I Max, Scalar, Easing
         public static double[] defaultHdgBankGains = { 2, 0.1, 0, -30, 30, -0.5, 0.5, 1, 1 };
         public static double[] defaultBankToYawGains = { 0, 0, 0.01, -2, 2, -0.5, 0.5, 1, 1 };
-        public static double[] defaultAileronGains = { 0.02, 0.005, 0.01, -1, 1, -0.4, 0.4, 1, 1 };
-        public static double[] defaultRudderGains = { 0.1, 0.08, 0.05, -1, 1, -0.4, 0.4, 1, 1 };
-        public static double[] defaultAltitudeGains = { 0.15, 0.01, 0, -50, 50, -0.01, 0.01, 1, 100 };
-        public static double[] defaultVSpeedGains = { 2, 0.8, 2, -10, 10, -5, 5, 1, 10 };
-        public static double[] defaultElevatorGains = { 0.05, 0.01, 0.1, -1, 1, -0.4, 0.4, 1, 1 };
-        public static double[] defaultThrottleGains = { 0.2, 0.08, 0.1, -1, 0, -1, 0.4, 1, 1 };
+        public static double[] defaultAileronGains = { 0.02, 0.005, 0.01, -1, 1, -1, 1, 1, 1 };
+        public static double[] defaultRudderGains = { 0.1, 0.08, 0.05, -1, 1, -1, 1, 1, 1 };
+        public static double[] defaultAltitudeGains = { 0.15, 0.01, 0, -50, 50, 0, 0, 1, 100 };
+        public static double[] defaultVSpeedGains = { 2, 0.8, 2, -15, 15, -10, 10, 1, 10 };
+        public static double[] defaultElevatorGains = { 0.05, 0.01, 0.1, -1, 1, -1, 1, 1, 1 };
+        public static double[] defaultSpeedGains = { 0.2, 0.08, 0.1, -10, 10, -10, 10, 1, 10 };
+        public static double[] defaultAccelGains = { 0.2, 0.08, 0, -1, 0, -1, 1, 1, 1 };
 
         #endregion
 
@@ -146,7 +148,7 @@ namespace PilotAssistant
             PIDList.Aileron.GetAsst().InMax = 180;
             PIDList.Aileron.GetAsst().InMin = -180;
             PIDList.Altitude.GetAsst().InMin = 0;
-            PIDList.Throttle.GetAsst().InMin = 0;
+            PIDList.Speed.GetAsst().InMin = 0;
             PIDList.HdgBank.GetAsst().isHeadingControl = true; // fix for derivative freaking out when heading target flickers across 0/360
 
             // events
@@ -181,7 +183,8 @@ namespace PilotAssistant
             controllers[(int)PIDList.Altitude] = new PID_Controller(defaultAltitudeGains);
             controllers[(int)PIDList.VertSpeed] = new PID_Controller(defaultVSpeedGains);
             controllers[(int)PIDList.Elevator] = new PID_Controller(defaultElevatorGains);
-            controllers[(int)PIDList.Throttle] = new PID_Controller(defaultThrottleGains);
+            controllers[(int)PIDList.Speed] = new PID_Controller(defaultSpeedGains);
+            controllers[(int)PIDList.Acceleration] = new PID_Controller(defaultAccelGains);
 
             // Set up a default preset that can be easily returned to
             PresetManager.initDefaultPresets(new AsstPreset(controllers, "default"));
@@ -211,7 +214,6 @@ namespace PilotAssistant
                 currentThrottleMode = ThrottleMode.Disabled;
             }
         }
-
 
         #region Update / Input Monitoring
         public void Update()
@@ -315,20 +317,32 @@ namespace PilotAssistant
                     if (currentThrottleMode != ThrottleMode.Disabled && ((GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey())
                                     || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown()))
                     {
-                        double speed = PIDList.Throttle.GetAsst().SetPoint;
+                        double speed;
+                        if (currentThrottleMode == ThrottleMode.Speed)
+                            speed = PIDList.Speed.GetAsst().SetPoint;
+                        else
+                            speed = PIDList.Acceleration.GetAsst().SetPoint * 10;
+
                         if (GameSettings.THROTTLE_UP.GetKey())
                             speed += throttleScale * scale;
                         else if (GameSettings.THROTTLE_DOWN.GetKey())
                             speed -= throttleScale * scale;
-
                         if (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey())
                             speed = 0;
-                        if (GameSettings.THROTTLE_FULL.GetKeyDown())
-                            speed = 2400;
 
-                        PIDList.Throttle.GetAsst().SetPoint = speed;
-
-                        targetSpeed = Math.Max(speed, 0).ToString("0.00");
+                        if (currentThrottleMode == ThrottleMode.Speed)
+                        {
+                            if (GameSettings.THROTTLE_FULL.GetKeyDown())
+                                speed = 2400;
+                            PIDList.Speed.GetAsst().SetPoint = speed;
+                            targetSpeed = Math.Max(speed, 0).ToString("0.00");
+                        }
+                        else
+                        {
+                            speed /= 10;
+                            PIDList.Acceleration.GetAsst().SetPoint = speed;
+                            targetSpeed = speed.ToString("0.0");
+                        }
                     }
                 }
             }
@@ -337,7 +351,7 @@ namespace PilotAssistant
         // stuff that isn't directly control related
         private void keyMonitor()
         {
-            if (Input.GetKeyDown(KeyCode.Tab))
+            if (Input.GetKeyDown(KeyCode.Tab) && !MapView.MapIsEnabled)
             {
                 // reset locks on unpausing
                 lastHrztMode = HrztMode.Disabled;
@@ -360,8 +374,9 @@ namespace PilotAssistant
             if (GameSettings.MODIFIER_KEY.GetKey() && Input.GetKeyDown(KeyCode.X))
             {
                 PIDList.VertSpeed.GetAsst().SetPoint = 0;
-                PIDList.Throttle.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed;
+                PIDList.Speed.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed;
                 currentVertMode = VertMode.VSpeed;
+                currentHrztMode = HrztMode.WingsLevel;
                 targetVert = "0.00";
                 targetSpeed = FlightData.thisVessel.srfSpeed.ToString("0.00");
                 Messaging.postMessage(Messaging.levelMessage);
@@ -372,7 +387,7 @@ namespace PilotAssistant
             if (Input.GetKeyDown(KeyCode.Keypad6) && GameSettings.MODIFIER_KEY.GetKey())
                 currentVertMode = (currentVertMode == VertMode.Disabled) ? VertMode.VSpeed : VertMode.Disabled;
             if (Input.GetKeyDown(KeyCode.Keypad3) && GameSettings.MODIFIER_KEY.GetKey())
-                currentThrottleMode = currentThrottleMode == ThrottleMode.Disabled ? ThrottleMode.Velocity : ThrottleMode.Disabled;
+                currentThrottleMode = currentThrottleMode == ThrottleMode.Disabled ? ThrottleMode.Speed : ThrottleMode.Disabled;
         }
 
         private void hdgToggle()
@@ -457,17 +472,19 @@ namespace PilotAssistant
             {
                 case ThrottleMode.Disabled:
                     {
-                        PIDList.Throttle.GetAsst().Clear();
+                        PIDList.Speed.GetAsst().Clear();
                         break;
                     }
-                case ThrottleMode.Velocity:
+                case ThrottleMode.Speed:
                     {
-                        PIDList.Throttle.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed;
-                        targetSpeed = PIDList.Throttle.GetAsst().SetPoint.ToString("0.00");
+                        PIDList.Speed.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed;
+                        targetSpeed = PIDList.Speed.GetAsst().SetPoint.ToString("0.00");
                         break;
                     }
                 case ThrottleMode.Acceleration:
                     {
+                        PIDList.Acceleration.GetAsst().SetPoint = FlightData.acceleration;
+                        targetSpeed = PIDList.Acceleration.GetAsst().SetPoint.ToString("0.00");
                         break;
                     }
             }
@@ -491,7 +508,7 @@ namespace PilotAssistant
             if (!HighLogic.LoadedSceneIsFlight)
                 return;
             if (FlightData.thisVessel == null)
-                return;
+                vesselSwitch(FlightGlobals.ActiveVessel);
 
             pitchSet = state.pitch; // last pitch ouput, used for presetting the elevator
             if (Utils.AsstIsPaused() || FlightData.thisVessel.srfSpeed < 1 || !FlightData.thisVessel.IsControllable)
@@ -542,12 +559,17 @@ namespace PilotAssistant
                 PIDList.Elevator.GetAsst().SetPoint = -PIDList.VertSpeed.GetAsst().ResponseD(FlightData.vertSpeed);
                 state.pitch = -PIDList.Elevator.GetAsst().ResponseF(FlightData.AoA).Clamp(-1, 1);
             }
+
             if (currentThrottleMode != ThrottleMode.Disabled)
             {
-                if (PIDList.Throttle.GetAsst().SetPoint != 0)
-                    state.mainThrottle = (-PIDList.Throttle.GetAsst().ResponseF(FlightData.thisVessel.srfSpeed)).Clamp(0, 1);
-                else
-                    state.mainThrottle = 0;
+                if (currentThrottleMode == ThrottleMode.Speed)
+                {
+                    if (PIDList.Speed.GetAsst().SetPoint != 0)
+                        PIDList.Acceleration.GetAsst().SetPoint = -PIDList.Speed.GetAsst().ResponseD(FlightData.thisVessel.srfSpeed);
+                    else
+                        PIDList.Acceleration.GetAsst().SetPoint = PIDList.Acceleration.GetAsst().OutMax;
+                }
+                state.mainThrottle = (-PIDList.Acceleration.GetAsst().ResponseF(FlightData.acceleration)).Clamp(0, 1);
             }
         }
 
@@ -819,24 +841,34 @@ namespace PilotAssistant
             else
                 GUI.backgroundColor = GeneralUI.InActiveBackground;
             if (GUILayout.Button("Throttle Control", GUILayout.Width(186)))
-                currentThrottleMode = currentThrottleMode == ThrottleMode.Disabled ? ThrottleMode.Velocity : ThrottleMode.Disabled;
+                currentThrottleMode = currentThrottleMode == ThrottleMode.Disabled ? ThrottleMode.Speed : ThrottleMode.Disabled;
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             GUILayout.EndHorizontal();
 
             if (bShowThrottle)
             {
+                currentThrottleMode = (ThrottleMode)GUILayout.SelectionGrid((int)currentThrottleMode, throttleLabels, 2, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Target Speed:", GUILayout.Width(118)))
+                if (GUILayout.Button((currentThrottleMode != ThrottleMode.Acceleration) ? "Target Speed:" : "Target Accel", GUILayout.Width(118)))
                 {
-                    ScreenMessages.PostScreenMessage("Target Speed updated");
+                    Messaging.postMessage((currentThrottleMode != ThrottleMode.Acceleration) ? "Target Speed updated" : "Target Acceleration updated");
 
                     double newVal;
                     double.TryParse(targetSpeed, out newVal);
-                    PIDList.Throttle.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed;
-                    PIDList.Throttle.GetAsst().BumplessSetPoint = newVal;
+                    if (currentThrottleMode != ThrottleMode.Acceleration)
+                    {
+                        PIDList.Speed.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed;
+                        PIDList.Speed.GetAsst().BumplessSetPoint = newVal;
+                    }
+                    else
+                    {
+                        PIDList.Acceleration.GetAsst().SetPoint = FlightData.acceleration;
+                        PIDList.Acceleration.GetAsst().BumplessSetPoint = newVal;
+                    }
 
-                    currentThrottleMode = lastThrottleMode = ThrottleMode.Velocity; // skip the toggle check so value isn't overwritten
+                    if (currentThrottleMode == ThrottleMode.Disabled)
+                        currentThrottleMode = lastThrottleMode = ThrottleMode.Speed;
 
                     GUI.FocusControl("Target Hdg: ");
                     GUI.UnfocusWindow();
@@ -844,10 +876,12 @@ namespace PilotAssistant
                 targetSpeed = GUILayout.TextField(targetSpeed, GUILayout.Width(78));
                 GUILayout.EndHorizontal();
 
-                drawPIDvalues(PIDList.Throttle, "Speed", "m/s", FlightData.thisVessel.srfSpeed, 2, "Throttle", "", true);
+                if (currentThrottleMode == ThrottleMode.Speed)
+                    drawPIDvalues(PIDList.Speed, "Speed", "m/s", FlightData.thisVessel.srfSpeed, 2, "Accel ", "m/s", true);
+                drawPIDvalues(PIDList.Acceleration, "Acceleration", "m/s", FlightData.acceleration, 1, "Throttle ", "%", true);
                 // can't have people bugging things out now can we...
-                PIDList.Throttle.GetAsst().OutMin = PIDList.Throttle.GetAsst().OutMin.Clamp(-1, 0);
-                PIDList.Throttle.GetAsst().OutMax = PIDList.Throttle.GetAsst().OutMax.Clamp(-1, 0);
+                PIDList.Acceleration.GetAsst().OutMax = PIDList.Speed.GetAsst().OutMax.Clamp(-1, 0);
+                PIDList.Acceleration.GetAsst().OutMax = PIDList.Speed.GetAsst().OutMax.Clamp(-1, 0);
             }
 
             #endregion

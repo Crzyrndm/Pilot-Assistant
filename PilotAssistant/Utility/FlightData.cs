@@ -15,6 +15,8 @@ namespace PilotAssistant.Utility
         public static double heading = 0;
         public static double progradeHeading = 0;
         public static double vertSpeed = 0;
+        public static double acceleration = 0;
+        static double oldSpd = 0;
 
         public static Vector3d lastPlanetUp = Vector3d.zero;
         public static Vector3d planetUp = Vector3d.zero;
@@ -35,6 +37,7 @@ namespace PilotAssistant.Utility
             // Called in PilotAssistant.OnPreAutoPilotUpdate. Do not call multiple times per physics frame or the "lastPlanetUp" vector will not be correct and VSpeed will not be calculated correctly
             // Can't just leave it to a Coroutine becuase it has to be called before anything else
             velocity = thisVessel.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
+            acceleration = (thisVessel.srfSpeed - oldSpd) / TimeWarp.fixedDeltaTime;
             vertSpeed = Vector3d.Dot((planetUp + lastPlanetUp) / 2, velocity);
 
             // surface vectors
@@ -72,6 +75,8 @@ namespace PilotAssistant.Utility
             }
             else
                 AoA = yaw = 0;
+
+            oldSpd = thisVessel.srfSpeed;
         }
     }
 }

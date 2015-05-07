@@ -60,7 +60,8 @@ namespace PilotAssistant
         const string altCtrlr = "AltitudeController";
         const string vertCtrlr = "AoAController";
         const string elevCtrlr = "ElevatorController";
-        const string throttleCtrlr = "ThrottleController";
+        const string speedCtrlr = "SpeedController";
+        const string accelCtrlr = "AccelController";
 
         const string pGain = "PGain";
         const string iGain = "IGain";
@@ -117,7 +118,8 @@ namespace PilotAssistant
                 gains.Add(controllerGains(node.GetNode(altCtrlr), PIDList.Altitude));
                 gains.Add(controllerGains(node.GetNode(vertCtrlr), PIDList.VertSpeed));
                 gains.Add(controllerGains(node.GetNode(elevCtrlr), PIDList.Elevator));
-                gains.Add(controllerGains(node.GetNode(throttleCtrlr), PIDList.Throttle));
+                gains.Add(controllerGains(node.GetNode(speedCtrlr), PIDList.Speed));
+                gains.Add(controllerGains(node.GetNode(accelCtrlr), PIDList.Acceleration));
 
                 if (node.GetValue("name") == asstDefaultName)
                     asstDefault = new AsstPreset(gains, node.GetValue("name"));
@@ -305,8 +307,10 @@ namespace PilotAssistant
                     return PilotAssistant.defaultVSpeedGains;
                 case PIDList.Elevator:
                     return PilotAssistant.defaultElevatorGains;
-                case PIDList.Throttle:
-                    return PilotAssistant.defaultThrottleGains;
+                case PIDList.Speed:
+                    return PilotAssistant.defaultSpeedGains;
+                case PIDList.Acceleration:
+                    return PilotAssistant.defaultAccelGains;
                 default:
                     return PilotAssistant.defaultAileronGains;
             }
@@ -354,7 +358,8 @@ namespace PilotAssistant
             node.AddNode(PIDnode(altCtrlr, (int)PIDList.Altitude, preset));
             node.AddNode(PIDnode(vertCtrlr, (int)PIDList.VertSpeed, preset));
             node.AddNode(PIDnode(elevCtrlr, (int)PIDList.Elevator, preset));
-            node.AddNode(PIDnode(throttleCtrlr, (int)PIDList.Throttle, preset));
+            node.AddNode(PIDnode(speedCtrlr, (int)PIDList.Speed, preset));
+            node.AddNode(PIDnode(accelCtrlr, (int)PIDList.Acceleration, preset));
 
             return node;
         }

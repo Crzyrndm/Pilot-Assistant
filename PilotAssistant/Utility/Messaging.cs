@@ -15,7 +15,6 @@ namespace PilotAssistant.Utility
         public static ScreenMessage StockSASPresetMessage = new ScreenMessage("Stock SAS active preset loaded", 3, ScreenMessageStyle.UPPER_RIGHT);
         public static ScreenMessage SSASArmedMessage = new ScreenMessage("Surface SAS Armed", 3, ScreenMessageStyle.UPPER_RIGHT);
         public static ScreenMessage SSASDisArmedMessage = new ScreenMessage("Surface SAS Disarmed and Deactivated", 3, ScreenMessageStyle.UPPER_RIGHT);
-        public static ScreenMessage derpMessage = new ScreenMessage("Idiot, this isn't a valid number", 3, ScreenMessageStyle.UPPER_RIGHT);
 
         public static void postMessage(ScreenMessage msg)
         {
@@ -25,11 +24,6 @@ namespace PilotAssistant.Utility
         public static void postMessage(string message)
         {
             ScreenMessages.PostScreenMessage(message);
-        }
-
-        public static bool checkAssistantActive()
-        {
-            return (PilotAssistant.Instance.currentHrztMode != HrztMode.Disabled || PilotAssistant.Instance.currentVertMode != VertMode.Disabled || PilotAssistant.Instance.currentThrottleMode != ThrottleMode.Disabled);
         }
     }
 }
