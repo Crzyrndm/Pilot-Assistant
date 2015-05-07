@@ -899,15 +899,15 @@ namespace PilotAssistant
                 doublesided = GUILayout.Toggle(doublesided, "Separate Min and Max limits", GUILayout.Width(200));
                 showTooltips = GUILayout.Toggle(showTooltips, "Show Tooltips", GUILayout.Width(200));
 
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Input delay", GUILayout.Width(98));
-                string text = GUILayout.TextField(commitDelay.ToString("0.0"), GUILayout.Width(98));
-                try
-                {
-                    commitDelay = double.Parse(text);
-                }
-                catch { } // if the conversion fails it just reverts to the last good value. No need for further action
-                GUILayout.EndHorizontal();
+                //GUILayout.BeginHorizontal();
+                //GUILayout.Label("Input delay", GUILayout.Width(98));
+                //string text = GUILayout.TextField(commitDelay.ToString("0.0"), GUILayout.Width(98));
+                //try
+                //{
+                //    commitDelay = double.Parse(text);
+                //}
+                //catch { } // if the conversion fails it just reverts to the last good value. No need for further action
+                //GUILayout.EndHorizontal();
             }
 
             GUI.DragWindow();
