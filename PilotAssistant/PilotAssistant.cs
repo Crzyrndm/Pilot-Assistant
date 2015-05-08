@@ -26,6 +26,7 @@ namespace PilotAssistant
 
     public enum VertMode
     {
+        ToggleOn = -2,
         Disabled = -1,
         VSpeed = 0,
         Altitude = 1,
@@ -34,6 +35,7 @@ namespace PilotAssistant
 
     public enum HrztMode
     {
+        ToggleOn = -2,
         Disabled = -1,
         WingsLevel = 0,
         Heading = 1
@@ -41,6 +43,7 @@ namespace PilotAssistant
 
     public enum ThrottleMode
     {
+        ToggleOn = -2,
         Disabled = -1,
         Speed = 0,
         Acceleration = 1
@@ -62,14 +65,17 @@ namespace PilotAssistant
 
         public HrztMode currentHrztMode = HrztMode.Disabled;
         HrztMode lastHrztMode = HrztMode.Disabled;
+        HrztMode lastActiveHrztMode = HrztMode.Heading;
         GUIContent[] hrztLabels = new GUIContent[2] { new GUIContent("Lvl", "Mode: Wing Leveller"), new GUIContent("Hdg", "Mode: Heading Control") };
 
         public VertMode currentVertMode = VertMode.Disabled;
         VertMode lastVertMode = VertMode.Disabled;
+        VertMode lastActiveVertMode = VertMode.VSpeed;
         GUIContent[] vertLabels = new GUIContent[2] { new GUIContent("VSpeed", "Mode: Vertical Speed Control"), new GUIContent("Alt", "Mode: Altitude Control") };
 
         public ThrottleMode currentThrottleMode = ThrottleMode.Disabled;
         ThrottleMode lastThrottleMode = ThrottleMode.Disabled;
+        ThrottleMode lastActiveThrottleMode = ThrottleMode.Speed;
         GUIContent[] throttleLabels = new GUIContent[2] { new GUIContent("Vel", "Mode: Velocity Control"), new GUIContent("Acc", "Mode: Acceleration Control") };
 
         public Rect window = new Rect(10, 130, 10, 10);
@@ -383,16 +389,21 @@ namespace PilotAssistant
             }
 
             if (Input.GetKeyDown(KeyCode.Keypad9) && GameSettings.MODIFIER_KEY.GetKey())
-                currentHrztMode = (currentHrztMode == HrztMode.Disabled) ? HrztMode.Heading : HrztMode.Disabled;
+                currentHrztMode = (currentHrztMode == HrztMode.Disabled) ? lastActiveHrztMode : HrztMode.Disabled;
             if (Input.GetKeyDown(KeyCode.Keypad6) && GameSettings.MODIFIER_KEY.GetKey())
-                currentVertMode = (currentVertMode == VertMode.Disabled) ? VertMode.VSpeed : VertMode.Disabled;
+                currentVertMode = (currentVertMode == VertMode.Disabled) ? lastActiveVertMode : VertMode.Disabled;
             if (Input.GetKeyDown(KeyCode.Keypad3) && GameSettings.MODIFIER_KEY.GetKey())
-                currentThrottleMode = currentThrottleMode == ThrottleMode.Disabled ? ThrottleMode.Speed : ThrottleMode.Disabled;
+                currentThrottleMode = currentThrottleMode == ThrottleMode.Disabled ? lastActiveThrottleMode : ThrottleMode.Disabled;
         }
 
         private void hdgToggle()
         {
             headingEdit = false;
+
+            if (lastHrztMode == HrztMode.Disabled)
+                return;
+            else if (currentHrztMode != HrztMode.Disabled)
+                lastActiveHrztMode = currentHrztMode;
 
             PIDList.HdgBank.GetAsst().skipDerivative = true;
             PIDList.BankToYaw.GetAsst().skipDerivative = true;
@@ -422,6 +433,11 @@ namespace PilotAssistant
 
         private void vertToggle()
         {
+            if (lastVertMode == VertMode.Disabled)
+                return;
+            else if (currentVertMode != VertMode.Disabled)
+                lastActiveVertMode = currentVertMode;
+
             PIDList.VertSpeed.GetAsst().skipDerivative = true;
             PIDList.Elevator.GetAsst().skipDerivative = true;
             PIDList.Altitude.GetAsst().skipDerivative = true;
@@ -462,17 +478,22 @@ namespace PilotAssistant
                         break;
                     }
             }
-
             lastVertMode = currentVertMode;
         }
 
         private void throttleToggle()
         {
+            if (lastThrottleMode == ThrottleMode.Disabled)
+                return;
+            else if (currentThrottleMode != ThrottleMode.Disabled)
+                lastActiveThrottleMode = currentThrottleMode;
+
             switch (currentThrottleMode)
             {
                 case ThrottleMode.Disabled:
                     {
                         PIDList.Speed.GetAsst().Clear();
+                        PIDList.Acceleration.GetAsst().Clear();
                         break;
                     }
                 case ThrottleMode.Speed:
@@ -501,6 +522,8 @@ namespace PilotAssistant
                 return;
 
             FlightData.updateAttitude();
+
+            //Debug.Log(findTerrainDistAtAngle(30, 10000, true));
         }
 
         private void vesselController(FlightCtrlState state)
@@ -515,7 +538,7 @@ namespace PilotAssistant
                 return;
 
             // Heading Control
-            if (currentHrztMode != HrztMode.Disabled)
+            if (lastHrztMode != HrztMode.Disabled)
             {
                 if (currentHrztMode == HrztMode.Heading)
                 {
@@ -550,7 +573,7 @@ namespace PilotAssistant
                 }
             }
 
-            if (currentVertMode != VertMode.Disabled)
+            if (lastVertMode != VertMode.Disabled)
             {
                 // Set requested vertical speed
                 if (currentVertMode == VertMode.Altitude)
@@ -560,7 +583,7 @@ namespace PilotAssistant
                 state.pitch = -PIDList.Elevator.GetAsst().ResponseF(FlightData.AoA).Clamp(-1, 1);
             }
 
-            if (currentThrottleMode != ThrottleMode.Disabled)
+            if (lastThrottleMode != ThrottleMode.Disabled)
             {
                 if (currentThrottleMode == ThrottleMode.Speed)
                 {
@@ -604,6 +627,44 @@ namespace PilotAssistant
                 currentDirectionTarget = newDirectionTarget;
             hdgShiftIsRunning = false;
         }
+
+        GameObject lineRendererObj;
+        LineRenderer line;
+        /// <summary>
+        /// raycast from 50m infront of vessel CoM along the given angle, returns the distance at which terrain is detected (-1 if never detected)
+        /// </summary>
+        float findTerrainDistAtAngle(float angle, float maxDist = 10000, bool debug = false)
+        {
+            Vector3 direction = Quaternion.AngleAxis(angle, -FlightData.thisVessel.ReferenceTransform.right) * FlightData.thisVessel.vesselTransform.up;
+            Vector3 origin = FlightData.thisVessel.localCoM + FlightData.thisVessel.ReferenceTransform.up * 50; // CoM vs. local CoM? Can I do something smart about the fixed 50m offset?
+            float distance = -1;
+            RaycastHit hitInfo;
+            if (Physics.Raycast(origin, direction, out hitInfo, maxDist))
+            {
+                distance = hitInfo.distance;
+                if (debug)
+                {
+                    if (lineRendererObj == null)
+                        lineRendererObj = new GameObject("Line");
+                    if (line == null)
+                    {
+                        line = lineRendererObj.AddComponent<LineRenderer>();
+                        line.transform.parent = FlightData.thisVessel.rootPart.transform;
+                        line.useWorldSpace = false;
+                        line.transform.localEulerAngles = Vector3.zero;
+                        line.transform.localPosition = Vector3.zero;
+                        line.material = new Material(Shader.Find("Particles/Additive"));
+                        line.SetColors(Color.red, Color.green);
+                        line.SetWidth(1, 1);
+                        line.SetVertexCount(2);
+                    }
+                    line.SetPosition(0, FlightData.thisVessel.localCoM);
+                    line.SetPosition(1, FlightData.thisVessel.localCoM + FlightData.thisVessel.vesselTransform.up * 10);
+                }
+            }
+            return distance;
+        }
+
         #endregion
 
         #region GUI
@@ -627,9 +688,9 @@ namespace PilotAssistant
             if (bShowHdg)
             {
                 hdgScrollHeight = 0; // no controllers visible when in wing lvl mode unless ctrl surf's are there
-                if (currentHrztMode != HrztMode.WingsLevel)
+                if (lastActiveHrztMode != HrztMode.WingsLevel)
                     hdgScrollHeight += 55; // hdg & yaw headers
-                if ((PIDList.HdgBank.GetAsst().bShow || PIDList.BankToYaw.GetAsst().bShow) && currentHrztMode != HrztMode.WingsLevel)
+                if ((PIDList.HdgBank.GetAsst().bShow || PIDList.BankToYaw.GetAsst().bShow) && lastActiveHrztMode != HrztMode.WingsLevel)
                     hdgScrollHeight += 150; // open controller
                 else if (showControlSurfaces)
                 {
@@ -641,7 +702,7 @@ namespace PilotAssistant
             if (bShowVert)
             {
                 vertScrollHeight = 38; // Vspeed header
-                if (currentVertMode == VertMode.Altitude)
+                if (lastActiveVertMode == VertMode.Altitude)
                     vertScrollHeight += 27; // altitude header
                 if ((PIDList.Altitude.GetAsst().bShow && currentVertMode == VertMode.Altitude) || PIDList.VertSpeed.GetAsst().bShow)
                     vertScrollHeight += 150; // open  controller
@@ -687,12 +748,25 @@ namespace PilotAssistant
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
             bShowHdg = GUILayout.Toggle(bShowHdg, bShowHdg ? "-" : "+", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(20));
 
-            if (currentHrztMode != HrztMode.Disabled)
+            if (lastHrztMode != HrztMode.Disabled)
                 GUI.backgroundColor = GeneralUI.ActiveBackground;
             else
                 GUI.backgroundColor = GeneralUI.InActiveBackground;
             if (GUILayout.Button("Roll and Yaw Control", GUILayout.Width(186)))
-                currentHrztMode = (currentHrztMode == HrztMode.Disabled) ? HrztMode.Heading : HrztMode.Disabled;
+            {
+                if (currentHrztMode == HrztMode.Disabled)
+                {
+                    currentHrztMode = lastActiveHrztMode;
+                    lastHrztMode = HrztMode.ToggleOn; // let the toggle check do it's thing
+                }
+                else
+                {
+                    if (lastHrztMode == HrztMode.Disabled)
+                        lastHrztMode = HrztMode.ToggleOn;
+                    else
+                        currentHrztMode = HrztMode.Disabled;
+                }
+            }
 
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
@@ -710,7 +784,10 @@ namespace PilotAssistant
                         if (double.TryParse(targetHeading, out newHdg))
                         {
                             StartCoroutine(shiftHeadingTarget(newHdg.headingClamp(360)));
-                            currentHrztMode = lastHrztMode = HrztMode.Heading; // skip toggle check to avoid being overwritten
+                            if (lastHrztMode == HrztMode.Disabled)
+                                currentHrztMode = lastHrztMode = lastActiveHrztMode; // skip toggle check to avoid being overwritten
+                            else
+                                lastHrztMode = currentHrztMode;
 
                             GUI.FocusControl("Target Hdg: ");
                             GUI.UnfocusWindow();
@@ -774,12 +851,25 @@ namespace PilotAssistant
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
             bShowVert = GUILayout.Toggle(bShowVert, bShowVert ? "-" : "+", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(20));
 
-            if (currentVertMode != VertMode.Disabled)
+            if (lastVertMode != VertMode.Disabled)
                 GUI.backgroundColor = GeneralUI.ActiveBackground;
             else
                 GUI.backgroundColor = GeneralUI.InActiveBackground;
             if (GUILayout.Button("Vertical Control", GUILayout.Width(186)))
-                currentVertMode = (currentVertMode == VertMode.Disabled) ? VertMode.VSpeed : VertMode.Disabled;
+            {
+                if (currentVertMode == VertMode.Disabled)
+                {
+                    currentVertMode = lastActiveVertMode;
+                    lastVertMode = VertMode.ToggleOn;
+                }
+                else
+                {
+                    if (lastVertMode == VertMode.Disabled)
+                        lastVertMode = VertMode.ToggleOn;
+                    else
+                        currentVertMode = VertMode.Disabled;
+                }
+            }
            
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
@@ -806,7 +896,10 @@ namespace PilotAssistant
                         PIDList.VertSpeed.GetAsst().BumplessSetPoint = newVal;
                     }
 
-                    currentVertMode = lastVertMode = currentVertMode == VertMode.Disabled ? VertMode.VSpeed : currentVertMode;
+                    if (currentVertMode == VertMode.Disabled)
+                        currentVertMode = lastVertMode = lastActiveVertMode;
+                    else
+                        lastVertMode = currentVertMode;
 
                     GUI.FocusControl("Target Hdg: ");
                     GUI.UnfocusWindow();
@@ -836,12 +929,25 @@ namespace PilotAssistant
             // button background
             GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
             bShowThrottle = GUILayout.Toggle(bShowThrottle, bShowThrottle ? "-" : "+", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(20));
-            if (currentThrottleMode != ThrottleMode.Disabled)
+            if (lastThrottleMode != ThrottleMode.Disabled)
                 GUI.backgroundColor = GeneralUI.ActiveBackground;
             else
                 GUI.backgroundColor = GeneralUI.InActiveBackground;
             if (GUILayout.Button("Throttle Control", GUILayout.Width(186)))
-                currentThrottleMode = currentThrottleMode == ThrottleMode.Disabled ? ThrottleMode.Speed : ThrottleMode.Disabled;
+            {
+                if (currentThrottleMode == ThrottleMode.Disabled)
+                {
+                    currentThrottleMode = lastActiveThrottleMode;
+                    lastThrottleMode = ThrottleMode.ToggleOn;
+                }
+                else
+                {
+                    if (lastThrottleMode == ThrottleMode.Disabled)
+                        lastThrottleMode = ThrottleMode.ToggleOn;
+                    else
+                        currentThrottleMode = ThrottleMode.Disabled;
+                }
+            }
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             GUILayout.EndHorizontal();
@@ -868,7 +974,9 @@ namespace PilotAssistant
                     }
 
                     if (currentThrottleMode == ThrottleMode.Disabled)
-                        currentThrottleMode = lastThrottleMode = ThrottleMode.Speed;
+                        currentThrottleMode = lastThrottleMode = lastActiveThrottleMode;
+                    else
+                        lastThrottleMode = currentThrottleMode;
 
                     GUI.FocusControl("Target Hdg: ");
                     GUI.UnfocusWindow();

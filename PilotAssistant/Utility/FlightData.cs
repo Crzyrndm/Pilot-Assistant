@@ -37,7 +37,7 @@ namespace PilotAssistant.Utility
             // Called in PilotAssistant.OnPreAutoPilotUpdate. Do not call multiple times per physics frame or the "lastPlanetUp" vector will not be correct and VSpeed will not be calculated correctly
             // Can't just leave it to a Coroutine becuase it has to be called before anything else
             velocity = thisVessel.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
-            acceleration = (thisVessel.srfSpeed - oldSpd) / TimeWarp.fixedDeltaTime;
+            acceleration = acceleration * 0.8 + 0.2 * (thisVessel.srfSpeed - oldSpd) / TimeWarp.fixedDeltaTime;
             vertSpeed = Vector3d.Dot((planetUp + lastPlanetUp) / 2, velocity);
 
             // surface vectors
