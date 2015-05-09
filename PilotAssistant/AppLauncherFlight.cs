@@ -47,7 +47,6 @@ namespace PilotAssistant
                 SurfSAS.Instance.SSASwindow = config.GetValue("SSASWindow", new Rect(500, 300, 0, 0));
                 Stock_SAS.Instance.StockSASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
                 window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
-                PilotAssistant.Instance.commitDelay = double.Parse(config.GetValue("commitDelay", "0.0"));
 
                 OnAppLauncherReady();
             }
@@ -83,7 +82,6 @@ namespace PilotAssistant
                 config["AsstPresetWindow"] = PilotAssistant.Instance.showPresets;
                 config["AsstLimits"] = PilotAssistant.Instance.showPIDLimits;
                 config["AsstControlSurfaces"] = PilotAssistant.Instance.showControlSurfaces;
-                config["commitDelay"] = PilotAssistant.Instance.commitDelay.ToString("0.0");
                 config["SSASWindow"] = SurfSAS.Instance.SSASwindow;
                 config["SASWindow"] = Stock_SAS.Instance.StockSASwindow;
                 config["AppWindow"] = window;
@@ -111,12 +109,24 @@ namespace PilotAssistant
 
         private void OnToggleTrue()
         {
-            bDisplayOptions = true;
+            if (Input.GetMouseButtonUp(0))
+                bDisplayOptions = true;
+            else if (Input.GetMouseButtonUp(1))
+            {
+                bDisplayAssistant = true;
+                if (bDisplayOptions)
+                    btnLauncher.SetTrue(false);
+                else
+                    btnLauncher.SetFalse(false);
+            }
         }
 
         private void OnToggleFalse()
         {
-            bDisplayOptions = false;
+            if (Input.GetMouseButtonUp(0))
+                bDisplayOptions = false;
+            else if (Input.GetMouseButtonUp(1))
+                bDisplayAssistant = true;
         }
 
         private void Draw()

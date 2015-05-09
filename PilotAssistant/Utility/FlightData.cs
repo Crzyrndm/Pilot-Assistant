@@ -8,6 +8,7 @@ namespace PilotAssistant.Utility
     {
         public static Vessel thisVessel;
 
+        public static double radarAlt = 0;
         public static double pitch = 0;
         public static double bank = 0;
         public static double yaw = 0;
@@ -36,6 +37,7 @@ namespace PilotAssistant.Utility
             // 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
             // Called in PilotAssistant.OnPreAutoPilotUpdate. Do not call multiple times per physics frame or the "lastPlanetUp" vector will not be correct and VSpeed will not be calculated correctly
             // Can't just leave it to a Coroutine becuase it has to be called before anything else
+            radarAlt = thisVessel.altitude - (thisVessel.mainBody.ocean ? Math.Max(thisVessel.pqsAltitude, 0) : thisVessel.pqsAltitude);
             velocity = thisVessel.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
             acceleration = acceleration * 0.8 + 0.2 * (thisVessel.srfSpeed - oldSpd) / TimeWarp.fixedDeltaTime;
             vertSpeed = Vector3d.Dot((planetUp + lastPlanetUp) / 2, velocity);
@@ -47,9 +49,9 @@ namespace PilotAssistant.Utility
             planetNorth = Vector3d.Cross(planetUp, planetEast).normalized;
             // Velocity forward and right parallel to the surface
             surfVelForward = (thisVessel.srf_velocity - thisVessel.verticalSpeed * planetUp).normalized;
-            surfVelRight = Vector3d.Cross(planetUp, surfVelForward).normalized;
+            surfVelRight = Vector3d.Cross(planetUp, surfVelForward).normalized; // actually, this is probably left...
             // Vessel forward and right vetors, parallel to the surface
-            surfVesRight = Vector3d.Cross(planetUp, thisVessel.ReferenceTransform.up).normalized;
+            surfVesRight = Vector3d.Cross(planetUp, thisVessel.ReferenceTransform.up).normalized; // also probably left
             surfVesForward = Vector3d.Cross(planetUp, surfVesRight).normalized;
 
             pitch = 90 - Vector3d.Angle(planetUp, thisVessel.ReferenceTransform.up);

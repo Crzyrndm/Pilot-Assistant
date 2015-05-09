@@ -71,7 +71,7 @@ namespace PilotAssistant
         public VertMode currentVertMode = VertMode.Disabled;
         VertMode lastVertMode = VertMode.Disabled;
         VertMode lastActiveVertMode = VertMode.VSpeed;
-        GUIContent[] vertLabels = new GUIContent[2] { new GUIContent("VSpeed", "Mode: Vertical Speed Control"), new GUIContent("Alt", "Mode: Altitude Control") };
+        GUIContent[] vertLabels = new GUIContent[3] { new GUIContent("VSpd", "Mode: Vertical Speed Control"), new GUIContent("Alt", "Mode: Altitude Control"), new GUIContent("RAlt", "Mode: Radar Altitude Control") };
 
         public ThrottleMode currentThrottleMode = ThrottleMode.Disabled;
         ThrottleMode lastThrottleMode = ThrottleMode.Disabled;
@@ -162,7 +162,6 @@ namespace PilotAssistant
             FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(vesselController);
             GameEvents.onVesselChange.Add(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Add(warpHandler);
-
             // add GUI callback
             RenderingManager.AddToPostDrawQueue(5, drawGUI);
 
@@ -254,6 +253,7 @@ namespace PilotAssistant
         {
             while (HighLogic.LoadedSceneIsFlight)
             {
+                Debug.Log("input");
                 yield return null;
                 if (!Utils.AsstIsPaused())
                 {
@@ -474,6 +474,8 @@ namespace PilotAssistant
                     }
                 case VertMode.RadarAltitude:
                     {
+                        PIDList.Altitude.GetAsst().SetPoint = FlightData.radarAlt;
+                        targetVert = FlightData.radarAlt.ToString("0.00");
                         bPause = false;
                         break;
                     }
@@ -520,10 +522,7 @@ namespace PilotAssistant
                 return;
             if (FlightData.thisVessel == null)
                 return;
-
             FlightData.updateAttitude();
-
-            //Debug.Log(findTerrainDistAtAngle(30, 10000, true));
         }
 
         private void vesselController(FlightCtrlState state)
@@ -531,7 +530,7 @@ namespace PilotAssistant
             if (!HighLogic.LoadedSceneIsFlight)
                 return;
             if (FlightData.thisVessel == null)
-                vesselSwitch(FlightGlobals.ActiveVessel);
+                return;
 
             pitchSet = state.pitch; // last pitch ouput, used for presetting the elevator
             if (Utils.AsstIsPaused() || FlightData.thisVessel.srfSpeed < 1 || !FlightData.thisVessel.IsControllable)
@@ -575,11 +574,17 @@ namespace PilotAssistant
 
             if (lastVertMode != VertMode.Disabled)
             {
-                // Set requested vertical speed
-                if (currentVertMode == VertMode.Altitude)
-                    PIDList.VertSpeed.GetAsst().SetPoint = -PIDList.Altitude.GetAsst().ResponseD(FlightData.thisVessel.altitude);
-
-                PIDList.Elevator.GetAsst().SetPoint = -PIDList.VertSpeed.GetAsst().ResponseD(FlightData.vertSpeed);
+                if (currentVertMode != VertMode.RadarAltitude)
+                {
+                    if (currentVertMode == VertMode.Altitude)
+                        PIDList.VertSpeed.GetAsst().SetPoint = -PIDList.Altitude.GetAsst().ResponseD(FlightData.thisVessel.altitude);
+                    PIDList.Elevator.GetAsst().SetPoint = -PIDList.VertSpeed.GetAsst().ResponseD(FlightData.vertSpeed);
+                }
+                else
+                {
+                    PIDList.VertSpeed.GetAsst().SetPoint = getClimbRateForConstAltitude() - PIDList.Altitude.GetAsst().ResponseD(FlightData.radarAlt);
+                    PIDList.Elevator.GetAsst().SetPoint = -PIDList.VertSpeed.GetAsst().ResponseD(FlightData.vertSpeed);
+                }
                 state.pitch = -PIDList.Elevator.GetAsst().ResponseF(FlightData.AoA).Clamp(-1, 1);
             }
 
@@ -628,41 +633,39 @@ namespace PilotAssistant
             hdgShiftIsRunning = false;
         }
 
-        GameObject lineRendererObj;
-        LineRenderer line;
-        /// <summary>
-        /// raycast from 50m infront of vessel CoM along the given angle, returns the distance at which terrain is detected (-1 if never detected)
-        /// </summary>
-        float findTerrainDistAtAngle(float angle, float maxDist = 10000, bool debug = false)
+        double getClimbRateForConstAltitude()
         {
-            Vector3 direction = Quaternion.AngleAxis(angle, -FlightData.thisVessel.ReferenceTransform.right) * FlightData.thisVessel.vesselTransform.up;
-            Vector3 origin = FlightData.thisVessel.localCoM + FlightData.thisVessel.ReferenceTransform.up * 50; // CoM vs. local CoM? Can I do something smart about the fixed 50m offset?
-            float distance = -1;
+            return terrainSlope(75) * FlightData.thisVessel.horizontalSrfSpeed;
+        }
+
+        /// <summary>
+        /// returns slope as the ratio of vertical distance to horizontal distance (ie. meters of rise per meter forward) between ground directly below and ground x degrees ahead
+        /// </summary>
+        double terrainSlope(double angle)
+        {
+            double RayDist = findTerrainDistAtAngle((float)angle, 10000);
+            double AltAhead = RayDist * Math.Cos(angle * Math.PI / 180);
+            if (FlightData.thisVessel.mainBody.ocean)
+                AltAhead = Math.Min(AltAhead, FlightData.thisVessel.altitude);
+            double DistAhead = AltAhead * Math.Tan(angle * Math.PI / 180);
+            Debug.Log("Alt: " + AltAhead);
+            Debug.Log("Dist: " + DistAhead);
+
+            return (FlightData.radarAlt - AltAhead) / DistAhead;
+        }
+
+        /// <summary>
+        /// raycast from vessel CoM along the given angle, returns the distance at which terrain is detected (-1 if never detected). Angle is degrees to rotate forwards from vertical
+        /// </summary>
+        float findTerrainDistAtAngle(float angle, float maxDist)
+        {
+            Vector3 direction = Quaternion.AngleAxis(angle, -FlightData.surfVelRight) * -FlightData.planetUp;
+            Vector3 origin = FlightData.thisVessel.CoM;
             RaycastHit hitInfo;
-            if (Physics.Raycast(origin, direction, out hitInfo, maxDist))
-            {
-                distance = hitInfo.distance;
-                if (debug)
-                {
-                    if (lineRendererObj == null)
-                        lineRendererObj = new GameObject("Line");
-                    if (line == null)
-                    {
-                        line = lineRendererObj.AddComponent<LineRenderer>();
-                        line.transform.parent = FlightData.thisVessel.rootPart.transform;
-                        line.useWorldSpace = false;
-                        line.transform.localEulerAngles = Vector3.zero;
-                        line.transform.localPosition = Vector3.zero;
-                        line.material = new Material(Shader.Find("Particles/Additive"));
-                        line.SetColors(Color.red, Color.green);
-                        line.SetWidth(1, 1);
-                        line.SetVertexCount(2);
-                    }
-                    line.SetPosition(0, FlightData.thisVessel.localCoM);
-                    line.SetPosition(1, FlightData.thisVessel.localCoM + FlightData.thisVessel.vesselTransform.up * 10);
-                }
-            }
-            return distance;
+            Debug.Log("raycast");
+            if (FlightGlobals.ready && Physics.Raycast(origin, direction, out hitInfo, maxDist, ~1)) // ~1 masks off layer 0 which is apparently the parts on the current vessel. Seems to work
+                return hitInfo.distance;
+            return -1;
         }
 
         #endregion
@@ -688,10 +691,12 @@ namespace PilotAssistant
             if (bShowHdg)
             {
                 hdgScrollHeight = 0; // no controllers visible when in wing lvl mode unless ctrl surf's are there
-                if (lastActiveHrztMode != HrztMode.WingsLevel)
+                if (currentHrztMode != HrztMode.WingsLevel)
+                {
                     hdgScrollHeight += 55; // hdg & yaw headers
-                if ((PIDList.HdgBank.GetAsst().bShow || PIDList.BankToYaw.GetAsst().bShow) && lastActiveHrztMode != HrztMode.WingsLevel)
-                    hdgScrollHeight += 150; // open controller
+                    if ((PIDList.HdgBank.GetAsst().bShow || PIDList.BankToYaw.GetAsst().bShow))
+                        hdgScrollHeight += 150; // open controller
+                }
                 else if (showControlSurfaces)
                 {
                     hdgScrollHeight += 50; // aileron and rudder headers
@@ -702,7 +707,7 @@ namespace PilotAssistant
             if (bShowVert)
             {
                 vertScrollHeight = 38; // Vspeed header
-                if (lastActiveVertMode == VertMode.Altitude)
+                if (currentVertMode == VertMode.Altitude)
                     vertScrollHeight += 27; // altitude header
                 if ((PIDList.Altitude.GetAsst().bShow && currentVertMode == VertMode.Altitude) || PIDList.VertSpeed.GetAsst().bShow)
                     vertScrollHeight += 150; // open  controller
@@ -877,11 +882,19 @@ namespace PilotAssistant
 
             if (bShowVert)
             {
-                currentVertMode = (VertMode)GUILayout.SelectionGrid((int)currentVertMode, vertLabels, 2, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
+                currentVertMode = (VertMode)GUILayout.SelectionGrid((int)currentVertMode, vertLabels, 3, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button(currentVertMode == VertMode.Altitude ? "Target Altitude:" : "Target Speed:", GUILayout.Width(98)))
+                string buttonString = "Target ";
+                if (lastActiveVertMode == VertMode.VSpeed)
+                    buttonString += "Speed";
+                else if (lastActiveVertMode == VertMode.Altitude)
+                    buttonString += "Altitude";
+                else if (lastActiveVertMode == VertMode.RadarAltitude)
+                    buttonString += "Radar Alt";
+
+                if (GUILayout.Button(buttonString, GUILayout.Width(98)))
                 {
-                    ScreenMessages.PostScreenMessage("Target " + (currentVertMode == VertMode.Altitude ? "Altitude" : "Vertical Speed") + " updated");
+                    ScreenMessages.PostScreenMessage(buttonString + " updated");
 
                     double newVal;
                     double.TryParse(targetVert, out newVal);
@@ -909,7 +922,7 @@ namespace PilotAssistant
 
                 scrollbarVert = GUILayout.BeginScrollView(scrollbarVert, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(vertScrollHeight));
 
-                if (currentVertMode == VertMode.Altitude)
+                if (currentVertMode == VertMode.Altitude || currentVertMode == VertMode.RadarAltitude)
                     drawPIDvalues(PIDList.Altitude, "Altitude", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true);
                 drawPIDvalues(PIDList.VertSpeed, "Vertical Speed", "m/s", FlightData.vertSpeed, 2, "AoA", "\u00B0", true);
 
