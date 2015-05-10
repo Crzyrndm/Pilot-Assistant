@@ -126,7 +126,13 @@ namespace PilotAssistant
             if (Input.GetMouseButtonUp(0))
                 bDisplayOptions = false;
             else if (Input.GetMouseButtonUp(1))
+            {
                 bDisplayAssistant = true;
+                if (bDisplayOptions)
+                    btnLauncher.SetTrue(false);
+                else
+                    btnLauncher.SetFalse(false);
+            }
         }
 
         private void Draw()
