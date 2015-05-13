@@ -12,7 +12,8 @@ namespace PilotAssistant.Utility
         btnPlus,
         btnMinus,
         btnToggle,
-        greenTextBox
+        greenTextBox,
+        redButtonText
     }
 
     static class GeneralUI
@@ -81,6 +82,13 @@ namespace PilotAssistant.Utility
             UISkin.customStyles[(int)myStyles.greenTextBox] = new GUIStyle(UISkin.textArea);
             UISkin.customStyles[(int)myStyles.greenTextBox].active.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].hover.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].focused.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].normal.textColor
                 = UISkin.customStyles[(int)myStyles.greenTextBox].onActive.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].onHover.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].onFocused.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].onNormal.textColor = XKCDColors.Green;
+
+            UISkin.customStyles[(int)myStyles.redButtonText] = new GUIStyle(UISkin.button);
+            UISkin.customStyles[(int)myStyles.redButtonText].active.textColor = UISkin.customStyles[(int)myStyles.redButtonText].hover.textColor = UISkin.customStyles[(int)myStyles.redButtonText].focused.textColor = UISkin.customStyles[(int)myStyles.redButtonText].normal.textColor
+                = UISkin.customStyles[(int)myStyles.redButtonText].onActive.textColor = UISkin.customStyles[(int)myStyles.redButtonText].onHover.textColor = UISkin.customStyles[(int)myStyles.redButtonText].onFocused.textColor = UISkin.customStyles[(int)myStyles.redButtonText].onNormal.textColor = XKCDColors.Red;
+
+            UISkin.box.onActive.background = UISkin.box.onFocused.background = UISkin.box.onHover.background = UISkin.box.onNormal.background =
+                UISkin.box.active.background = UISkin.box.focused.background = UISkin.box.hover.background = UISkin.box.normal.background = UISkin.window.normal.background;
         }
 
         /// <summary>
@@ -164,5 +172,16 @@ namespace PilotAssistant.Utility
             GUILayout.EndHorizontal();
             return val;
         }
+
+        //private static Texture2D alphaShift(this Texture2D tex, float shift)
+        //{
+        //    Texture2D newTex = (Texture2D)MonoBehaviour.Instantiate(tex);
+        //    Color32[] pixels = tex.GetPixels32();
+        //    for (int i = 0; i < pixels.Length; i++)
+        //        pixels[i].a = (byte)Mathf.Clamp(pixels[i].a * shift, 0, 255);
+        //    tex.SetPixels32(pixels);
+        //    tex.Apply();
+        //    return tex;
+        //}
     }
 }

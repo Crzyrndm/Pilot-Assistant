@@ -59,6 +59,7 @@ namespace PilotAssistant
         public PID_Controller[] controllers = new PID_Controller[9];
 
         public bool bPause = false;
+        public bool bLockInput = false;
 
         public bool HrztActive = false;
         public HrztMode CurrentHrztMode = HrztMode.Heading;
@@ -86,6 +87,9 @@ namespace PilotAssistant
         string targetVert = "0.00";
         string targetHeading = "0.00";
         string targetSpeed = "0.00";
+
+        const string yawLockID = "Pilot Assistant Yaw Lock";
+        const string pitchLockID = "Pilot Assistant Pitch Lock";
 
         // rate values for keyboard input
         double hrztScale = 0.4;
@@ -238,99 +242,102 @@ namespace PilotAssistant
             while (HighLogic.LoadedSceneIsFlight)
             {
                 yield return null;
-                if (!Utils.AsstIsPaused())
+                if (!bLockInput)
                 {
-                    double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1; // normally *1, with alt is *10
-                    if (FlightInputHandler.fetch.precisionMode)
-                        scale = 0.1 / scale; // normally *0.1, with alt is *0.01
-
-                    // ============================================================ Hrzt Controls ============================================================
-                    if (HrztActive && !FlightData.thisVessel.checkLanded())
+                    if (!Utils.AsstIsPaused())
                     {
-                        if (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_YAW))
-                        {
-                            if (GameSettings.YAW_LEFT.GetKey())
-                                headingChangeToCommit -= hrztScale * scale;
-                            else if (GameSettings.YAW_RIGHT.GetKey())
-                                headingChangeToCommit += hrztScale * scale;
-                            else
-                                headingChangeToCommit += hrztScale * scale * GameSettings.AXIS_YAW.GetAxis();
+                        double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1; // normally *1, with alt is *10
+                        if (FlightInputHandler.fetch.precisionMode)
+                            scale = 0.1 / scale; // normally *0.1, with alt is *0.01
 
-                            headingChangeToCommit = headingChangeToCommit.headingClamp(180);
-                            headingTimeToCommit = commitDelay;
+                        // ============================================================ Hrzt Controls ============================================================
+                        if (HrztActive && !FlightData.thisVessel.checkLanded())
+                        {
+                            if (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_YAW))
+                            {
+                                if (GameSettings.YAW_LEFT.GetKey())
+                                    headingChangeToCommit -= hrztScale * scale;
+                                else if (GameSettings.YAW_RIGHT.GetKey())
+                                    headingChangeToCommit += hrztScale * scale;
+                                else
+                                    headingChangeToCommit += hrztScale * scale * GameSettings.AXIS_YAW.GetAxis();
+
+                                headingChangeToCommit = headingChangeToCommit.headingClamp(180);
+                                headingTimeToCommit = commitDelay;
+                            }
+
+                            if (headingTimeToCommit <= 0 && headingChangeToCommit != 0)
+                            {
+                                StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newDirectionTarget) + headingChangeToCommit));
+
+                                headingChangeToCommit = 0;
+                            }
+                            else if (headingTimeToCommit > 0)
+                                headingTimeToCommit -= TimeWarp.deltaTime;
                         }
-
-                        if (headingTimeToCommit <= 0 && headingChangeToCommit != 0)
-                        {
-                            StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newDirectionTarget) + headingChangeToCommit));
-
+                        else
                             headingChangeToCommit = 0;
-                        }
-                        else if (headingTimeToCommit > 0)
-                            headingTimeToCommit -= TimeWarp.deltaTime;
-                    }
-                    else
-                        headingChangeToCommit = 0;
 
-                    // ============================================================ Vertical Controls ============================================================
-                    if (VertActive && (GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_PITCH)))
-                    {
-                        double vert = 0; // = double.Parse(targetVert);
-                        if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
-                            vert = PIDList.Altitude.GetAsst().SetPoint / 10;
-                        else if (CurrentVertMode == VertMode.VSpeed)
-                            vert = PIDList.VertSpeed.GetAsst().SetPoint;
-
-                        if (GameSettings.PITCH_DOWN.GetKey())
-                            vert -= vertScale * scale;
-                        else if (GameSettings.PITCH_UP.GetKey())
-                            vert += vertScale * scale;
-                        else if (!Utils.IsNeutral(GameSettings.AXIS_PITCH))
-                            vert += vertScale * scale * GameSettings.AXIS_PITCH.GetAxis();
-
-                        if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
+                        // ============================================================ Vertical Controls ============================================================
+                        if (VertActive && (GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_PITCH)))
                         {
-                            vert = Math.Max(vert * 10, 0);
-                            PIDList.Altitude.GetAsst().SetPoint = vert;
+                            double vert = 0; // = double.Parse(targetVert);
+                            if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
+                                vert = PIDList.Altitude.GetAsst().SetPoint / 10;
+                            else if (CurrentVertMode == VertMode.VSpeed)
+                                vert = PIDList.VertSpeed.GetAsst().SetPoint;
+
+                            if (GameSettings.PITCH_DOWN.GetKey())
+                                vert -= vertScale * scale;
+                            else if (GameSettings.PITCH_UP.GetKey())
+                                vert += vertScale * scale;
+                            else if (!Utils.IsNeutral(GameSettings.AXIS_PITCH))
+                                vert += vertScale * scale * GameSettings.AXIS_PITCH.GetAxis();
+
+                            if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
+                            {
+                                vert = Math.Max(vert * 10, 0);
+                                PIDList.Altitude.GetAsst().SetPoint = vert;
+                            }
+                            else
+                                PIDList.VertSpeed.GetAsst().SetPoint = vert;
+                            targetVert = vert.ToString("0.00");
                         }
-                        else
-                            PIDList.VertSpeed.GetAsst().SetPoint = vert;
-                        targetVert = vert.ToString("0.00");
-                    }
 
-                    // ============================================================ Throttle Controls ============================================================
-                    if (ThrtActive && ((GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey())
-                                    || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown()))
-                    {
-                        double speed;
-                        if (CurrentThrottleMode == ThrottleMode.Speed)
-                            speed = PIDList.Speed.GetAsst().SetPoint;
-                        else
-                            speed = PIDList.Acceleration.GetAsst().SetPoint * 10;
-
-                        if (GameSettings.THROTTLE_UP.GetKey())
-                            speed += throttleScale * scale;
-                        else if (GameSettings.THROTTLE_DOWN.GetKey())
-                            speed -= throttleScale * scale;
-                        if (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey())
-                            speed = 0;
-
-                        if (CurrentThrottleMode == ThrottleMode.Speed)
+                        // ============================================================ Throttle Controls ============================================================
+                        if (ThrtActive && ((GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey())
+                                        || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown()))
                         {
-                            if (GameSettings.THROTTLE_FULL.GetKeyDown())
-                                speed = 2400;
-                            PIDList.Speed.GetAsst().SetPoint = speed;
-                            targetSpeed = Math.Max(speed, 0).ToString("0.00");
-                        }
-                        else
-                        {
-                            speed /= 10;
-                            PIDList.Acceleration.GetAsst().SetPoint = speed;
-                            targetSpeed = speed.ToString("0.0");
+                            double speed;
+                            if (CurrentThrottleMode == ThrottleMode.Speed)
+                                speed = PIDList.Speed.GetAsst().SetPoint;
+                            else
+                                speed = PIDList.Acceleration.GetAsst().SetPoint * 10;
+
+                            if (GameSettings.THROTTLE_UP.GetKey())
+                                speed += throttleScale * scale;
+                            else if (GameSettings.THROTTLE_DOWN.GetKey())
+                                speed -= throttleScale * scale;
+                            if (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey())
+                                speed = 0;
+
+                            if (CurrentThrottleMode == ThrottleMode.Speed)
+                            {
+                                if (GameSettings.THROTTLE_FULL.GetKeyDown())
+                                    speed = 2400;
+                                PIDList.Speed.GetAsst().SetPoint = speed;
+                                targetSpeed = Math.Max(speed, 0).ToString("0.00");
+                            }
+                            else
+                            {
+                                speed /= 10;
+                                PIDList.Acceleration.GetAsst().SetPoint = speed;
+                                targetSpeed = speed.ToString("0.0");
+                            }
                         }
                     }
+                    keyMonitor();
                 }
-                keyMonitor();
             }
         }
 
@@ -340,24 +347,26 @@ namespace PilotAssistant
             if (Input.GetKeyDown(KeyCode.Tab) && !MapView.MapIsEnabled)
             {
                 bPause = !bPause;
-                hdgModeChanged(CurrentHrztMode, bPause);
-                vertModeChanged(CurrentVertMode, bPause);
-                throttleModeChanged(CurrentThrottleMode, bPause);
+                hdgModeChanged(CurrentHrztMode, !bPause);
+                vertModeChanged(CurrentVertMode, !bPause);
+                throttleModeChanged(CurrentThrottleMode, !bPause);
                 Messaging.postMessage(bPause ? Messaging.pauseMessage : Messaging.unpauseMessage);
+
+                if (bPause)
+                {
+                    InputLockManager.RemoveControlLock(yawLockID);
+                    InputLockManager.RemoveControlLock(pitchLockID);
+                }
+                else
+                {
+                    if (HrztActive)
+                        InputLockManager.SetControlLock(ControlTypes.YAW, yawLockID);
+                    if (VertActive)
+                        InputLockManager.SetControlLock(ControlTypes.PITCH, pitchLockID);
+                }
             }
             if (Utils.isFlightControlLocked())
                 return;
-
-            if (GameSettings.MODIFIER_KEY.GetKey() && Input.GetKeyDown(KeyCode.X))
-            {
-                PIDList.VertSpeed.GetAsst().SetPoint = 0;
-                PIDList.Speed.GetAsst().SetPoint = FlightData.thisVessel.srfSpeed;
-                CurrentVertMode = VertMode.VSpeed;
-                CurrentHrztMode = HrztMode.WingsLevel;
-                targetVert = "0.00";
-                targetSpeed = FlightData.thisVessel.srfSpeed.ToString("0.00");
-                Messaging.postMessage(Messaging.levelMessage);
-            }
 
             if (Input.GetKeyDown(KeyCode.Keypad9) && GameSettings.MODIFIER_KEY.GetKey())
                 HrztActive = !HrztActive;
@@ -367,7 +376,7 @@ namespace PilotAssistant
                 ThrtActive = !ThrtActive;
         }
 
-        private void hdgModeChanged(HrztMode newMode, bool disabled, bool setTarget = true)
+        private void hdgModeChanged(HrztMode newMode, bool active, bool setTarget = true)
         {
             headingEdit = false;
 
@@ -376,8 +385,9 @@ namespace PilotAssistant
             PIDList.Aileron.GetAsst().skipDerivative = true;
             PIDList.Rudder.GetAsst().skipDerivative = true;
 
-            if (disabled)
+            if (!active)
             {
+                InputLockManager.RemoveControlLock(yawLockID);
                 stopHdgShift = true;
                 PIDList.HdgBank.GetAsst().Clear();
                 PIDList.BankToYaw.GetAsst().Clear();
@@ -386,6 +396,9 @@ namespace PilotAssistant
             }
             else
             {
+                if (active && !HrztActive)
+                    InputLockManager.SetControlLock(ControlTypes.YAW, yawLockID);
+
                 switch (newMode)
                 {
                     case HrztMode.Heading:
@@ -398,23 +411,28 @@ namespace PilotAssistant
                         break;
                 }
             }
+            HrztActive = active;
             CurrentHrztMode = newMode;
         }
 
-        private void vertModeChanged(VertMode newMode, bool disabled, bool setTarget = true)
+        private void vertModeChanged(VertMode newMode, bool active, bool setTarget = true)
         {
             PIDList.VertSpeed.GetAsst().skipDerivative = true;
             PIDList.Elevator.GetAsst().skipDerivative = true;
             PIDList.Altitude.GetAsst().skipDerivative = true;
 
-            if (disabled)
+            if (!active)
             {
+                InputLockManager.RemoveControlLock(pitchLockID);
                 PIDList.Altitude.GetAsst().Clear();
                 PIDList.VertSpeed.GetAsst().Clear();
                 PIDList.Elevator.GetAsst().Clear();
             }
             else
             {
+                if (active && !VertActive)
+                    InputLockManager.SetControlLock(ControlTypes.PITCH, pitchLockID);
+
                 switch (newMode)
                 {
                     case VertMode.VSpeed:
@@ -454,15 +472,16 @@ namespace PilotAssistant
                         }
                 }
             }
+            VertActive = active;
             CurrentVertMode = newMode;
         }
 
-        private void throttleModeChanged(ThrottleMode newMode, bool disabled, bool setTarget = true)
+        private void throttleModeChanged(ThrottleMode newMode, bool active, bool setTarget = true)
         {
             PIDList.Acceleration.GetAsst().skipDerivative = true;
             PIDList.Speed.GetAsst().skipDerivative = true;
 
-            if (disabled)
+            if (!active)
             {
                 PIDList.Acceleration.GetAsst().Clear();
                 PIDList.Speed.GetAsst().Clear();
@@ -487,6 +506,7 @@ namespace PilotAssistant
                         }
                 }
             }
+            ThrtActive = active;
             CurrentThrottleMode = newMode;
         }
         #endregion
@@ -640,13 +660,16 @@ namespace PilotAssistant
         double terrainSlope(double angle)
         {
             double RayDist = findTerrainDistAtAngle((float)angle, 10000);
-            double AltAhead = RayDist * Math.Cos(angle * Math.PI / 180);
-            if (FlightData.thisVessel.mainBody.ocean)
-                AltAhead = Math.Min(AltAhead, FlightData.thisVessel.altitude);
+            double AltAhead = 0;
+            if (RayDist == -1)
+                AltAhead = FlightData.thisVessel.altitude;
+            else
+            {
+                AltAhead = RayDist * Math.Cos(angle * Math.PI / 180);
+                if (FlightData.thisVessel.mainBody.ocean)
+                    AltAhead = Math.Min(AltAhead, FlightData.thisVessel.altitude);
+            }
             double DistAhead = AltAhead * Math.Tan(angle * Math.PI / 180);
-            Debug.Log("Alt: " + AltAhead);
-            Debug.Log("Dist: " + DistAhead);
-
             return (FlightData.radarAlt - AltAhead) / DistAhead;
         }
 
@@ -716,7 +739,7 @@ namespace PilotAssistant
             }
             #endregion
 
-            window = GUILayout.Window(34244, window, displayWindow, "Pilot Assistant", GUILayout.Height(0), GUILayout.Width(width));
+            window = GUILayout.Window(34244, window, displayWindow, "", GeneralUI.UISkin.box, GUILayout.Height(0), GUILayout.Width(width));
 
             // tooltip window. Label skin is transparent so it's only drawing what's inside it
             if (tooltip != "" && showTooltips)
@@ -728,19 +751,18 @@ namespace PilotAssistant
                 presetWindow.x = window.x + window.width;
                 presetWindow.y = window.y;
 
-                GUILayout.Window(34245, presetWindow, displayPresetWindow, "Pilot Assistant Presets", GUILayout.Width(200), GUILayout.Height(0));
+                GUILayout.Window(34245, presetWindow, displayPresetWindow, "", GeneralUI.UISkin.box, GUILayout.Width(200), GUILayout.Height(0));
             }
         }
 
         private void displayWindow(int id)
         {
-            if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
-                AppLauncherFlight.bDisplayAssistant = false;
-
+            GUILayout.BeginHorizontal();
+            GUILayout.BeginVertical();
             if (Utils.AsstIsPaused())
                 GUILayout.Box("CONTROL PAUSED", GeneralUI.UISkin.customStyles[(int)myStyles.labelAlert]);
 
-            showPresets = GUILayout.Toggle(showPresets, showPresets ? "Hide Presets" : "Show Presets", GUILayout.Width(200));
+            //showPresets = GUILayout.Toggle(showPresets, showPresets ? "Hide Presets" : "Show Presets", GUILayout.Width(200));
 
             #region Hdg GUI
 
@@ -754,10 +776,7 @@ namespace PilotAssistant
             else
                 GUI.backgroundColor = GeneralUI.InActiveBackground;
             if (GUILayout.Button("Roll and Yaw Control", GUILayout.Width(186)))
-            {
-                HrztActive = !HrztActive;
                 hdgModeChanged(CurrentHrztMode, !HrztActive);
-            }
 
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
@@ -767,7 +786,7 @@ namespace PilotAssistant
             {
                 HrztMode tempMode = (HrztMode)GUILayout.SelectionGrid((int)CurrentHrztMode, hrztLabels, 2, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
                 if (CurrentHrztMode != tempMode)
-                    hdgModeChanged(tempMode, !HrztActive);
+                    hdgModeChanged(tempMode, HrztActive);
                 if (CurrentHrztMode == HrztMode.Heading)
                 {
                     GUILayout.BeginHorizontal();
@@ -777,8 +796,7 @@ namespace PilotAssistant
                         if (double.TryParse(targetHeading, out newHdg))
                         {
                             StartCoroutine(shiftHeadingTarget(newHdg.headingClamp(360)));
-                            HrztActive = true;
-                            hdgModeChanged(CurrentHrztMode, false, false);
+                            hdgModeChanged(CurrentHrztMode, true, false);
 
                             GUI.FocusControl("Target Hdg: ");
                             GUI.UnfocusWindow();
@@ -847,10 +865,7 @@ namespace PilotAssistant
             else
                 GUI.backgroundColor = GeneralUI.InActiveBackground;
             if (GUILayout.Button("Vertical Control", GUILayout.Width(186)))
-            {
-                VertActive = !VertActive;
                 vertModeChanged(CurrentVertMode, !VertActive);
-            }
            
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
@@ -860,7 +875,7 @@ namespace PilotAssistant
             {
                 VertMode tempMode = (VertMode)GUILayout.SelectionGrid((int)CurrentVertMode, vertLabels, 3, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
                 if (tempMode != CurrentVertMode)
-                    vertModeChanged(tempMode, !VertActive);
+                    vertModeChanged(tempMode, VertActive);
                 GUILayout.BeginHorizontal();
                 string buttonString = "Target ";
                 if (CurrentVertMode == VertMode.VSpeed)
@@ -886,8 +901,7 @@ namespace PilotAssistant
                         PIDList.VertSpeed.GetAsst().SetPoint = FlightData.thisVessel.verticalSpeed + FlightData.AoA / PIDList.VertSpeed.GetAsst().PGain;
                         PIDList.VertSpeed.GetAsst().BumplessSetPoint = newVal;
                     }
-                    VertActive = true;
-                    vertModeChanged(CurrentVertMode, false, false);
+                    vertModeChanged(CurrentVertMode, true, false);
 
                     GUI.FocusControl("Target Hdg: ");
                     GUI.UnfocusWindow();
@@ -923,10 +937,7 @@ namespace PilotAssistant
             else
                 GUI.backgroundColor = GeneralUI.InActiveBackground;
             if (GUILayout.Button("Throttle Control", GUILayout.Width(186)))
-            {
-                ThrtActive = !ThrtActive;
                 throttleModeChanged(CurrentThrottleMode, !ThrtActive);
-            }
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             GUILayout.EndHorizontal();
@@ -935,7 +946,7 @@ namespace PilotAssistant
             {
                 ThrottleMode tempMode = (ThrottleMode)GUILayout.SelectionGrid((int)CurrentThrottleMode, throttleLabels, 2, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
                 if (tempMode != CurrentThrottleMode)
-                    throttleModeChanged(tempMode, !ThrtActive);
+                    throttleModeChanged(tempMode, ThrtActive);
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button((CurrentThrottleMode != ThrottleMode.Acceleration) ? "Target Speed:" : "Target Accel", GUILayout.Width(118)))
                 {
@@ -953,8 +964,7 @@ namespace PilotAssistant
                         PIDList.Acceleration.GetAsst().SetPoint = FlightData.acceleration;
                         PIDList.Acceleration.GetAsst().BumplessSetPoint = newVal;
                     }
-                    ThrtActive = true;
-                    throttleModeChanged(CurrentThrottleMode, false, false);
+                    throttleModeChanged(CurrentThrottleMode, true, false);
 
                     GUI.FocusControl("Target Hdg: ");
                     GUI.UnfocusWindow();
@@ -972,19 +982,20 @@ namespace PilotAssistant
 
             #endregion
 
-            GUI.backgroundColor = GeneralUI.HeaderButtonBackground;
-            if (GUILayout.Button("Options", GUILayout.Width(205)))
-            {
-                bShowSettings = !bShowSettings;
-            }
-            GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
-            if (bShowSettings)
-            {
-                showPIDLimits = GUILayout.Toggle(showPIDLimits, showPIDLimits ? "Hide PID Limits" : "Show PID Limits", GUILayout.Width(200));
-                showControlSurfaces = GUILayout.Toggle(showControlSurfaces, showControlSurfaces ? "Hide Control Surfaces" : "Show Control Surfaces", GUILayout.Width(200));
-                doublesided = GUILayout.Toggle(doublesided, "Separate Min and Max limits", GUILayout.Width(200));
-                showTooltips = GUILayout.Toggle(showTooltips, "Show Tooltips", GUILayout.Width(200));
-            }
+            GUILayout.EndVertical();
+            GUILayout.BeginVertical();
+
+            if (GUILayout.Button("X", GeneralUI.UISkin.customStyles[(int)myStyles.redButtonText]))
+                AppLauncherFlight.bDisplayAssistant = false;
+            showPresets = GUILayout.Toggle(showPresets, new GUIContent("P", "Show/Hide Presets"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            bLockInput = GUILayout.Toggle(bLockInput, new GUIContent("L", "Lock Keyboard Input"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            showPIDLimits = GUILayout.Toggle(showPIDLimits, new GUIContent("L", "Show/Hide PID Limits"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            showControlSurfaces = GUILayout.Toggle(showControlSurfaces, new GUIContent("C", "Show/Hide Control Surfaces"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            doublesided = GUILayout.Toggle(doublesided, new GUIContent("D", "Separate Min and Max limits"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            showTooltips = GUILayout.Toggle(showTooltips, new GUIContent("T", "Show/Hide Tooltips"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+
+            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
 
             GUI.DragWindow();
             if (Event.current.type == EventType.Repaint)
