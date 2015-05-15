@@ -26,7 +26,7 @@ namespace PilotAssistant
             get { return instance; }
         }
 
-        public PID_Controller[] SASControllers = new PID_Controller[3]; // controller per axis
+        public SASController[] SASControllers = new SASController[3]; // controller per axis
 
         public bool bArmed = false; // if armed, SAS toggles activate/deactivate SSAS
         public bool[] bActive = new bool[3]; // activate on per axis basis
@@ -82,9 +82,9 @@ namespace PilotAssistant
             ActivitySwitch(false);
             delayEngage[0] = delayEngage[1] = delayEngage[2] = 20; // delay engagement by 0.2s
 
-            SASControllers[(int)SASList.Pitch] = new PID_Controller(SASList.Pitch, defaultPitchGains);
-            SASControllers[(int)SASList.Bank] = new PID_Controller(SASList.Bank, defaultRollGains);
-            SASControllers[(int)SASList.Hdg] = new PID_Controller(SASList.Hdg, defaultHdgGains);
+            SASControllers[(int)SASList.Pitch] = new SASController(SASList.Pitch, defaultPitchGains);
+            SASControllers[(int)SASList.Bank] = new SASController(SASList.Bank, defaultRollGains);
+            SASControllers[(int)SASList.Hdg] = new SASController(SASList.Hdg, defaultHdgGains);
 
             PresetManager.initDefaultPresets(new SSASPreset(SASControllers, "SSAS"));
             PresetManager.initSSASPreset();
@@ -554,7 +554,7 @@ namespace PilotAssistant
 
         private void drawPIDValues(SASList controllerID, string inputName)
         {
-            PID_Controller controller = Utils.GetSAS(controllerID);
+            SASController controller = Utils.GetSAS(controllerID);
             controller.bShow = GUILayout.Toggle(controller.bShow, inputName, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
 
             if (controller.bShow)

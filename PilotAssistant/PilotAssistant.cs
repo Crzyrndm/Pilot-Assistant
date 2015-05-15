@@ -56,7 +56,7 @@ namespace PilotAssistant
             get { return instance; }
         }
 
-        public PID_Controller[] controllers = new PID_Controller[9];
+        public AsstController[] controllers = new AsstController[9];
 
         public bool bPause = false;
         public bool bLockInput = false;
@@ -194,15 +194,15 @@ namespace PilotAssistant
 
         void Initialise()
         {
-            controllers[(int)PIDList.HdgBank] = new PID_Controller(PIDList.HdgBank, defaultHdgBankGains);
-            controllers[(int)PIDList.BankToYaw] = new PID_Controller(PIDList.BankToYaw, defaultBankToYawGains);
-            controllers[(int)PIDList.Aileron] = new PID_Controller(PIDList.Aileron, defaultAileronGains);
-            controllers[(int)PIDList.Rudder] = new PID_Controller(PIDList.Rudder, defaultRudderGains);
-            controllers[(int)PIDList.Altitude] = new PID_Controller(PIDList.Altitude, defaultAltitudeGains);
-            controllers[(int)PIDList.VertSpeed] = new PID_Controller(PIDList.VertSpeed, defaultVSpeedGains);
-            controllers[(int)PIDList.Elevator] = new PID_Controller(PIDList.Elevator, defaultElevatorGains);
-            controllers[(int)PIDList.Speed] = new PID_Controller(PIDList.Speed, defaultSpeedGains);
-            controllers[(int)PIDList.Acceleration] = new PID_Controller(PIDList.Acceleration, defaultAccelGains);
+            controllers[(int)PIDList.HdgBank] = new AsstController(PIDList.HdgBank, defaultHdgBankGains);
+            controllers[(int)PIDList.BankToYaw] = new AsstController(PIDList.BankToYaw, defaultBankToYawGains);
+            controllers[(int)PIDList.Aileron] = new AsstController(PIDList.Aileron, defaultAileronGains);
+            controllers[(int)PIDList.Rudder] = new AsstController(PIDList.Rudder, defaultRudderGains);
+            controllers[(int)PIDList.Altitude] = new AsstController(PIDList.Altitude, defaultAltitudeGains);
+            controllers[(int)PIDList.VertSpeed] = new AsstController(PIDList.VertSpeed, defaultVSpeedGains);
+            controllers[(int)PIDList.Elevator] = new AsstController(PIDList.Elevator, defaultElevatorGains);
+            controllers[(int)PIDList.Speed] = new AsstController(PIDList.Speed, defaultSpeedGains);
+            controllers[(int)PIDList.Acceleration] = new AsstController(PIDList.Acceleration, defaultAccelGains);
 
             // Set up a default preset that can be easily returned to
             PresetManager.initDefaultPresets(new AsstPreset(controllers, "default"));
@@ -699,7 +699,6 @@ namespace PilotAssistant
             Vector3 direction = Quaternion.AngleAxis(angle, -FlightData.surfVelRight) * -FlightData.planetUp;
             Vector3 origin = FlightData.thisVessel.CoM;
             RaycastHit hitInfo;
-            Debug.Log("raycast");
             if (FlightGlobals.ready && Physics.Raycast(origin, direction, out hitInfo, maxDist, ~1)) // ~1 masks off layer 0 which is apparently the parts on the current vessel. Seems to work
                 return hitInfo.distance;
             return -1;
@@ -772,7 +771,7 @@ namespace PilotAssistant
             }
         }
 
-        private bool controllerVisible(PID_Controller controller)
+        private bool controllerVisible(AsstController controller)
         {
             if (!controller.bShow)
                 return false;
@@ -1139,7 +1138,7 @@ namespace PilotAssistant
 
         private void drawPIDvalues(PIDList controllerid, string inputName, string inputUnits, double inputValue, int displayPrecision, string outputName, string outputUnits, bool invertOutput = false, bool showTarget = true)
         {
-            PID_Controller controller = controllerid.GetAsst();
+            AsstController controller = controllerid.GetAsst();
             controller.bShow = GUILayout.Toggle(controller.bShow, string.Format("{0}: {1}{2}", inputName, inputValue.ToString("N" + displayPrecision.ToString()), inputUnits), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
 
             if (controller.bShow)

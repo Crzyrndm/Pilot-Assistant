@@ -7,43 +7,43 @@ namespace PilotAssistant.PID
 
     public class PID_Controller : MonoBehaviour
     {
-        public PIDList ctrlID { get; set; }
-        public SASList ctrlSASID { get; set; } // I should really use inheritance to make two separate types with different ID's...
-        double target_setpoint = 0; // target setpoint
-        double active_setpoint = 0;
+        protected double target_setpoint = 0; // target setpoint
+        protected double active_setpoint = 0;
 
-        double k_proportional; // Kp
-        double k_integral; // Ki
-        double k_derivative; // Kd
+        protected double k_proportional; // Kp
+        protected double k_integral; // Ki
+        protected double k_derivative; // Kd
 
-        double sum = 0; // integral sum
-        double previous = 0; // previous value stored for derivative action
-        double rolling_diff = 0; // used for rolling average difference
-        double rollingFactor = 0.5; // rolling average proportion. 0 = all new, 1 = never changes
-        double error = 0; // error of current iteration
+        protected double sum = 0; // integral sum
+        protected double previous = 0; // previous value stored for derivative action
+        protected double rolling_diff = 0; // used for rolling average difference
+        protected double rollingFactor = 0.5; // rolling average proportion. 0 = all new, 1 = never changes
+        protected double error = 0; // error of current iteration
 
-        double inMin = -1000000000; // Minimum input value
-        double inMax = 1000000000; // Maximum input value
+        protected double inMin = -1000000000; // Minimum input value
+        protected double inMax = 1000000000; // Maximum input value
 
-        double outMin; // Minimum output value
-        double outMax; // Maximum output value
+        protected double outMin; // Minimum output value
+        protected double outMax; // Maximum output value
 
-        double integralClampUpper; // AIW clamp
-        double integralClampLower;
+        protected double integralClampUpper; // AIW clamp
+        protected double integralClampLower;
 
-        double dt = 1; // standardised response for any physics dt
+        protected double dt = 1; // standardised response for any physics dt
 
-        double scale = 1;
-        double easing = 1;
-        double increment = 0;
+        protected double scale = 1;
+        protected double easing = 1;
+        protected double increment = 0;
 
-        public bool bShow = false;
-        public bool skipDerivative = false;
-        public bool isHeadingControl = false;
+        public bool bShow { get; set; }
+        public bool skipDerivative { get; set; }
+        public bool isHeadingControl { get; set; }
 
-        public PID_Controller(PIDList ID, double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double easing = 1)
+        protected PID_Controller()
+        { }
+
+        public PID_Controller(double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double easing = 1)
         {
-            ctrlID = ID;
             k_proportional = Kp;
             k_integral = Ki;
             k_derivative = Kd;
@@ -55,23 +55,8 @@ namespace PilotAssistant.PID
             this.easing = easing;
         }
 
-        public PID_Controller(SASList ID, double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double easing = 1)
+        public PID_Controller(double[] gains)
         {
-            ctrlSASID = ID;
-            k_proportional = Kp;
-            k_integral = Ki;
-            k_derivative = Kd;
-            outMin = OutputMin;
-            outMax = OutputMax;
-            integralClampLower = intClampLower;
-            integralClampUpper = intClampUpper;
-            scale = scalar;
-            this.easing = easing;
-        }
-
-        public PID_Controller(PIDList ID, double[] gains)
-        {
-            ctrlID = ID;
             k_proportional = gains[0];
             k_integral = gains[1];
             k_derivative = gains[2];
@@ -83,21 +68,7 @@ namespace PilotAssistant.PID
             easing = gains[8];
         }
 
-        public PID_Controller(SASList ID, double[] gains)
-        {
-            ctrlSASID = ID;
-            k_proportional = gains[0];
-            k_integral = gains[1];
-            k_derivative = gains[2];
-            outMin = gains[3];
-            outMax = gains[4];
-            integralClampLower = gains[5];
-            integralClampUpper = gains[6];
-            scale = gains[7];
-            easing = gains[8];
-        }
-
-        public double ResponseD(double input)
+        public virtual double ResponseD(double input)
         {
             if (active_setpoint != target_setpoint)
             {
@@ -130,17 +101,17 @@ namespace PilotAssistant.PID
             return Clamp((proportionalError(error) + integralError(error) + derivativeError(input)), outMin, outMax);
         }
 
-        public float ResponseF(double input)
+        public virtual float ResponseF(double input)
         {
             return (float)ResponseD(input);
         }
 
-        private double proportionalError(double error)
+        protected virtual double proportionalError(double error)
         {
             return error * k_proportional / scale;
         }
 
-        private double integralError(double error)
+        protected virtual double integralError(double error)
         {
             if (k_integral == 0 || FlightData.thisVessel.checkLanded()|| !FlightData.thisVessel.IsControllable)
             {
@@ -153,7 +124,7 @@ namespace PilotAssistant.PID
             return sum;
         }
 
-        private double derivativeError(double input)
+        protected virtual double derivativeError(double input)
         {
             double difference = 0;
             if (!isHeadingControl)
@@ -169,12 +140,12 @@ namespace PilotAssistant.PID
             return rolling_diff * k_derivative / scale;
         }
 
-        public void Clear()
+        public virtual void Clear()
         {
             sum = 0;
         }
 
-        public void Preset(double target)
+        public virtual void Preset(double target)
         {
             sum = target;
         }
@@ -188,7 +159,7 @@ namespace PilotAssistant.PID
         /// <param name="min">minimum output value of the variable</param>
         /// <param name="max">maximum output value of the variable</param>
         /// <returns>val clamped between max and min</returns>
-        public static double Clamp(double val, double min, double max)
+        protected static double Clamp(double val, double min, double max)
         {
             if (val < min)
                 return min;
@@ -201,7 +172,7 @@ namespace PilotAssistant.PID
         #endregion
 
         #region properties
-        public double SetPoint
+        public virtual double SetPoint
         {
             get
             {
@@ -215,7 +186,7 @@ namespace PilotAssistant.PID
         }
 
         // let active setpoint move to match the target to smooth the transition
-        public double BumplessSetPoint
+        public virtual double BumplessSetPoint
         {
             get
             {
@@ -228,7 +199,7 @@ namespace PilotAssistant.PID
             }
         }
 
-        public double PGain
+        public virtual double PGain
         {
             get
             {
@@ -240,7 +211,7 @@ namespace PilotAssistant.PID
             }
         }
 
-        public double IGain
+        public virtual double IGain
         {
             get
             {
@@ -252,7 +223,7 @@ namespace PilotAssistant.PID
             }
         }
 
-        public double DGain
+        public virtual double DGain
         {
             get
             {
@@ -264,7 +235,7 @@ namespace PilotAssistant.PID
             }
         }
 
-        public double InMin
+        public virtual double InMin
         {
             set
             {
@@ -272,7 +243,7 @@ namespace PilotAssistant.PID
             }
         }
 
-        public double InMax
+        public virtual double InMax
         {
             set
             {
@@ -283,7 +254,7 @@ namespace PilotAssistant.PID
         /// <summary>
         /// Set output minimum to value
         /// </summary>
-        public double OutMin
+        public virtual double OutMin
         {
             get
             {
@@ -298,7 +269,7 @@ namespace PilotAssistant.PID
         /// <summary>
         /// Set output maximum to value
         /// </summary>
-        public double OutMax
+        public virtual double OutMax
         {
             get
             {
@@ -310,7 +281,7 @@ namespace PilotAssistant.PID
             }
         }
 
-        public double ClampLower
+        public virtual double ClampLower
         {
             get
             {
@@ -322,7 +293,7 @@ namespace PilotAssistant.PID
             }
         }
 
-        public double ClampUpper
+        public virtual double ClampUpper
         {
             get
             {
@@ -334,7 +305,7 @@ namespace PilotAssistant.PID
             }
         }
 
-        public double Scalar
+        public virtual double Scalar
         {
             get
             {
@@ -346,7 +317,7 @@ namespace PilotAssistant.PID
             }
         }
 
-        public double Easing
+        public virtual double Easing
         {
             get
             {
@@ -358,5 +329,71 @@ namespace PilotAssistant.PID
             }
         }
         #endregion
+    }
+
+    public class AsstController : PID_Controller
+    {
+        public PIDList ctrlID { get; set; }
+
+        public AsstController(PIDList ID, double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double easing = 1)
+        {
+            ctrlID = ID;
+            k_proportional = Kp;
+            k_integral = Ki;
+            k_derivative = Kd;
+            outMin = OutputMin;
+            outMax = OutputMax;
+            integralClampLower = intClampLower;
+            integralClampUpper = intClampUpper;
+            scale = scalar;
+            this.easing = easing;
+        }
+
+        public AsstController(PIDList ID, double[] gains)
+        {
+            ctrlID = ID;
+            k_proportional = gains[0];
+            k_integral = gains[1];
+            k_derivative = gains[2];
+            outMin = gains[3];
+            outMax = gains[4];
+            integralClampLower = gains[5];
+            integralClampUpper = gains[6];
+            scale = gains[7];
+            easing = gains[8];
+        }
+    }
+
+    public class SASController : PID_Controller
+    {
+        public SASList ctrlID { get; set; }
+
+        public SASController(SASList ID, double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double easing = 1)
+        {
+            ctrlID = ID;
+            k_proportional = Kp;
+            k_integral = Ki;
+            k_derivative = Kd;
+            outMin = OutputMin;
+            outMax = OutputMax;
+            integralClampLower = intClampLower;
+            integralClampUpper = intClampUpper;
+            scale = scalar;
+            this.easing = easing;
+        }
+
+        public SASController(SASList ID, double[] gains)
+        {
+            ctrlID = ID;
+            k_proportional = gains[0];
+            k_integral = gains[1];
+            k_derivative = gains[2];
+            outMin = gains[3];
+            outMax = gains[4];
+            integralClampLower = gains[5];
+            integralClampUpper = gains[6];
+            scale = gains[7];
+            easing = gains[8];
+        }
     }
 }
