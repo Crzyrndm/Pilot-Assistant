@@ -470,7 +470,7 @@ namespace PilotAssistant
             string tempName = name;
             if (Instance.AsstPresetList.Any(p => p.name == tempName))
             {
-                Messaging.postMessage("Failed to add preset with duplicate name");
+                GeneralUI.postMessage("Failed to add preset with duplicate name");
                 return;
             }
             AsstPreset newPreset = new AsstPreset(controllers, name);
@@ -499,7 +499,7 @@ namespace PilotAssistant
             }
 
             Instance.activeAsstPreset = p;
-            Messaging.postMessage("Loaded preset " + p.name);
+            GeneralUI.postMessage("Loaded preset " + p.name);
 
             if (Instance.activeAsstPreset != Instance.craftPresetDict[craftDefaultName].AsstPreset)
                 updateCraftPreset(Instance.activeAsstPreset);
@@ -514,7 +514,7 @@ namespace PilotAssistant
 
         public static void deleteAsstPreset(AsstPreset p)
         {
-            Messaging.postMessage("Deleted preset " + p.name);
+            GeneralUI.postMessage("Deleted preset " + p.name);
             if (Instance.activeAsstPreset == p)
                 Instance.activeAsstPreset = null;
             Instance.AsstPresetList.Remove(p);
@@ -576,7 +576,7 @@ namespace PilotAssistant
 
         public static void deleteSASPreset(SASPreset p)
         {
-            Messaging.postMessage("Deleted preset " + p.name);
+            GeneralUI.postMessage("Deleted preset " + p.name);
             if (Instance.activeSASPreset == p)
                 Instance.activeSASPreset = null;
             Instance.SASPresetList.Remove(p);
@@ -637,7 +637,7 @@ namespace PilotAssistant
 
         public static void deleteSSASPreset(SSASPreset p)
         {
-            Messaging.postMessage("Deleted preset " + p.name);
+            GeneralUI.postMessage("Deleted preset " + p.name);
             if (Instance.activeSSASPreset == p)
                 Instance.activeSSASPreset = null;
             Instance.SSASPresetList.Remove(p);
@@ -693,7 +693,7 @@ namespace PilotAssistant
 
         public static void deleteRSASPreset(RSASPreset p)
         {
-            Messaging.postMessage("Deleted preset " + p.name);
+            GeneralUI.postMessage("Deleted preset " + p.name);
             if (Instance.activeRSASPreset == p)
                 Instance.activeRSASPreset = null;
             Instance.RSASPresetList.Remove(p);

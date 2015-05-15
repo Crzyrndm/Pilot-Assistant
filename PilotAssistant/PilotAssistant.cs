@@ -77,7 +77,9 @@ namespace PilotAssistant
 
         Vector2 scrollbarHdg = Vector2.zero;
         Vector2 scrollbarVert = Vector2.zero;
+        Vector2 scrollbarThrt = Vector2.zero;
 
+        public bool reduceHeight = true;
         public bool showPresets = false;
         public bool showPIDLimits = false;
         public bool showControlSurfaces = false;
@@ -165,6 +167,9 @@ namespace PilotAssistant
 
             // start the WASD monitor
             StartCoroutine(InputResponse());
+
+            InputLockManager.RemoveControlLock(pitchLockID);
+            InputLockManager.RemoveControlLock(yawLockID);
         }
 
         public void OnDestroy()
@@ -350,10 +355,13 @@ namespace PilotAssistant
             if (Input.GetKeyDown(KeyCode.Tab) && !MapView.MapIsEnabled)
             {
                 bPause = !bPause;
-                hdgModeChanged(CurrentHrztMode, !bPause);
-                vertModeChanged(CurrentVertMode, !bPause);
-                throttleModeChanged(CurrentThrottleMode, !bPause);
-                Messaging.postMessage(bPause ? Messaging.pauseMessage : Messaging.unpauseMessage);
+                if (!bPause)
+                {
+                    hdgModeChanged(CurrentHrztMode, HrztActive);
+                    vertModeChanged(CurrentVertMode, VertActive);
+                    throttleModeChanged(CurrentThrottleMode, ThrtActive);
+                }
+                GeneralUI.postMessage(bPause ? "Pilot Assistant: Control Paused" : "Pilot Assistant: Control Unpaused");
 
                 if (bPause)
                 {
@@ -372,11 +380,11 @@ namespace PilotAssistant
                 return;
 
             if (Input.GetKeyDown(KeyCode.Keypad9) && GameSettings.MODIFIER_KEY.GetKey())
-                HrztActive = !HrztActive;
+                hdgModeChanged(CurrentHrztMode, !HrztActive);
             if (Input.GetKeyDown(KeyCode.Keypad6) && GameSettings.MODIFIER_KEY.GetKey())
-                VertActive = !VertActive;
+                vertModeChanged(CurrentVertMode, !VertActive);
             if (Input.GetKeyDown(KeyCode.Keypad3) && GameSettings.MODIFIER_KEY.GetKey())
-                ThrtActive = !ThrtActive;
+                throttleModeChanged(CurrentThrottleMode, !ThrtActive);
         }
 
         private void hdgModeChanged(HrztMode newMode, bool active, bool setTarget = true)
@@ -706,9 +714,9 @@ namespace PilotAssistant
             // Have to put the width changes before the draw so the close button is correctly placed
             float width;
             if (showPIDLimits && controllers.Any(c => c.bShow)) // use two column view if show limits option and a controller is open
-                width = 370;
+                width = 340;
             else
-                width = 240;
+                width = 210;
 
             if (bShowHdg)
             {
@@ -761,7 +769,19 @@ namespace PilotAssistant
         private void displayWindow(int id)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.BeginVertical();
+
+            bLockInput = GUILayout.Toggle(bLockInput, new GUIContent("L", "Lock Keyboard Input"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            showPIDLimits = GUILayout.Toggle(showPIDLimits, new GUIContent("L", "Show/Hide PID Limits"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            showControlSurfaces = GUILayout.Toggle(showControlSurfaces, new GUIContent("C", "Show/Hide Control Surfaces"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            doublesided = GUILayout.Toggle(doublesided, new GUIContent("D", "Separate Min and Max limits"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            showTooltips = GUILayout.Toggle(showTooltips, new GUIContent("T", "Show/Hide Tooltips"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            reduceHeight = GUILayout.Toggle(reduceHeight, new GUIContent("R", "Reduce UI Height"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            GUILayout.FlexibleSpace();
+            showPresets = GUILayout.Toggle(showPresets, new GUIContent("P", "Show/Hide Presets"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            if (GUILayout.Button("X", GeneralUI.UISkin.customStyles[(int)myStyles.redButtonText]))
+                AppLauncherFlight.bDisplayAssistant = false;
+            GUILayout.EndHorizontal();
+
             if (Utils.AsstIsPaused())
                 GUILayout.Box("CONTROL PAUSED", GeneralUI.UISkin.customStyles[(int)myStyles.labelAlert]);
 
@@ -835,7 +855,8 @@ namespace PilotAssistant
                     GUILayout.EndHorizontal();
                 }
 
-                scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(hdgScrollHeight));
+                if (reduceHeight)
+                    scrollbarHdg = GUILayout.BeginScrollView(scrollbarHdg, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(hdgScrollHeight));
                 if (CurrentHrztMode != HrztMode.WingsLevel)
                 {
                     drawPIDvalues(PIDList.HdgBank, "Heading", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0");
@@ -846,7 +867,8 @@ namespace PilotAssistant
                     drawPIDvalues(PIDList.Aileron, "Bank", "\u00B0", FlightData.bank, 3, "Deflection", "\u00B0");
                     drawPIDvalues(PIDList.Rudder, "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0");
                 }
-                GUILayout.EndScrollView();
+                if (reduceHeight)
+                    GUILayout.EndScrollView();
 
                 PIDList.Aileron.GetAsst().OutMin = Math.Min(Math.Max(PIDList.Aileron.GetAsst().OutMin, -1), 1);
                 PIDList.Aileron.GetAsst().OutMax = Math.Min(Math.Max(PIDList.Aileron.GetAsst().OutMax, -1), 1);
@@ -912,7 +934,8 @@ namespace PilotAssistant
                 targetVert = GUILayout.TextField(targetVert, GUILayout.Width(98));
                 GUILayout.EndHorizontal();
 
-                scrollbarVert = GUILayout.BeginScrollView(scrollbarVert, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(vertScrollHeight));
+                if (reduceHeight)
+                    scrollbarVert = GUILayout.BeginScrollView(scrollbarVert, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(vertScrollHeight));
                 if (CurrentVertMode == VertMode.RadarAltitude)
                     drawPIDvalues(PIDList.Altitude, "RAltitude", "m", FlightData.radarAlt, 2, "Speed ", "m/s", true);
                 if (CurrentVertMode == VertMode.Altitude)
@@ -924,8 +947,9 @@ namespace PilotAssistant
 
                 PIDList.Elevator.GetAsst().OutMin = Math.Min(Math.Max(PIDList.Elevator.GetAsst().OutMin, -1), 1);
                 PIDList.Elevator.GetAsst().OutMax = Math.Min(Math.Max(PIDList.Elevator.GetAsst().OutMax, -1), 1);
-
-                GUILayout.EndScrollView();
+                
+                if (reduceHeight)
+                    GUILayout.EndScrollView();
             }
             #endregion
 
@@ -953,7 +977,7 @@ namespace PilotAssistant
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button((CurrentThrottleMode != ThrottleMode.Acceleration) ? "Target Speed:" : "Target Accel", GUILayout.Width(118)))
                 {
-                    Messaging.postMessage((CurrentThrottleMode != ThrottleMode.Acceleration) ? "Target Speed updated" : "Target Acceleration updated");
+                    GeneralUI.postMessage((CurrentThrottleMode != ThrottleMode.Acceleration) ? "Target Speed updated" : "Target Acceleration updated");
 
                     double newVal;
                     double.TryParse(targetSpeed, out newVal);
@@ -975,30 +999,20 @@ namespace PilotAssistant
                 targetSpeed = GUILayout.TextField(targetSpeed, GUILayout.Width(78));
                 GUILayout.EndHorizontal();
 
+                if (reduceHeight)
+                    scrollbarThrt = GUILayout.BeginScrollView(scrollbarThrt, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(hdgScrollHeight));
                 if (CurrentThrottleMode == ThrottleMode.Speed)
                     drawPIDvalues(PIDList.Speed, "Speed", "m/s", FlightData.thisVessel.srfSpeed, 2, "Accel ", "m/s", true);
                 drawPIDvalues(PIDList.Acceleration, "Acceleration", "m/s", FlightData.acceleration, 1, "Throttle ", "%", true);
                 // can't have people bugging things out now can we...
                 PIDList.Acceleration.GetAsst().OutMax = PIDList.Speed.GetAsst().OutMax.Clamp(-1, 0);
                 PIDList.Acceleration.GetAsst().OutMax = PIDList.Speed.GetAsst().OutMax.Clamp(-1, 0);
+
+                if (reduceHeight)
+                    GUILayout.EndScrollView();
             }
 
             #endregion
-
-            GUILayout.EndVertical();
-            GUILayout.BeginVertical();
-
-            if (GUILayout.Button("X", GeneralUI.UISkin.customStyles[(int)myStyles.redButtonText]))
-                AppLauncherFlight.bDisplayAssistant = false;
-            showPresets = GUILayout.Toggle(showPresets, new GUIContent("P", "Show/Hide Presets"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            bLockInput = GUILayout.Toggle(bLockInput, new GUIContent("L", "Lock Keyboard Input"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            showPIDLimits = GUILayout.Toggle(showPIDLimits, new GUIContent("L", "Show/Hide PID Limits"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            showControlSurfaces = GUILayout.Toggle(showControlSurfaces, new GUIContent("C", "Show/Hide Control Surfaces"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            doublesided = GUILayout.Toggle(doublesided, new GUIContent("D", "Separate Min and Max limits"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            showTooltips = GUILayout.Toggle(showTooltips, new GUIContent("T", "Show/Hide Tooltips"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-
-            GUILayout.EndVertical();
-            GUILayout.EndHorizontal();
 
             GUI.DragWindow();
             if (Event.current.type == EventType.Repaint)

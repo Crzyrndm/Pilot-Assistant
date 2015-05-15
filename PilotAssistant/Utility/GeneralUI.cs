@@ -176,15 +176,9 @@ namespace PilotAssistant.Utility
             return val;
         }
 
-        //private static Texture2D alphaShift(this Texture2D tex, float shift)
-        //{
-        //    Texture2D newTex = (Texture2D)MonoBehaviour.Instantiate(tex);
-        //    Color32[] pixels = tex.GetPixels32();
-        //    for (int i = 0; i < pixels.Length; i++)
-        //        pixels[i].a = (byte)Mathf.Clamp(pixels[i].a * shift, 0, 255);
-        //    tex.SetPixels32(pixels);
-        //    tex.Apply();
-        //    return tex;
-        //}
+        public static void postMessage(string message)
+        {
+            ScreenMessages.PostScreenMessage(message);
+        }
     }
 }
