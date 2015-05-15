@@ -44,6 +44,7 @@ namespace PilotAssistant
                 PilotAssistant.Instance.showPresets = config.GetValue("AsstPresetWindow", false);
                 PilotAssistant.Instance.showPIDLimits = config.GetValue("AsstLimits", false);
                 PilotAssistant.Instance.showControlSurfaces = config.GetValue("AsstControlSurfaces", false);
+                PilotAssistant.Instance.reduceHeight = config.GetValue("ReduceHeight", true);
                 SurfSAS.Instance.SSASwindow = config.GetValue("SSASWindow", new Rect(500, 300, 0, 0));
                 Stock_SAS.Instance.StockSASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
                 window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
@@ -82,6 +83,7 @@ namespace PilotAssistant
                 config["AsstPresetWindow"] = PilotAssistant.Instance.showPresets;
                 config["AsstLimits"] = PilotAssistant.Instance.showPIDLimits;
                 config["AsstControlSurfaces"] = PilotAssistant.Instance.showControlSurfaces;
+                config["reduceHeight"] = PilotAssistant.Instance.reduceHeight;
                 config["SSASWindow"] = SurfSAS.Instance.SSASwindow;
                 config["SASWindow"] = Stock_SAS.Instance.StockSASwindow;
                 config["AppWindow"] = window;
