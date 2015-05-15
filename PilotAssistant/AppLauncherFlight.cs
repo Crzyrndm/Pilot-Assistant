@@ -44,7 +44,9 @@ namespace PilotAssistant
                 PilotAssistant.Instance.showPresets = config.GetValue("AsstPresetWindow", false);
                 PilotAssistant.Instance.showPIDLimits = config.GetValue("AsstLimits", false);
                 PilotAssistant.Instance.showControlSurfaces = config.GetValue("AsstControlSurfaces", false);
-                PilotAssistant.Instance.reduceHeight = config.GetValue("ReduceHeight", true);
+                PilotAssistant.Instance.maxHdgScrollbarHeight = PilotAssistant.Instance.hdgScrollHeight = config.GetValue("maxHdgHeight", 55f);
+                PilotAssistant.Instance.maxVertScrollbarHeight = PilotAssistant.Instance.vertScrollHeight = config.GetValue("maxVertHeight", 55f);
+                PilotAssistant.Instance.maxThrtScrollbarHeight = PilotAssistant.Instance.thrtScrollHeight = config.GetValue("maxThrtHeight", 55f);
                 SurfSAS.Instance.SSASwindow = config.GetValue("SSASWindow", new Rect(500, 300, 0, 0));
                 Stock_SAS.Instance.StockSASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
                 window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
@@ -83,10 +85,12 @@ namespace PilotAssistant
                 config["AsstPresetWindow"] = PilotAssistant.Instance.showPresets;
                 config["AsstLimits"] = PilotAssistant.Instance.showPIDLimits;
                 config["AsstControlSurfaces"] = PilotAssistant.Instance.showControlSurfaces;
-                config["reduceHeight"] = PilotAssistant.Instance.reduceHeight;
                 config["SSASWindow"] = SurfSAS.Instance.SSASwindow;
                 config["SASWindow"] = Stock_SAS.Instance.StockSASwindow;
                 config["AppWindow"] = window;
+                config["maxHdgHeight"] = PilotAssistant.Instance.maxHdgScrollbarHeight;
+                config["maxVertHeight"] = PilotAssistant.Instance.maxVertScrollbarHeight;
+                config["maxTHrtHeight"] = PilotAssistant.Instance.maxThrtScrollbarHeight;
                 config.save();
             }
             catch
