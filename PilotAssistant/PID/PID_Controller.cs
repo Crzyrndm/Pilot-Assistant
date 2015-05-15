@@ -7,6 +7,8 @@ namespace PilotAssistant.PID
 
     public class PID_Controller : MonoBehaviour
     {
+        public PIDList ctrlID { get; set; }
+        public SASList ctrlSASID { get; set; } // I should really use inheritance to make two separate types with different ID's...
         double target_setpoint = 0; // target setpoint
         double active_setpoint = 0;
 
@@ -39,8 +41,9 @@ namespace PilotAssistant.PID
         public bool skipDerivative = false;
         public bool isHeadingControl = false;
 
-        public PID_Controller(double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double easing = 1)
+        public PID_Controller(PIDList ID, double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double easing = 1)
         {
+            ctrlID = ID;
             k_proportional = Kp;
             k_integral = Ki;
             k_derivative = Kd;
@@ -52,8 +55,37 @@ namespace PilotAssistant.PID
             this.easing = easing;
         }
 
-        public PID_Controller(double[] gains)
+        public PID_Controller(SASList ID, double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double easing = 1)
         {
+            ctrlSASID = ID;
+            k_proportional = Kp;
+            k_integral = Ki;
+            k_derivative = Kd;
+            outMin = OutputMin;
+            outMax = OutputMax;
+            integralClampLower = intClampLower;
+            integralClampUpper = intClampUpper;
+            scale = scalar;
+            this.easing = easing;
+        }
+
+        public PID_Controller(PIDList ID, double[] gains)
+        {
+            ctrlID = ID;
+            k_proportional = gains[0];
+            k_integral = gains[1];
+            k_derivative = gains[2];
+            outMin = gains[3];
+            outMax = gains[4];
+            integralClampLower = gains[5];
+            integralClampUpper = gains[6];
+            scale = gains[7];
+            easing = gains[8];
+        }
+
+        public PID_Controller(SASList ID, double[] gains)
+        {
+            ctrlSASID = ID;
             k_proportional = gains[0];
             k_integral = gains[1];
             k_derivative = gains[2];

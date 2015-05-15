@@ -82,9 +82,9 @@ namespace PilotAssistant
             ActivitySwitch(false);
             delayEngage[0] = delayEngage[1] = delayEngage[2] = 20; // delay engagement by 0.2s
 
-            SASControllers[(int)SASList.Pitch] = new PID_Controller(defaultPitchGains);
-            SASControllers[(int)SASList.Bank] = new PID_Controller(defaultRollGains);
-            SASControllers[(int)SASList.Hdg] = new PID_Controller(defaultHdgGains);
+            SASControllers[(int)SASList.Pitch] = new PID_Controller(SASList.Pitch, defaultPitchGains);
+            SASControllers[(int)SASList.Bank] = new PID_Controller(SASList.Bank, defaultRollGains);
+            SASControllers[(int)SASList.Hdg] = new PID_Controller(SASList.Hdg, defaultHdgGains);
 
             PresetManager.initDefaultPresets(new SSASPreset(SASControllers, "SSAS"));
             PresetManager.initSSASPreset();

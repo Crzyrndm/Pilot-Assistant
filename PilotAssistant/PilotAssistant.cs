@@ -194,15 +194,15 @@ namespace PilotAssistant
 
         void Initialise()
         {
-            controllers[(int)PIDList.HdgBank] = new PID_Controller(defaultHdgBankGains);
-            controllers[(int)PIDList.BankToYaw] = new PID_Controller(defaultBankToYawGains);
-            controllers[(int)PIDList.Aileron] = new PID_Controller(defaultAileronGains);
-            controllers[(int)PIDList.Rudder] = new PID_Controller(defaultRudderGains);
-            controllers[(int)PIDList.Altitude] = new PID_Controller(defaultAltitudeGains);
-            controllers[(int)PIDList.VertSpeed] = new PID_Controller(defaultVSpeedGains);
-            controllers[(int)PIDList.Elevator] = new PID_Controller(defaultElevatorGains);
-            controllers[(int)PIDList.Speed] = new PID_Controller(defaultSpeedGains);
-            controllers[(int)PIDList.Acceleration] = new PID_Controller(defaultAccelGains);
+            controllers[(int)PIDList.HdgBank] = new PID_Controller(PIDList.HdgBank, defaultHdgBankGains);
+            controllers[(int)PIDList.BankToYaw] = new PID_Controller(PIDList.BankToYaw, defaultBankToYawGains);
+            controllers[(int)PIDList.Aileron] = new PID_Controller(PIDList.Aileron, defaultAileronGains);
+            controllers[(int)PIDList.Rudder] = new PID_Controller(PIDList.Rudder, defaultRudderGains);
+            controllers[(int)PIDList.Altitude] = new PID_Controller(PIDList.Altitude, defaultAltitudeGains);
+            controllers[(int)PIDList.VertSpeed] = new PID_Controller(PIDList.VertSpeed, defaultVSpeedGains);
+            controllers[(int)PIDList.Elevator] = new PID_Controller(PIDList.Elevator, defaultElevatorGains);
+            controllers[(int)PIDList.Speed] = new PID_Controller(PIDList.Speed, defaultSpeedGains);
+            controllers[(int)PIDList.Acceleration] = new PID_Controller(PIDList.Acceleration, defaultAccelGains);
 
             // Set up a default preset that can be easily returned to
             PresetManager.initDefaultPresets(new AsstPreset(controllers, "default"));
@@ -720,40 +720,39 @@ namespace PilotAssistant
             #region Main Window resizing (scroll views dont work nicely with GUILayout)
             // Have to put the width changes before the draw so the close button is correctly placed
             float width;
-            if (showPIDLimits && controllers.Any(c => c.bShow)) // use two column view if show limits option and a controller is open
+            if (showPIDLimits && controllers.Any(c => controllerVisible(c))) // use two column view if show limits option and a controller is open
                 width = 340;
             else
                 width = 210;
-
-            if (bShowHdg)
+            if (bShowHdg && dragID != 1)
             {
-                //hdgScrollHeight = 0; // no controllers visible when in wing lvl mode unless ctrl surf's are there
-                //if (CurrentHrztMode != HrztMode.WingsLevel)
-                //{
-                //    hdgScrollHeight += 55; // hdg & yaw headers
-                //    if ((PIDList.HdgBank.GetAsst().bShow || PIDList.BankToYaw.GetAsst().bShow))
-                //        hdgScrollHeight += 150; // open controller
-                //}
-                //else if (showControlSurfaces)
-                //{
-                //    hdgScrollHeight += 50; // aileron and rudder headers
-                //    if (PIDList.Aileron.GetAsst().bShow || PIDList.Rudder.GetAsst().bShow)
-                //        hdgScrollHeight += 100; // open controller
-                //}
+                hdgScrollHeight = 0; // no controllers visible when in wing lvl mode unless ctrl surf's are there
+                if (CurrentHrztMode != HrztMode.WingsLevel)
+                {
+                    hdgScrollHeight += PIDList.HdgBank.GetAsst().bShow ? 168 : 29;
+                    hdgScrollHeight += PIDList.BankToYaw.GetAsst().bShow ? 140 : 27;
+                }
+                if (showControlSurfaces)
+                {
+                    hdgScrollHeight += PIDList.Aileron.GetAsst().bShow ? 168 : 29;
+                    hdgScrollHeight += PIDList.Rudder.GetAsst().bShow ? 168 : 27;
+                }
             }
-            if (bShowVert)
+            if (bShowVert && dragID != 2)
             {
-                //vertScrollHeight = 38; // Vspeed header
-                //if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
-                //    vertScrollHeight += 27; // altitude header
-                //if (PIDList.Altitude.GetAsst().bShow && (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude) || PIDList.VertSpeed.GetAsst().bShow)
-                //    vertScrollHeight += 150; // open  controller
-                //else if (showControlSurfaces)
-                //{
-                //    vertScrollHeight += 27; // elevator header
-                //    if (PIDList.Elevator.GetAsst().bShow)
-                //        vertScrollHeight += 123; // open controller
-                //}
+                vertScrollHeight = 0;
+                if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
+                    vertScrollHeight += PIDList.Altitude.GetAsst().bShow ? 168 : 27;
+                vertScrollHeight += PIDList.VertSpeed.GetAsst().bShow ? 168 : 29;
+                if (showControlSurfaces)
+                    vertScrollHeight += PIDList.Elevator.GetAsst().bShow ? 168 : 27;
+            }
+            if (bShowThrottle && dragID != 3)
+            {
+                thrtScrollHeight = 0;
+                if (CurrentThrottleMode == ThrottleMode.Speed)
+                    thrtScrollHeight += PIDList.Speed.GetAsst().bShow ? 168 : 27;
+                thrtScrollHeight += PIDList.Acceleration.GetAsst().bShow ? 168 : 29;
             }
             #endregion
 
@@ -771,6 +770,34 @@ namespace PilotAssistant
 
                 GUILayout.Window(34245, presetWindow, displayPresetWindow, "", GeneralUI.UISkin.box, GUILayout.Width(200), GUILayout.Height(0));
             }
+        }
+
+        private bool controllerVisible(PID_Controller controller)
+        {
+            if (!controller.bShow)
+                return false;
+            switch (controller.ctrlID)
+            {
+                case PIDList.HdgBank:
+                case PIDList.BankToYaw:
+                    return bShowHdg && CurrentHrztMode != HrztMode.WingsLevel;
+                case PIDList.Aileron:
+                case PIDList.Rudder:
+                    return bShowHdg && showControlSurfaces;
+                case PIDList.Altitude:
+                    return bShowVert && (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude);
+                case PIDList.VertSpeed:
+                    return bShowVert;
+                case PIDList.Elevator:
+                    return bShowVert && showControlSurfaces;
+                case PIDList.Speed:
+                    return bShowThrottle && CurrentThrottleMode == ThrottleMode.Speed;
+                case PIDList.Acceleration:
+                    return bShowThrottle;
+                default:
+                    return true;
+            }
+            return false;
         }
 
         private void displayWindow(int id)
@@ -861,7 +888,7 @@ namespace PilotAssistant
                     GUILayout.EndHorizontal();
                 }
 
-                HdgScrollbar = GUILayout.BeginScrollView(HdgScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(hdgScrollHeight), GUILayout.MaxHeight(maxHdgScrollbarHeight));
+                HdgScrollbar = GUILayout.BeginScrollView(HdgScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(hdgScrollHeight, maxHdgScrollbarHeight)));
                 if (CurrentHrztMode != HrztMode.WingsLevel)
                 {
                     drawPIDvalues(PIDList.HdgBank, "Heading", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0");
@@ -881,7 +908,7 @@ namespace PilotAssistant
                         dragResizeActive = true;
                         dragID = 1;
                         dragStart = Input.mousePosition.y;
-                        maxHdgScrollbarHeight = hdgScrollHeight;
+                        maxHdgScrollbarHeight = hdgScrollHeight = Math.Min(maxHdgScrollbarHeight, hdgScrollHeight);
                     }
                 }
                 if (dragResizeActive && dragID == 1)
@@ -965,7 +992,7 @@ namespace PilotAssistant
                 targetVert = GUILayout.TextField(targetVert, GUILayout.Width(98));
                 GUILayout.EndHorizontal();
 
-                VertScrollbar = GUILayout.BeginScrollView(VertScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(vertScrollHeight), GUILayout.MaxHeight(maxVertScrollbarHeight));
+                VertScrollbar = GUILayout.BeginScrollView(VertScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(vertScrollHeight, maxVertScrollbarHeight)));
                 if (CurrentVertMode == VertMode.RadarAltitude)
                     drawPIDvalues(PIDList.Altitude, "RAltitude", "m", FlightData.radarAlt, 2, "Speed ", "m/s", true);
                 if (CurrentVertMode == VertMode.Altitude)
@@ -987,7 +1014,7 @@ namespace PilotAssistant
                         dragResizeActive = true;
                         dragID = 2;
                         dragStart = Input.mousePosition.y;
-                        maxVertScrollbarHeight = vertScrollHeight;
+                        maxVertScrollbarHeight = vertScrollHeight = Math.Min(maxVertScrollbarHeight, vertScrollHeight);
                     }
                 }
                 if (dragResizeActive && dragID == 2)
@@ -1055,10 +1082,10 @@ namespace PilotAssistant
                 targetSpeed = GUILayout.TextField(targetSpeed, GUILayout.Width(78));
                 GUILayout.EndHorizontal();
 
-                ThrtScrollbar = GUILayout.BeginScrollView(ThrtScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(thrtScrollHeight), GUILayout.MaxHeight(maxThrtScrollbarHeight));
+                ThrtScrollbar = GUILayout.BeginScrollView(ThrtScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(thrtScrollHeight, maxThrtScrollbarHeight)));
                 if (CurrentThrottleMode == ThrottleMode.Speed)
                     drawPIDvalues(PIDList.Speed, "Speed", "m/s", FlightData.thisVessel.srfSpeed, 2, "Accel ", "m/s", true);
-                drawPIDvalues(PIDList.Acceleration, "Acceleration", "m/s", FlightData.acceleration, 1, "Throttle ", "%", true);
+                drawPIDvalues(PIDList.Acceleration, "Acceleration", " m/s/s", FlightData.acceleration, 1, "Throttle ", "%", true);
                 // can't have people bugging things out now can we...
                 PIDList.Acceleration.GetAsst().OutMax = PIDList.Speed.GetAsst().OutMax.Clamp(-1, 0);
                 PIDList.Acceleration.GetAsst().OutMax = PIDList.Speed.GetAsst().OutMax.Clamp(-1, 0);
@@ -1072,7 +1099,7 @@ namespace PilotAssistant
                         dragResizeActive = true;
                         dragID = 3;
                         dragStart = Input.mousePosition.y;
-                        maxThrtScrollbarHeight = thrtScrollHeight;
+                        maxThrtScrollbarHeight = thrtScrollHeight = Math.Min(maxThrtScrollbarHeight, thrtScrollHeight);
                     }
                 }
                 if (dragResizeActive && dragID == 3)
@@ -1086,7 +1113,7 @@ namespace PilotAssistant
                     {
                         float height = Math.Max(Input.mousePosition.y, 0);
                         maxThrtScrollbarHeight += dragStart - height;
-                        thrtScrollHeight = maxThrtScrollbarHeight = Mathf.Clamp(maxThrtScrollbarHeight, 55, 500);
+                        thrtScrollHeight = maxThrtScrollbarHeight = Mathf.Clamp(maxThrtScrollbarHeight, 10, 500);
                         if (maxThrtScrollbarHeight > 10)
                             dragStart = height;
                     }
