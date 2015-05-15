@@ -174,6 +174,9 @@ namespace PilotAssistant
             GameEvents.onTimeWarpRateChanged.Remove(warpHandler);
             PresetManager.saveToFile();
 
+            InputLockManager.RemoveControlLock(pitchLockID);
+            InputLockManager.RemoveControlLock(yawLockID);
+
             instance = null; // static object is only for easy referencing between modules. Don't need to keep hold of it
         }
 

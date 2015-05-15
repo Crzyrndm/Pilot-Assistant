@@ -13,7 +13,8 @@ namespace PilotAssistant.Utility
         btnMinus,
         btnToggle,
         greenTextBox,
-        redButtonText
+        redButtonText,
+        lblToggle
     }
 
     static class GeneralUI
@@ -78,6 +79,8 @@ namespace PilotAssistant.Utility
             UISkin.customStyles[(int)myStyles.btnToggle].onNormal.background = UISkin.customStyles[(int)myStyles.btnToggle].onHover.background = UISkin.customStyles[(int)myStyles.btnToggle].onActive.background
                 = UISkin.customStyles[(int)myStyles.btnToggle].active.background = HighLogic.Skin.button.onNormal.background;
             UISkin.customStyles[(int)myStyles.btnToggle].hover.background = UISkin.customStyles[(int)myStyles.btnToggle].normal.background;
+
+            UISkin.customStyles[(int)myStyles.lblToggle] = new GUIStyle(UISkin.customStyles[(int)myStyles.btnToggle]);
 
             UISkin.customStyles[(int)myStyles.greenTextBox] = new GUIStyle(UISkin.textArea);
             UISkin.customStyles[(int)myStyles.greenTextBox].active.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].hover.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].focused.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].normal.textColor
