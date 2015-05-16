@@ -29,7 +29,7 @@ namespace PilotAssistant.Utility
                 return val;
         }
 
-        public static AsstController GetAsst(this PIDList id)
+        public static AsstController GetAsst(this AsstList id)
         {
             return PilotAssistant.Instance.controllers[(int)id];
         }
@@ -41,7 +41,8 @@ namespace PilotAssistant.Utility
 
         public static bool isFlightControlLocked()
         {
-            return InputLockManager.IsLocked(ControlTypes.PITCH) || InputLockManager.IsLocked(ControlTypes.ROLL) || InputLockManager.IsLocked(ControlTypes.YAW) || InputLockManager.IsLocked(ControlTypes.THROTTLE);
+            return (InputLockManager.IsLocked(ControlTypes.PITCH) && !PilotAssistant.Instance.VertActive) || InputLockManager.IsLocked(ControlTypes.ROLL)
+                    || (InputLockManager.IsLocked(ControlTypes.YAW) && !PilotAssistant.Instance.HrztActive) || InputLockManager.IsLocked(ControlTypes.THROTTLE);
         }
 
         /// <summary>

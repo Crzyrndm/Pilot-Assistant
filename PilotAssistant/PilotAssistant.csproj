@@ -48,6 +48,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppLauncherFlight.cs" />
+    <Compile Include="BindingManager.cs" />
+    <Compile Include="PilotAssistantFlightCore.cs" />
     <Compile Include="Presets\CraftPreset.cs" />
     <Compile Include="Presets\RSASPreset.cs" />
     <Compile Include="Presets\SSASPreset.cs" />

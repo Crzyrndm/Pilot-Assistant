@@ -6,30 +6,40 @@ namespace PilotAssistant
 {
     using Utility;
 
-    [KSPAddon(KSPAddon.Startup.Flight, false)]
-    public class AppLauncherFlight : MonoBehaviour
+    public class AppLauncherFlight
     {
+        static AppLauncherFlight instance;
+        public static AppLauncherFlight Instance
+        {
+            get
+            {
+                if (instance == null)
+                    instance = new AppLauncherFlight();
+                return instance;
+            }
+        }
+        void StartCoroutine(IEnumerator routine) // quick access to coroutine now it doesn't inherit Monobehaviour
+        {
+            PilotAssistantFlightCore.Instance.StartCoroutine(routine);
+        }
+
         private ApplicationLauncherButton btnLauncher;
         private Rect window;
 
+        public static bool bDisplayBindings = false;
         public static bool bDisplayOptions = false;
         public static bool bDisplayAssistant = false;
         public static bool bDisplaySAS = false;
         public static bool bDisplaySSAS = false;
 
         public static KSP.IO.PluginConfiguration config;
-        void Awake()
+        public void Start()
         {
-            window = new Rect(10, 50, 30, 30);
-
-            RenderingManager.AddToPostDrawQueue(5, Draw);
-
-            StartCoroutine(LoadConfig());
+            LoadConfig();
         }
 
-        IEnumerator LoadConfig()
+        void LoadConfig()
         {
-            yield return new WaitForEndOfFrame(); // Make sure PA and SSAS are running first
             try
             {
                 if (config == null)
@@ -44,11 +54,20 @@ namespace PilotAssistant
                 PilotAssistant.Instance.showPresets = config.GetValue("AsstPresetWindow", false);
                 PilotAssistant.Instance.showPIDLimits = config.GetValue("AsstLimits", false);
                 PilotAssistant.Instance.showControlSurfaces = config.GetValue("AsstControlSurfaces", false);
-                PilotAssistant.Instance.maxHdgScrollbarHeight = PilotAssistant.Instance.hdgScrollHeight = config.GetValue("maxHdgHeight", 55f);
-                PilotAssistant.Instance.maxVertScrollbarHeight = PilotAssistant.Instance.vertScrollHeight = config.GetValue("maxVertHeight", 55f);
-                PilotAssistant.Instance.maxThrtScrollbarHeight = PilotAssistant.Instance.thrtScrollHeight = config.GetValue("maxThrtHeight", 55f);
+                PilotAssistant.Instance.maxHdgScrollbarHeight = config.GetValue("maxHdgHeight", 55f);
+                PilotAssistant.Instance.maxVertScrollbarHeight = config.GetValue("maxVertHeight", 55f);
+                PilotAssistant.Instance.maxThrtScrollbarHeight = config.GetValue("maxThrtHeight", 55f);
                 SurfSAS.Instance.SSASwindow = config.GetValue("SSASWindow", new Rect(500, 300, 0, 0));
                 Stock_SAS.Instance.StockSASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
+                BindingManager.Instance.windowRect = config.GetValue("BindingWindow", new Rect(300, 50, 0, 0));
+                BindingManager.AsstPauseBinding.primaryBindingCode = config.GetValue("pausePrimary", KeyCode.Tab);
+                BindingManager.AsstPauseBinding.secondaryBindingCode = config.GetValue("pauseSecondary", KeyCode.None);
+                BindingManager.AsstHdgToggleBinding.primaryBindingCode = config.GetValue("hdgTglPrimary", KeyCode.Keypad9);
+                BindingManager.AsstHdgToggleBinding.secondaryBindingCode = config.GetValue("hdgTglSecondary", KeyCode.LeftAlt);
+                BindingManager.AsstVertToggleBinding.primaryBindingCode = config.GetValue("vertTglPrimary", KeyCode.Keypad6);
+                BindingManager.AsstVertToggleBinding.secondaryBindingCode = config.GetValue("vertTglSecondary", KeyCode.LeftAlt);
+                BindingManager.AsstThrtToggleBinding.primaryBindingCode = config.GetValue("thrtTglPrimary", KeyCode.Keypad3);
+                BindingManager.AsstThrtToggleBinding.secondaryBindingCode = config.GetValue("thrtTglSecondary", KeyCode.LeftAlt);
                 window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
 
                 OnAppLauncherReady();
@@ -59,15 +78,14 @@ namespace PilotAssistant
             }
         }
 
-        void OnDestroy()
+        public void OnDestroy()
         {
-            RenderingManager.RemoveFromPostDrawQueue(5, Draw);
-
             if (btnLauncher != null)
                 ApplicationLauncher.Instance.RemoveModApplication(btnLauncher);
             btnLauncher = null;
 
             SaveConfig();
+            instance = null;
         }
 
         public void SaveConfig()
@@ -85,12 +103,23 @@ namespace PilotAssistant
                 config["AsstPresetWindow"] = PilotAssistant.Instance.showPresets;
                 config["AsstLimits"] = PilotAssistant.Instance.showPIDLimits;
                 config["AsstControlSurfaces"] = PilotAssistant.Instance.showControlSurfaces;
+                config["maxHdgHeight"] = PilotAssistant.Instance.maxHdgScrollbarHeight;
+                config["maxVertHeight"] = PilotAssistant.Instance.maxVertScrollbarHeight;
+                config["maxThrtHeight"] = PilotAssistant.Instance.maxThrtScrollbarHeight;
                 config["SSASWindow"] = SurfSAS.Instance.SSASwindow;
                 config["SASWindow"] = Stock_SAS.Instance.StockSASwindow;
                 config["AppWindow"] = window;
-                config["maxHdgHeight"] = PilotAssistant.Instance.maxHdgScrollbarHeight;
-                config["maxVertHeight"] = PilotAssistant.Instance.maxVertScrollbarHeight;
-                config["maxTHrtHeight"] = PilotAssistant.Instance.maxThrtScrollbarHeight;
+                config["BindingWindow"] = BindingManager.Instance.windowRect;
+                config["pausePrimary"] = BindingManager.AsstPauseBinding.primaryBindingCode;
+                config["pauseSecondary"] = BindingManager.AsstPauseBinding.secondaryBindingCode;
+                config["hdgTglPrimary"] = BindingManager.AsstHdgToggleBinding.primaryBindingCode;
+                config["hdgTglSecondary"] = BindingManager.AsstHdgToggleBinding.secondaryBindingCode;
+                config["vertTglPrimary"] = BindingManager.AsstVertToggleBinding.primaryBindingCode;
+                config["vertTglSecondary"] = BindingManager.AsstVertToggleBinding.secondaryBindingCode;
+                config["thrtTglPrimary"] = BindingManager.AsstThrtToggleBinding.primaryBindingCode;
+                config["thrtTglSecondary"] = BindingManager.AsstThrtToggleBinding.secondaryBindingCode;
+
+
                 config.save();
             }
             catch
@@ -141,10 +170,8 @@ namespace PilotAssistant
             }
         }
 
-        private void Draw()
+        public void Draw()
         {
-            GUI.skin = GeneralUI.UISkin;
-
             if (bDisplayOptions)
                 window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
         }
@@ -157,6 +184,7 @@ namespace PilotAssistant
             bDisplayAssistant = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
             bDisplaySAS = GUILayout.Toggle(bDisplaySAS, "Stock SAS", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
             bDisplaySSAS = GUILayout.Toggle(bDisplaySSAS, "SSAS", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            bDisplayBindings = GUILayout.Toggle(bDisplayBindings, "Keybindings", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
 
             if (GUILayout.Button("Update Defaults"))
                 PresetManager.updateDefaults();

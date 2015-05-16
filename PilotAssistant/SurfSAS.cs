@@ -16,14 +16,23 @@ namespace PilotAssistant
         Hdg
     }
 
-    [KSPAddon(KSPAddon.Startup.Flight, false)]
-    class SurfSAS : MonoBehaviour
+    class SurfSAS
     {
         #region Globals
         private static SurfSAS instance;
         public static SurfSAS Instance
         {
-            get { return instance; }
+            get
+            {
+                if (instance == null)
+                    instance = new SurfSAS();
+                return instance;
+            }
+        }
+
+        void StartCoroutine(IEnumerator routine) // quick access to coroutine now it doesn't inherit Monobehaviour
+        {
+            PilotAssistantFlightCore.Instance.StartCoroutine(routine);
         }
 
         public SASController[] SASControllers = new SASController[3]; // controller per axis
@@ -74,9 +83,6 @@ namespace PilotAssistant
         public void Start()
         {
             instance = this;
-            // Have to wait for stock SAS to be ready
-            if (FlightData.thisVessel == null)
-                FlightData.thisVessel = FlightGlobals.ActiveVessel;
 
             bPause.Initialize();
             ActivitySwitch(false);
@@ -85,32 +91,15 @@ namespace PilotAssistant
             SASControllers[(int)SASList.Pitch] = new SASController(SASList.Pitch, defaultPitchGains);
             SASControllers[(int)SASList.Bank] = new SASController(SASList.Bank, defaultRollGains);
             SASControllers[(int)SASList.Hdg] = new SASController(SASList.Hdg, defaultHdgGains);
+            SASList.Hdg.GetSAS().isHeadingControl = true;
 
             PresetManager.initDefaultPresets(new SSASPreset(SASControllers, "SSAS"));
-            PresetManager.initSSASPreset();
-
-            SASList.Hdg.GetSAS().isHeadingControl = true;
-            // hide/show with KSP hide UI
-            RenderingManager.AddToPostDrawQueue(5, drawGUI);
-
-            // events and callbacks
-            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
-            GameEvents.onVesselChange.Add(vesselSwitch);
-            GameEvents.onTimeWarpRateChanged.Add(warpHandler);
+            PresetManager.loadCraftSASPreset();
 
             tooltip = "";
         }
 
-        private void vesselSwitch(Vessel v)
-        {
-            FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(SurfaceSAS);
-            FlightData.thisVessel = v;
-            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(SurfaceSAS);
-
-            PresetManager.initSSASPreset();
-        }
-
-        private void warpHandler()
+        public void warpHandler()
         {
             if (TimeWarp.CurrentRateIndex == 0 && TimeWarp.CurrentRate != 1 && TimeWarp.WarpMode == TimeWarp.Modes.HIGH)
                 updateTarget();
@@ -120,12 +109,7 @@ namespace PilotAssistant
         {
             bArmed = false;
             ActivitySwitch(false);
-
-            RenderingManager.RemoveFromPostDrawQueue(5, drawGUI);
             FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(SurfaceSAS);
-            GameEvents.onVesselChange.Remove(vesselSwitch);
-            GameEvents.onTimeWarpRateChanged.Remove(warpHandler);
-
             instance = null;
         }
 
@@ -160,7 +144,7 @@ namespace PilotAssistant
         #endregion
 
         #region Fixed Update / Control
-        private void SurfaceSAS(FlightCtrlState state)
+        public void SurfaceSAS(FlightCtrlState state)
         {
             if (!bArmed || !ActivityCheck() || !FlightData.thisVessel.IsControllable)
                 return;
@@ -475,8 +459,6 @@ namespace PilotAssistant
         #region GUI
         public void drawGUI()
         {
-            GUI.skin = GeneralUI.UISkin;
-
             // SAS toggle button
             // is before the bDisplay check so it can be up without the GUI
             if (bArmed)

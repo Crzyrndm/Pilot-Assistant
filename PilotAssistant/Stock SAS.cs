@@ -10,13 +10,22 @@ namespace PilotAssistant
     using Utility;
     using Presets;
 
-    [KSPAddon(KSPAddon.Startup.Flight, false)]
-    class Stock_SAS : MonoBehaviour
+    class Stock_SAS
     {
         private static Stock_SAS instance;
         public static Stock_SAS Instance
         {
-            get { return instance; }
+            get
+            {
+                if (instance == null)
+                    instance = new Stock_SAS();
+                return instance;
+            }
+        }
+
+        void StartCoroutine(IEnumerator routine) // quick access to coroutine now it doesn't inherit Monobehaviour
+        {
+            PilotAssistantFlightCore.Instance.StartCoroutine(routine);
         }
 
         public Rect StockSASwindow = new Rect(10, 505, 200, 30); // gui window rect
@@ -29,9 +38,6 @@ namespace PilotAssistant
         {
             instance = this;
             StartCoroutine(Initialise());
-
-            GameEvents.onVesselChange.Add(vesselSwitch);
-            RenderingManager.AddToPostDrawQueue(5, drawGUI);
         }
 
         IEnumerator Initialise()
@@ -46,23 +52,18 @@ namespace PilotAssistant
             PresetManager.initDefaultPresets(new RSASPreset(FlightData.thisVessel.Autopilot.RSAS, "RSAS"));
         }
 
-        private void vesselSwitch(Vessel v)
+        public void vesselSwitch()
         {
-            FlightData.thisVessel = v;
-
             StartCoroutine(Initialise());
         }
 
         public void OnDestroy()
         {
-            RenderingManager.RemoveFromPostDrawQueue(5, drawGUI);
-            GameEvents.onVesselChange.Remove(vesselSwitch);
+            instance = null;
         }
 
         public void drawGUI()
         {
-            GUI.skin = GeneralUI.UISkin;
-
             if (FlightData.thisVessel.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
             {
                 if (AppLauncherFlight.bDisplaySAS)
