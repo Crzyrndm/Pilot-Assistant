@@ -46,8 +46,6 @@ namespace PilotAssistant
             instance = null;
         }
 
-
-
         private void OnAppLauncherReady()
         {
             GameEvents.onGUIApplicationLauncherReady.Remove(this.OnAppLauncherReady);

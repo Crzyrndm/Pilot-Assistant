@@ -89,7 +89,6 @@ namespace PilotAssistant
             }
             catch (Exception ex)
             {
-                Debug.Log(ex.Message);
                 Debug.Log("Pilot Assistant: Config load failed");
             }
         }

@@ -736,7 +736,7 @@ namespace PilotAssistant
                 presetWindow.x = window.x + window.width;
                 presetWindow.y = window.y;
 
-                GUILayout.Window(34245, presetWindow, displayPresetWindow, "", GeneralUI.UISkin.box, GUILayout.Width(200), GUILayout.Height(0));
+                presetWindow = GUILayout.Window(34245, presetWindow, displayPresetWindow, "", GeneralUI.UISkin.box, GUILayout.Width(200));
             }
         }
 
@@ -1187,21 +1187,27 @@ namespace PilotAssistant
                 PresetManager.newAsstPreset(ref newPresetName, controllers);
             GUILayout.EndHorizontal();
 
-            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
+            GUILayout.Box("", GUILayout.Height(10));
 
             if (GUILayout.Button("Reset to Defaults"))
                 PresetManager.loadAsstPreset(PresetManager.Instance.craftPresetDict["default"].AsstPreset);
 
-            GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
+            GUILayout.Box("", GUILayout.Height(10));
 
+            AsstPreset presetToDelete = null;
             foreach (AsstPreset p in PresetManager.Instance.AsstPresetList)
             {
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(p.name))
                     PresetManager.loadAsstPreset(p);
                 else if (GUILayout.Button("x", GUILayout.Width(25)))
-                    PresetManager.deleteAsstPreset(p);
+                    presetToDelete = p;
                 GUILayout.EndHorizontal();
+            }
+            if (presetToDelete != null)
+            {
+                PresetManager.deleteAsstPreset(presetToDelete);
+                presetWindow.height = 0;
             }
         }
         #endregion
