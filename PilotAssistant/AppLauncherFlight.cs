@@ -42,6 +42,7 @@ namespace PilotAssistant
         {
             try
             {
+                OnAppLauncherReady();
                 if (config == null)
                 {
                     config = KSP.IO.PluginConfiguration.CreateForType<AppLauncherFlight>();
@@ -60,20 +61,19 @@ namespace PilotAssistant
                 SurfSAS.Instance.SSASwindow = config.GetValue("SSASWindow", new Rect(500, 300, 0, 0));
                 Stock_SAS.Instance.StockSASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
                 BindingManager.Instance.windowRect = config.GetValue("BindingWindow", new Rect(300, 50, 0, 0));
-                BindingManager.AsstPauseBinding.primaryBindingCode = config.GetValue("pausePrimary", KeyCode.Tab);
-                BindingManager.AsstPauseBinding.secondaryBindingCode = config.GetValue("pauseSecondary", KeyCode.None);
-                BindingManager.AsstHdgToggleBinding.primaryBindingCode = config.GetValue("hdgTglPrimary", KeyCode.Keypad9);
-                BindingManager.AsstHdgToggleBinding.secondaryBindingCode = config.GetValue("hdgTglSecondary", KeyCode.LeftAlt);
-                BindingManager.AsstVertToggleBinding.primaryBindingCode = config.GetValue("vertTglPrimary", KeyCode.Keypad6);
-                BindingManager.AsstVertToggleBinding.secondaryBindingCode = config.GetValue("vertTglSecondary", KeyCode.LeftAlt);
-                BindingManager.AsstThrtToggleBinding.primaryBindingCode = config.GetValue("thrtTglPrimary", KeyCode.Keypad3);
-                BindingManager.AsstThrtToggleBinding.secondaryBindingCode = config.GetValue("thrtTglSecondary", KeyCode.LeftAlt);
+                BindingManager.bindingList[(int)bindingIndex.Pause].primaryBindingCode = config.GetValue("pausePrimary", KeyCode.Tab);
+                BindingManager.bindingList[(int)bindingIndex.Pause].secondaryBindingCode = config.GetValue("pauseSecondary", KeyCode.None);
+                BindingManager.bindingList[(int)bindingIndex.HdgTgl].primaryBindingCode = config.GetValue("hdgTglPrimary", KeyCode.Keypad9);
+                BindingManager.bindingList[(int)bindingIndex.HdgTgl].secondaryBindingCode = config.GetValue("hdgTglSecondary", KeyCode.LeftAlt);
+                BindingManager.bindingList[(int)bindingIndex.VertTgl].primaryBindingCode = config.GetValue("vertTglPrimary", KeyCode.Keypad6);
+                BindingManager.bindingList[(int)bindingIndex.VertTgl].secondaryBindingCode = config.GetValue("vertTglSecondary", KeyCode.LeftAlt);
+                BindingManager.bindingList[(int)bindingIndex.ThrtTgl].primaryBindingCode = config.GetValue("thrtTglPrimary", KeyCode.Keypad3);
+                BindingManager.bindingList[(int)bindingIndex.ThrtTgl].secondaryBindingCode = config.GetValue("thrtTglSecondary", KeyCode.LeftAlt);
                 window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
-
-                OnAppLauncherReady();
             }
-            catch
+            catch (Exception ex)
             {
+                Debug.Log(ex.Message);
                 Debug.Log("Pilot Assistant: Config load failed");
             }
         }
@@ -110,14 +110,14 @@ namespace PilotAssistant
                 config["SASWindow"] = Stock_SAS.Instance.StockSASwindow;
                 config["AppWindow"] = window;
                 config["BindingWindow"] = BindingManager.Instance.windowRect;
-                config["pausePrimary"] = BindingManager.AsstPauseBinding.primaryBindingCode;
-                config["pauseSecondary"] = BindingManager.AsstPauseBinding.secondaryBindingCode;
-                config["hdgTglPrimary"] = BindingManager.AsstHdgToggleBinding.primaryBindingCode;
-                config["hdgTglSecondary"] = BindingManager.AsstHdgToggleBinding.secondaryBindingCode;
-                config["vertTglPrimary"] = BindingManager.AsstVertToggleBinding.primaryBindingCode;
-                config["vertTglSecondary"] = BindingManager.AsstVertToggleBinding.secondaryBindingCode;
-                config["thrtTglPrimary"] = BindingManager.AsstThrtToggleBinding.primaryBindingCode;
-                config["thrtTglSecondary"] = BindingManager.AsstThrtToggleBinding.secondaryBindingCode;
+                config["pausePrimary"] = BindingManager.bindingList[(int)bindingIndex.Pause].primaryBindingCode;
+                config["pauseSecondary"] = BindingManager.bindingList[(int)bindingIndex.Pause].secondaryBindingCode;
+                config["hdgTglPrimary"] = BindingManager.bindingList[(int)bindingIndex.HdgTgl].primaryBindingCode;
+                config["hdgTglSecondary"] = BindingManager.bindingList[(int)bindingIndex.HdgTgl].secondaryBindingCode;
+                config["vertTglPrimary"] = BindingManager.bindingList[(int)bindingIndex.VertTgl].primaryBindingCode;
+                config["vertTglSecondary"] = BindingManager.bindingList[(int)bindingIndex.VertTgl].secondaryBindingCode;
+                config["thrtTglPrimary"] = BindingManager.bindingList[(int)bindingIndex.ThrtTgl].primaryBindingCode;
+                config["thrtTglSecondary"] = BindingManager.bindingList[(int)bindingIndex.ThrtTgl].secondaryBindingCode;
 
 
                 config.save();

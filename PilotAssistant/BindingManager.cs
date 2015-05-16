@@ -12,6 +12,15 @@ namespace PilotAssistant
         Asst,
         SSAS
     }
+
+    enum bindingIndex
+    {
+        Pause,
+        HdgTgl,
+        VertTgl,
+        ThrtTgl
+    }
+
     class BindingManager
     {
         static BindingManager instance;
@@ -29,14 +38,15 @@ namespace PilotAssistant
         display selector = display.Asst;
         GUIContent[] selectorLabels = new GUIContent[2] { new GUIContent("Pilot Assistant"), new GUIContent("SSAS") };
 
-        public static Binding AsstPauseBinding = new Binding(KeyCode.Tab, KeyCode.None);
-        public static Binding AsstHdgToggleBinding = new Binding(KeyCode.Keypad9, KeyCode.LeftAlt);
-        public static Binding AsstVertToggleBinding = new Binding(KeyCode.Keypad6, KeyCode.LeftAlt);
-        public static Binding AsstThrtToggleBinding = new Binding(KeyCode.Keypad3, KeyCode.LeftAlt);
+        public static List<Binding> bindingList;
 
         public void Start()
         {
-
+            bindingList = new List<Binding>();
+            bindingList.Add(new Binding("Pause Control", KeyCode.Tab, KeyCode.None));
+            bindingList.Add(new Binding("Toggle Heading Control", KeyCode.Keypad9, KeyCode.LeftAlt));
+            bindingList.Add(new Binding("Toggle Vert Control", KeyCode.Keypad6, KeyCode.LeftAlt));
+            bindingList.Add(new Binding("Toggle Throttle Control", KeyCode.Keypad3, KeyCode.LeftAlt));
         }
 
         public void Draw()
@@ -59,10 +69,8 @@ namespace PilotAssistant
                 drawLabelsInRow("Toggle Fine Mode", GameSettings.PRECISION_CTRL.primary);
                 drawLabelsInRow("Rate x10", GameSettings.MODIFIER_KEY.primary);
                 GUILayout.Space(20);
-                drawSetKey("Pause Control", AsstPauseBinding);
-                drawSetKey("Toggle Heading Control", AsstHdgToggleBinding);
-                drawSetKey("Toggle Vert Control", AsstVertToggleBinding);
-                drawSetKey("Toggle Throttle Control", AsstThrtToggleBinding);
+                foreach (Binding b in bindingList)
+                    drawSetKey(b);
             }
             else if (selector == display.SSAS)
             {
@@ -79,11 +87,11 @@ namespace PilotAssistant
             GUILayout.EndHorizontal();
         }
 
-        void drawSetKey(string Action, Binding keybind)
+        void drawSetKey(Binding keybind)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label(Action, GUILayout.Width(150));
-            keybind.waitingToSetPrimary = GUILayout.Toggle(keybind.waitingToSetPrimary, keybind.primaryBindingCode.ToString(), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            GUILayout.Label(keybind.bindingDescription, GUILayout.Width(150));
+            keybind.waitingToSetPrimary = GUILayout.Toggle(keybind.waitingToSetPrimary, keybind.primaryBindingCode.ToString(), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(100));
             if (keybind.waitingToSetPrimary)
             {
                 if (Input.GetMouseButton(0) || Event.current.keyCode == KeyCode.Escape)
@@ -94,7 +102,7 @@ namespace PilotAssistant
                     keybind.waitingToSetPrimary = false;
                 }
             }
-            keybind.waitingToSetSecondary = GUILayout.Toggle(keybind.waitingToSetSecondary, keybind.secondaryBindingCode.ToString(), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            keybind.waitingToSetSecondary = GUILayout.Toggle(keybind.waitingToSetSecondary, keybind.secondaryBindingCode.ToString(), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(100));
             if (keybind.waitingToSetSecondary)
             {
                 if (Input.GetMouseButton(0) || Event.current.keyCode == KeyCode.Escape)
@@ -113,17 +121,20 @@ namespace PilotAssistant
 
         public void OnDestroy()
         {
-
+            bindingList = null;
+            instance = null;
         }
 
         public class Binding
         {
+            public string bindingDescription { get; set; }
             public KeyCode primaryBindingCode { get; set; }
             public bool waitingToSetPrimary { get; set; }
             public KeyCode secondaryBindingCode { get; set; }
             public bool waitingToSetSecondary { get; set; }
-            public Binding(KeyCode primary, KeyCode secondary)
+            public Binding(string description, KeyCode primary, KeyCode secondary)
             {
+                bindingDescription = description;
                 primaryBindingCode = primary;
                 secondaryBindingCode = secondary;
             }

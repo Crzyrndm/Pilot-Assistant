@@ -331,7 +331,7 @@ namespace PilotAssistant
                             }
                         }
                     }
-                    if (BindingManager.AsstPauseBinding.isPressed && !MapView.MapIsEnabled)
+                    if (BindingManager.bindingList[(int)bindingIndex.Pause].isPressed && !MapView.MapIsEnabled)
                     {
                         bPause = !bPause;
                         if (!bPause)
@@ -356,11 +356,11 @@ namespace PilotAssistant
                         }
                     }
 
-                    if (BindingManager.AsstHdgToggleBinding.isPressed)
+                    if (BindingManager.bindingList[(int)bindingIndex.HdgTgl].isPressed)
                         hdgModeChanged(CurrentHrztMode, !HrztActive);
-                    if (BindingManager.AsstVertToggleBinding.isPressed)
+                    if (BindingManager.bindingList[(int)bindingIndex.VertTgl].isPressed)
                         vertModeChanged(CurrentVertMode, !VertActive);
-                    if (BindingManager.AsstThrtToggleBinding.isPressed)
+                    if (BindingManager.bindingList[(int)bindingIndex.ThrtTgl].isPressed)
                         throttleModeChanged(CurrentThrottleMode, !ThrtActive);
                 }
             }

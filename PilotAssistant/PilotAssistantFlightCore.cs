@@ -39,9 +39,9 @@ namespace PilotAssistant
             PilotAssistant.Instance.Start();
             SurfSAS.Instance.Start();
             Stock_SAS.Instance.Start();
-            AppLauncherFlight.Instance.Start();
             BindingManager.Instance.Start();
-
+            AppLauncherFlight.Instance.Start(); // must be the last to start as it loads settings and assigns it to the others
+            
             FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(onPreAutoPilotUpdate);
             FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(onAutoPilotUpdate);
             FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(onPostAutoPilotUpdate);
