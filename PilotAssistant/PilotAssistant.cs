@@ -196,8 +196,6 @@ namespace PilotAssistant
             controllers[(int)AsstList.Speed] = new AsstController(AsstList.Speed, defaultSpeedGains);
             controllers[(int)AsstList.Acceleration] = new AsstController(AsstList.Acceleration, defaultAccelGains);
 
-            Debug.Log(new AsstController(AsstList.HdgBank, defaultHdgBankGains));
-
             // Set up a default preset that can be easily returned to
             PresetManager.initDefaultPresets(new AsstPreset(controllers, "default"));
 

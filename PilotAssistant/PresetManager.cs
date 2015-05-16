@@ -484,7 +484,6 @@ namespace PilotAssistant
         public static void loadAsstPreset(AsstPreset p)
         {
             AsstController[] c = PilotAssistant.Instance.controllers;
-            Debug.Log(c[0]);
             for (int i = 0; i < 8; i++)
             {
                 c[i].PGain = p.PIDGains[i][0];
