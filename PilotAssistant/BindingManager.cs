@@ -38,15 +38,15 @@ namespace PilotAssistant
         display selector = display.Asst;
         GUIContent[] selectorLabels = new GUIContent[2] { new GUIContent("Pilot Assistant"), new GUIContent("SSAS") };
 
-        public static List<Binding> bindingList;
+        public static Binding[] bindings;
 
         public void Start()
         {
-            bindingList = new List<Binding>();
-            bindingList.Add(new Binding("Pause Control", KeyCode.Tab, KeyCode.None));
-            bindingList.Add(new Binding("Toggle Heading Control", KeyCode.Keypad9, KeyCode.LeftAlt));
-            bindingList.Add(new Binding("Toggle Vert Control", KeyCode.Keypad6, KeyCode.LeftAlt));
-            bindingList.Add(new Binding("Toggle Throttle Control", KeyCode.Keypad3, KeyCode.LeftAlt));
+            bindings = new Binding[Enum.GetNames(typeof(bindingIndex)).GetLength(0)];
+            bindings[(int)bindingIndex.Pause] = new Binding("Pause Control", KeyCode.Tab, KeyCode.None);
+            bindings[(int)bindingIndex.HdgTgl] = new Binding("Toggle Heading Control", KeyCode.Keypad9, KeyCode.LeftAlt);
+            bindings[(int)bindingIndex.VertTgl] = new Binding("Toggle Vert Control", KeyCode.Keypad6, KeyCode.LeftAlt);
+            bindings[(int)bindingIndex.ThrtTgl] = new Binding("Toggle Throttle Control", KeyCode.Keypad3, KeyCode.LeftAlt);
         }
 
         public void Draw()
@@ -69,7 +69,7 @@ namespace PilotAssistant
                 drawLabelsInRow("Toggle Fine Mode", GameSettings.PRECISION_CTRL.primary);
                 drawLabelsInRow("Rate x10", GameSettings.MODIFIER_KEY.primary);
                 GUILayout.Space(20);
-                foreach (Binding b in bindingList)
+                foreach (Binding b in bindings)
                     drawSetKey(b);
             }
             else if (selector == display.SSAS)
@@ -121,7 +121,7 @@ namespace PilotAssistant
 
         public void OnDestroy()
         {
-            bindingList = null;
+            bindings = null;
             instance = null;
         }
 

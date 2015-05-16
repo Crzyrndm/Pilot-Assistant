@@ -10,7 +10,7 @@ namespace PilotAssistant.Presets
         public string name;
         public double[,] PIDGains = new double[3, 5];
 
-        public SSASPreset(List<PID.PID_Controller> controllers, string Name) // used for adding a new preset, can clone the current values
+        public SSASPreset(List<PID.SASController> controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
 
@@ -24,7 +24,7 @@ namespace PilotAssistant.Presets
             }
         }
 
-        public SSASPreset(PID.PID_Controller[] controllers, string Name) // used for adding a new preset, can clone the current values
+        public SSASPreset(PID.SASController[] controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
             foreach (SASList s in Enum.GetValues(typeof(SASList)))
@@ -50,7 +50,7 @@ namespace PilotAssistant.Presets
             }
         }
 
-        public void Update(List<PID.PID_Controller> controllers)
+        public void Update(List<PID.SASController> controllers)
         {
             foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {
@@ -62,7 +62,7 @@ namespace PilotAssistant.Presets
             }
         }
 
-        public void Update(PID.PID_Controller[] controllers)
+        public void Update(PID.SASController[] controllers)
         {
             foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {

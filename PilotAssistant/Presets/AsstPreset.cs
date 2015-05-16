@@ -14,13 +14,13 @@ namespace PilotAssistant.Presets
         public string name;
         public List<double[]> PIDGains = new List<double[]>();
 
-        public AsstPreset(List<PID_Controller> controllers, string Name) // used for adding a new preset, can clone the current values
+        public AsstPreset(List<AsstController> controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
             Update(controllers);
         }
 
-        public AsstPreset(PID_Controller[] controllers, string Name) // used for adding a new preset, can clone the current values
+        public AsstPreset(AsstController[] controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
             Update(controllers);
@@ -32,10 +32,10 @@ namespace PilotAssistant.Presets
             PIDGains = gains;        
         }
 
-        public void Update(List<PID_Controller> controllers)
+        public void Update(List<AsstController> controllers)
         {
             PIDGains.Clear();
-            foreach (PID_Controller controller in controllers)
+            foreach (AsstController controller in controllers)
             {
                 double[] gains = new double[9];
                 gains[0] = controller.PGain;
@@ -52,10 +52,10 @@ namespace PilotAssistant.Presets
             }
         }
 
-        public void Update(PID_Controller[] controllers)
+        public void Update(AsstController[] controllers)
         {
             PIDGains.Clear();
-            foreach (PID_Controller controller in controllers)
+            foreach (AsstController controller in controllers)
             {
                 double[] gains = new double[9];
                 gains[0] = controller.PGain;

@@ -462,7 +462,7 @@ namespace PilotAssistant
         }
 
         #region AsstPreset
-        public static void newAsstPreset(ref string name, PID_Controller[] controllers)
+        public static void newAsstPreset(ref string name, AsstController[] controllers)
         {
             if (name == "")
                 return;
@@ -591,7 +591,7 @@ namespace PilotAssistant
         #endregion
 
         #region SSAS Preset
-        public static void newSSASPreset(ref string name, PID_Controller[] controllers)
+        public static void newSSASPreset(ref string name, SASController[] controllers)
         {
             if (string.IsNullOrEmpty(name))
                 return;
@@ -610,7 +610,7 @@ namespace PilotAssistant
 
         public static void loadSSASPreset(SSASPreset p)
         {
-            PID_Controller[] c = SurfSAS.Instance.SASControllers;
+            SASController[] c = SurfSAS.Instance.SASControllers;
 
             foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {
@@ -718,16 +718,19 @@ namespace PilotAssistant
                 loadAsstPreset(instance.craftPresetDict[craftDefaultName].AsstPreset);
         }
 
+        public static void loadCraftSSASPreset()
+        {
+            if (instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SSASPreset != null)
+                loadSSASPreset(instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SSASPreset);
+            else
+                loadSSASPreset(instance.craftPresetDict[craftDefaultName].SSASPreset);
+        }
+
         // called on vessel load
         public static void loadCraftSASPreset()
         {
             if (instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName))
             {
-                if (instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SSASPreset != null)
-                    loadSSASPreset(instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SSASPreset);
-                else
-                    loadSSASPreset(instance.craftPresetDict[craftDefaultName].SSASPreset);
-
                 if (instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SASPreset != null)
                     loadSASPreset(instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SASPreset);
                 else
@@ -741,7 +744,6 @@ namespace PilotAssistant
             else
             {
                 loadSASPreset(instance.craftPresetDict[craftDefaultName].SASPreset);
-                loadSSASPreset(instance.craftPresetDict[craftDefaultName].SSASPreset);
                 loadRSASPreset(instance.craftPresetDict[craftDefaultName].RSASPreset);
             }
         }

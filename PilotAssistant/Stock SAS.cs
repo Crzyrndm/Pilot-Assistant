@@ -50,6 +50,8 @@ namespace PilotAssistant
 
             PresetManager.initDefaultPresets(new SASPreset(FlightData.thisVessel.Autopilot.SAS, "stock"));
             PresetManager.initDefaultPresets(new RSASPreset(FlightData.thisVessel.Autopilot.RSAS, "RSAS"));
+
+            PresetManager.loadCraftSASPreset();
         }
 
         public void vesselSwitch()
@@ -89,7 +91,7 @@ namespace PilotAssistant
                 }
             }
 
-            if (tooltip != "" && PilotAssistant.Instance.showTooltips)
+            if (tooltip != "" && PilotAssistantFlightCore.showTooltips)
                 GUILayout.Window(34246, new Rect(StockSASwindow.x + StockSASwindow.width, Screen.height - Input.mousePosition.y, 0, 0), tooltipWindow, "", GeneralUI.UISkin.label, GUILayout.Height(0), GUILayout.Width(300));
         }
 

@@ -88,7 +88,6 @@ namespace PilotAssistant
         public bool showPIDLimits = false;
         public bool showControlSurfaces = false;
         public bool doublesided = false;
-        public bool showTooltips = true;
 
         string targetVert = "0.00";
         string targetHeading = "0.00";
@@ -157,8 +156,6 @@ namespace PilotAssistant
         {
             instance = this;
             Initialise();
-
-            PresetManager.loadCraftAsstPreset();
 
             // Input clamps aren't part of the presets (there's no reason for them to be...). Just some sanity checking
             AsstList.Aileron.GetAsst().InMax = 180;
@@ -331,7 +328,7 @@ namespace PilotAssistant
                             }
                         }
                     }
-                    if (BindingManager.bindingList[(int)bindingIndex.Pause].isPressed && !MapView.MapIsEnabled)
+                    if (BindingManager.bindings[(int)bindingIndex.Pause].isPressed && !MapView.MapIsEnabled)
                     {
                         bPause = !bPause;
                         if (!bPause)
@@ -356,11 +353,11 @@ namespace PilotAssistant
                         }
                     }
 
-                    if (BindingManager.bindingList[(int)bindingIndex.HdgTgl].isPressed)
+                    if (BindingManager.bindings[(int)bindingIndex.HdgTgl].isPressed)
                         hdgModeChanged(CurrentHrztMode, !HrztActive);
-                    if (BindingManager.bindingList[(int)bindingIndex.VertTgl].isPressed)
+                    if (BindingManager.bindings[(int)bindingIndex.VertTgl].isPressed)
                         vertModeChanged(CurrentVertMode, !VertActive);
-                    if (BindingManager.bindingList[(int)bindingIndex.ThrtTgl].isPressed)
+                    if (BindingManager.bindings[(int)bindingIndex.ThrtTgl].isPressed)
                         throttleModeChanged(CurrentThrottleMode, !ThrtActive);
                 }
             }
@@ -727,7 +724,7 @@ namespace PilotAssistant
             window = GUILayout.Window(34244, window, displayWindow, "", GeneralUI.UISkin.box, GUILayout.Height(0), GUILayout.Width(width));
 
             // tooltip window. Label skin is transparent so it's only drawing what's inside it
-            if (tooltip != "" && showTooltips)
+            if (tooltip != "" && PilotAssistantFlightCore.showTooltips)
                 GUILayout.Window(34246, new Rect(window.x + window.width, Screen.height - Input.mousePosition.y, 0, 0), tooltipWindow, "", GeneralUI.UISkin.label, GUILayout.Height(0), GUILayout.Width(300));
 
             if (showPresets)
@@ -765,7 +762,6 @@ namespace PilotAssistant
                 default:
                     return true;
             }
-            return false;
         }
 
         private void displayWindow(int id)
@@ -776,7 +772,7 @@ namespace PilotAssistant
             showPIDLimits = GUILayout.Toggle(showPIDLimits, new GUIContent("L", "Show/Hide PID Limits"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
             showControlSurfaces = GUILayout.Toggle(showControlSurfaces, new GUIContent("C", "Show/Hide Control Surfaces"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
             doublesided = GUILayout.Toggle(doublesided, new GUIContent("S", "Separate Min and Max limits"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            showTooltips = GUILayout.Toggle(showTooltips, new GUIContent("T", "Show/Hide Tooltips"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            PilotAssistantFlightCore.showTooltips = GUILayout.Toggle(PilotAssistantFlightCore.showTooltips, new GUIContent("T", "Show/Hide Tooltips"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
             GUILayout.FlexibleSpace();
             showPresets = GUILayout.Toggle(showPresets, new GUIContent("P", "Show/Hide Presets"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
             if (GUILayout.Button("X", GeneralUI.UISkin.customStyles[(int)myStyles.redButtonText]))

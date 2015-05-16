@@ -94,8 +94,7 @@ namespace PilotAssistant
             SASList.Hdg.GetSAS().isHeadingControl = true;
 
             PresetManager.initDefaultPresets(new SSASPreset(SASControllers, "SSAS"));
-            PresetManager.loadCraftSASPreset();
-
+            
             tooltip = "";
         }
 
@@ -489,7 +488,7 @@ namespace PilotAssistant
                 SSASPresetwindow.y = SSASwindow.y;
             }
 
-            if (tooltip != "" && PilotAssistant.Instance.showTooltips)
+            if (tooltip != "" && PilotAssistantFlightCore.showTooltips)
                 GUILayout.Window(34246, new Rect(SSASwindow.x + SSASwindow.width, Screen.height - Input.mousePosition.y, 0, 0), tooltipWindow, "", GeneralUI.UISkin.label, GUILayout.Height(0), GUILayout.Width(300));
         }
 

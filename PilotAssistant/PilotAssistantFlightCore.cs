@@ -24,7 +24,7 @@ namespace PilotAssistant
                 return instance;
             }
         }
-
+        public static bool showTooltips = true;
         bool bHideUI = false;
         public static KSP.IO.PluginConfiguration config;
 
@@ -41,18 +41,23 @@ namespace PilotAssistant
             SurfSAS.Instance.Start();
             Stock_SAS.Instance.Start();
             BindingManager.Instance.Start();
-            AppLauncherFlight.Instance.Start(); // must be the last to start as it loads settings and assigns it to the others
+            AppLauncherFlight.Instance.Start();
             
             FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(onPreAutoPilotUpdate);
             FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(onAutoPilotUpdate);
             FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(onPostAutoPilotUpdate);
 
+            // don't put these in awake or they trigger on loading the vessel
             GameEvents.onHideUI.Add(hideUI);
             GameEvents.onShowUI.Add(showUI);
             GameEvents.onVesselChange.Add(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Add(warpRateChanged);
 
             LoadConfig();
+
+            PresetManager.loadCraftAsstPreset();
+            PresetManager.loadCraftSSASPreset();
+            // SAS and RSAS need to be handled in a coroutine to ensure they have been initialised.
         }
 
         public void LoadConfig()
@@ -65,29 +70,34 @@ namespace PilotAssistant
                     config.load();
                 }
 
-                PilotAssistant.Instance.window = config.GetValue("AsstWindow", new Rect(300, 300, 0, 0));
+                showTooltips = config.GetValue("AsstTooltips", true);
+
                 PilotAssistant.Instance.doublesided = config.GetValue("AsstDoublesided", false);
-                PilotAssistant.Instance.showTooltips = config.GetValue("AsstTooltips", true);
                 PilotAssistant.Instance.showPresets = config.GetValue("AsstPresetWindow", false);
                 PilotAssistant.Instance.showPIDLimits = config.GetValue("AsstLimits", false);
                 PilotAssistant.Instance.showControlSurfaces = config.GetValue("AsstControlSurfaces", false);
                 PilotAssistant.Instance.maxHdgScrollbarHeight = config.GetValue("maxHdgHeight", 55f);
                 PilotAssistant.Instance.maxVertScrollbarHeight = config.GetValue("maxVertHeight", 55f);
                 PilotAssistant.Instance.maxThrtScrollbarHeight = config.GetValue("maxThrtHeight", 55f);
+
+                // windows
+                PilotAssistant.Instance.window = config.GetValue("AsstWindow", new Rect(300, 300, 0, 0));
                 SurfSAS.Instance.SSASwindow = config.GetValue("SSASWindow", new Rect(500, 300, 0, 0));
                 Stock_SAS.Instance.StockSASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
                 BindingManager.Instance.windowRect = config.GetValue("BindingWindow", new Rect(300, 50, 0, 0));
-                BindingManager.bindingList[(int)bindingIndex.Pause].primaryBindingCode = config.GetValue("pausePrimary", KeyCode.Tab);
-                BindingManager.bindingList[(int)bindingIndex.Pause].secondaryBindingCode = config.GetValue("pauseSecondary", KeyCode.None);
-                BindingManager.bindingList[(int)bindingIndex.HdgTgl].primaryBindingCode = config.GetValue("hdgTglPrimary", KeyCode.Keypad9);
-                BindingManager.bindingList[(int)bindingIndex.HdgTgl].secondaryBindingCode = config.GetValue("hdgTglSecondary", KeyCode.LeftAlt);
-                BindingManager.bindingList[(int)bindingIndex.VertTgl].primaryBindingCode = config.GetValue("vertTglPrimary", KeyCode.Keypad6);
-                BindingManager.bindingList[(int)bindingIndex.VertTgl].secondaryBindingCode = config.GetValue("vertTglSecondary", KeyCode.LeftAlt);
-                BindingManager.bindingList[(int)bindingIndex.ThrtTgl].primaryBindingCode = config.GetValue("thrtTglPrimary", KeyCode.Keypad3);
-                BindingManager.bindingList[(int)bindingIndex.ThrtTgl].secondaryBindingCode = config.GetValue("thrtTglSecondary", KeyCode.LeftAlt);
                 AppLauncherFlight.Instance.window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
+
+                // key bindings
+                BindingManager.bindings[(int)bindingIndex.Pause].primaryBindingCode = config.GetValue("pausePrimary", KeyCode.Tab);
+                BindingManager.bindings[(int)bindingIndex.Pause].secondaryBindingCode = config.GetValue("pauseSecondary", KeyCode.None);
+                BindingManager.bindings[(int)bindingIndex.HdgTgl].primaryBindingCode = config.GetValue("hdgTglPrimary", KeyCode.Keypad9);
+                BindingManager.bindings[(int)bindingIndex.HdgTgl].secondaryBindingCode = config.GetValue("hdgTglSecondary", KeyCode.LeftAlt);
+                BindingManager.bindings[(int)bindingIndex.VertTgl].primaryBindingCode = config.GetValue("vertTglPrimary", KeyCode.Keypad6);
+                BindingManager.bindings[(int)bindingIndex.VertTgl].secondaryBindingCode = config.GetValue("vertTglSecondary", KeyCode.LeftAlt);
+                BindingManager.bindings[(int)bindingIndex.ThrtTgl].primaryBindingCode = config.GetValue("thrtTglPrimary", KeyCode.Keypad3);
+                BindingManager.bindings[(int)bindingIndex.ThrtTgl].secondaryBindingCode = config.GetValue("thrtTglSecondary", KeyCode.LeftAlt);
             }
-            catch (Exception ex)
+            catch
             {
                 Debug.Log("Pilot Assistant: Config load failed");
             }
@@ -101,8 +111,6 @@ namespace PilotAssistant
 
         void vesselSwitch(Vessel v)
         {
-            //if (FlightData.thisVessel == null)
-            //    return;
             FlightData.thisVessel.OnPreAutopilotUpdate -= new FlightInputCallback(onPreAutoPilotUpdate);
             FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(onAutoPilotUpdate);
             FlightData.thisVessel.OnPostAutopilotUpdate -= new FlightInputCallback(onPostAutoPilotUpdate);
@@ -120,8 +128,6 @@ namespace PilotAssistant
 
         void warpRateChanged()
         {
-            //if (FlightData.thisVessel == null)
-            //    return;
             PilotAssistant.Instance.warpHandler();
             SurfSAS.Instance.warpHandler();
         }
@@ -197,27 +203,33 @@ namespace PilotAssistant
                     config = KSP.IO.PluginConfiguration.CreateForType<AppLauncherFlight>();
                     config.load();
                 }
-                config["AsstWindow"] = PilotAssistant.Instance.window;
+
+                config["AsstTooltips"] = showTooltips;
+                
                 config["AsstDoublesided"] = PilotAssistant.Instance.doublesided;
-                config["AsstTooltips"] = PilotAssistant.Instance.showTooltips;
                 config["AsstPresetWindow"] = PilotAssistant.Instance.showPresets;
                 config["AsstLimits"] = PilotAssistant.Instance.showPIDLimits;
                 config["AsstControlSurfaces"] = PilotAssistant.Instance.showControlSurfaces;
                 config["maxHdgHeight"] = PilotAssistant.Instance.maxHdgScrollbarHeight;
                 config["maxVertHeight"] = PilotAssistant.Instance.maxVertScrollbarHeight;
                 config["maxThrtHeight"] = PilotAssistant.Instance.maxThrtScrollbarHeight;
+
+                // window rect's
+                config["AsstWindow"] = PilotAssistant.Instance.window;
                 config["SSASWindow"] = SurfSAS.Instance.SSASwindow;
                 config["SASWindow"] = Stock_SAS.Instance.StockSASwindow;
                 config["AppWindow"] = AppLauncherFlight.Instance.window;
                 config["BindingWindow"] = BindingManager.Instance.windowRect;
-                config["pausePrimary"] = BindingManager.bindingList[(int)bindingIndex.Pause].primaryBindingCode;
-                config["pauseSecondary"] = BindingManager.bindingList[(int)bindingIndex.Pause].secondaryBindingCode;
-                config["hdgTglPrimary"] = BindingManager.bindingList[(int)bindingIndex.HdgTgl].primaryBindingCode;
-                config["hdgTglSecondary"] = BindingManager.bindingList[(int)bindingIndex.HdgTgl].secondaryBindingCode;
-                config["vertTglPrimary"] = BindingManager.bindingList[(int)bindingIndex.VertTgl].primaryBindingCode;
-                config["vertTglSecondary"] = BindingManager.bindingList[(int)bindingIndex.VertTgl].secondaryBindingCode;
-                config["thrtTglPrimary"] = BindingManager.bindingList[(int)bindingIndex.ThrtTgl].primaryBindingCode;
-                config["thrtTglSecondary"] = BindingManager.bindingList[(int)bindingIndex.ThrtTgl].secondaryBindingCode;
+
+                // key bindings
+                config["pausePrimary"] = BindingManager.bindings[(int)bindingIndex.Pause].primaryBindingCode;
+                config["pauseSecondary"] = BindingManager.bindings[(int)bindingIndex.Pause].secondaryBindingCode;
+                config["hdgTglPrimary"] = BindingManager.bindings[(int)bindingIndex.HdgTgl].primaryBindingCode;
+                config["hdgTglSecondary"] = BindingManager.bindings[(int)bindingIndex.HdgTgl].secondaryBindingCode;
+                config["vertTglPrimary"] = BindingManager.bindings[(int)bindingIndex.VertTgl].primaryBindingCode;
+                config["vertTglSecondary"] = BindingManager.bindings[(int)bindingIndex.VertTgl].secondaryBindingCode;
+                config["thrtTglPrimary"] = BindingManager.bindings[(int)bindingIndex.ThrtTgl].primaryBindingCode;
+                config["thrtTglSecondary"] = BindingManager.bindings[(int)bindingIndex.ThrtTgl].secondaryBindingCode;
 
 
                 config.save();
