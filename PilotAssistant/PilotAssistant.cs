@@ -219,10 +219,9 @@ namespace PilotAssistant
             // Heading setpoint updates
             if (HrztActive)
             {
-                if (!FlightData.thisVessel.checkLanded())
-                    AsstList.HdgBank.GetAsst().SetPoint = Utils.calculateTargetHeading(currentDirectionTarget);
-                else
-                    AsstList.HdgBank.GetAsst().SetPoint = FlightData.heading;
+                if (FlightData.thisVessel.checkLanded())
+                    newDirectionTarget = currentDirectionTarget = Utils.vecHeading(FlightData.heading);
+                AsstList.HdgBank.GetAsst().SetPoint = Utils.calculateTargetHeading(currentDirectionTarget);
 
                 if (!headingEdit)
                     targetHeading = AsstList.HdgBank.GetAsst().SetPoint.ToString("0.00");
@@ -499,14 +498,6 @@ namespace PilotAssistant
         #endregion
 
         #region Control / Fixed Update
-        public void preAutoPilotEvent(FlightCtrlState state)
-        {
-            if (!HighLogic.LoadedSceneIsFlight)
-                return;
-            if (FlightData.thisVessel == null)
-                return;
-            FlightData.updateAttitude();
-        }
 
         public void vesselController(FlightCtrlState state)
         {
@@ -599,7 +590,6 @@ namespace PilotAssistant
                 newDirectionTarget = Utils.vecHeading(newHdg);
                 // get new remainder, reset increment only if the sign changed
                 finalTarget = Utils.calculateTargetHeading(newDirectionTarget);
-                target = Utils.calculateTargetHeading(currentDirectionTarget);
                 double tempRemainder = finalTarget - Utils.CurrentAngleTargetRel(target, finalTarget, 180);
                 if (Math.Sign(remainder) != Math.Sign(tempRemainder))
                 {
@@ -692,7 +682,7 @@ namespace PilotAssistant
         #region GUI
         public void drawGUI()
         {
-            if (!AppLauncherFlight.bDisplayAssistant)
+            if (!PilotAssistantFlightCore.bDisplayAssistant)
                 return;
 
             // main window
@@ -790,7 +780,7 @@ namespace PilotAssistant
             GUILayout.FlexibleSpace();
             showPresets = GUILayout.Toggle(showPresets, new GUIContent("P", "Show/Hide Presets"), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
             if (GUILayout.Button("X", GeneralUI.UISkin.customStyles[(int)myStyles.redButtonText]))
-                AppLauncherFlight.bDisplayAssistant = false;
+                PilotAssistantFlightCore.bDisplayAssistant = false;
             GUILayout.EndHorizontal();
 
             if (Utils.AsstIsPaused())

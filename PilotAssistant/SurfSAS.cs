@@ -478,7 +478,7 @@ namespace PilotAssistant
             }
 
             // Main and preset window stuff
-            if (AppLauncherFlight.bDisplaySSAS)
+            if (PilotAssistantFlightCore.bDisplaySSAS)
                 SSASwindow = GUILayout.Window(78934856, SSASwindow, drawSSASWindow, "SSAS", GUILayout.Height(0));
 
             if (bShowSSASPresets)
@@ -495,7 +495,7 @@ namespace PilotAssistant
         private void drawSSASWindow(int id)
         {
             if (GUI.Button(new Rect(SSASwindow.width - 16, 2, 14, 14), ""))
-                AppLauncherFlight.bDisplaySSAS = false;
+                PilotAssistantFlightCore.bDisplaySSAS = false;
 
             bShowSSASPresets = GUILayout.Toggle(bShowSSASPresets, bShowSSASPresets ? "Hide SAS Presets" : "Show SAS Presets");
 

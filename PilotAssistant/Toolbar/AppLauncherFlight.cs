@@ -2,7 +2,7 @@
 using System.Collections;
 using UnityEngine;
 
-namespace PilotAssistant
+namespace PilotAssistant.Toolbar
 {
     using Utility;
 
@@ -24,14 +24,6 @@ namespace PilotAssistant
         }
 
         private ApplicationLauncherButton btnLauncher;
-        public Rect window;
-
-        public static bool bDisplayBindings = false;
-        public static bool bDisplayOptions = false;
-        public static bool bDisplayAssistant = false;
-        public static bool bDisplaySAS = false;
-        public static bool bDisplaySSAS = false;
-
         
         public void Start()
         {
@@ -63,51 +55,31 @@ namespace PilotAssistant
         private void OnToggleTrue()
         {
             if (Input.GetMouseButtonUp(0))
-                bDisplayOptions = true;
+                PilotAssistantFlightCore.bDisplayOptions = true;
             else if (Input.GetMouseButtonUp(1))
             {
-                bDisplayAssistant = true;
-                if (bDisplayOptions)
-                    btnLauncher.SetTrue(false);
-                else
-                    btnLauncher.SetFalse(false);
+                PilotAssistantFlightCore.bDisplayAssistant = true;
+                setBtnState(PilotAssistantFlightCore.bDisplayOptions);
             }
         }
 
         private void OnToggleFalse()
         {
             if (Input.GetMouseButtonUp(0))
-                bDisplayOptions = false;
+                PilotAssistantFlightCore.bDisplayOptions = false;
             else if (Input.GetMouseButtonUp(1))
             {
-                bDisplayAssistant = true;
-                if (bDisplayOptions)
-                    btnLauncher.SetTrue(false);
-                else
-                    btnLauncher.SetFalse(false);
+                PilotAssistantFlightCore.bDisplayAssistant = true;
+                setBtnState(PilotAssistantFlightCore.bDisplayOptions);
             }
         }
 
-        public void Draw()
+        public static void setBtnState(bool state, bool click = false)
         {
-            if (bDisplayOptions)
-                window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
-        }
-
-        private void optionsWindow(int id)
-        {
-            if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
-                btnLauncher.SetFalse();
-
-            bDisplayAssistant = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            bDisplaySAS = GUILayout.Toggle(bDisplaySAS, "Stock SAS", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            bDisplaySSAS = GUILayout.Toggle(bDisplaySSAS, "SSAS", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            bDisplayBindings = GUILayout.Toggle(bDisplayBindings, "Keybindings", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-
-            if (GUILayout.Button("Update Defaults"))
-                PresetManager.updateDefaults();
-
-            GUI.DragWindow();
+            if (state)
+                instance.btnLauncher.SetTrue(click);
+            else
+                instance.btnLauncher.SetFalse(click);
         }
     }
 }

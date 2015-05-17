@@ -65,7 +65,7 @@ namespace PilotAssistant
         {
             if (FlightData.thisVessel.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
             {
-                if (AppLauncherFlight.bDisplaySAS)
+                if (PilotAssistantFlightCore.bDisplaySAS)
                     StockSASwindow = GUILayout.Window(78934857, StockSASwindow, drawSASWindow, "Stock SAS", GUILayout.Height(0));
 
                 if (bShowPresets)
@@ -77,7 +77,7 @@ namespace PilotAssistant
             }
             else
             {
-                if (AppLauncherFlight.bDisplaySAS)
+                if (PilotAssistantFlightCore.bDisplaySAS)
                     StockSASwindow = GUILayout.Window(78934857, StockSASwindow, drawRSASWindow, "Stock SAS", GUILayout.Height(0));
 
                 if (bShowPresets)
@@ -102,7 +102,7 @@ namespace PilotAssistant
         private void drawSASWindow(int id)
         {
             if (GUI.Button(new Rect(StockSASwindow.width - 16, 2, 14, 14), ""))
-                AppLauncherFlight.bDisplaySAS = false;
+                PilotAssistantFlightCore.bDisplaySAS = false;
 
             bShowPresets = GUILayout.Toggle(bShowPresets, bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
 
@@ -161,7 +161,7 @@ namespace PilotAssistant
         private void drawRSASWindow(int id)
         {
             if (GUI.Button(new Rect(StockSASwindow.width - 16, 2, 14, 14), ""))
-                AppLauncherFlight.bDisplaySAS = false;
+                PilotAssistantFlightCore.bDisplaySAS = false;
 
             bShowPresets = GUILayout.Toggle(bShowPresets, bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
 

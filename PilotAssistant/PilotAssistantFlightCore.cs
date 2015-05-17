@@ -12,6 +12,7 @@ namespace PilotAssistant
      * */
 
     using Utility;
+    using Toolbar;
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class PilotAssistantFlightCore : MonoBehaviour
@@ -27,10 +28,29 @@ namespace PilotAssistant
         public static bool showTooltips = true;
         bool bHideUI = false;
         public static KSP.IO.PluginConfiguration config;
+        public Rect window;
+        public bool bUseStockToolbar = true;
+
+        public static bool bDisplayBindings = false;
+        public static bool bDisplayOptions = false;
+        public static bool bDisplayAssistant = false;
+        public static bool bDisplaySAS = false;
+        public static bool bDisplaySSAS = false;
 
         public void Awake()
         {
             instance = this;
+            if (config == null)
+            {
+                config = KSP.IO.PluginConfiguration.CreateForType<PilotAssistantFlightCore>();
+                config.load();
+            }
+            bUseStockToolbar = config.GetValue("UseStockToolbar", true);
+
+            if (!bUseStockToolbar && ToolbarManager.ToolbarAvailable)
+                ToolbarMod.Instance.Start();
+            else
+                AppLauncherFlight.Instance.Start();
         }
 
         public void Start()
@@ -41,7 +61,6 @@ namespace PilotAssistant
             SurfSAS.Instance.Start();
             Stock_SAS.Instance.Start();
             BindingManager.Instance.Start();
-            AppLauncherFlight.Instance.Start();
             
             FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(onPreAutoPilotUpdate);
             FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(onAutoPilotUpdate);
@@ -64,12 +83,6 @@ namespace PilotAssistant
         {
             try
             {
-                if (config == null)
-                {
-                    config = KSP.IO.PluginConfiguration.CreateForType<PilotAssistantFlightCore>();
-                    config.load();
-                }
-
                 showTooltips = config.GetValue("AsstTooltips", true);
 
                 PilotAssistant.Instance.doublesided = config.GetValue("AsstDoublesided", false);
@@ -84,7 +97,7 @@ namespace PilotAssistant
                 SurfSAS.Instance.SSASwindow = config.GetValue("SSASWindow", new Rect(500, 300, 0, 0));
                 Stock_SAS.Instance.StockSASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
                 BindingManager.Instance.windowRect = config.GetValue("BindingWindow", new Rect(300, 50, 0, 0));
-                AppLauncherFlight.Instance.window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
+                window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
 
                 // key bindings
                 BindingManager.bindings[(int)bindingIndex.Pause].primaryBindingCode = config.GetValue("pausePrimary", KeyCode.Tab);
@@ -161,8 +174,30 @@ namespace PilotAssistant
             PilotAssistant.Instance.drawGUI();
             SurfSAS.Instance.drawGUI();
             Stock_SAS.Instance.drawGUI();
-            AppLauncherFlight.Instance.Draw();
+            Draw();
             BindingManager.Instance.Draw();
+        }
+
+        public void Draw()
+        {
+            if (bDisplayOptions)
+                window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
+        }
+
+        private void optionsWindow(int id)
+        {
+            if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
+                bDisplayOptions = false;
+
+            bDisplayAssistant = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            bDisplaySAS = GUILayout.Toggle(bDisplaySAS, "Stock SAS", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            bDisplaySSAS = GUILayout.Toggle(bDisplaySSAS, "SSAS", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+            bDisplayBindings = GUILayout.Toggle(bDisplayBindings, "Keybindings", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+
+            if (GUILayout.Button("Update Defaults"))
+                PresetManager.updateDefaults();
+
+            GUI.DragWindow();
         }
 
         void hideUI()
@@ -183,6 +218,7 @@ namespace PilotAssistant
             SurfSAS.Instance.OnDestroy();
             Stock_SAS.Instance.OnDestroy();
             AppLauncherFlight.Instance.OnDestroy();
+            ToolbarMod.Instance.OnDestroy();
             BindingManager.Instance.OnDestroy();
 
             GameEvents.onHideUI.Remove(hideUI);
@@ -204,6 +240,7 @@ namespace PilotAssistant
                 }
 
                 config["AsstTooltips"] = showTooltips;
+                config["UseStockToolbar"] = bUseStockToolbar;
                 
                 config["AsstDoublesided"] = PilotAssistant.Instance.doublesided;
                 config["AsstLimits"] = PilotAssistant.Instance.showPIDLimits;
@@ -216,7 +253,7 @@ namespace PilotAssistant
                 config["AsstWindow"] = PilotAssistant.Instance.window;
                 config["SSASWindow"] = SurfSAS.Instance.SSASwindow;
                 config["SASWindow"] = Stock_SAS.Instance.StockSASwindow;
-                config["AppWindow"] = AppLauncherFlight.Instance.window;
+                config["AppWindow"] = window;
                 config["BindingWindow"] = BindingManager.Instance.windowRect;
 
                 // key bindings

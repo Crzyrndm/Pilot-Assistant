@@ -51,7 +51,7 @@ namespace PilotAssistant
 
         public void Draw()
         {
-            if (AppLauncherFlight.bDisplayBindings)
+            if (PilotAssistantFlightCore.bDisplayBindings)
                 windowRect = GUILayout.Window(6849762, windowRect, drawWindow, "");
         }
 
