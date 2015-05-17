@@ -453,7 +453,7 @@ namespace PilotAssistant
                         {
                             if (setTarget)
                                 AsstList.Altitude.GetAsst().SetPoint = FlightData.radarAlt;
-                            targetVert = FlightData.radarAlt.ToString("0.00");
+                            targetVert = AsstList.Altitude.GetAsst().SetPoint.ToString("0.00");
                             bPause = false;
                             break;
                         }
@@ -638,26 +638,40 @@ namespace PilotAssistant
 
         double getClimbRateForConstAltitude()
         {
-            return terrainSlope(75) * FlightData.thisVessel.horizontalSrfSpeed;
-        }
-
-        /// <summary>
-        /// returns slope as the ratio of vertical distance to horizontal distance (ie. meters of rise per meter forward) between ground directly below and ground x degrees ahead
-        /// </summary>
-        double terrainSlope(double angle)
-        {
-            double RayDist = findTerrainDistAtAngle((float)angle, 10000);
-            double AltAhead = 0;
-            if (RayDist == -1)
-                AltAhead = FlightData.thisVessel.altitude;
+            // work out angle for ~1s to approach the point
+            double angle = Math.Min(Math.Atan(FlightData.thisVessel.horizontalSrfSpeed / FlightData.radarAlt), 1.5); // 1.5 is ~86 degrees
+            if (double.IsNaN(angle) || angle < 0.25) // 0.25 is 14.3 degrees
+                return 0; // fly without predictive if high/slow
             else
             {
-                AltAhead = RayDist * Math.Cos(angle * Math.PI / 180);
+                double slope = 0;
+                terrainSlope(angle, out slope);
+                return slope * FlightData.thisVessel.horizontalSrfSpeed;
+            }
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="angle">angle in radians to ping. 0 is straight down</param>
+        /// <param name="slope">the calculated terrain slope</param>
+        /// <returns>true if an object was encountered</returns>
+        bool terrainSlope(double angle, out double slope)
+        {
+            slope = 0;
+            angle += FlightData.pitch * Math.PI / 180;
+            double RayDist = findTerrainDistAtAngle((float)(angle * 180 / Math.PI), 10000);
+            double AltAhead = 0;
+            if (RayDist == -1)
+                return false;
+            else
+            {
+                AltAhead = RayDist * Math.Cos(angle);
                 if (FlightData.thisVessel.mainBody.ocean)
                     AltAhead = Math.Min(AltAhead, FlightData.thisVessel.altitude);
             }
-            double DistAhead = AltAhead * Math.Tan(angle * Math.PI / 180);
-            return (FlightData.radarAlt - AltAhead) / DistAhead;
+            slope = (FlightData.radarAlt - AltAhead) / (AltAhead * Math.Tan(angle));
+            return true;
         }
 
         /// <summary>
@@ -932,15 +946,16 @@ namespace PilotAssistant
                 else if (CurrentVertMode == VertMode.RadarAltitude)
                     buttonString += "Radar Alt";
 
-                if (GUILayout.Button(buttonString, GUILayout.Width(98)))
+                if (GUILayout.Button(buttonString, GUILayout.Width(118)))
                 {
                     ScreenMessages.PostScreenMessage(buttonString + " updated");
 
                     double newVal;
                     double.TryParse(targetVert, out newVal);
-                    if (CurrentVertMode == VertMode.Altitude)
+                    if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
                     {
-                        AsstList.Altitude.GetAsst().SetPoint = FlightData.thisVessel.altitude + FlightData.vertSpeed / AsstList.Altitude.GetAsst().PGain;
+                        if (CurrentVertMode == VertMode.Altitude)
+                            AsstList.Altitude.GetAsst().SetPoint = FlightData.thisVessel.altitude + FlightData.vertSpeed / AsstList.Altitude.GetAsst().PGain;
                         AsstList.Altitude.GetAsst().BumplessSetPoint = newVal;
                     }
                     else
@@ -953,7 +968,7 @@ namespace PilotAssistant
                     GUI.FocusControl("Target Hdg: ");
                     GUI.UnfocusWindow();
                 }
-                targetVert = GUILayout.TextField(targetVert, GUILayout.Width(98));
+                targetVert = GUILayout.TextField(targetVert, GUILayout.Width(78));
                 GUILayout.EndHorizontal();
 
                 VertScrollbar = GUILayout.BeginScrollView(VertScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(vertScrollHeight, maxVertScrollbarHeight)));

@@ -42,10 +42,7 @@ namespace PilotAssistant
 
         IEnumerator Initialise()
         {
-            if (FlightData.thisVessel == null)
-                FlightData.thisVessel = FlightGlobals.ActiveVessel;
-            
-            while (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch == null)
+            while (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch == null || FlightData.thisVessel.Autopilot.RSAS.pidPitch == null)
                 yield return null;
 
             PresetManager.initDefaultPresets(new SASPreset(FlightData.thisVessel.Autopilot.SAS, "stock"));

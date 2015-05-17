@@ -66,19 +66,18 @@ namespace PilotAssistant
             {
                 if (config == null)
                 {
-                    config = KSP.IO.PluginConfiguration.CreateForType<AppLauncherFlight>();
+                    config = KSP.IO.PluginConfiguration.CreateForType<PilotAssistantFlightCore>();
                     config.load();
                 }
 
                 showTooltips = config.GetValue("AsstTooltips", true);
 
                 PilotAssistant.Instance.doublesided = config.GetValue("AsstDoublesided", false);
-                PilotAssistant.Instance.showPresets = config.GetValue("AsstPresetWindow", false);
                 PilotAssistant.Instance.showPIDLimits = config.GetValue("AsstLimits", false);
                 PilotAssistant.Instance.showControlSurfaces = config.GetValue("AsstControlSurfaces", false);
-                PilotAssistant.Instance.maxHdgScrollbarHeight = config.GetValue("maxHdgHeight", 55f);
-                PilotAssistant.Instance.maxVertScrollbarHeight = config.GetValue("maxVertHeight", 55f);
-                PilotAssistant.Instance.maxThrtScrollbarHeight = config.GetValue("maxThrtHeight", 55f);
+                PilotAssistant.Instance.maxHdgScrollbarHeight = float.Parse(config.GetValue("maxHdgHeight", "55"));
+                PilotAssistant.Instance.maxVertScrollbarHeight = float.Parse(config.GetValue("maxVertHeight", "55"));
+                PilotAssistant.Instance.maxThrtScrollbarHeight = float.Parse(config.GetValue("maxThrtHeight", "55"));
 
                 // windows
                 PilotAssistant.Instance.window = config.GetValue("AsstWindow", new Rect(300, 300, 0, 0));
@@ -200,19 +199,18 @@ namespace PilotAssistant
             {
                 if (config == null)
                 {
-                    config = KSP.IO.PluginConfiguration.CreateForType<AppLauncherFlight>();
+                    config = KSP.IO.PluginConfiguration.CreateForType<PilotAssistantFlightCore>();
                     config.load();
                 }
 
                 config["AsstTooltips"] = showTooltips;
                 
                 config["AsstDoublesided"] = PilotAssistant.Instance.doublesided;
-                config["AsstPresetWindow"] = PilotAssistant.Instance.showPresets;
                 config["AsstLimits"] = PilotAssistant.Instance.showPIDLimits;
                 config["AsstControlSurfaces"] = PilotAssistant.Instance.showControlSurfaces;
-                config["maxHdgHeight"] = PilotAssistant.Instance.maxHdgScrollbarHeight;
-                config["maxVertHeight"] = PilotAssistant.Instance.maxVertScrollbarHeight;
-                config["maxThrtHeight"] = PilotAssistant.Instance.maxThrtScrollbarHeight;
+                config["maxHdgHeight"] = PilotAssistant.Instance.maxHdgScrollbarHeight.ToString("0");
+                config["maxVertHeight"] = PilotAssistant.Instance.maxVertScrollbarHeight.ToString("0");
+                config["maxThrtHeight"] = PilotAssistant.Instance.maxThrtScrollbarHeight.ToString("0");
 
                 // window rect's
                 config["AsstWindow"] = PilotAssistant.Instance.window;
