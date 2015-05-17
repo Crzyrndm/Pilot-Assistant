@@ -5,6 +5,7 @@ using System.Text;
 
 namespace PilotAssistant.Presets
 {
+    using FlightModules;
     public class SASPreset
     {
         public string name;

@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using KSP.IO;
 
-namespace PilotAssistant
+namespace PilotAssistant.FlightModules
 {
     using Presets;
     using Utility;

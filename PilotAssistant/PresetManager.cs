@@ -8,6 +8,7 @@ namespace PilotAssistant
     using PID;
     using Utility;
     using Presets;
+    using FlightModules;
 
     [KSPAddon(KSPAddon.Startup.MainMenu, true)]
     public class PresetManager : MonoBehaviour

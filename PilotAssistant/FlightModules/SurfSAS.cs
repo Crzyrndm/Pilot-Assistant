@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 
-namespace PilotAssistant
+namespace PilotAssistant.FlightModules
 {
     using PID;
     using Utility;

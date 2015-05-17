@@ -6,6 +6,7 @@ using UnityEngine;
 namespace PilotAssistant.Utility
 {
     using PID;
+    using FlightModules;
 
     public static class Utils
     {

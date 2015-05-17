@@ -48,15 +48,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Toolbar\AppLauncherFlight.cs" />
-    <Compile Include="BindingManager.cs" />
+    <Compile Include="FlightModules\BindingManager.cs" />
     <Compile Include="PilotAssistantFlightCore.cs" />
     <Compile Include="Presets\CraftPreset.cs" />
     <Compile Include="Presets\RSASPreset.cs" />
     <Compile Include="Presets\SSASPreset.cs" />
-    <Compile Include="Stock SAS.cs" />
-    <Compile Include="SurfSAS.cs" />
+    <Compile Include="FlightModules\Stock SAS.cs" />
+    <Compile Include="FlightModules\SurfSAS.cs" />
     <Compile Include="PID\PID_Controller.cs" />
-    <Compile Include="PilotAssistant.cs" />
+    <Compile Include="FlightModules\PilotAssistant.cs" />
     <Compile Include="Presets\AsstPreset.cs" />
     <Compile Include="PresetManager.cs" />
     <Compile Include="Presets\SASPreset.cs" />

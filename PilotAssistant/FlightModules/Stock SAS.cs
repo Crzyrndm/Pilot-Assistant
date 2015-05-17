@@ -4,7 +4,7 @@ using System.Collections;
 using System.Linq;
 using UnityEngine;
 
-namespace PilotAssistant
+namespace PilotAssistant.FlightModules
 {
     using PID;
     using Utility;

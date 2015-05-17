@@ -8,11 +8,13 @@ namespace PilotAssistant
     /* Flight core calls Unity functions of all flight scene classes. This improves control over execution order
      * which has previously been a slight annoyance.
      * 
-     * It also simplifies management of event subscriptions and the like
+     * It also simplifies management of event subscriptions and the like and serves as a location for settings
+     * and other common variables
      * */
 
     using Utility;
     using Toolbar;
+    using FlightModules;
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class PilotAssistantFlightCore : MonoBehaviour
@@ -25,6 +27,7 @@ namespace PilotAssistant
                 return instance;
             }
         }
+
         public static bool showTooltips = true;
         bool bHideUI = false;
         public static KSP.IO.PluginConfiguration config;
@@ -76,7 +79,7 @@ namespace PilotAssistant
 
             PresetManager.loadCraftAsstPreset();
             PresetManager.loadCraftSSASPreset();
-            // SAS and RSAS need to be handled in a coroutine to ensure they have been initialised.
+            // SAS and RSAS preset loading needs to be handled in a coroutine to ensure they have been initialised so they are handled by applicable classes
         }
 
         public void LoadConfig()
@@ -233,12 +236,6 @@ namespace PilotAssistant
         {
             try
             {
-                if (config == null)
-                {
-                    config = KSP.IO.PluginConfiguration.CreateForType<PilotAssistantFlightCore>();
-                    config.load();
-                }
-
                 config["AsstTooltips"] = showTooltips;
                 config["UseStockToolbar"] = bUseStockToolbar;
                 
@@ -249,7 +246,7 @@ namespace PilotAssistant
                 config["maxVertHeight"] = PilotAssistant.Instance.maxVertScrollbarHeight.ToString("0");
                 config["maxThrtHeight"] = PilotAssistant.Instance.maxThrtScrollbarHeight.ToString("0");
 
-                // window rect's
+                // window rects
                 config["AsstWindow"] = PilotAssistant.Instance.window;
                 config["SSASWindow"] = SurfSAS.Instance.SSASwindow;
                 config["SASWindow"] = Stock_SAS.Instance.StockSASwindow;

@@ -4,6 +4,7 @@ using UnityEngine;
 namespace PilotAssistant.PID
 {
     using Utility;
+    using FlightModules;
 
     public class PID_Controller : MonoBehaviour
     {
