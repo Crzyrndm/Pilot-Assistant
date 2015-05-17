@@ -25,22 +25,22 @@ namespace PilotAssistant.Toolbar
         public void Start()
         {
             menuButton = ToolbarManager.Instance.add("PilotAssistant", "PilotAssistantMenuBtn");
-            menuButton.TexturePath = "Pilot Assistant/Icon/AppLauncherIcon";
+            menuButton.TexturePath = "Pilot Assistant/Icon/BlizzyIcon";
             menuButton.ToolTip = "Open Pilot Assistant Menu";
             menuButton.OnClick += (e) => PilotAssistantFlightCore.bDisplayOptions = !PilotAssistantFlightCore.bDisplayOptions;
 
             asstButton = ToolbarManager.Instance.add("PilotAssistant", "PilotAssistantAsstBtn");
-            asstButton.TexturePath = "";
+            asstButton.TexturePath = "Pilot Assistant/Icon/BlizzyIcon";
             asstButton.ToolTip = "Open Pilot Assistant Window";
             asstButton.OnClick += (e) => PilotAssistantFlightCore.bDisplayAssistant = !PilotAssistantFlightCore.bDisplayAssistant;
 
             SSASButton = ToolbarManager.Instance.add("PilotAssistant", "PilotAssistantSSASBtn");
-            SSASButton.TexturePath = "";
+            SSASButton.TexturePath = "Pilot Assistant/Icon/BlizzyIcon";
             SSASButton.ToolTip = "Open SSAS Window";
             SSASButton.OnClick += (e) => PilotAssistantFlightCore.bDisplaySSAS = !PilotAssistantFlightCore.bDisplaySSAS;
 
             stockButton = ToolbarManager.Instance.add("PilotAssistant", "PilotAssistantStockBtn");
-            stockButton.TexturePath = "";
+            stockButton.TexturePath = "Pilot Assistant/Icon/BlizzyIcon";
             stockButton.ToolTip = "Open Stock SAS tuning Window";
             stockButton.OnClick += (e) => PilotAssistantFlightCore.bDisplaySAS = !PilotAssistantFlightCore.bDisplaySAS;
         }
