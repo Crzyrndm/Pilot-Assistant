@@ -40,6 +40,11 @@ namespace PilotAssistant
         public static bool bDisplaySAS = false;
         public static bool bDisplaySSAS = false;
 
+        public string blizMenuTexPath;
+        public string blizAsstTexPath;
+        public string blizSSASTexPath;
+        public string blizSASTexPath;
+
         public void Awake()
         {
             instance = this;
@@ -50,8 +55,13 @@ namespace PilotAssistant
             }
             bUseStockToolbar = config.GetValue("UseStockToolbar", true);
 
+            blizMenuTexPath = config.GetValue("blizMenuIcon", "Pilot Assistant/Icon/BlizzyIcon");
+            blizAsstTexPath = config.GetValue("blizAsstIcon", "Pilot Assistant/Icon/BlizzyIcon");
+            blizSSASTexPath = config.GetValue("blizSSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
+            blizSASTexPath = config.GetValue("blizSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
+
             if (!bUseStockToolbar && ToolbarManager.ToolbarAvailable)
-                ToolbarMod.Instance.Start();
+                ToolbarMod.Instance.Awake();
             else
                 AppLauncherFlight.Instance.Start();
         }
@@ -111,6 +121,8 @@ namespace PilotAssistant
                 BindingManager.bindings[(int)bindingIndex.VertTgl].secondaryBindingCode = config.GetValue("vertTglSecondary", KeyCode.LeftAlt);
                 BindingManager.bindings[(int)bindingIndex.ThrtTgl].primaryBindingCode = config.GetValue("thrtTglPrimary", KeyCode.Keypad3);
                 BindingManager.bindings[(int)bindingIndex.ThrtTgl].secondaryBindingCode = config.GetValue("thrtTglSecondary", KeyCode.LeftAlt);
+                BindingManager.bindings[(int)bindingIndex.ArmSSAS].primaryBindingCode = config.GetValue("SSASArmPrimary", GameSettings.SAS_TOGGLE.primary);
+                BindingManager.bindings[(int)bindingIndex.ArmSSAS].secondaryBindingCode = config.GetValue("SSASArmSecondary", KeyCode.LeftAlt);
             }
             catch
             {
@@ -262,7 +274,14 @@ namespace PilotAssistant
                 config["vertTglSecondary"] = BindingManager.bindings[(int)bindingIndex.VertTgl].secondaryBindingCode;
                 config["thrtTglPrimary"] = BindingManager.bindings[(int)bindingIndex.ThrtTgl].primaryBindingCode;
                 config["thrtTglSecondary"] = BindingManager.bindings[(int)bindingIndex.ThrtTgl].secondaryBindingCode;
+                config["SSASArmPrimary"] = BindingManager.bindings[(int)bindingIndex.ArmSSAS].primaryBindingCode;
+                config["SSASArmSecondary"] = BindingManager.bindings[(int)bindingIndex.ArmSSAS].secondaryBindingCode;
 
+                // bliz toolbar icons
+                config["blizMenuIcon"] = blizMenuTexPath;
+                config["blizAsstIcon"] = blizAsstTexPath;
+                config["blizSSASIcon"] = blizSSASTexPath;
+                config["blizSASIcon"] = blizSASTexPath;
 
                 config.save();
             }

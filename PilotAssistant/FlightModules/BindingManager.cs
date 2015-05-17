@@ -18,7 +18,8 @@ namespace PilotAssistant.FlightModules
         Pause,
         HdgTgl,
         VertTgl,
-        ThrtTgl
+        ThrtTgl,
+        ArmSSAS
     }
 
     class BindingManager
@@ -43,10 +44,11 @@ namespace PilotAssistant.FlightModules
         public void Start()
         {
             bindings = new Binding[Enum.GetNames(typeof(bindingIndex)).GetLength(0)];
-            bindings[(int)bindingIndex.Pause] = new Binding("Pause Control", KeyCode.Tab, KeyCode.None);
-            bindings[(int)bindingIndex.HdgTgl] = new Binding("Toggle Heading Control", KeyCode.Keypad9, KeyCode.LeftAlt);
-            bindings[(int)bindingIndex.VertTgl] = new Binding("Toggle Vert Control", KeyCode.Keypad6, KeyCode.LeftAlt);
-            bindings[(int)bindingIndex.ThrtTgl] = new Binding("Toggle Throttle Control", KeyCode.Keypad3, KeyCode.LeftAlt);
+            bindings[(int)bindingIndex.Pause] = new Binding("Pause Control", KeyCode.Tab, KeyCode.None, display.Asst);
+            bindings[(int)bindingIndex.HdgTgl] = new Binding("Toggle Heading Control", KeyCode.Keypad9, KeyCode.LeftAlt, display.Asst);
+            bindings[(int)bindingIndex.VertTgl] = new Binding("Toggle Vert Control", KeyCode.Keypad6, KeyCode.LeftAlt, display.Asst);
+            bindings[(int)bindingIndex.ThrtTgl] = new Binding("Toggle Throttle Control", KeyCode.Keypad3, KeyCode.LeftAlt, display.Asst);
+            bindings[(int)bindingIndex.ArmSSAS] = new Binding("Arm SSAS", GameSettings.SAS_TOGGLE.primary, KeyCode.LeftAlt, display.SSAS);
         }
 
         public void Draw()
@@ -70,11 +72,16 @@ namespace PilotAssistant.FlightModules
                 drawLabelsInRow("Rate x10", GameSettings.MODIFIER_KEY.primary);
                 GUILayout.Space(20);
                 foreach (Binding b in bindings)
+                {
+                    if (b.toDisplay != display.Asst)
+                        continue;
                     drawSetKey(b);
+                }
             }
             else if (selector == display.SSAS)
             {
-
+                drawSetKey(bindings[(int)bindingIndex.ArmSSAS]);
+                drawLabelsInRow("Toggle SSAS", GameSettings.SAS_TOGGLE.primary);
             }
             GUI.DragWindow();
         }
@@ -127,16 +134,18 @@ namespace PilotAssistant.FlightModules
 
         public class Binding
         {
+            public display toDisplay { get; set; }
             public string bindingDescription { get; set; }
             public KeyCode primaryBindingCode { get; set; }
             public bool waitingToSetPrimary { get; set; }
             public KeyCode secondaryBindingCode { get; set; }
             public bool waitingToSetSecondary { get; set; }
-            public Binding(string description, KeyCode primary, KeyCode secondary)
+            public Binding(string description, KeyCode primary, KeyCode secondary, display display)
             {
                 bindingDescription = description;
                 primaryBindingCode = primary;
                 secondaryBindingCode = secondary;
+                toDisplay = display;
             }
 
             public bool isPressed
