@@ -35,11 +35,11 @@ namespace PilotAssistant.Utility
         public static void updateAttitude()
         {
             // 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
-            // Called in PilotAssistant.OnPreAutoPilotUpdate. Do not call multiple times per physics frame or the "lastPlanetUp" vector will not be correct and VSpeed will not be calculated correctly
+            // Called in OnPreAutoPilotUpdate. Do not call multiple times per physics frame or the "lastPlanetUp" vector will not be correct and VSpeed will not be calculated correctly
             // Can't just leave it to a Coroutine becuase it has to be called before anything else
             radarAlt = thisVessel.altitude - (thisVessel.mainBody.ocean ? Math.Max(thisVessel.pqsAltitude, 0) : thisVessel.pqsAltitude);
             velocity = thisVessel.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
-            acceleration = acceleration * 0.8 + 0.2 * (thisVessel.srfSpeed - oldSpd) / TimeWarp.fixedDeltaTime;
+            acceleration = acceleration * 0.8 + 0.2 * (thisVessel.srfSpeed - oldSpd) / TimeWarp.fixedDeltaTime; // vessel.acceleration.magnitude includes acceleration by gravity
             vertSpeed = Vector3d.Dot((planetUp + lastPlanetUp) / 2, velocity);
 
             // surface vectors

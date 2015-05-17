@@ -565,7 +565,7 @@ namespace PilotAssistant
                 }
                 else
                 {
-                    AsstList.VertSpeed.GetAsst().SetPoint = getClimbRateForConstAltitude() - AsstList.Altitude.GetAsst().ResponseD(FlightData.radarAlt);
+                    AsstList.VertSpeed.GetAsst().SetPoint = getClimbRateForConstAltitude() - AsstList.Altitude.GetAsst().ResponseD(FlightData.radarAlt * Vector3.Dot(FlightData.surfVelForward, FlightData.thisVessel.srf_velocity.normalized));
                     AsstList.Elevator.GetAsst().SetPoint = -AsstList.VertSpeed.GetAsst().ResponseD(FlightData.vertSpeed);
                 }
                 state.pitch = -AsstList.Elevator.GetAsst().ResponseF(FlightData.AoA).Clamp(-1, 1);
@@ -639,7 +639,7 @@ namespace PilotAssistant
         double getClimbRateForConstAltitude()
         {
             // work out angle for ~1s to approach the point
-            double angle = Math.Min(Math.Atan(FlightData.thisVessel.horizontalSrfSpeed / FlightData.radarAlt), 1.5); // 1.5 is ~86 degrees
+            double angle = Math.Min(Math.Atan(4 * FlightData.thisVessel.horizontalSrfSpeed / FlightData.radarAlt), 1.55); // 1.55 is ~89 degrees
             if (double.IsNaN(angle) || angle < 0.25) // 0.25 is 14.3 degrees
                 return 0; // fly without predictive if high/slow
             else
