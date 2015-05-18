@@ -69,7 +69,7 @@ namespace PilotAssistant.FlightModules
         public double[] defaultRollGains = { 0.1, 0.0, 0.06, -1, 1, -1, 1, 3, 200 };
         public double[] defaultHdgGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3, 1 };
 
-        public Vector3 currentDirectionTarget = Vector3.zero; // this is the vec the Ienumerator is moving
+        public Vector3 currentDirectionTarget = Vector3.zero; // this is the vec the IEnumerator is moving
         public Vector3 newDirectionTarget = Vector3.zero; // this is the vec we are moving to
         double increment = 0; // this is the angle to shift per second
         bool hdgShiftIsRunning = false;
@@ -177,6 +177,17 @@ namespace PilotAssistant.FlightModules
                     state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
             }
             rollResponse(state);
+            //QuaternionResponse();
+        }
+
+        ArrowPointer pointer;
+        void QuaternionResponse()
+        {
+            Quaternion targetRotation = Quaternion.Inverse(Quaternion.Euler(90, 0, 0)) * Quaternion.Inverse(FlightData.thisVessel.GetTransform().rotation);
+            if (pointer == null)
+                pointer = ArrowPointer.Create(FlightData.thisVessel.rootPart.transform, Vector3.zero, targetRotation * FlightData.thisVessel.transform.up, 100, Color.red, true);
+            else
+                pointer.Direction = targetRotation * currentDirectionTarget;
         }
 
         private void rollResponse(FlightCtrlState state)

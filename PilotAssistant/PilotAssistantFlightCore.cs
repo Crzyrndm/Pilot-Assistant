@@ -233,7 +233,8 @@ namespace PilotAssistant
             SurfSAS.Instance.OnDestroy();
             Stock_SAS.Instance.OnDestroy();
             AppLauncherFlight.Instance.OnDestroy();
-            ToolbarMod.Instance.OnDestroy();
+            if (Toolbar.ToolbarManager.ToolbarAvailable && !bUseStockToolbar)
+                ToolbarMod.Instance.OnDestroy();
             BindingManager.Instance.OnDestroy();
 
             GameEvents.onHideUI.Remove(hideUI);
