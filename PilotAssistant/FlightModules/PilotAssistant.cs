@@ -36,7 +36,8 @@ namespace PilotAssistant.FlightModules
     {
         ToggleOn = -1,
         WingsLevel = 0,
-        Heading = 1
+        Heading = 1,
+        HeadingNum = 2
     }
 
     public enum ThrottleMode
@@ -72,7 +73,7 @@ namespace PilotAssistant.FlightModules
 
         public bool HrztActive = false;
         public HrztMode CurrentHrztMode = HrztMode.Heading;
-        GUIContent[] hrztLabels = new GUIContent[2] { new GUIContent("Lvl", "Mode: Wing Leveller"), new GUIContent("Hdg", "Mode: Heading Control") };
+        GUIContent[] hrztLabels = new GUIContent[3] { new GUIContent("Lvl", "Mode: Wing Leveller"), new GUIContent("Hdg", "Mode: Heading Control - Dirction"), new GUIContent("Hdg#", "Mode: Heading control - Value") };
 
         public bool VertActive = false;
         public VertMode CurrentVertMode = VertMode.VSpeed;
@@ -120,6 +121,10 @@ namespace PilotAssistant.FlightModules
         bool bShowVert = true;
         bool bShowThrottle = true;
 
+        bool bMinimiseHdg = false;
+        bool bMinimiseVert = false;
+        bool bMinimiseThrt = false;
+
         Vector2 HdgScrollbar = Vector2.zero;
         public float hdgScrollHeight = 55;
         public float maxHdgScrollbarHeight = 55;
@@ -146,7 +151,7 @@ namespace PilotAssistant.FlightModules
         public static double[] defaultRudderGains = { 0.1, 0.08, 0.05, -1, 1, -1, 1, 1, 1 };
         public static double[] defaultAltitudeGains = { 0.15, 0.01, 0, -50, 50, 0, 0, 1, 100 };
         public static double[] defaultVSpeedGains = { 2, 0.8, 2, -15, 15, -10, 10, 1, 10 };
-        public static double[] defaultElevatorGains = { 0.05, 0.01, 0.1, -1, 1, -1, 1, 1, 1 };
+        public static double[] defaultElevatorGains = { 0.05, 0.01, 0.1, -1, 1, -1, 1, 2, 1 };
         public static double[] defaultSpeedGains = { 0.2, 0.08, 0.1, -10, 10, -10, 10, 1, 10 };
         public static double[] defaultAccelGains = { 0.2, 0.08, 0, -1, 0, -1, 1, 1, 1 };
 
@@ -221,10 +226,13 @@ namespace PilotAssistant.FlightModules
             {
                 if (FlightData.thisVessel.checkLanded())
                     newDirectionTarget = currentDirectionTarget = Utils.vecHeading(FlightData.heading);
-                AsstList.HdgBank.GetAsst().SetPoint = Utils.calculateTargetHeading(currentDirectionTarget);
+                if (CurrentHrztMode == HrztMode.Heading)
+                {
+                    AsstList.HdgBank.GetAsst().SetPoint = Utils.calculateTargetHeading(currentDirectionTarget);
 
-                if (!headingEdit)
-                    targetHeading = AsstList.HdgBank.GetAsst().SetPoint.ToString("0.00");
+                    if (!headingEdit)
+                        targetHeading = AsstList.HdgBank.GetAsst().SetPoint.ToString("0.00");
+                }
             }
         }
 
@@ -513,10 +521,14 @@ namespace PilotAssistant.FlightModules
             // Heading Control
             if (HrztActive)
             {
-                if (CurrentHrztMode == HrztMode.Heading)
+                if (CurrentHrztMode == HrztMode.Heading || CurrentHrztMode == HrztMode.HeadingNum)
                 {
                     // calculate the bank angle response based on the current heading
-                    double hdgBankResponse = AsstList.HdgBank.GetAsst().ResponseD(Utils.CurrentAngleTargetRel(FlightData.progradeHeading, AsstList.HdgBank.GetAsst().SetPoint, 180));
+                    double hdgBankResponse;
+                    if (CurrentHrztMode == HrztMode.Heading)
+                        hdgBankResponse = AsstList.HdgBank.GetAsst().ResponseD(Utils.CurrentAngleTargetRel(FlightData.progradeHeading, AsstList.HdgBank.GetAsst().SetPoint, 180));
+                    else
+                        hdgBankResponse = AsstList.HdgBank.GetAsst().ResponseD(FlightData.progradeHeading);
                     // aileron setpoint updated, bank angle also used for yaw calculations (don't go direct to rudder because we want yaw stabilisation *or* turn assistance)
                     AsstList.BankToYaw.GetAsst().SetPoint = AsstList.Aileron.GetAsst().SetPoint = hdgBankResponse;
                     AsstList.Rudder.GetAsst().SetPoint = -AsstList.BankToYaw.GetAsst().ResponseD(FlightData.yaw);
@@ -551,12 +563,12 @@ namespace PilotAssistant.FlightModules
                 if (CurrentVertMode != VertMode.RadarAltitude)
                 {
                     if (CurrentVertMode == VertMode.Altitude)
-                        AsstList.VertSpeed.GetAsst().SetPoint = -AsstList.Altitude.GetAsst().ResponseD(FlightData.thisVessel.altitude);
+                        AsstList.VertSpeed.GetAsst().SetPoint = Utils.Clamp(-AsstList.Altitude.GetAsst().ResponseD(FlightData.thisVessel.altitude), FlightData.thisVessel.srfSpeed * -0.95, FlightData.thisVessel.srfSpeed * 0.95);
                     AsstList.Elevator.GetAsst().SetPoint = -AsstList.VertSpeed.GetAsst().ResponseD(FlightData.vertSpeed);
                 }
                 else
                 {
-                    AsstList.VertSpeed.GetAsst().SetPoint = getClimbRateForConstAltitude() - AsstList.Altitude.GetAsst().ResponseD(FlightData.radarAlt * Vector3.Dot(FlightData.surfVelForward, FlightData.thisVessel.srf_velocity.normalized));
+                    AsstList.VertSpeed.GetAsst().SetPoint = Utils.Clamp(getClimbRateForConstAltitude() - AsstList.Altitude.GetAsst().ResponseD(FlightData.radarAlt * Vector3.Dot(FlightData.surfVelForward, FlightData.thisVessel.srf_velocity.normalized)), -FlightData.thisVessel.srfSpeed * 0.95, FlightData.thisVessel.srfSpeed * 0.95);
                     AsstList.Elevator.GetAsst().SetPoint = -AsstList.VertSpeed.GetAsst().ResponseD(FlightData.vertSpeed);
                 }
                 state.pitch = -AsstList.Elevator.GetAsst().ResponseF(FlightData.AoA).Clamp(-1, 1);
@@ -564,14 +576,20 @@ namespace PilotAssistant.FlightModules
 
             if (ThrtActive)
             {
-                if (CurrentThrottleMode == ThrottleMode.Speed)
+                if (FlightData.thisVessel.ActionGroups[KSPActionGroup.Brakes])
+                    state.mainThrottle = 0;
+                else if (CurrentThrottleMode == ThrottleMode.Speed)
                 {
-                    if (AsstList.Speed.GetAsst().SetPoint != 0)
+                    if (!(AsstList.Speed.GetAsst().SetPoint == 0 && FlightData.thisVessel.srfSpeed < -AsstList.Acceleration.GetAsst().OutMin))
+                    {
                         AsstList.Acceleration.GetAsst().SetPoint = -AsstList.Speed.GetAsst().ResponseD(FlightData.thisVessel.srfSpeed);
+                        state.mainThrottle = (-AsstList.Acceleration.GetAsst().ResponseF(FlightData.acceleration)).Clamp(0, 1);
+                    }
                     else
-                        AsstList.Acceleration.GetAsst().SetPoint = AsstList.Acceleration.GetAsst().OutMax;
+                        state.mainThrottle = 0;
                 }
-                state.mainThrottle = (-AsstList.Acceleration.GetAsst().ResponseF(FlightData.acceleration)).Clamp(0, 1);
+                else
+                    state.mainThrottle = (-AsstList.Acceleration.GetAsst().ResponseF(FlightData.acceleration)).Clamp(0, 1);
             }
         }
 
@@ -670,7 +688,7 @@ namespace PilotAssistant.FlightModules
         float findTerrainDistAtAngle(float angle, float maxDist)
         {
             Vector3 direction = Quaternion.AngleAxis(angle, -FlightData.surfVelRight) * -FlightData.planetUp;
-            Vector3 origin = FlightData.thisVessel.CoM;
+            Vector3 origin = FlightData.thisVessel.rootPart.transform.position;
             RaycastHit hitInfo;
             if (FlightGlobals.ready && Physics.Raycast(origin, direction, out hitInfo, maxDist, ~1)) // ~1 masks off layer 0 which is apparently the parts on the current vessel. Seems to work
                 return hitInfo.distance;
@@ -684,6 +702,13 @@ namespace PilotAssistant.FlightModules
         {
             if (!PilotAssistantFlightCore.bDisplayAssistant)
                 return;
+
+            if (Event.current.type == EventType.Layout)
+            {
+                bMinimiseHdg = maxHdgScrollbarHeight == 10;
+                bMinimiseVert = maxVertScrollbarHeight == 10;
+                bMinimiseThrt = maxThrtScrollbarHeight == 10;
+            }
 
             // main window
             #region Main Window resizing (scroll views dont work nicely with GUILayout)
@@ -729,7 +754,7 @@ namespace PilotAssistant.FlightModules
 
             // tooltip window. Label skin is transparent so it's only drawing what's inside it
             if (tooltip != "" && PilotAssistantFlightCore.showTooltips)
-                GUILayout.Window(34246, new Rect(window.x + window.width, Screen.height - Input.mousePosition.y, 0, 0), tooltipWindow, "", GeneralUI.UISkin.label, GUILayout.Height(0), GUILayout.Width(300));
+                GUILayout.Window(34246, new Rect(window.x + window.width, Screen.height - Input.mousePosition.y, 300, 0), tooltipWindow, "", GeneralUI.UISkin.label);
 
             if (showPresets)
             {
@@ -808,10 +833,13 @@ namespace PilotAssistant.FlightModules
 
             if (bShowHdg)
             {
-                HrztMode tempMode = (HrztMode)GUILayout.SelectionGrid((int)CurrentHrztMode, hrztLabels, 2, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
-                if (CurrentHrztMode != tempMode)
-                    hdgModeChanged(tempMode, HrztActive);
-                if (CurrentHrztMode == HrztMode.Heading)
+                if (!bMinimiseHdg)
+                {
+                    HrztMode tempMode = (HrztMode)GUILayout.SelectionGrid((int)CurrentHrztMode, hrztLabels, 3, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
+                    if (CurrentHrztMode != tempMode)
+                        hdgModeChanged(tempMode, HrztActive);
+                }
+                if (CurrentHrztMode == HrztMode.Heading || CurrentHrztMode == HrztMode.HeadingNum)
                 {
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button("Target Hdg: ", GUILayout.Width(90)))
@@ -856,19 +884,21 @@ namespace PilotAssistant.FlightModules
                     GUILayout.EndHorizontal();
                 }
 
-                HdgScrollbar = GUILayout.BeginScrollView(HdgScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(hdgScrollHeight, maxHdgScrollbarHeight)));
-                if (CurrentHrztMode != HrztMode.WingsLevel)
+                if (!bMinimiseHdg)
                 {
-                    drawPIDvalues(AsstList.HdgBank, "Heading", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0");
-                    drawPIDvalues(AsstList.BankToYaw, "Yaw", "\u00B0", FlightData.yaw, 2, "Yaw", "\u00B0", true, false);
+                    HdgScrollbar = GUILayout.BeginScrollView(HdgScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(hdgScrollHeight, maxHdgScrollbarHeight)));
+                    if (CurrentHrztMode != HrztMode.WingsLevel)
+                    {
+                        drawPIDvalues(AsstList.HdgBank, "Heading", "\u00B0", FlightData.heading, 2, "Bank", "\u00B0");
+                        drawPIDvalues(AsstList.BankToYaw, "Yaw", "\u00B0", FlightData.yaw, 2, "Yaw", "\u00B0", true, false);
+                    }
+                    if (showControlSurfaces)
+                    {
+                        drawPIDvalues(AsstList.Aileron, "Bank", "\u00B0", FlightData.bank, 3, "Deflection", "\u00B0");
+                        drawPIDvalues(AsstList.Rudder, "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0");
+                    }
+                    GUILayout.EndScrollView();
                 }
-                if (showControlSurfaces)
-                {
-                    drawPIDvalues(AsstList.Aileron, "Bank", "\u00B0", FlightData.bank, 3, "Deflection", "\u00B0");
-                    drawPIDvalues(AsstList.Rudder, "Yaw", "\u00B0", FlightData.yaw, 3, "Deflection", "\u00B0");
-                }
-                GUILayout.EndScrollView();
-
                 if (GUILayout.RepeatButton("", GUILayout.Height(8)))
                 {// drag resizing code from Dmagics Contracts window + used as a template
                     if (!dragResizeActive && Event.current.button == 0)
@@ -924,9 +954,12 @@ namespace PilotAssistant.FlightModules
 
             if (bShowVert)
             {
-                VertMode tempMode = (VertMode)GUILayout.SelectionGrid((int)CurrentVertMode, vertLabels, 3, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
-                if (tempMode != CurrentVertMode)
-                    vertModeChanged(tempMode, VertActive);
+                if (!bMinimiseVert)
+                {
+                    VertMode tempMode = (VertMode)GUILayout.SelectionGrid((int)CurrentVertMode, vertLabels, 3, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
+                    if (tempMode != CurrentVertMode)
+                        vertModeChanged(tempMode, VertActive);
+                }
                 GUILayout.BeginHorizontal();
                 string buttonString = "Target ";
                 if (CurrentVertMode == VertMode.VSpeed)
@@ -961,20 +994,23 @@ namespace PilotAssistant.FlightModules
                 targetVert = GUILayout.TextField(targetVert, GUILayout.Width(78));
                 GUILayout.EndHorizontal();
 
-                VertScrollbar = GUILayout.BeginScrollView(VertScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(vertScrollHeight, maxVertScrollbarHeight)));
-                if (CurrentVertMode == VertMode.RadarAltitude)
-                    drawPIDvalues(AsstList.Altitude, "RAltitude", "m", FlightData.radarAlt, 2, "Speed ", "m/s", true);
-                if (CurrentVertMode == VertMode.Altitude)
-                    drawPIDvalues(AsstList.Altitude, "Altitude", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true);
-                drawPIDvalues(AsstList.VertSpeed, "Vertical Speed", "m/s", FlightData.vertSpeed, 2, "AoA", "\u00B0", true);
+                if (!bMinimiseVert)
+                {
+                    VertScrollbar = GUILayout.BeginScrollView(VertScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(vertScrollHeight, maxVertScrollbarHeight)));
+                    if (CurrentVertMode == VertMode.RadarAltitude)
+                        drawPIDvalues(AsstList.Altitude, "RAltitude", "m", FlightData.radarAlt, 2, "Speed ", "m/s", true);
+                    if (CurrentVertMode == VertMode.Altitude)
+                        drawPIDvalues(AsstList.Altitude, "Altitude", "m", FlightData.thisVessel.altitude, 2, "Speed ", "m/s", true);
+                    drawPIDvalues(AsstList.VertSpeed, "Vertical Speed", "m/s", FlightData.vertSpeed, 2, "AoA", "\u00B0", true);
 
-                if (showControlSurfaces)
-                    drawPIDvalues(AsstList.Elevator, "Angle of Attack", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0", true);
+                    if (showControlSurfaces)
+                        drawPIDvalues(AsstList.Elevator, "Angle of Attack", "\u00B0", FlightData.AoA, 3, "Deflection", "\u00B0", true);
 
-                AsstList.Elevator.GetAsst().OutMin = Math.Min(Math.Max(AsstList.Elevator.GetAsst().OutMin, -1), 1);
-                AsstList.Elevator.GetAsst().OutMax = Math.Min(Math.Max(AsstList.Elevator.GetAsst().OutMax, -1), 1);
-                
-                GUILayout.EndScrollView();
+                    AsstList.Elevator.GetAsst().OutMin = Math.Min(Math.Max(AsstList.Elevator.GetAsst().OutMin, -1), 1);
+                    AsstList.Elevator.GetAsst().OutMax = Math.Min(Math.Max(AsstList.Elevator.GetAsst().OutMax, -1), 1);
+
+                    GUILayout.EndScrollView();
+                }
 
                 if (GUILayout.RepeatButton("", GUILayout.Height(8)))
                 {// drag resizing code from Dmagics Contracts window + used as a template
@@ -1023,9 +1059,12 @@ namespace PilotAssistant.FlightModules
 
             if (bShowThrottle)
             {
-                ThrottleMode tempMode = (ThrottleMode)GUILayout.SelectionGrid((int)CurrentThrottleMode, throttleLabels, 2, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
-                if (tempMode != CurrentThrottleMode)
-                    throttleModeChanged(tempMode, ThrtActive);
+                if (!bMinimiseThrt)
+                {
+                    ThrottleMode tempMode = (ThrottleMode)GUILayout.SelectionGrid((int)CurrentThrottleMode, throttleLabels, 2, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
+                    if (tempMode != CurrentThrottleMode)
+                        throttleModeChanged(tempMode, ThrtActive);
+                }
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button((CurrentThrottleMode != ThrottleMode.Acceleration) ? "Target Speed:" : "Target Accel", GUILayout.Width(118)))
                 {
@@ -1051,15 +1090,18 @@ namespace PilotAssistant.FlightModules
                 targetSpeed = GUILayout.TextField(targetSpeed, GUILayout.Width(78));
                 GUILayout.EndHorizontal();
 
-                ThrtScrollbar = GUILayout.BeginScrollView(ThrtScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(thrtScrollHeight, maxThrtScrollbarHeight)));
-                if (CurrentThrottleMode == ThrottleMode.Speed)
-                    drawPIDvalues(AsstList.Speed, "Speed", "m/s", FlightData.thisVessel.srfSpeed, 2, "Accel ", "m/s", true);
-                drawPIDvalues(AsstList.Acceleration, "Acceleration", " m/s/s", FlightData.acceleration, 1, "Throttle ", "%", true);
-                // can't have people bugging things out now can we...
-                AsstList.Acceleration.GetAsst().OutMax = AsstList.Speed.GetAsst().OutMax.Clamp(-1, 0);
-                AsstList.Acceleration.GetAsst().OutMax = AsstList.Speed.GetAsst().OutMax.Clamp(-1, 0);
+                if (!bMinimiseThrt)
+                {
+                    ThrtScrollbar = GUILayout.BeginScrollView(ThrtScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(thrtScrollHeight, maxThrtScrollbarHeight)));
+                    if (CurrentThrottleMode == ThrottleMode.Speed)
+                        drawPIDvalues(AsstList.Speed, "Speed", "m/s", FlightData.thisVessel.srfSpeed, 2, "Accel ", "m/s", true);
+                    drawPIDvalues(AsstList.Acceleration, "Acceleration", " m/s/s", FlightData.acceleration, 1, "Throttle ", "%", true);
+                    // can't have people bugging things out now can we...
+                    AsstList.Acceleration.GetAsst().OutMax = AsstList.Speed.GetAsst().OutMax.Clamp(-1, 0);
+                    AsstList.Acceleration.GetAsst().OutMax = AsstList.Speed.GetAsst().OutMax.Clamp(-1, 0);
 
-                GUILayout.EndScrollView();
+                    GUILayout.EndScrollView();
+                }
 
                 if (GUILayout.RepeatButton("", GUILayout.Height(8)))
                 {// drag resizing code from Dmagics Contracts window + used as a template

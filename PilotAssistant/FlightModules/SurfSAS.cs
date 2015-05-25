@@ -177,17 +177,19 @@ namespace PilotAssistant.FlightModules
                     state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
             }
             rollResponse(state);
-            //QuaternionResponse();
+            QuaternionResponse();
         }
 
         ArrowPointer pointer;
         void QuaternionResponse()
         {
-            Quaternion targetRotation = Quaternion.Inverse(Quaternion.Euler(90, 0, 0)) * Quaternion.Inverse(FlightData.thisVessel.GetTransform().rotation);
+            Vector3 targetRotation =  Quaternion.Euler(10, 90, 180) * -FlightData.thisVessel.GetTransform().forward;
             if (pointer == null)
-                pointer = ArrowPointer.Create(FlightData.thisVessel.rootPart.transform, Vector3.zero, targetRotation * FlightData.thisVessel.transform.up, 100, Color.red, true);
+                pointer = ArrowPointer.Create(FlightData.thisVessel.rootPart.transform, Vector3.zero, targetRotation, 100, Color.red, true);
             else
-                pointer.Direction = targetRotation * currentDirectionTarget;
+                pointer.Direction = targetRotation;
+
+            KSP.IO.File.Exists<SurfSAS>("");
         }
 
         private void rollResponse(FlightCtrlState state)
