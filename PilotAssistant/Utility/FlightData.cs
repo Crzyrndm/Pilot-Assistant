@@ -48,11 +48,11 @@ namespace PilotAssistant.Utility
             planetEast = thisVessel.mainBody.getRFrmVel(thisVessel.findWorldCenterOfMass()).normalized;
             planetNorth = Vector3d.Cross(planetUp, planetEast).normalized;
             // Velocity forward and right parallel to the surface
-            surfVelForward = (thisVessel.srf_velocity - thisVessel.verticalSpeed * planetUp).normalized;
+            surfVelForward = Vector3.ProjectOnPlane(thisVessel.srf_velocity, planetUp).normalized;
             surfVelRight = Vector3d.Cross(planetUp, surfVelForward).normalized; // actually, this is probably left...
             // Vessel forward and right vetors, parallel to the surface
             surfVesRight = Vector3d.Cross(planetUp, thisVessel.ReferenceTransform.up).normalized; // also probably left
-            surfVesForward = Vector3d.Cross(planetUp, surfVesRight).normalized;
+            surfVesForward = Vector3d.Cross(planetUp, surfVesRight).normalized; // which may make this backwards...
 
             pitch = 90 - Vector3d.Angle(planetUp, thisVessel.ReferenceTransform.up);
             heading = -1 * Vector3d.Angle(surfVesForward, planetNorth) * Math.Sign(Vector3d.Dot(surfVesForward, planetEast));

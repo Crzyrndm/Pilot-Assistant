@@ -395,6 +395,7 @@ namespace PilotAssistant.FlightModules
 
                 switch (newMode)
                 {
+                    case HrztMode.HeadingNum:
                     case HrztMode.Heading:
                         if (setTarget)
                             StartCoroutine(shiftHeadingTarget(FlightData.heading));
@@ -920,7 +921,7 @@ namespace PilotAssistant.FlightModules
                     {
                         float height = Math.Max(Input.mousePosition.y, 0);
                         maxHdgScrollbarHeight += dragStart - height;
-                        hdgScrollHeight = maxHdgScrollbarHeight = Mathf.Clamp(maxHdgScrollbarHeight, 10, 500);
+                        hdgScrollHeight = maxHdgScrollbarHeight = Mathf.Min(maxHdgScrollbarHeight, 10, 500);
                         if (maxHdgScrollbarHeight > 10)
                             dragStart = height;
                     }
