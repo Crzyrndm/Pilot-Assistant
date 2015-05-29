@@ -150,33 +150,6 @@ namespace PilotAssistant.FlightModules
 
             pauseManager(state);
 
-            double vertResponse = 0;
-            double hrztResponse = 0;
-
-            if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
-                vertResponse = -1 * SASList.Pitch.GetSAS().ResponseD(FlightData.pitch);
-
-            if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
-                hrztResponse = -1 * SASList.Hdg.GetSAS().ResponseD(Utils.CurrentAngleTargetRel(FlightData.progradeHeading, SASList.Hdg.GetSAS().SetPoint, 180));
-
-            double rollRad = Mathf.Deg2Rad * FlightData.bank;
-
-            //if (Math.Abs(FlightData.bank) > bankAngleSynch)
-            //{
-            //    if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Hdg]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Hdg]))
-            //    {
-            //        state.pitch = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
-            //        state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
-            //    }
-            //}
-            //else
-            //{
-            //    if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
-            //        state.pitch = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
-            //    if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
-            //        state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
-            //}
-            //rollResponse(state);
             QuaternionResponse(state);
         }
 
@@ -205,16 +178,19 @@ namespace PilotAssistant.FlightModules
             Quaternion vesRefRot = FlightData.thisVessel.ReferenceTransform.transform.rotation;
             Quaternion currentRotation2 = vesRefRot * Quaternion.AngleAxis(-90, FlightData.thisVessel.ReferenceTransform.transform.up);
             Quaternion targetRotation2 = Quaternion.LookRotation(FlightData.planetNorth, FlightData.planetUp);
+            //////////////////////////////////////////////////////////////////
+            Quaternion delta = Quaternion.Inverse(Quaternion.Euler(90, 0, 0) * Quaternion.Inverse(vesRefRot) * targetRotation2);
+            Vector3d deltaEuler = new Vector3d(Utils.headingClamp(delta.eulerAngles.x, 180), -Utils.headingClamp(delta.eulerAngles.y, 180), Utils.headingClamp(delta.eulerAngles.z, 180));
+            //////////////////////////////////////////////////////////////////
             // (roll, heading, pitch) error in 0-360 degrees (will need to make that +/- 180)
             Vector3 angleDiff2 = (Quaternion.Inverse(targetRotation2) * currentRotation2).eulerAngles;
-
             Vector3d targetUp2 = vesRefRot.Inverse() * targetRotation2 * Vector3d.forward;
             Vector3d currentUp2 = Vector3d.up;
 
             double turnAngle2 = Math.Abs(Vector3d.Angle(currentUp2, targetUp2));
             Vector2d direction2 = (new Vector2d(targetUp2.x, targetUp2.z)).normalized;
-            Vector3d newDiff2 = new Vector3d(-direction2.y * turnAngle2, Utils.headingClamp(angleDiff2.x, 180), direction2.x * turnAngle2);
-            //
+            Vector3d newDiff2 = new Vector3d(-direction2.y * turnAngle2, deltaEuler.z, direction2.x * turnAngle2);
+
             if (bActive[(int)SASList.Bank] && !bPause[(int)SASList.Bank])
                 state.roll = QuatControlArray[(int)SASList.Bank].ResponseF(newDiff2.y, FlightData.thisVessel.angularVelocity.y * Mathf.Rad2Deg);
             if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
