@@ -152,8 +152,8 @@ namespace PilotAssistant.FlightModules
         public static double[] defaultAltitudeGains = { 0.15, 0.01, 0, -50, 50, 0, 0, 1, 100 };
         public static double[] defaultVSpeedGains = { 2, 0.8, 2, -15, 15, -10, 10, 1, 10 };
         public static double[] defaultElevatorGains = { 0.05, 0.01, 0.1, -1, 1, -1, 1, 2, 1 };
-        public static double[] defaultSpeedGains = { 0.2, 0.08, 0.1, -10, 10, -10, 10, 1, 10 };
-        public static double[] defaultAccelGains = { 0.2, 0.08, 0, -1, 0, -1, 1, 1, 1 };
+        public static double[] defaultSpeedGains = { 0.2, 0.0, 0.0, -10, 10, -10, 10, 1, 10 };
+        public static double[] defaultAccelGains = { 0.2, 0.08, 0.0, -1, 0, -1, 1, 1, 1 };
 
         #endregion
 

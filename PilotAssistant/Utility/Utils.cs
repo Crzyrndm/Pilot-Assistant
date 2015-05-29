@@ -37,7 +37,8 @@ namespace PilotAssistant.Utility
 
         public static SASController GetSAS(this SASList id)
         {
-            return SurfSAS.Instance.SASControllers[(int)id];
+            //return SurfSAS.Instance.SASControllers[(int)id];
+            return SurfSAS.Instance.QuatControlArray[(int)id];
         }
 
         public static bool isFlightControlLocked()
@@ -65,7 +66,7 @@ namespace PilotAssistant.Utility
         public static Vector3 vecHeading(double heading)
         {
             double angleDiff = heading - FlightData.heading;
-            return Quaternion.AngleAxis((float)(angleDiff - 90), (Vector3)FlightData.planetUp) * FlightData.surfVesForward;
+            return Quaternion.AngleAxis((float)(angleDiff + 90), (Vector3)FlightData.planetUp) * FlightData.surfVesForward;
         }
 
         /// <summary>
@@ -74,7 +75,7 @@ namespace PilotAssistant.Utility
         public static double calculateTargetHeading(Vector3 direction)
         {
             Vector3 fwd = Vector3.Cross(FlightData.planetUp, direction);
-            double heading = -1 * Vector3.Angle(fwd, FlightData.planetNorth) * Math.Sign(Vector3.Dot(fwd, FlightData.planetEast));
+            double heading = -1 * Vector3.Angle(fwd, -FlightData.planetNorth) * Math.Sign(Vector3.Dot(fwd, FlightData.planetEast));
             return heading.headingClamp(360);
         }
 

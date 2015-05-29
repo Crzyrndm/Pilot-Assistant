@@ -145,7 +145,7 @@ namespace PilotAssistant.FlightModules
         #region Fixed Update / Control
         public void SurfaceSAS(FlightCtrlState state)
         {
-            if (!bArmed || !ActivityCheck() || !FlightData.thisVessel.IsControllable)
+            if (!bArmed /* || !ActivityCheck() */|| !FlightData.thisVessel.IsControllable)
                 return;
 
             pauseManager(state);
@@ -161,35 +161,66 @@ namespace PilotAssistant.FlightModules
 
             double rollRad = Mathf.Deg2Rad * FlightData.bank;
 
-            if (Math.Abs(FlightData.bank) > bankAngleSynch)
-            {
-                if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Hdg]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Hdg]))
-                {
-                    state.pitch = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
-                    state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
-                }
-            }
-            else
-            {
-                if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
-                    state.pitch = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
-                if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
-                    state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
-            }
-            rollResponse(state);
-            QuaternionResponse();
+            //if (Math.Abs(FlightData.bank) > bankAngleSynch)
+            //{
+            //    if ((!bPause[(int)SASList.Pitch] || !bPause[(int)SASList.Hdg]) && (bActive[(int)SASList.Pitch] || bActive[(int)SASList.Hdg]))
+            //    {
+            //        state.pitch = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
+            //        state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
+            //    }
+            //}
+            //else
+            //{
+            //    if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
+            //        state.pitch = (float)(vertResponse * Math.Cos(rollRad) - hrztResponse * Math.Sin(rollRad)) / fadeCurrent[(int)SASList.Pitch];
+            //    if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
+            //        state.yaw = (float)(vertResponse * Math.Sin(rollRad) + hrztResponse * Math.Cos(rollRad)) / fadeCurrent[(int)SASList.Hdg];
+            //}
+            //rollResponse(state);
+            QuaternionResponse(state);
         }
 
-        ArrowPointer pointer;
-        void QuaternionResponse()
-        {
-            Vector3 targetRotation =  Quaternion.Euler(10, 90, 180) * -FlightData.thisVessel.GetTransform().forward;
-            if (pointer == null)
-                pointer = ArrowPointer.Create(FlightData.thisVessel.rootPart.transform, Vector3.zero, targetRotation, 100, Color.red, true);
-            else
-                pointer.Direction = targetRotation;
+        public PIDErrorController[] QuatControlArray = new PIDErrorController[3] { 
+                                              new PIDErrorController(SASList.Pitch, 0.15, 0.05, 0.1, -1, 1, -1, 1)
+                                            , new PIDErrorController(SASList.Bank, 0.15, 0.05, 0.1, -1, 1, -1, 1)
+                                            , new PIDErrorController(SASList.Hdg, 0.15, 0.05, 0.1, -1, 1, -1, 1) };
 
-            KSP.IO.File.Exists<SurfSAS>("");
+        void QuaternionResponse(FlightCtrlState state)
+        {
+            Quaternion targetRotation, currentRotation;
+            Transform vesRefTrans = FlightData.thisVessel.ReferenceTransform.transform;
+            currentRotation = FlightData.thisVessel.transform.rotation;
+            targetRotation = Quaternion.LookRotation(FlightData.planetNorth, FlightData.planetUp);
+            // (roll, heading, pitch) error in 0-360 degrees (will need to make that +/- 180)
+            Vector3 angleDiff = (Quaternion.Inverse(targetRotation) * currentRotation).eulerAngles;
+
+            Vector3d targetUp = FlightData.thisVessel.ReferenceTransform.transform.rotation.Inverse() * Quaternion.LookRotation(FlightData.planetNorth, FlightData.planetUp) * Vector3d.forward;
+            Vector3d currentUp = Vector3d.up;
+
+            double turnAngle = Math.Abs(Vector3d.Angle(currentUp, targetUp));
+            Vector2d direction = (new Vector2d(targetUp.x, targetUp.z)).normalized;
+            Vector3d newDiff = new Vector3d(-direction.y * turnAngle, Utils.headingClamp(angleDiff.x, 180), direction.x * turnAngle);
+            //// (pitch, roll, yaw) rate (degrees/radians?)
+            //Vector3 angleRate = FlightData.thisVessel.angularVelocity;
+            Quaternion vesRefRot = FlightData.thisVessel.ReferenceTransform.transform.rotation;
+            Quaternion currentRotation2 = vesRefRot * Quaternion.AngleAxis(-90, FlightData.thisVessel.ReferenceTransform.transform.up);
+            Quaternion targetRotation2 = Quaternion.LookRotation(FlightData.planetNorth, FlightData.planetUp);
+            // (roll, heading, pitch) error in 0-360 degrees (will need to make that +/- 180)
+            Vector3 angleDiff2 = (Quaternion.Inverse(targetRotation2) * currentRotation2).eulerAngles;
+
+            Vector3d targetUp2 = vesRefRot.Inverse() * targetRotation2 * Vector3d.forward;
+            Vector3d currentUp2 = Vector3d.up;
+
+            double turnAngle2 = Math.Abs(Vector3d.Angle(currentUp2, targetUp2));
+            Vector2d direction2 = (new Vector2d(targetUp2.x, targetUp2.z)).normalized;
+            Vector3d newDiff2 = new Vector3d(-direction2.y * turnAngle2, Utils.headingClamp(angleDiff2.x, 180), direction2.x * turnAngle2);
+            //
+            if (bActive[(int)SASList.Bank] && !bPause[(int)SASList.Bank])
+                state.roll = QuatControlArray[(int)SASList.Bank].ResponseF(newDiff2.y, FlightData.thisVessel.angularVelocity.y * Mathf.Rad2Deg);
+            if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
+                state.pitch = QuatControlArray[(int)SASList.Pitch].ResponseF(newDiff2.x, FlightData.thisVessel.angularVelocity.x * Mathf.Rad2Deg);
+            if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
+                state.yaw = QuatControlArray[(int)SASList.Hdg].ResponseF(newDiff2.z, FlightData.thisVessel.angularVelocity.z * Mathf.Rad2Deg);
         }
 
         private void rollResponse(FlightCtrlState state)
@@ -492,13 +523,15 @@ namespace PilotAssistant.FlightModules
 
             // Main and preset window stuff
             if (PilotAssistantFlightCore.bDisplaySSAS)
+            {
                 SSASwindow = GUILayout.Window(78934856, SSASwindow, drawSSASWindow, "SSAS", GUILayout.Height(0));
 
-            if (bShowSSASPresets)
-            {
-                SSASPresetwindow = GUILayout.Window(78934859, SSASPresetwindow, drawSSASPresetWindow, "SSAS Presets", GUILayout.Height(0));
-                SSASPresetwindow.x = SSASwindow.x + SSASwindow.width;
-                SSASPresetwindow.y = SSASwindow.y;
+                if (bShowSSASPresets)
+                {
+                    SSASPresetwindow = GUILayout.Window(78934859, SSASPresetwindow, drawSSASPresetWindow, "SSAS Presets", GUILayout.Height(0));
+                    SSASPresetwindow.x = SSASwindow.x + SSASwindow.width;
+                    SSASPresetwindow.y = SSASwindow.y;
+                }
             }
 
             if (tooltip != "" && PilotAssistantFlightCore.showTooltips)

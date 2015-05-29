@@ -32,6 +32,7 @@ namespace PilotAssistant.Utility
 
         public static Vector3d velocity = Vector3d.zero;
 
+        static ArrowPointer pointer;
         public static void updateAttitude()
         {
             // 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
@@ -46,20 +47,20 @@ namespace PilotAssistant.Utility
             lastPlanetUp = planetUp;
             planetUp = (thisVessel.rootPart.transform.position - thisVessel.mainBody.position).normalized;
             planetEast = thisVessel.mainBody.getRFrmVel(thisVessel.findWorldCenterOfMass()).normalized;
-            planetNorth = Vector3d.Cross(planetUp, planetEast).normalized;
+            planetNorth = Vector3d.Cross(planetEast, planetUp).normalized;
             // Velocity forward and right parallel to the surface
             surfVelForward = Vector3.ProjectOnPlane(thisVessel.srf_velocity, planetUp).normalized;
-            surfVelRight = Vector3d.Cross(planetUp, surfVelForward).normalized; // actually, this is probably left...
+            surfVelRight = Vector3d.Cross(planetUp, surfVelForward).normalized;
             // Vessel forward and right vetors, parallel to the surface
-            surfVesRight = Vector3d.Cross(planetUp, thisVessel.ReferenceTransform.up).normalized; // also probably left
-            surfVesForward = Vector3d.Cross(planetUp, surfVesRight).normalized; // which may make this backwards...
+            surfVesRight = Vector3d.Cross(planetUp, thisVessel.ReferenceTransform.up).normalized;
+            surfVesForward = Vector3d.Cross(surfVesRight, planetUp).normalized;
 
             pitch = 90 - Vector3d.Angle(planetUp, thisVessel.ReferenceTransform.up);
-            heading = -1 * Vector3d.Angle(surfVesForward, planetNorth) * Math.Sign(Vector3d.Dot(surfVesForward, planetEast));
+            heading = -1 * Vector3d.Angle(-surfVesForward, -planetNorth) * Math.Sign(Vector3d.Dot(-surfVesForward, planetEast));
             if (heading < 0)
                 heading += 360; // offset -ve heading by 360 degrees
 
-            progradeHeading = -1 * Vector3d.Angle(-surfVelForward, planetNorth) * Math.Sign(Vector3d.Dot(-surfVelForward, planetEast));
+            progradeHeading = -1 * Vector3d.Angle(-surfVelForward, -planetNorth) * Math.Sign(Vector3d.Dot(-surfVelForward, planetEast));
             if (progradeHeading < 0)
                 progradeHeading += 360; // offset -ve heading by 360 degrees
 
@@ -79,6 +80,17 @@ namespace PilotAssistant.Utility
                 AoA = yaw = 0;
 
             oldSpd = thisVessel.srfSpeed;
+            //drawArrow();
+        }
+
+        static void drawArrow()
+        {
+            Vector3 dir = planetNorth;
+            Debug.Log(dir);
+            if (pointer == null)
+                pointer = ArrowPointer.Create(thisVessel.rootPart.transform, Vector3.zero, dir, 100, Color.red, true);
+            else
+                pointer.Direction = dir;
         }
     }
 }

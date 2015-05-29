@@ -65,7 +65,7 @@ namespace PilotAssistant.PID
             scale = gains[7];
             easing = gains[8];
         }
-
+        
         public virtual double ResponseD(double input)
         {
             if (active_setpoint != target_setpoint)
@@ -87,7 +87,6 @@ namespace PilotAssistant.PID
                 }
             }
             input = Clamp(input, inMin, inMax);
-
             dt = TimeWarp.fixedDeltaTime;
             error = input - active_setpoint;
 
@@ -136,6 +135,11 @@ namespace PilotAssistant.PID
             
             previous = input;
             return rolling_diff * k_derivative / scale;
+        }
+
+        protected virtual double derivativeErrorRate(double rate)
+        {
+            return rate * k_derivative / scale;
         }
 
         public virtual void Clear()

@@ -144,23 +144,6 @@ namespace PilotAssistant
                     instance.SASPresetList.Add(new SASPreset(gains, node.GetValue("name")));
             }
 
-            // legacy SSAS presets
-            foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(sasPresetNodeName))
-            {
-                if (node == null || node.GetValue("stock") == "true")
-                    continue;
-
-                List<double[]> gains = new List<double[]>();
-                gains.Add(controllerSASGains(node.GetNode(elevCtrlr), SASList.Pitch));
-                gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), SASList.Bank));
-                gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), SASList.Hdg));
-
-                if (node.GetValue("name") == ssasDefaultName)
-                    SSASDefault = new SSASPreset(gains, node.GetValue("name"));
-                else if (!instance.SSASPresetList.Any(p => p.name == node.GetValue("name")))
-                    instance.SSASPresetList.Add(new SSASPreset(gains, node.GetValue("name")));
-            }
-
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(ssasPresetNodeName))
             {
                 if (node == null)
