@@ -19,11 +19,12 @@ namespace PilotAssistant.PID
 
         public virtual double ResponseD(double error, double rate)
         {
-            double res_d = derivativeError(rate);
-            double res_i = integralError(error);
-            double res_p = proportionalError(error);
+            double res_d, res_i, res_p;
+            res_d = derivativeError(rate);
+            res_i = integralError(error);
+            res_p = proportionalError(error);
 
-            return (res_p + res_i + res_d).Clamp(OutMin, OutMax);
+            return res_p + res_i + res_d;
         }
 
         public virtual float ResponseF(double error, double rate)
