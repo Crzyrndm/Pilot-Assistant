@@ -136,8 +136,7 @@ namespace PilotAssistant.FlightModules
         public float maxThrtScrollbarHeight = 55;
 
         float dragStart = 0;
-        float dragID = -1; // 1 = hdg, 2 = vert, 3 = thrt
-        bool dragResizeActive = false;
+        float dragID = 0; // 0 = inactive, 1 = hdg, 2 = vert, 3 = thrt
 
         string newPresetName = "";
         Rect presetWindow = new Rect(0, 0, 200, 10);
@@ -902,26 +901,22 @@ namespace PilotAssistant.FlightModules
                 }
                 if (GUILayout.RepeatButton("", GUILayout.Height(8)))
                 {// drag resizing code from Dmagics Contracts window + used as a template
-                    if (!dragResizeActive && Event.current.button == 0)
+                    if (dragID == 0 && Event.current.button == 0)
                     {
-                        dragResizeActive = true;
                         dragID = 1;
                         dragStart = Input.mousePosition.y;
                         maxHdgScrollbarHeight = hdgScrollHeight = Math.Min(maxHdgScrollbarHeight, hdgScrollHeight);
                     }
                 }
-                if (dragResizeActive && dragID == 1)
+                if (dragID != 0 && dragID == 1)
                 {
                     if (Input.GetMouseButtonUp(0))
-                    {
-                        dragResizeActive = false;
                         dragID = -1;
-                    }
                     else
                     {
                         float height = Math.Max(Input.mousePosition.y, 0);
                         maxHdgScrollbarHeight += dragStart - height;
-                        hdgScrollHeight = maxHdgScrollbarHeight = Mathf.Min(maxHdgScrollbarHeight, 10, 500);
+                        hdgScrollHeight = maxHdgScrollbarHeight = Mathf.Clamp(maxHdgScrollbarHeight, 10, 500);
                         if (maxHdgScrollbarHeight > 10)
                             dragStart = height;
                     }
@@ -1015,21 +1010,17 @@ namespace PilotAssistant.FlightModules
 
                 if (GUILayout.RepeatButton("", GUILayout.Height(8)))
                 {// drag resizing code from Dmagics Contracts window + used as a template
-                    if (!dragResizeActive && Event.current.button == 0)
+                    if (dragID == 0 && Event.current.button == 0)
                     {
-                        dragResizeActive = true;
                         dragID = 2;
                         dragStart = Input.mousePosition.y;
                         maxVertScrollbarHeight = vertScrollHeight = Math.Min(maxVertScrollbarHeight, vertScrollHeight);
                     }
                 }
-                if (dragResizeActive && dragID == 2)
+                if (dragID != 0 && dragID == 2)
                 {
                     if (Input.GetMouseButtonUp(0))
-                    {
-                        dragResizeActive = false;
                         dragID = -1;
-                    }
                     else
                     {
                         float height = Math.Max(Input.mousePosition.y, 0);
@@ -1106,21 +1097,17 @@ namespace PilotAssistant.FlightModules
 
                 if (GUILayout.RepeatButton("", GUILayout.Height(8)))
                 {// drag resizing code from Dmagics Contracts window + used as a template
-                    if (!dragResizeActive && Event.current.button == 0)
+                    if (dragID == 0 && Event.current.button == 0)
                     {
-                        dragResizeActive = true;
                         dragID = 3;
                         dragStart = Input.mousePosition.y;
                         maxThrtScrollbarHeight = thrtScrollHeight = Math.Min(maxThrtScrollbarHeight, thrtScrollHeight);
                     }
                 }
-                if (dragResizeActive && dragID == 3)
+                if (dragID != 0 && dragID == 3)
                 {
                     if (Input.GetMouseButtonUp(0))
-                    {
-                        dragResizeActive = false;
                         dragID = -1;
-                    }
                     else
                     {
                         float height = Math.Max(Input.mousePosition.y, 0);

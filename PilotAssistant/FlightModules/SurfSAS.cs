@@ -161,7 +161,7 @@ namespace PilotAssistant.FlightModules
 
             Transform vesRefTrans = FlightData.thisVessel.ReferenceTransform.transform;
             Quaternion targetRot = Quaternion.LookRotation(FlightData.planetNorth, FlightData.planetUp);
-            //targetRot = Quaternion.AngleAxis((float)SASList.Pitch.GetSAS().SetPoint, -vesRefTrans.right) * targetRot;
+            
             targetRot = Quaternion.AngleAxis((float)SASList.Hdg.GetSAS().SetPoint, targetRot * Vector3.up) * targetRot;
             targetRot = Quaternion.AngleAxis((float)SASList.Pitch.GetSAS().SetPoint, targetRot * -Vector3.right) * targetRot;
             targetRot = Quaternion.AngleAxis((float)SASList.Bank.GetSAS().SetPoint, targetRot * Vector3.forward) * targetRot;
@@ -178,10 +178,6 @@ namespace PilotAssistant.FlightModules
                 state.pitch = QuatControlArray[(int)SASList.Pitch].ResponseF(PYratio.y * angleError, FlightData.thisVessel.angularVelocity.x * Mathf.Rad2Deg);
             if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
                 state.yaw = QuatControlArray[(int)SASList.Hdg].ResponseF(PYratio.x * angleError, FlightData.thisVessel.angularVelocity.z * Mathf.Rad2Deg);
-
-            state.pitch = Mathf.Clamp(state.pitch, -1, 1);
-            state.yaw = Mathf.Clamp(state.yaw, -1, 1);
-            state.roll = Mathf.Clamp(state.roll, -1, 1);
         }
 
 
