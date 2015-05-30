@@ -83,10 +83,8 @@ namespace PilotAssistant.Utility
             //drawArrow();
         }
 
-        static void drawArrow()
+        public static void drawArrow(Vector3 dir)
         {
-            Vector3 dir = planetNorth;
-            Debug.Log(dir);
             if (pointer == null)
                 pointer = ArrowPointer.Create(thisVessel.rootPart.transform, Vector3.zero, dir, 100, Color.red, true);
             else

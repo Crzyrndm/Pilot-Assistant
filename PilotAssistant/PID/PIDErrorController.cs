@@ -13,6 +13,10 @@ namespace PilotAssistant.PID
                             : base (ID, Kp, Ki, Kd, OutputMin, OutputMax, intClampLower, intClampUpper, scalar, easing)
         { }
 
+        public PIDErrorController(SASList ID, double[] gains)
+            : base(ID, gains)
+        { }
+
         public virtual double ResponseD(double error, double rate)
         {
             double res_d = derivativeError(rate);

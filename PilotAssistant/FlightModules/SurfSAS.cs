@@ -35,7 +35,11 @@ namespace PilotAssistant.FlightModules
             PilotAssistantFlightCore.Instance.StartCoroutine(routine);
         }
 
-        public SASController[] SASControllers = new SASController[3]; // controller per axis
+        public PIDErrorController[] SASControllers = new PIDErrorController[3]; // controller per axis
+        //public PIDErrorController[] QuatControlArray = new PIDErrorController[3] { 
+        //                                      new PIDErrorController(SASList.Pitch, 0.15, 0.05, 0.3, -1, 1, -1, 1)
+        //                                    , new PIDErrorController(SASList.Bank, 0.15, 0.05, 0.1, -1, 1, -1, 1)
+        //                                    , new PIDErrorController(SASList.Hdg, 0.15, 0.05, 0.3, -1, 1, -1, 1) };
 
         public bool bArmed = false; // if armed, SAS toggles activate/deactivate SSAS
         public bool[] bActive = new bool[3]; // activate on per axis basis
@@ -88,9 +92,9 @@ namespace PilotAssistant.FlightModules
             ActivitySwitch(false);
             delayEngage[0] = delayEngage[1] = delayEngage[2] = 20; // delay engagement by 0.2s
 
-            SASControllers[(int)SASList.Pitch] = new SASController(SASList.Pitch, defaultPitchGains);
-            SASControllers[(int)SASList.Bank] = new SASController(SASList.Bank, defaultRollGains);
-            SASControllers[(int)SASList.Hdg] = new SASController(SASList.Hdg, defaultHdgGains);
+            SASControllers[(int)SASList.Pitch] = new PIDErrorController(SASList.Pitch, defaultPitchGains);
+            SASControllers[(int)SASList.Bank] = new PIDErrorController(SASList.Bank, defaultRollGains);
+            SASControllers[(int)SASList.Hdg] = new PIDErrorController(SASList.Hdg, defaultHdgGains);
             SASList.Hdg.GetSAS().isHeadingControl = true;
 
             PresetManager.initDefaultPresets(new SSASPreset(SASControllers, "SSAS"));
@@ -137,128 +141,68 @@ namespace PilotAssistant.FlightModules
             if (GameSettings.SAS_HOLD.GetKey())
                 updateTarget();
 
-            if (bActive[(int)SASList.Hdg])
-                SASList.Hdg.GetSAS().SetPoint = Utils.calculateTargetHeading(currentDirectionTarget);
+            //if (bActive[(int)SASList.Hdg])
+            //    SASList.Hdg.GetSAS().SetPoint = Utils.calculateTargetHeading(currentDirectionTarget);
         }
         #endregion
 
         #region Fixed Update / Control
         public void SurfaceSAS(FlightCtrlState state)
         {
-            if (!bArmed /* || !ActivityCheck() */|| !FlightData.thisVessel.IsControllable)
+            if (!bArmed /*|| !ActivityCheck() */|| !FlightData.thisVessel.IsControllable)
                 return;
 
             pauseManager(state);
 
-            QuaternionResponse(state);
-        }
-
-        public PIDErrorController[] QuatControlArray = new PIDErrorController[3] { 
-                                              new PIDErrorController(SASList.Pitch, 0.15, 0.05, 0.1, -1, 1, -1, 1)
-                                            , new PIDErrorController(SASList.Bank, 0.15, 0.05, 0.1, -1, 1, -1, 1)
-                                            , new PIDErrorController(SASList.Hdg, 0.15, 0.05, 0.1, -1, 1, -1, 1) };
-
-        void QuaternionResponse(FlightCtrlState state)
-        {
             Transform vesRefTrans = FlightData.thisVessel.ReferenceTransform.transform;
-            Quaternion vesRefRot = vesRefTrans.rotation;
-            Quaternion currentRotation = vesRefRot * Quaternion.AngleAxis(-90, FlightData.thisVessel.ReferenceTransform.transform.up);
-            Quaternion targetRotation = Quaternion.LookRotation(FlightData.planetNorth, FlightData.planetUp);
+            Quaternion vesRefRot = Quaternion.Euler(90, 0, 0) * vesRefTrans.rotation.Inverse();
+            Quaternion targetRot = Quaternion.LookRotation(FlightData.planetNorth, FlightData.planetUp);
+            FlightData.drawArrow(FlightData.planetNorth);
+            ////////////////////////////////////////////////////////////////////////////////////////////////////
+            Vector3 angleDiff = Quaternion.Inverse(vesRefRot * targetRot).eulerAngles;
+            Vector3 target = vesRefRot * targetRot * Vector3.up;
 
-            //////////////////////////////////////////////////////////////////
-            // (roll, heading, pitch) error in 0-360 degrees (will need to make that +/- 180)
-            Vector3 angleDiff = Quaternion.Inverse(Quaternion.Euler(90, 0, 0) * vesRefRot.Inverse() * targetRotation).eulerAngles;
-            Vector3d targetUp = vesRefRot.Inverse() * targetRotation * Vector3d.forward;
-            Vector3d currentUp = Vector3d.up;
+            float turnAngle = Mathf.Abs(Vector3.Angle(Vector3.up, target));
+            Vector2 PYError = (new Vector2(target.z, target.x)).normalized * turnAngle;
 
-            double turnAngle = Math.Abs(Vector3d.Angle(currentUp, targetUp));
-            Vector2d direction = (new Vector2d(targetUp.x, targetUp.z)).normalized;
-            Vector3d newDiff = new Vector3d(-direction.y * turnAngle, Utils.headingClamp(angleDiff.z, 180), direction.x * turnAngle);
+            Debug.Log(PYError);
 
             if (bActive[(int)SASList.Bank] && !bPause[(int)SASList.Bank])
-                state.roll = QuatControlArray[(int)SASList.Bank].ResponseF(newDiff.y, FlightData.thisVessel.angularVelocity.y * Mathf.Rad2Deg);
+                state.roll = SASControllers[(int)SASList.Bank].ResponseF(Utils.headingClamp(angleDiff.z, 180), FlightData.thisVessel.angularVelocity.y * Mathf.Rad2Deg);
             if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
-                state.pitch = QuatControlArray[(int)SASList.Pitch].ResponseF(newDiff.x, FlightData.thisVessel.angularVelocity.x * Mathf.Rad2Deg);
+                state.pitch = SASControllers[(int)SASList.Pitch].ResponseF(PYError.y, FlightData.thisVessel.angularVelocity.x * Mathf.Rad2Deg);
             if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
-                state.yaw = QuatControlArray[(int)SASList.Hdg].ResponseF(newDiff.z, FlightData.thisVessel.angularVelocity.z * Mathf.Rad2Deg);
-        }
-
-        private void rollResponse(FlightCtrlState state)
-        {
-            if (!bPause[(int)SASList.Bank] && bActive[(int)SASList.Bank])
-            {
-                bool rollStateWas = rollState;
-                // switch tracking modes
-                if (rollState) // currently in vector mode
-                {
-                    if (FlightData.pitch < 35 && FlightData.pitch > -35)
-                        rollState = false; // fall back to surface mode
-                }
-                else // surface mode
-                {
-                    if (FlightData.pitch > 40 || FlightData.pitch < -40)
-                        rollState = true; // go to vector mode
-                }
-
-                // Above 40 degrees pitch, rollTarget should always lie on the horizontal plane of the vessel
-                // Below 35 degrees pitch, use the surf roll logic
-                // hysteresis on the switch ensures it doesn't bounce back and forth and lose the lock
-                if (rollState)
-                {
-                    if (!rollStateWas)
-                    {
-                        Utils.GetSAS(SASList.Bank).SetPoint = 0;
-                        Utils.GetSAS(SASList.Bank).skipDerivative = true;
-                        rollTarget = FlightData.thisVessel.ReferenceTransform.right;
-                    }
-
-                    Vector3 proj = FlightData.thisVessel.ReferenceTransform.up * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.up, rollTarget)
-                        + FlightData.thisVessel.ReferenceTransform.right * Vector3.Dot(FlightData.thisVessel.ReferenceTransform.right, rollTarget);
-                    double roll = Vector3.Angle(proj, rollTarget) * Math.Sign(Vector3.Dot(FlightData.thisVessel.ReferenceTransform.forward, rollTarget));
-
-                    state.roll = SASList.Bank.GetSAS().ResponseF(roll) / fadeCurrent[(int)SASList.Bank];
-                }
-                else
-                {
-                    if (rollStateWas)
-                    {
-                        SASList.Bank.GetSAS().SetPoint = FlightData.bank;
-                        SASList.Bank.GetSAS().skipDerivative = true;
-                    }
-
-                    state.roll = SASList.Bank.GetSAS().ResponseF(Utils.CurrentAngleTargetRel(FlightData.bank, SASList.Bank.GetSAS().SetPoint, 180)) / fadeCurrent[(int)SASList.Bank];
-                }
-            }
+                state.yaw = SASControllers[(int)SASList.Hdg].ResponseF(PYError.x, FlightData.thisVessel.angularVelocity.z * Mathf.Rad2Deg);
         }
 
         public IEnumerator shiftHeadingTarget(double newHdg)
         {
-            stopHdgShift = false;
-            headingEdit = false;
+            //stopHdgShift = false;
+            //headingEdit = false;
             newDirectionTarget = Utils.vecHeading(newHdg);
-            currentDirectionTarget = Utils.vecHeading(SASList.Hdg.GetSAS().BumplessSetPoint);
-            increment = 0;
+            //currentDirectionTarget = Utils.vecHeading(SASList.Hdg.GetSAS().BumplessSetPoint);
+            //increment = 0;
 
             if (hdgShiftIsRunning)
                 yield break;
-            hdgShiftIsRunning = true;
+            //hdgShiftIsRunning = true;
 
-            while (!stopHdgShift && Math.Abs(Vector3.Angle(currentDirectionTarget, newDirectionTarget)) > 0.01)
-            {
-                double finalTarget = Utils.calculateTargetHeading(newDirectionTarget);
-                double target = Utils.calculateTargetHeading(currentDirectionTarget);
-                increment += SASList.Hdg.GetSAS().Easing * TimeWarp.fixedDeltaTime * 0.01;
+            //while (!stopHdgShift && Math.Abs(Vector3.Angle(currentDirectionTarget, newDirectionTarget)) > 0.01)
+            //{
+            //    double finalTarget = Utils.calculateTargetHeading(newDirectionTarget);
+            //    double target = Utils.calculateTargetHeading(currentDirectionTarget);
+            //    increment += SASList.Hdg.GetSAS().Easing * TimeWarp.fixedDeltaTime * 0.01;
 
-                double remainder = finalTarget - Utils.CurrentAngleTargetRel(target, finalTarget, 180);
-                if (remainder < 0)
-                    target += Math.Max(-1 * increment, remainder);
-                else
-                    target += Math.Min(increment, remainder);
+            //    double remainder = finalTarget - Utils.CurrentAngleTargetRel(target, finalTarget, 180);
+            //    if (remainder < 0)
+            //        target += Math.Max(-1 * increment, remainder);
+            //    else
+            //        target += Math.Min(increment, remainder);
 
-                currentDirectionTarget = Utils.vecHeading(target);
-                yield return new WaitForFixedUpdate();
-            }
-            if (!stopHdgShift)
+            //    currentDirectionTarget = Utils.vecHeading(target);
+            //    yield return new WaitForFixedUpdate();
+            //}
+            //if (!stopHdgShift)
                 currentDirectionTarget = newDirectionTarget;
             hdgShiftIsRunning = false;
         }
@@ -518,9 +462,9 @@ namespace PilotAssistant.FlightModules
 
             if (bArmed)
             {
-                Utils.GetSAS(SASList.Pitch).BumplessSetPoint = Utils.Clamp(TogPlusNumBox("Pitch:", SASList.Pitch, FlightData.pitch, 80, 70), -90, 90);
-                TogPlusNumBox("Heading:", SASList.Hdg, FlightData.heading, 80, 70);
-                Utils.GetSAS(SASList.Bank).BumplessSetPoint = TogPlusNumBox("Roll:", SASList.Bank, FlightData.bank, 80, 70);
+                Utils.GetSAS(SASList.Pitch).SetPoint = Utils.Clamp(TogPlusNumBox("Pitch:", SASList.Pitch, FlightData.pitch, 80, 70), -90, 90);
+                Utils.GetSAS(SASList.Bank).SetPoint = TogPlusNumBox("Heading:", SASList.Hdg, FlightData.heading, 80, 70);
+                Utils.GetSAS(SASList.Bank).SetPoint = TogPlusNumBox("Roll:", SASList.Bank, FlightData.bank, 80, 70);
 
                 GUILayout.Box("", GUILayout.Height(10)); // seperator
 
@@ -623,36 +567,17 @@ namespace PilotAssistant.FlightModules
                 }
             }
 
-            if (controllerID != SASList.Bank || !SurfSAS.Instance.rollState)
+            string tempText = GUILayout.TextField(targets[(int)controllerID], GeneralUI.UISkin.customStyles[(int)myStyles.numBoxText], GUILayout.Width(boxWidth));
+            targets[(int)controllerID] = tempText;
+
+            if (GUILayout.Button("u"))
             {
-                if (controllerID == SASList.Hdg && !headingEdit)
-                {
-                    if (hdgShiftIsRunning)
-                        targets[(int)controllerID] = Utils.calculateTargetHeading(newDirectionTarget).ToString("0.00");
-                    else
-                        targets[(int)controllerID] = Utils.calculateTargetHeading(currentDirectionTarget).ToString("0.00");
-                }
-                string tempText = GUILayout.TextField(targets[(int)controllerID], GeneralUI.UISkin.customStyles[(int)myStyles.numBoxText], GUILayout.Width(boxWidth));
-                if (controllerID == SASList.Hdg && targets[(int)controllerID] != tempText)
-                    headingEdit = true;
-                targets[(int)controllerID] = tempText;
+                double temp;
+                if (double.TryParse(targets[(int)controllerID], out temp))
+                    setPoint = temp;
 
-                if (GUILayout.Button("u"))
-                {
-                    headingEdit = false;
-                    double temp;
-                    if (double.TryParse(targets[(int)controllerID], out temp))
-                        setPoint = temp;
-
-                    if (controllerID == SASList.Hdg)
-                        StartCoroutine(shiftHeadingTarget(setPoint));
-
-                    bActive[(int)controllerID] = true;
-                    controllerID.GetSAS().skipDerivative = true;
-                }
+                bActive[(int)controllerID] = true;
             }
-            else
-                GUILayout.TextField(targets[(int)controllerID], GeneralUI.UISkin.customStyles[(int)myStyles.numBoxText], GUILayout.Width(boxWidth));
 
             GUILayout.EndHorizontal();
             return setPoint;
