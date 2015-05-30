@@ -24,7 +24,7 @@ namespace PilotAssistant.PID
             res_i = integralError(error);
             res_p = proportionalError(error);
 
-            return res_p + res_i + res_d;
+            return Utils.Clamp(res_p + res_i + res_d, OutMin, OutMax);
         }
 
         public virtual float ResponseF(double error, double rate)
