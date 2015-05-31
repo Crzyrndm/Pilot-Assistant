@@ -148,17 +148,20 @@ namespace PilotAssistant.FlightModules
             targetRot = Quaternion.AngleAxis(hdgAngle, targetRot * Vector3.up) * targetRot; // heading rotation
             targetRot = Quaternion.AngleAxis(pitchAngle, targetRot * -Vector3.right) * targetRot; // pitch rotation
             targetRot = Quaternion.AngleAxis(rollAngle, targetRot * Vector3.forward) * targetRot; // roll rotation
-            Quaternion rotDiff = vesRefTrans.rotation.Inverse() * targetRot;
-
-            // roll error doesn't rotate when yawing, roll error 2 doesn't rotate when pitching
-            double rollError = Utils.headingClamp(rotDiff.Inverse().eulerAngles.z, 180);
-            double rollError2 = Utils.headingClamp(Vector3.Angle(rotDiff * Vector3.right, Vector3.right) * Math.Sign(Vector3.Dot(rotDiff * Vector3.right, Vector3.forward)), 180);
-            
+            Quaternion rotDiff = vesRefTrans.rotation.Inverse() * targetRot;            
 
             Vector3 target = rotDiff * Vector3.forward;
             float angleError = Math.Abs(Vector3.Angle(Vector3.up, target));
             Vector2 PYratio = (new Vector2(target.x, -target.z)).normalized;
             Vector2 PYError = PYratio * angleError;
+
+            // roll error doesn't rotate when yawing, roll error 2 doesn't rotate when pitching
+            double rollError = 0, rollError2 = 0;
+            if (angleError < 89)
+            {
+                rollError = Utils.headingClamp(rotDiff.Inverse().eulerAngles.z, 180);
+                rollError2 = Utils.headingClamp(Vector3.Angle(rotDiff * Vector3.right, Vector3.right) * Math.Sign(Vector3.Dot(rotDiff * Vector3.right, Vector3.forward)), 180);
+            }
 
             if (bActive[(int)SASList.Bank] && !bPause[(int)SASList.Bank])
                 state.roll = SASControllers[(int)SASList.Bank].ResponseF(Utils.headingClamp(rollError2, 180), FlightData.thisVessel.angularVelocity.y * Mathf.Rad2Deg);
