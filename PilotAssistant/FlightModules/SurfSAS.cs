@@ -36,15 +36,10 @@ namespace PilotAssistant.FlightModules
         }
 
         public PIDErrorController[] SASControllers = new PIDErrorController[3]; // controller per axis
-        //public PIDErrorController[] QuatControlArray = new PIDErrorController[3] { 
-        //                                      new PIDErrorController(SASList.Pitch, 0.15, 0.05, 0.3, -1, 1, -1, 1)
-        //                                    , new PIDErrorController(SASList.Bank, 0.15, 0.05, 0.1, -1, 1, -1, 1)
-        //                                    , new PIDErrorController(SASList.Hdg, 0.15, 0.05, 0.3, -1, 1, -1, 1) };
 
         public bool bArmed = false; // if armed, SAS toggles activate/deactivate SSAS
         public bool[] bActive = new bool[3]; // activate on per axis basis
         public bool[] bPause = new bool[3]; // pause on a per axis basis
-        public bool bStockSAS = true;
 
         public string[] targets = { "0.00", "0.00", "0.00" };
 
@@ -58,8 +53,6 @@ namespace PilotAssistant.FlightModules
         // unpause delay
         public float[] delayEngage = new float[3];
 
-        public bool rollState = false; // false = surface mode, true = vector mode
-
         public Rect SSASwindow = new Rect(10, 505, 200, 30); // gui window rect
 
         string newPresetName = "";
@@ -67,20 +60,14 @@ namespace PilotAssistant.FlightModules
         Rect SSASPresetwindow = new Rect(550, 50, 50, 50);
         bool bShowSSASPresets = false;
 
-
         // initialisation and default presets stuff
-        public double[] defaultPitchGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3, 200 };
-        public double[] defaultRollGains = { 0.1, 0.0, 0.06, -1, 1, -1, 1, 3, 200 };
-        public double[] defaultHdgGains = { 0.15, 0.0, 0.06, -1, 1, -1, 1, 3, 1 };
+        public double[] defaultPitchGains = { 0.1, 0.05, 0.3, -1, 1, -1, 1, 1, 200 };
+        public double[] defaultRollGains = { 0.1, 0.02, 0.1, -1, 1, -1, 1, 1, 200 };
+        public double[] defaultHdgGains = { 0.1, 0.05, 0.3, -1, 1, -1, 1, 1, 200 };
 
-        public Vector3 currentDirectionTarget = Vector3.zero; // this is the vec the IEnumerator is moving
-        public Vector3 newDirectionTarget = Vector3.zero; // this is the vec we are moving to
-        double increment = 0; // this is the angle to shift per second
-        bool hdgShiftIsRunning = false;
-        bool stopHdgShift = false;
-        bool headingEdit = false;
-
-        Vector3d rollTarget = Vector3d.zero;
+        // will be added back soonish
+        //public Vector3 currentDirectionTarget = Vector3.zero; // this is the vec the IEnumerator is moving
+        //public Vector3 newDirectionTarget = Vector3.zero; // this is the vec we are moving to
 
         #endregion
 
@@ -95,7 +82,6 @@ namespace PilotAssistant.FlightModules
             SASControllers[(int)SASList.Pitch] = new PIDErrorController(SASList.Pitch, defaultPitchGains);
             SASControllers[(int)SASList.Bank] = new PIDErrorController(SASList.Bank, defaultRollGains);
             SASControllers[(int)SASList.Hdg] = new PIDErrorController(SASList.Hdg, defaultHdgGains);
-            SASList.Hdg.GetSAS().isHeadingControl = true;
 
             PresetManager.initDefaultPresets(new SSASPreset(SASControllers, "SSAS"));
             
@@ -119,38 +105,31 @@ namespace PilotAssistant.FlightModules
         #region Update / Input monitoring
         public void Update()
         {
-            bool mod = GameSettings.MODIFIER_KEY.GetKey();
-
-            // SAS activated by user
-            if (bArmed && !ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown() && !mod)
+            if (GameSettings.MODIFIER_KEY.GetKey())
             {
-                if (!bStockSAS)
-                {
-                    ActivitySwitch(true);
-                    setStockSAS(false);
-                    updateTarget();
-                }
+                if (GameSettings.SAS_TOGGLE.GetKeyDown())
+                    bArmed = !bArmed;
             }
-            else if (ActivityCheck() && GameSettings.SAS_TOGGLE.GetKeyDown() && !mod)
+            else
             {
-                ActivitySwitch(false);
-                setStockSAS(bStockSAS);
+                if (bArmed)
+                {
+                    if (GameSettings.SAS_TOGGLE.GetKeyDown())
+                    {
+                        ActivitySwitch(!ActivityCheck());
+                        setStockSAS(false);
+                        updateTarget();
+                    }
+                    if (GameSettings.SAS_HOLD.GetKey())
+                        updateTarget();
+                }
             }
 
             // lets target slide while key is down, effectively temporary deactivation
-            if (GameSettings.SAS_HOLD.GetKey())
-                updateTarget();
-
-            //if (bActive[(int)SASList.Hdg])
-            //    SASList.Hdg.GetSAS().SetPoint = Utils.calculateTargetHeading(currentDirectionTarget);
         }
         #endregion
 
         #region Fixed Update / Control
-        public PIDErrorController[] QuatControlArray = new PIDErrorController[3] { 
-                                              new PIDErrorController(SASList.Pitch, 0.15, 0.05, 0.2, -1, 1, -1, 1)
-                                            , new PIDErrorController(SASList.Bank, 0.15, 0.05, 0.2, -1, 1, -1, 1)
-                                            , new PIDErrorController(SASList.Hdg, 0.15, 0.05, 0.2, -1, 1, -1, 1) };
 
         public void SurfaceSAS(FlightCtrlState state)
         {
@@ -159,27 +138,35 @@ namespace PilotAssistant.FlightModules
 
             pauseManager(state);
 
-            Transform vesRefTrans = FlightData.thisVessel.ReferenceTransform.transform;
-            Quaternion targetRot = Quaternion.LookRotation(FlightData.planetNorth, FlightData.planetUp);
-            
-            targetRot = Quaternion.AngleAxis((float)SASList.Hdg.GetSAS().SetPoint, targetRot * Vector3.up) * targetRot;
-            targetRot = Quaternion.AngleAxis((float)SASList.Pitch.GetSAS().SetPoint, targetRot * -Vector3.right) * targetRot;
-            targetRot = Quaternion.AngleAxis((float)SASList.Bank.GetSAS().SetPoint, targetRot * Vector3.forward) * targetRot;
+            // still need 3 values to build the quaternion, even if the control system isn't active
+            float hdgAngle = (float)(bActive[(int)SASList.Hdg] ? SASList.Hdg.GetSAS().SetPoint : FlightData.heading);
+            float pitchAngle = (float)(bActive[(int)SASList.Pitch] ? SASList.Pitch.GetSAS().SetPoint : FlightData.pitch);
+            float rollAngle = (float)(bActive[(int)SASList.Bank] ? SASList.Bank.GetSAS().SetPoint : FlightData.bank);
 
-            double rollError = Utils.headingClamp((Quaternion.Euler(90, 0, 0) * vesRefTrans.rotation.Inverse() * targetRot).Inverse().eulerAngles.z, 180);
+            Transform vesRefTrans = FlightData.thisVessel.ReferenceTransform.transform;
+            Quaternion targetRot = Quaternion.LookRotation(FlightData.planetNorth, FlightData.planetUp); // reference rotation
+            targetRot = Quaternion.AngleAxis(hdgAngle, targetRot * Vector3.up) * targetRot; // heading rotation
+            targetRot = Quaternion.AngleAxis(pitchAngle, targetRot * -Vector3.right) * targetRot; // pitch rotation
+            targetRot = Quaternion.AngleAxis(rollAngle, targetRot * Vector3.forward) * targetRot; // roll rotation
+            Quaternion rotDiff = vesRefTrans.rotation.Inverse() * targetRot;
+
+            // roll error doesn't rotate when yawing, roll error 2 doesn't rotate when pitching
+            double rollError = Utils.headingClamp(rotDiff.Inverse().eulerAngles.z, 180);
+            double rollError2 = Utils.headingClamp(Vector3.Angle(rotDiff * Vector3.right, Vector3.right) * Math.Sign(Vector3.Dot(rotDiff * Vector3.right, Vector3.forward)), 180);
             
-            Vector3 target = vesRefTrans.rotation.Inverse() * targetRot * Vector3.forward;
-            double angleError = Math.Abs(Vector3d.Angle(Vector3.up, target));
+
+            Vector3 target = rotDiff * Vector3.forward;
+            float angleError = Math.Abs(Vector3.Angle(Vector3.up, target));
             Vector2 PYratio = (new Vector2(target.x, -target.z)).normalized;
+            Vector2 PYError = PYratio * angleError;
 
             if (bActive[(int)SASList.Bank] && !bPause[(int)SASList.Bank])
-                state.roll = QuatControlArray[(int)SASList.Bank].ResponseF(Utils.headingClamp(rollError, 180), FlightData.thisVessel.angularVelocity.y * Mathf.Rad2Deg);
+                state.roll = SASControllers[(int)SASList.Bank].ResponseF(Utils.headingClamp(rollError2, 180), FlightData.thisVessel.angularVelocity.y * Mathf.Rad2Deg);
             if (bActive[(int)SASList.Pitch] && !bPause[(int)SASList.Pitch])
-                state.pitch = QuatControlArray[(int)SASList.Pitch].ResponseF(PYratio.y * angleError, FlightData.thisVessel.angularVelocity.x * Mathf.Rad2Deg);
+                state.pitch = SASControllers[(int)SASList.Pitch].ResponseF(PYError.y, FlightData.thisVessel.angularVelocity.x * Mathf.Rad2Deg);
             if (bActive[(int)SASList.Hdg] && !bPause[(int)SASList.Hdg])
-                state.yaw = QuatControlArray[(int)SASList.Hdg].ResponseF(PYratio.x * angleError, FlightData.thisVessel.angularVelocity.z * Mathf.Rad2Deg);
+                state.yaw = SASControllers[(int)SASList.Hdg].ResponseF(PYError.x, FlightData.thisVessel.angularVelocity.z * Mathf.Rad2Deg);
         }
-
 
         private void pauseManager(FlightCtrlState state)
         {
@@ -228,7 +215,6 @@ namespace PilotAssistant.FlightModules
         bool pitchEnum = false;
         IEnumerator FadeInPitch()
         {
-            SASList.Pitch.GetSAS().skipDerivative = true;
             SASList.Pitch.GetSAS().SetPoint = FlightData.pitch;
             // initialse all relevant values
             timeElapsed[(int)SASList.Pitch] = 0;
@@ -245,13 +231,12 @@ namespace PilotAssistant.FlightModules
                 // handle both in the same while loop so if we pause/unpause again it just resets
                 if (timeElapsed[(int)SASList.Pitch] < delayEngage[(int)SASList.Pitch])
                 {
-                    Utils.GetSAS(SASList.Pitch).SetPoint = FlightData.pitch;
+                    SASList.Pitch.GetSAS().SetPoint = FlightData.pitch;
                     targets[(int)SASList.Pitch] = FlightData.pitch.ToString("0.00");
                 }
                 else
                     fadeCurrent[(int)SASList.Pitch] = Mathf.Max(fadeSetpoint[(int)SASList.Pitch] * Mathf.Pow(fadeMult, timeElapsed[(int)SASList.Pitch] - delayEngage[(int)SASList.Pitch]), 1);
             }
-
             // make sure we are actually set to 1
             fadeCurrent[(int)SASList.Pitch] = 1.0f;
             // clear the lock
@@ -261,9 +246,7 @@ namespace PilotAssistant.FlightModules
         bool rollEnum = false;
         IEnumerator FadeInRoll()
         {
-            SASList.Bank.GetSAS().skipDerivative = true;
-            SASList.Bank.GetSAS().SetPoint = rollState ? 0 : FlightData.bank;
-            rollTarget = FlightData.thisVessel.ReferenceTransform.right;
+            SASList.Bank.GetSAS().SetPoint = FlightData.bank;
 
             // initialse all relevant values
             timeElapsed[(int)SASList.Bank] = 0;
@@ -280,18 +263,12 @@ namespace PilotAssistant.FlightModules
                 // handle both in the same while loop so if we pause/unpause again it just resets
                 if (timeElapsed[(int)SASList.Bank] < delayEngage[(int)SASList.Bank])
                 {
-                    if (rollState)
-                        rollTarget = FlightData.thisVessel.ReferenceTransform.right;
-                    else
-                    {
-                        Utils.GetSAS(SASList.Bank).SetPoint = FlightData.bank;
-                        targets[(int)SASList.Bank] = FlightData.bank.ToString("0.00");
-                    }
+                    SASList.Bank.GetSAS().SetPoint = FlightData.bank;
+                    targets[(int)SASList.Bank] = FlightData.bank.ToString("0.00");
                 }
                 else
                     fadeCurrent[(int)SASList.Bank] = Mathf.Max(fadeSetpoint[(int)SASList.Bank] * Mathf.Pow(fadeMult, timeElapsed[(int)SASList.Bank]), 1);
             }
-
             // make sure we are actually at 1.0
             fadeCurrent[(int)SASList.Bank] = 1.0f;
             // clear the lock
@@ -301,6 +278,8 @@ namespace PilotAssistant.FlightModules
         bool yawEnum = false;
         IEnumerator FadeInHdg()
         {
+            SASList.Hdg.GetSAS().SetPoint = FlightData.heading;
+
             // initialse all relevant values
             timeElapsed[(int)SASList.Hdg] = 0;
             fadeCurrent[(int)SASList.Hdg] = fadeSetpoint[(int)SASList.Hdg]; // x to the power of 0 is 1
@@ -309,7 +288,6 @@ namespace PilotAssistant.FlightModules
                 yield break;
             yawEnum = true;
 
-            bool updated = false;
             while (fadeCurrent[(int)SASList.Hdg] > 1) // fadeCurrent only decreases after delay period finishes
             {
                 yield return new WaitForFixedUpdate();
@@ -317,27 +295,14 @@ namespace PilotAssistant.FlightModules
                 // handle both in the same while loop so if we pause/unpause again it just resets
                 if (timeElapsed[(int)SASList.Hdg] < delayEngage[(int)SASList.Hdg])
                 {
-                    updated = true;
-                    
-                    stopHdgShift = true;
-                    headingEdit = false;
-                    currentDirectionTarget = Utils.vecHeading(FlightData.heading);
-                    SASList.Hdg.GetSAS().skipDerivative = true;
+                    SASList.Hdg.GetSAS().SetPoint = FlightData.heading;
+                    targets[(int)SASList.Hdg] = FlightData.heading.ToString("0.00");
                 }
                 else
                     fadeCurrent[(int)SASList.Hdg] = Mathf.Max(fadeSetpoint[(int)SASList.Hdg] * Mathf.Pow(fadeMult, timeElapsed[(int)SASList.Hdg] - delayEngage[(int)SASList.Hdg]), 1);
             }
-            if (!updated)
-            {
-                stopHdgShift = true;
-                headingEdit = false;
-                currentDirectionTarget = Utils.vecHeading(FlightData.heading);
-                SASList.Hdg.GetSAS().skipDerivative = true;
-            }
-
             // make sure we are actually set to 1
             fadeCurrent[(int)SASList.Hdg] = 1.0f;
-            
             // clear the lock
             yawEnum = false;
         }
@@ -436,7 +401,7 @@ namespace PilotAssistant.FlightModules
 
             if (bArmed)
             {
-                Utils.GetSAS(SASList.Pitch).SetPoint = Utils.Clamp(TogPlusNumBox("Pitch:", SASList.Pitch, FlightData.pitch, 80, 70), -90, 90);
+                Utils.GetSAS(SASList.Pitch).SetPoint = TogPlusNumBox("Pitch:", SASList.Pitch, FlightData.pitch, 80, 70);
                 Utils.GetSAS(SASList.Hdg).SetPoint = TogPlusNumBox("Heading:", SASList.Hdg, FlightData.heading, 80, 70);
                 Utils.GetSAS(SASList.Bank).SetPoint = TogPlusNumBox("Roll:", SASList.Bank, FlightData.bank, 80, 70);
 
@@ -534,9 +499,6 @@ namespace PilotAssistant.FlightModules
                 {
                     setPoint = currentVal;
                     targets[(int)controllerID] = currentVal.ToString("0.00");
-
-                    if (controllerID == SASList.Hdg)
-                        currentDirectionTarget = Utils.vecHeading(FlightData.heading);
                 }
             }
 

@@ -563,7 +563,7 @@ namespace PilotAssistant.FlightModules
                 if (CurrentVertMode != VertMode.RadarAltitude)
                 {
                     if (CurrentVertMode == VertMode.Altitude)
-                        AsstList.VertSpeed.GetAsst().SetPoint = Utils.Clamp(-AsstList.Altitude.GetAsst().ResponseD(FlightData.thisVessel.altitude), FlightData.thisVessel.srfSpeed * -0.95, FlightData.thisVessel.srfSpeed * 0.95);
+                        AsstList.VertSpeed.GetAsst().SetPoint = Utils.Clamp(-AsstList.Altitude.GetAsst().ResponseD(FlightData.thisVessel.altitude), FlightData.thisVessel.srfSpeed * -0.9, FlightData.thisVessel.srfSpeed * 0.9);
                     AsstList.Elevator.GetAsst().SetPoint = -AsstList.VertSpeed.GetAsst().ResponseD(FlightData.vertSpeed);
                 }
                 else
@@ -908,10 +908,10 @@ namespace PilotAssistant.FlightModules
                         maxHdgScrollbarHeight = hdgScrollHeight = Math.Min(maxHdgScrollbarHeight, hdgScrollHeight);
                     }
                 }
-                if (dragID != 0 && dragID == 1)
+                if (dragID == 1)
                 {
                     if (Input.GetMouseButtonUp(0))
-                        dragID = -1;
+                        dragID = 0;
                     else
                     {
                         float height = Math.Max(Input.mousePosition.y, 0);
@@ -1017,10 +1017,10 @@ namespace PilotAssistant.FlightModules
                         maxVertScrollbarHeight = vertScrollHeight = Math.Min(maxVertScrollbarHeight, vertScrollHeight);
                     }
                 }
-                if (dragID != 0 && dragID == 2)
+                if (dragID == 2)
                 {
                     if (Input.GetMouseButtonUp(0))
-                        dragID = -1;
+                        dragID = 0;
                     else
                     {
                         float height = Math.Max(Input.mousePosition.y, 0);
@@ -1104,10 +1104,10 @@ namespace PilotAssistant.FlightModules
                         maxThrtScrollbarHeight = thrtScrollHeight = Math.Min(maxThrtScrollbarHeight, thrtScrollHeight);
                     }
                 }
-                if (dragID != 0 && dragID == 3)
+                if (dragID == 3)
                 {
                     if (Input.GetMouseButtonUp(0))
-                        dragID = -1;
+                        dragID = 0;
                     else
                     {
                         float height = Math.Max(Input.mousePosition.y, 0);

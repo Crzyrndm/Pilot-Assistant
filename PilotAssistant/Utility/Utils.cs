@@ -37,8 +37,7 @@ namespace PilotAssistant.Utility
 
         public static SASController GetSAS(this SASList id)
         {
-            //return SurfSAS.Instance.SASControllers[(int)id];
-            return SurfSAS.Instance.QuatControlArray[(int)id];
+            return SurfSAS.Instance.SASControllers[(int)id];
         }
 
         public static bool isFlightControlLocked()
