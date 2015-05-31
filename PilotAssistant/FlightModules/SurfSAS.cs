@@ -157,7 +157,6 @@ namespace PilotAssistant.FlightModules
             Vector2 PYError = PYratio * angleError;
             ////////////////////////////////////////////////////////////////////////////
 
-            // roll error doesn't rotate when yawing, roll error 2 doesn't rotate when pitching
             // roll error isn't particularly well defined past 90 degrees so we'll just not worry about it for now
             double rollError = 0;
             if (angleError < 89)
