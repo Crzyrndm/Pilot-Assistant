@@ -179,9 +179,20 @@ namespace PilotAssistant.FlightModules
                     return Quaternion.LookRotation(FlightData.obtNormal);
                 case VesselAutopilot.AutopilotMode.Antinormal:
                     return Quaternion.LookRotation(-FlightData.obtNormal);
-                default:
-                    return Quaternion.LookRotation(FlightData.planetNorth);
+                case VesselAutopilot.AutopilotMode.Target:
+                    if (FlightData.thisVessel.targetObject != null)
+                        return Quaternion.LookRotation(FlightData.thisVessel.targetObject.GetVessel().GetWorldPos3D() - FlightData.thisVessel.GetWorldPos3D());
+                    break;
+                case VesselAutopilot.AutopilotMode.AntiTarget:
+                    if (FlightData.thisVessel.targetObject != null)
+                        return Quaternion.LookRotation(FlightData.thisVessel.GetWorldPos3D() - FlightData.thisVessel.targetObject.GetVessel().GetWorldPos3D());
+                    break;
+                case VesselAutopilot.AutopilotMode.Maneuver:
+                    if (FlightData.thisVessel.patchedConicSolver.maneuverNodes != null && FlightData.thisVessel.patchedConicSolver.maneuverNodes.Count > 0)
+                        return FlightData.thisVessel.patchedConicSolver.maneuverNodes[0].nodeRotation;
+                    break;
             }
+            return Quaternion.identity;
         }
 
         bool allowControl(SASList ID)
