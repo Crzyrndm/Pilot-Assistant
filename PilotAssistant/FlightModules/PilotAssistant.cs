@@ -251,7 +251,7 @@ namespace PilotAssistant.FlightModules
                         // ============================================================ Hrzt Controls ============================================================
                         if (HrztActive && !FlightData.thisVessel.checkLanded())
                         {
-                            if (GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_YAW))
+                            if (Utils.hasYawInput())
                             {
                                 if (GameSettings.YAW_LEFT.GetKey())
                                     headingChangeToCommit -= hrztScale * scale;
@@ -277,7 +277,7 @@ namespace PilotAssistant.FlightModules
                             headingChangeToCommit = 0;
 
                         // ============================================================ Vertical Controls ============================================================
-                        if (VertActive && (GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_PITCH)))
+                        if (VertActive && Utils.hasPitchInput())
                         {
                             double vert = 0; // = double.Parse(targetVert);
                             if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
@@ -303,8 +303,7 @@ namespace PilotAssistant.FlightModules
                         }
 
                         // ============================================================ Throttle Controls ============================================================
-                        if (ThrtActive && ((GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey())
-                                        || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown()))
+                        if (ThrtActive && Utils.hasThrottleInput())
                         {
                             double speed;
                             if (CurrentThrottleMode == ThrottleMode.Speed)

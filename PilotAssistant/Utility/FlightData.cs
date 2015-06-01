@@ -32,6 +32,11 @@ namespace PilotAssistant.Utility
 
         public static Vector3d velocity = Vector3d.zero;
 
+        public static Vector3 obtRadial = Vector3.zero;
+        public static Vector3 obtNormal = Vector3.zero;
+        public static Vector3 srfRadial = Vector3.zero;
+        public static Vector3 srfNormal = Vector3.zero;
+
         static ArrowPointer pointer;
         public static void updateAttitude()
         {
@@ -54,6 +59,11 @@ namespace PilotAssistant.Utility
             // Vessel forward and right vetors, parallel to the surface
             surfVesRight = Vector3d.Cross(planetUp, thisVessel.ReferenceTransform.up).normalized;
             surfVesForward = Vector3d.Cross(surfVesRight, planetUp).normalized;
+
+            obtNormal = Vector3.Cross(FlightData.thisVessel.obt_velocity, FlightData.planetUp);
+            obtRadial = Vector3.Cross(obtNormal, FlightData.thisVessel.obt_velocity);
+            srfNormal = Vector3.Cross(FlightData.thisVessel.srf_velocity, FlightData.planetUp);
+            srfRadial = Vector3.Cross(srfNormal, FlightData.thisVessel.srf_velocity);
 
             pitch = 90 - Vector3d.Angle(planetUp, thisVessel.ReferenceTransform.up);
             heading = -1 * Vector3d.Angle(-surfVesForward, -planetNorth) * Math.Sign(Vector3d.Dot(-surfVesForward, planetEast));
@@ -80,7 +90,7 @@ namespace PilotAssistant.Utility
                 AoA = yaw = 0;
 
             oldSpd = thisVessel.srfSpeed;
-            //drawArrow();
+            //drawArrow(radial);
         }
 
         public static void drawArrow(Vector3 dir)

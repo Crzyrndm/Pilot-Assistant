@@ -76,7 +76,7 @@ namespace PilotAssistant
             BindingManager.Instance.Start();
             
             FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(onPreAutoPilotUpdate);
-            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(onAutoPilotUpdate);
+            //FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(onAutoPilotUpdate);
             FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(onPostAutoPilotUpdate);
 
             // don't put these in awake or they trigger on loading the vessel
@@ -139,13 +139,13 @@ namespace PilotAssistant
         void vesselSwitch(Vessel v)
         {
             FlightData.thisVessel.OnPreAutopilotUpdate -= new FlightInputCallback(onPreAutoPilotUpdate);
-            FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(onAutoPilotUpdate);
+            //FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(onAutoPilotUpdate);
             FlightData.thisVessel.OnPostAutopilotUpdate -= new FlightInputCallback(onPostAutoPilotUpdate);
 
             FlightData.thisVessel = v;
 
             FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(onPreAutoPilotUpdate);
-            FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(onAutoPilotUpdate);
+            //FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(onAutoPilotUpdate);
             FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(onPostAutoPilotUpdate);
 
             PresetManager.loadCraftAsstPreset();
@@ -168,13 +168,14 @@ namespace PilotAssistant
             FlightData.updateAttitude();
         }
 
-        void onAutoPilotUpdate(FlightCtrlState state)
-        {
-            SurfSAS.Instance.SurfaceSAS(state);
-        }
+        //void onAutoPilotUpdate(FlightCtrlState state)
+        //{
+            
+        //}
 
         void onPostAutoPilotUpdate(FlightCtrlState state)
         {
+            SurfSAS.Instance.SurfaceSAS(state);
             PilotAssistant.Instance.vesselController(state);
         }
 

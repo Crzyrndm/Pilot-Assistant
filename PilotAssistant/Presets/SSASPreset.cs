@@ -9,9 +9,9 @@ namespace PilotAssistant.Presets
     public class SSASPreset
     {
         public string name;
-        public double[,] PIDGains = new double[3, 5];
+        public double[,] PIDGains = new double[3, 4];
 
-        public SSASPreset(List<PID.SASController> controllers, string Name) // used for adding a new preset, can clone the current values
+        public SSASPreset(List<PID.PIDErrorController> controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
 
@@ -21,11 +21,10 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = controllers[(int)s].IGain;
                 PIDGains[(int)s, 2] = controllers[(int)s].DGain;
                 PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
-                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeCurrent[(int)s];
             }
         }
 
-        public SSASPreset(PID.SASController[] controllers, string Name) // used for adding a new preset, can clone the current values
+        public SSASPreset(PID.PIDErrorController[] controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
             foreach (SASList s in Enum.GetValues(typeof(SASList)))
@@ -34,7 +33,6 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = controllers[(int)s].IGain;
                 PIDGains[(int)s, 2] = controllers[(int)s].DGain;
                 PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
-                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeCurrent[(int)s];
             }
         }
 
@@ -47,11 +45,10 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = gains[(int)s][1];
                 PIDGains[(int)s, 2] = gains[(int)s][2];
                 PIDGains[(int)s, 3] = gains[(int)s][3];
-                PIDGains[(int)s, 4] = gains[(int)s][4];
             }
         }
 
-        public void Update(List<PID.SASController> controllers)
+        public void Update(List<PID.PIDErrorController> controllers)
         {
             foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {
@@ -59,11 +56,10 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = controllers[(int)s].IGain;
                 PIDGains[(int)s, 2] = controllers[(int)s].DGain;
                 PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
-                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeCurrent[(int)s];
             }
         }
 
-        public void Update(PID.SASController[] controllers)
+        public void Update(PID.PIDErrorController[] controllers)
         {
             foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {
@@ -71,7 +67,6 @@ namespace PilotAssistant.Presets
                 PIDGains[(int)s, 1] = controllers[(int)s].IGain;
                 PIDGains[(int)s, 2] = controllers[(int)s].DGain;
                 PIDGains[(int)s, 3] = controllers[(int)s].Scalar;
-                PIDGains[(int)s, 4] = SurfSAS.Instance.fadeCurrent[(int)s];
             }
         }
     }

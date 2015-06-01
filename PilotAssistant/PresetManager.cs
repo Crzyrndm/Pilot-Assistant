@@ -413,7 +413,6 @@ namespace PilotAssistant
             node.AddValue(iGain, preset.PIDGains[index, 1]);
             node.AddValue(dGain, preset.PIDGains[index, 2]);
             node.AddValue(scalar, preset.PIDGains[index, 3]);
-            node.AddValue(delay, preset.PIDGains[index, 4]);
             return node;
         }
 
@@ -575,7 +574,7 @@ namespace PilotAssistant
         #endregion
 
         #region SSAS Preset
-        public static void newSSASPreset(ref string name, SASController[] controllers)
+        public static void newSSASPreset(ref string name, PIDErrorController[] controllers)
         {
             if (string.IsNullOrEmpty(name))
                 return;
@@ -594,7 +593,7 @@ namespace PilotAssistant
 
         public static void loadSSASPreset(SSASPreset p)
         {
-            SASController[] c = SurfSAS.Instance.SASControllers;
+            PIDErrorController[] c = SurfSAS.Instance.SASControllers;
 
             foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {
@@ -602,7 +601,6 @@ namespace PilotAssistant
                 c[(int)s].IGain = p.PIDGains[(int)s, 1];
                 c[(int)s].DGain = p.PIDGains[(int)s, 2];
                 c[(int)s].Scalar = p.PIDGains[(int)s, 3];
-                SurfSAS.Instance.fadeCurrent[(int)s] = Math.Max((float)p.PIDGains[(int)s, 4], 1);
             }
 
             Instance.activeSSASPreset = p;

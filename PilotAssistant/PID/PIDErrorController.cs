@@ -7,7 +7,7 @@ namespace PilotAssistant.PID
 {
     using Utility;
     using FlightModules;
-    class PIDErrorController : SASController
+    public class PIDErrorController : SASController
     {
         public PIDErrorController(SASList ID, double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double easing = 1)
                             : base (ID, Kp, Ki, Kd, OutputMin, OutputMax, intClampLower, intClampUpper, scalar, easing)

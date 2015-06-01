@@ -102,5 +102,67 @@ namespace PilotAssistant.Utility
         {
             return axis.IsNeutral() && Math.Abs(axis.GetAxis()) < 0.00001;
         }
+
+        public static bool hasInput(SASList ID)
+        {
+            switch (ID)
+            {
+                case SASList.Bank:
+                    return hasRollInput();
+                case SASList.Hdg:
+                    return hasYawInput();
+                case SASList.Pitch:
+                default:
+                    return hasPitchInput();
+            }
+        }
+
+        public static bool hasYawInput()
+        {
+            return GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_YAW);
+        }
+
+        public static bool hasPitchInput()
+        {
+            return GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_PITCH);
+        }
+
+        public static bool hasRollInput()
+        {
+            return GameSettings.ROLL_LEFT.GetKey() || GameSettings.ROLL_RIGHT.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_ROLL);
+        }
+
+        public static bool hasThrottleInput()
+        {
+            return GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey() || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown();
+        }
+
+        public static double getCurrentVal(SASList ID)
+        {
+            switch (ID)
+            {
+                case SASList.Bank:
+                    return FlightData.bank;
+                case SASList.Hdg:
+                    return FlightData.heading;
+                case SASList.Pitch:
+                default:
+                    return FlightData.pitch;
+            }
+        }
+
+        public static double getCurrentRate(SASList ID)
+        {
+            switch (ID)
+            {
+                case SASList.Bank:
+                    return FlightData.thisVessel.angularVelocity.y;
+                case SASList.Hdg:
+                    return FlightData.thisVessel.angularVelocity.z;
+                case SASList.Pitch:
+                default:
+                    return FlightData.thisVessel.angularVelocity.x;
+            }
+        }
     }
 }
