@@ -116,12 +116,11 @@ namespace PilotAssistant.FlightModules
         #endregion
 
         #region Fixed Update / Control
-
         public void SurfaceSAS(FlightCtrlState state)
         {
             if (!bArmed || !ActivityCheck() || !FlightData.thisVessel.IsControllable)
                 return;
-            
+
             pauseManager();
             Transform vesRefTrans = FlightData.thisVessel.ReferenceTransform.transform;
 
@@ -136,22 +135,34 @@ namespace PilotAssistant.FlightModules
             ////////////////////////////////////////////////////////////////////////////
 
             // roll error isn't particularly well defined past 90 degrees so we'll just not worry about it for now
-            double rollError = 0;
-            if (angleError < 89 && FlightData.thisVessel.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
-                rollError = Utils.headingClamp(Vector3.Angle(rotDiff * Vector3.right, Vector3.right) * Math.Sign(Vector3.Dot(rotDiff * Vector3.right, Vector3.forward)), 180);
-
-            setCtrlState(SASList.Bank, rollError, FlightData.thisVessel.angularVelocity.y * Mathf.Rad2Deg, ref state.roll);
+            double rollError = 0, rollError2 = 0;
+            if (FlightData.thisVessel.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
+            {
+                if (angleError < 89)
+                    rollError = Utils.headingClamp(Vector3.Angle(rotDiff * Vector3.right, Vector3.right) * Math.Sign(Vector3.Dot(rotDiff * Vector3.right, Vector3.forward)), 180);
+                //================================
+                // forward vectors for ves and target
+                // vesRefTrans.up
+                // targetRot * Vector3.forward
+                Vector3 normVec = Quaternion.AngleAxis(Mathf.Atan2(PYratio.y, PYratio.x) * Mathf.Rad2Deg, vesRefTrans.up) * vesRefTrans.forward;
+                float angleToTurn = angleError * Mathf.Sign(Vector3.Dot(vesRefTrans.right, targetRot * Vector3.forward));
+                Quaternion targetDeRotated = Quaternion.AngleAxis(angleToTurn, normVec) * targetRot;
+                //Debug.Log(Vector3.Angle(vesRefTrans.up, targetDeRotated * Vector3.forward));
+                //Debug.Log(Vector3.Angle(vesRefTrans.right, targetDeRotated * Vector3.right));
+                rollError2 = Utils.headingClamp(Vector3.Angle(vesRefTrans.right, targetDeRotated * Vector3.right) * Math.Sign(Vector3.Dot(targetDeRotated * Vector3.right, vesRefTrans.forward)), 180);
+                //================================
+            }
+            setCtrlState(SASList.Bank, rollError2, FlightData.thisVessel.angularVelocity.y * Mathf.Rad2Deg, ref state.roll);
             setCtrlState(SASList.Pitch, PYError.y, FlightData.thisVessel.angularVelocity.x * Mathf.Rad2Deg, ref state.pitch);
             setCtrlState(SASList.Hdg, PYError.x, FlightData.thisVessel.angularVelocity.z * Mathf.Rad2Deg, ref state.yaw);
         }
 
         void setCtrlState(SASList ID, double error, double rate, ref float ctrlState)
         {
-            // ctrlstate set by reference so I can ignore it if need be (ie. when user is commanding input
             if (allowControl(ID))
-                ctrlState = SASControllers[(int)ID].ResponseF(error, rate);
+                ctrlState = ID.GetSAS().ResponseF(error, rate);
             else if (!Utils.hasInput(ID))
-                ctrlState = 0;
+                ctrlState = 0; // kill off stock SAS inputs
         }
 
         Quaternion TargetModeSwitch()
@@ -168,17 +179,41 @@ namespace PilotAssistant.FlightModules
                     targetRot = Quaternion.AngleAxis(pitchAngle, targetRot * -Vector3.right) * targetRot; // pitch rotation
                     return Quaternion.AngleAxis(rollAngle, targetRot * Vector3.forward) * targetRot; // roll rotation
                 case VesselAutopilot.AutopilotMode.Prograde:
-                    return Quaternion.LookRotation(FlightData.thisVessel.obt_velocity);
+                    if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit)
+                        return Quaternion.LookRotation(FlightData.thisVessel.obt_velocity);
+                    else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
+                        return Quaternion.LookRotation(FlightData.thisVessel.srf_velocity);
+                    break;
                 case VesselAutopilot.AutopilotMode.Retrograde:
-                    return Quaternion.LookRotation(-FlightData.thisVessel.obt_velocity);
+                    if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit)
+                        return Quaternion.LookRotation(-FlightData.thisVessel.obt_velocity);
+                    else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
+                        return Quaternion.LookRotation(FlightData.thisVessel.srf_velocity);
+                    break;
                 case VesselAutopilot.AutopilotMode.RadialOut:
-                    return Quaternion.LookRotation(-FlightData.obtRadial);
+                    if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit)
+                        return Quaternion.LookRotation(-FlightData.obtRadial);
+                    else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
+                        return Quaternion.LookRotation(-FlightData.srfRadial);
+                    break;
                 case VesselAutopilot.AutopilotMode.RadialIn:
-                    return Quaternion.LookRotation(FlightData.obtRadial);
+                    if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit)
+                        return Quaternion.LookRotation(FlightData.obtRadial);
+                    else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
+                        return Quaternion.LookRotation(FlightData.srfRadial);
+                    break;
                 case VesselAutopilot.AutopilotMode.Normal:
-                    return Quaternion.LookRotation(FlightData.obtNormal);
+                    if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit)
+                        return Quaternion.LookRotation(FlightData.obtNormal);
+                    else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
+                        return Quaternion.LookRotation(FlightData.srfNormal);
+                    break;
                 case VesselAutopilot.AutopilotMode.Antinormal:
-                    return Quaternion.LookRotation(-FlightData.obtNormal);
+                    if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit)
+                        return Quaternion.LookRotation(-FlightData.obtNormal);
+                    else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
+                        return Quaternion.LookRotation(-FlightData.srfNormal);
+                    break;
                 case VesselAutopilot.AutopilotMode.Target:
                     if (FlightData.thisVessel.targetObject != null)
                         return Quaternion.LookRotation(FlightData.thisVessel.targetObject.GetVessel().GetWorldPos3D() - FlightData.thisVessel.GetWorldPos3D());

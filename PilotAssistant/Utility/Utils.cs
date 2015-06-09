@@ -35,7 +35,7 @@ namespace PilotAssistant.Utility
             return PilotAssistant.Instance.controllers[(int)id];
         }
 
-        public static SASController GetSAS(this SASList id)
+        public static PIDErrorController GetSAS(this SASList id)
         {
             return SurfSAS.Instance.SASControllers[(int)id];
         }
