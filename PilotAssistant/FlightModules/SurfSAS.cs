@@ -138,13 +138,13 @@ namespace PilotAssistant.FlightModules
             double rollError = 0;
             if (FlightData.thisVessel.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
             {
-                if (angleError < 89)
-                    rollError = Utils.headingClamp(Vector3.Angle(rotDiff * Vector3.right, Vector3.right) * Math.Sign(Vector3.Dot(rotDiff * Vector3.right, Vector3.forward)), 180);
                 //================================
                 // forward vectors for ves and target
                 // vesRefTrans.up
                 // targetRot * Vector3.forward
+                // normVec = axis normal to plane of travel
                 Vector3 normVec = Vector3.Cross(targetRot * Vector3.forward, vesRefTrans.up).normalized;
+                // rotation with Pitch and yaw elements removed (forward vectors aligned)
                 Quaternion targetDeRotated = Quaternion.AngleAxis(angleError, normVec) * targetRot;
                 rollError = Utils.headingClamp(Vector3.Angle(vesRefTrans.right, targetDeRotated * Vector3.right) * Math.Sign(Vector3.Dot(targetDeRotated * Vector3.right, vesRefTrans.forward)), 180);
                 //================================
@@ -174,7 +174,7 @@ namespace PilotAssistant.FlightModules
                     Quaternion targetRot = Quaternion.LookRotation(FlightData.planetNorth, FlightData.planetUp);
                     targetRot = Quaternion.AngleAxis(hdgAngle, targetRot * Vector3.up) * targetRot; // heading rotation
                     targetRot = Quaternion.AngleAxis(pitchAngle, targetRot * -Vector3.right) * targetRot; // pitch rotation
-                    return Quaternion.AngleAxis(rollAngle, targetRot * Vector3.forward) * targetRot; // roll rotation
+                    return Quaternion.AngleAxis(-rollAngle, targetRot * Vector3.forward) * targetRot; // roll rotation
                 case VesselAutopilot.AutopilotMode.Prograde:
                     if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit)
                         return Quaternion.LookRotation(FlightData.thisVessel.obt_velocity);

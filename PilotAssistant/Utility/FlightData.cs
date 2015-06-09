@@ -74,7 +74,7 @@ namespace PilotAssistant.Utility
             if (progradeHeading < 0)
                 progradeHeading += 360; // offset -ve heading by 360 degrees
 
-            bank = Vector3d.Angle(surfVesRight, thisVessel.ReferenceTransform.right) * Math.Sign(Vector3d.Dot(surfVesRight, thisVessel.ReferenceTransform.forward));
+            bank = Vector3d.Angle(surfVesRight, thisVessel.ReferenceTransform.right) * Math.Sign(Vector3d.Dot(surfVesRight, -thisVessel.ReferenceTransform.forward));
 
             if (thisVessel.srfSpeed > 1)
             {
