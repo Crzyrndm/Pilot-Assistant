@@ -111,6 +111,8 @@ namespace PilotAssistant.FlightModules
             if (currentMode != FlightData.thisVessel.Autopilot.Mode)
             {
                 currentMode = FlightData.thisVessel.Autopilot.Mode;
+                if (currentMode == VesselAutopilot.AutopilotMode.StabilityAssist)
+                    updateTarget();
             }
         }
         #endregion
