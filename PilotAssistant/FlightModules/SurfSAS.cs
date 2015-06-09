@@ -135,7 +135,7 @@ namespace PilotAssistant.FlightModules
             ////////////////////////////////////////////////////////////////////////////
 
             // roll error isn't particularly well defined past 90 degrees so we'll just not worry about it for now
-            double rollError = 0, rollError2 = 0;
+            double rollError = 0;
             if (FlightData.thisVessel.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
             {
                 if (angleError < 89)
@@ -144,15 +144,12 @@ namespace PilotAssistant.FlightModules
                 // forward vectors for ves and target
                 // vesRefTrans.up
                 // targetRot * Vector3.forward
-                Vector3 normVec = Quaternion.AngleAxis(Mathf.Atan2(PYratio.y, PYratio.x) * Mathf.Rad2Deg, vesRefTrans.up) * vesRefTrans.forward;
-                float angleToTurn = angleError * Mathf.Sign(Vector3.Dot(vesRefTrans.right, targetRot * Vector3.forward));
-                Quaternion targetDeRotated = Quaternion.AngleAxis(angleToTurn, normVec) * targetRot;
-                //Debug.Log(Vector3.Angle(vesRefTrans.up, targetDeRotated * Vector3.forward));
-                //Debug.Log(Vector3.Angle(vesRefTrans.right, targetDeRotated * Vector3.right));
-                rollError2 = Utils.headingClamp(Vector3.Angle(vesRefTrans.right, targetDeRotated * Vector3.right) * Math.Sign(Vector3.Dot(targetDeRotated * Vector3.right, vesRefTrans.forward)), 180);
+                Vector3 normVec = Vector3.Cross(targetRot * Vector3.forward, vesRefTrans.up).normalized;
+                Quaternion targetDeRotated = Quaternion.AngleAxis(angleError, normVec) * targetRot;
+                rollError = Utils.headingClamp(Vector3.Angle(vesRefTrans.right, targetDeRotated * Vector3.right) * Math.Sign(Vector3.Dot(targetDeRotated * Vector3.right, vesRefTrans.forward)), 180);
                 //================================
             }
-            setCtrlState(SASList.Bank, rollError2, FlightData.thisVessel.angularVelocity.y * Mathf.Rad2Deg, ref state.roll);
+            setCtrlState(SASList.Bank, rollError, FlightData.thisVessel.angularVelocity.y * Mathf.Rad2Deg, ref state.roll);
             setCtrlState(SASList.Pitch, PYError.y, FlightData.thisVessel.angularVelocity.x * Mathf.Rad2Deg, ref state.pitch);
             setCtrlState(SASList.Hdg, PYError.x, FlightData.thisVessel.angularVelocity.z * Mathf.Rad2Deg, ref state.yaw);
         }
