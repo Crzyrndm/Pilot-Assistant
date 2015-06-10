@@ -51,6 +51,7 @@ namespace PilotAssistant.FlightModules
         bool bShowSSASPresets = false;
 
         // initialisation and default presets stuff
+        // kp, ki, kd, outMin, outMax, iMin, iMax, scalar, easing (unused)
         public double[] defaultPitchGains = { 0.1, 0.01, 0.3, -1, 1, -1, 1, 1, 200 };
         public double[] defaultRollGains = { 0.1, 0.01, 0.1, -1, 1, -1, 1, 1, 200 };
         public double[] defaultHdgGains = { 0.1, 0.01, 0.3, -1, 1, -1, 1, 1, 200 };
@@ -143,6 +144,7 @@ namespace PilotAssistant.FlightModules
             Vector3d normVec = Vector3d.Cross(targetRot * Vector3.forward, vesRefTrans.up).normalized;
             // rotation with Pitch and Yaw elements removed (facing aligned)
             Quaternion targetDeRotated = Quaternion.AngleAxis((float)angleError, normVec) * targetRot;
+            // signed angle difference between vessel.right and deRotated.right
             double rollError = Utils.headingClamp(Vector3d.Angle(vesRefTrans.right, targetDeRotated * Vector3d.right) * Math.Sign(Vector3d.Dot(targetDeRotated * Vector3d.right, vesRefTrans.forward)), 180);
             //================================
 
@@ -168,11 +170,9 @@ namespace PilotAssistant.FlightModules
                     float hdgAngle = (float)(bActive[(int)SASList.Hdg] ? SASList.Hdg.GetSAS().SetPoint : FlightData.heading);
                     float pitchAngle = (float)(bActive[(int)SASList.Pitch] ? SASList.Pitch.GetSAS().SetPoint : FlightData.pitch);
                     
-
                     target = Quaternion.LookRotation(FlightData.planetNorth, FlightData.planetUp);
                     target = Quaternion.AngleAxis(hdgAngle, target * Vector3.up) * target; // heading rotation
                     target = Quaternion.AngleAxis(pitchAngle, target * -Vector3.right) * target; // pitch rotation
-                    
                     break;
                 case VesselAutopilot.AutopilotMode.Prograde:
                     if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit)
@@ -256,7 +256,7 @@ namespace PilotAssistant.FlightModules
             // if the heading control is not paused, and there is yaw input input or there is pitch input and the bank angle is greater than 5 degrees, pause the heading lock
             if (!bPause[(int)SASList.Hdg] && (Utils.hasYawInput() || (Utils.hasPitchInput() && Math.Abs(FlightData.bank) > bankAngleSynch)))
                 bPause[(int)SASList.Hdg] = true;
-            // if the heading control is paused, and there is no yaw input, and there is no pitch input or the bank angle is less than 5 degrees, unpause the pitch lock
+            // if the heading control is paused, and there is no yaw input, and there is no pitch input or the bank angle is less than 5 degrees, unpause the heading lock
             else if (bPause[(int)SASList.Hdg] && !Utils.hasYawInput() && (!Utils.hasPitchInput() || Math.Abs(FlightData.bank) <= bankAngleSynch))
             {
                 bPause[(int)SASList.Hdg] = false;
@@ -389,8 +389,11 @@ namespace PilotAssistant.FlightModules
 
             if (bArmed)
             {
-                Utils.GetSAS(SASList.Pitch).SetPoint = TogPlusNumBox("Pitch:", SASList.Pitch, FlightData.pitch, 80, 70);
-                Utils.GetSAS(SASList.Hdg).SetPoint = TogPlusNumBox("Heading:", SASList.Hdg, FlightData.heading, 80, 70);
+                if (currentMode == VesselAutopilot.AutopilotMode.StabilityAssist)
+                {
+                    Utils.GetSAS(SASList.Pitch).SetPoint = TogPlusNumBox("Pitch:", SASList.Pitch, FlightData.pitch, 80, 70);
+                    Utils.GetSAS(SASList.Hdg).SetPoint = TogPlusNumBox("Heading:", SASList.Hdg, FlightData.heading, 80, 70);
+                }
                 Utils.GetSAS(SASList.Bank).SetPoint = TogPlusNumBox("Roll:", SASList.Bank, FlightData.bank, 80, 70);
 
                 GUILayout.Box("", GUILayout.Height(10)); // seperator

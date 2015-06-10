@@ -552,7 +552,7 @@ namespace PilotAssistant.FlightModules
 
                 if (!FlightData.thisVessel.checkLanded())
                 {
-                    state.roll = (AsstList.Aileron.GetAsst().ResponseF(FlightData.bank) + rollInput).Clamp(-1, 1);
+                    state.roll = (AsstList.Aileron.GetAsst().ResponseF(-FlightData.bank) + rollInput).Clamp(-1, 1);
                     state.yaw = AsstList.Rudder.GetAsst().ResponseF(FlightData.yaw).Clamp(-1, 1);
                 }
             }

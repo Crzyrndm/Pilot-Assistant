@@ -60,10 +60,10 @@ namespace PilotAssistant.Utility
             surfVesRight = Vector3d.Cross(planetUp, thisVessel.ReferenceTransform.up).normalized;
             surfVesForward = Vector3d.Cross(surfVesRight, planetUp).normalized;
 
-            obtNormal = Vector3.Cross(FlightData.thisVessel.obt_velocity, FlightData.planetUp);
-            obtRadial = Vector3.Cross(FlightData.thisVessel.obt_velocity, obtNormal);
-            srfNormal = Vector3.Cross(FlightData.thisVessel.srf_velocity, FlightData.planetUp);
-            srfRadial = Vector3.Cross(FlightData.thisVessel.srf_velocity, srfNormal);
+            obtNormal = Vector3.Cross(FlightData.thisVessel.obt_velocity, FlightData.planetUp).normalized;
+            obtRadial = Vector3.Cross(FlightData.thisVessel.obt_velocity, obtNormal).normalized;
+            srfNormal = Vector3.Cross(FlightData.thisVessel.srf_velocity, FlightData.planetUp).normalized;
+            srfRadial = Vector3.Cross(FlightData.thisVessel.srf_velocity, srfNormal).normalized;
 
             pitch = 90 - Vector3d.Angle(planetUp, thisVessel.ReferenceTransform.up);
             heading = -1 * Vector3d.Angle(-surfVesForward, -planetNorth) * Math.Sign(Vector3d.Dot(-surfVesForward, planetEast));
