@@ -47,6 +47,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FlightModules\VesselData.cs" />
+    <Compile Include="FlightModules\AsstVesselModule.cs" />
     <Compile Include="PID\PIDErrorController.cs" />
     <Compile Include="Toolbar\AppLauncherFlight.cs" />
     <Compile Include="FlightModules\BindingManager.cs" />

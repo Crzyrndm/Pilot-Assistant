@@ -30,9 +30,9 @@ namespace PilotAssistant.Utility
                 return val;
         }
 
-        public static AsstController GetAsst(this AsstList id)
+        public static AsstController GetAsst(this AsstList id, PilotAssistant instance)
         {
-            return PilotAssistant.Instance.controllers[(int)id];
+            return instance.controllers[(int)id];
         }
 
         public static PIDErrorController GetSAS(this SASList id)
@@ -42,8 +42,8 @@ namespace PilotAssistant.Utility
 
         public static bool isFlightControlLocked()
         {
-            return (InputLockManager.IsLocked(ControlTypes.PITCH) && !PilotAssistant.Instance.VertActive) || InputLockManager.IsLocked(ControlTypes.ROLL)
-                    || (InputLockManager.IsLocked(ControlTypes.YAW) && !PilotAssistant.Instance.HrztActive) || InputLockManager.IsLocked(ControlTypes.THROTTLE);
+            return (InputLockManager.IsLocked(ControlTypes.PITCH) && !PilotAssistant.pitchLockEngaged) || InputLockManager.IsLocked(ControlTypes.ROLL)
+                    || (InputLockManager.IsLocked(ControlTypes.YAW) && !PilotAssistant.yawLockEngaged) || InputLockManager.IsLocked(ControlTypes.THROTTLE);
         }
 
         /// <summary>
@@ -91,11 +91,6 @@ namespace PilotAssistant.Utility
                 return current + 360;
             else
                 return current;
-        }
-
-        public static bool AsstIsPaused()
-        {
-            return PilotAssistant.Instance.bPause;
         }
 
         public static bool IsNeutral(AxisBinding axis)

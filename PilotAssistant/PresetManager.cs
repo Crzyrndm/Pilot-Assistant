@@ -464,9 +464,9 @@ namespace PilotAssistant
             name = "";
         }
 
-        public static void loadAsstPreset(AsstPreset p)
+        public static void loadAsstPreset(AsstPreset p, PilotAssistant instance)
         {
-            AsstController[] c = PilotAssistant.Instance.controllers;
+            AsstController[] c = instance.controllers;
             for (int i = 0; i < 8; i++)
             {
                 c[i].PGain = p.PIDGains[i][0];
@@ -488,9 +488,9 @@ namespace PilotAssistant
             saveToFile();
         }
 
-        public static void updateAsstPreset()
+        public static void updateAsstPreset(PilotAssistant instance)
         {
-            instance.activeAsstPreset.Update(PilotAssistant.Instance.controllers);
+            Instance.activeAsstPreset.Update(instance.controllers);
             saveToFile();
         }
 
@@ -692,12 +692,12 @@ namespace PilotAssistant
 
         #region Craft Presets
         // called on vessel load
-        public static void loadCraftAsstPreset()
+        public static void loadCraftAsstPreset(PilotAssistant instance)
         {
-            if (instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].AsstPreset != null)
-                loadAsstPreset(instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].AsstPreset);
+            if (Instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].AsstPreset != null)
+                loadAsstPreset(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].AsstPreset, instance);
             else
-                loadAsstPreset(instance.craftPresetDict[craftDefaultName].AsstPreset);
+                loadAsstPreset(Instance.craftPresetDict[craftDefaultName].AsstPreset, instance);
         }
 
         public static void loadCraftSSASPreset()

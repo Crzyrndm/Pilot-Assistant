@@ -10,7 +10,7 @@ namespace PilotAssistant
      * 
      * It also simplifies management of event subscriptions and the like and serves as a location for settings
      * and other common variables
-     * */
+     */
 
     using Utility;
     using Toolbar;
@@ -45,6 +45,8 @@ namespace PilotAssistant
         public string blizSSASTexPath;
         public string blizSASTexPath;
 
+        List<AsstVesselModule> controlledVessels = new List<AsstVesselModule>();
+
         public void Awake()
         {
             instance = this;
@@ -63,23 +65,24 @@ namespace PilotAssistant
             if (!bUseStockToolbar && ToolbarManager.ToolbarAvailable)
                 ToolbarMod.Instance.Awake();
             else
-                AppLauncherFlight.Instance.Start();
+                AppLauncherFlight.Instance.Awake();
         }
 
         public void Start()
         {
             FlightData.thisVessel = FlightGlobals.ActiveVessel;
 
-            PilotAssistant.Instance.Start();
+            controlledVessels.Add(new AsstVesselModule(FlightGlobals.ActiveVessel));
+            controlledVessels[0].Start();
+
             SurfSAS.Instance.Start();
             Stock_SAS.Instance.Start();
             BindingManager.Instance.Start();
             
             FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(onPreAutoPilotUpdate);
-            //FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(onAutoPilotUpdate);
             FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(onPostAutoPilotUpdate);
 
-            // don't put these in awake or they trigger on loading the vessel
+            // don't put these in awake or they trigger on loading the vessel and everything gets wierd
             GameEvents.onHideUI.Add(hideUI);
             GameEvents.onShowUI.Add(showUI);
             GameEvents.onVesselChange.Add(vesselSwitch);
@@ -87,9 +90,8 @@ namespace PilotAssistant
 
             LoadConfig();
 
-            PresetManager.loadCraftAsstPreset();
+            PresetManager.loadCraftAsstPreset(controlledVessels[0].vesselAsst);
             PresetManager.loadCraftSSASPreset();
-            // SAS and RSAS preset loading needs to be handled in a coroutine to ensure they have been initialised so they are handled by applicable classes
         }
 
         public void LoadConfig()
@@ -98,15 +100,15 @@ namespace PilotAssistant
             {
                 showTooltips = config.GetValue("AsstTooltips", true);
 
-                PilotAssistant.Instance.doublesided = config.GetValue("AsstDoublesided", false);
-                PilotAssistant.Instance.showPIDLimits = config.GetValue("AsstLimits", false);
-                PilotAssistant.Instance.showControlSurfaces = config.GetValue("AsstControlSurfaces", false);
-                PilotAssistant.Instance.maxHdgScrollbarHeight = float.Parse(config.GetValue("maxHdgHeight", "55"));
-                PilotAssistant.Instance.maxVertScrollbarHeight = float.Parse(config.GetValue("maxVertHeight", "55"));
-                PilotAssistant.Instance.maxThrtScrollbarHeight = float.Parse(config.GetValue("maxThrtHeight", "55"));
+                PilotAssistant.doublesided = config.GetValue("AsstDoublesided", false);
+                PilotAssistant.showPIDLimits = config.GetValue("AsstLimits", false);
+                PilotAssistant.showControlSurfaces = config.GetValue("AsstControlSurfaces", false);
+                PilotAssistant.maxHdgScrollbarHeight = float.Parse(config.GetValue("maxHdgHeight", "55"));
+                PilotAssistant.maxVertScrollbarHeight = float.Parse(config.GetValue("maxVertHeight", "55"));
+                PilotAssistant.maxThrtScrollbarHeight = float.Parse(config.GetValue("maxThrtHeight", "55"));
 
                 // windows
-                PilotAssistant.Instance.window = config.GetValue("AsstWindow", new Rect(300, 300, 0, 0));
+                PilotAssistant.window = config.GetValue("AsstWindow", new Rect(300, 300, 0, 0));
                 SurfSAS.Instance.SSASwindow = config.GetValue("SSASWindow", new Rect(500, 300, 0, 0));
                 Stock_SAS.Instance.StockSASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
                 BindingManager.Instance.windowRect = config.GetValue("BindingWindow", new Rect(300, 50, 0, 0));
@@ -132,30 +134,40 @@ namespace PilotAssistant
 
         public void Update()
         {
-            PilotAssistant.Instance.Update();
+            for (int i = 0; i < controlledVessels.Count; i++)
+            {
+                if (controlledVessels[i].vesselRef.loaded)
+                    controlledVessels[i].Update();
+            }
             SurfSAS.Instance.Update();
         }
 
         void vesselSwitch(Vessel v)
         {
-            FlightData.thisVessel.OnPreAutopilotUpdate -= new FlightInputCallback(onPreAutoPilotUpdate);
-            //FlightData.thisVessel.OnAutopilotUpdate -= new FlightInputCallback(onAutoPilotUpdate);
-            FlightData.thisVessel.OnPostAutopilotUpdate -= new FlightInputCallback(onPostAutoPilotUpdate);
-
             FlightData.thisVessel = v;
 
             FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(onPreAutoPilotUpdate);
-            //FlightData.thisVessel.OnAutopilotUpdate += new FlightInputCallback(onAutoPilotUpdate);
             FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(onPostAutoPilotUpdate);
 
-            PresetManager.loadCraftAsstPreset();
+            if (!controlledVessels.Any(ves => ves.vesselRef == v))
+            {
+                AsstVesselModule newVesMod = new AsstVesselModule(v);
+                controlledVessels.Add(newVesMod);
+                newVesMod.Start();
+                PresetManager.loadCraftAsstPreset(newVesMod.vesselAsst);
+            }
+
             PresetManager.loadCraftSASPreset();
             Stock_SAS.Instance.vesselSwitch();
         }
 
         void warpRateChanged()
         {
-            PilotAssistant.Instance.warpHandler();
+            for (int i = 0; i < controlledVessels.Count; i++)
+            {
+                if (controlledVessels[i].vesselRef.loaded)
+                    controlledVessels[i].warpHandler();
+            }
             SurfSAS.Instance.warpHandler();
         }
 
@@ -176,7 +188,6 @@ namespace PilotAssistant
         void onPostAutoPilotUpdate(FlightCtrlState state)
         {
             SurfSAS.Instance.SurfaceSAS(state);
-            PilotAssistant.Instance.vesselController(state);
         }
 
         public void OnGUI()
@@ -187,7 +198,11 @@ namespace PilotAssistant
             GUI.skin = GeneralUI.UISkin;
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
 
-            PilotAssistant.Instance.drawGUI();
+            for (int i = 0; i < controlledVessels.Count; i++)
+            {
+                if (controlledVessels[i].vesselRef.loaded)
+                    controlledVessels[i].OnGUI();
+            }
             SurfSAS.Instance.drawGUI();
             Stock_SAS.Instance.drawGUI();
             Draw();
@@ -230,7 +245,11 @@ namespace PilotAssistant
         {
             SaveConfig();
 
-            PilotAssistant.Instance.OnDestroy();
+            for (int i = 0; i < controlledVessels.Count; i++)
+            {
+                controlledVessels[i].OnDestroy();
+            }
+            //PilotAssistant.Instance.OnDestroy();
             SurfSAS.Instance.OnDestroy();
             Stock_SAS.Instance.OnDestroy();
             AppLauncherFlight.Instance.OnDestroy();
@@ -242,7 +261,8 @@ namespace PilotAssistant
             GameEvents.onShowUI.Remove(showUI);
             GameEvents.onVesselChange.Remove(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Remove(warpRateChanged);
-
+            
+            PresetManager.saveToFile();
             instance = null;
         }
 
@@ -253,15 +273,15 @@ namespace PilotAssistant
                 config["AsstTooltips"] = showTooltips;
                 config["UseStockToolbar"] = bUseStockToolbar;
                 
-                config["AsstDoublesided"] = PilotAssistant.Instance.doublesided;
-                config["AsstLimits"] = PilotAssistant.Instance.showPIDLimits;
-                config["AsstControlSurfaces"] = PilotAssistant.Instance.showControlSurfaces;
-                config["maxHdgHeight"] = PilotAssistant.Instance.maxHdgScrollbarHeight.ToString("0");
-                config["maxVertHeight"] = PilotAssistant.Instance.maxVertScrollbarHeight.ToString("0");
-                config["maxThrtHeight"] = PilotAssistant.Instance.maxThrtScrollbarHeight.ToString("0");
+                config["AsstDoublesided"] = PilotAssistant.doublesided;
+                config["AsstLimits"] = PilotAssistant.showPIDLimits;
+                config["AsstControlSurfaces"] = PilotAssistant.showControlSurfaces;
+                config["maxHdgHeight"] = PilotAssistant.maxHdgScrollbarHeight.ToString("0");
+                config["maxVertHeight"] = PilotAssistant.maxVertScrollbarHeight.ToString("0");
+                config["maxThrtHeight"] = PilotAssistant.maxThrtScrollbarHeight.ToString("0");
 
                 // window rects
-                config["AsstWindow"] = PilotAssistant.Instance.window;
+                config["AsstWindow"] = PilotAssistant.window;
                 config["SSASWindow"] = SurfSAS.Instance.SSASwindow;
                 config["SASWindow"] = Stock_SAS.Instance.StockSASwindow;
                 config["AppWindow"] = window;

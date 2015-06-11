@@ -134,23 +134,22 @@ namespace PilotAssistant.FlightModules
             // pitch / yaw response ratio. Original method from MJ attitude controller
             Vector3d target = rotDiff * Vector3d.forward;
             double angleError = Math.Abs(Vector3d.Angle(Vector3d.up, target));
-            Vector2d PYratio = (new Vector2d(target.x, -target.z)).normalized;
-            Vector2d PYError = PYratio * angleError;
+            Vector2d PYerror = (new Vector2d(target.x, -target.z)).normalized * angleError;
             //================================
 
             //================================
             // facing vectors for vessel (vesRefTrans.up) and target (targetRot * Vector3.forward)
-            // normVec = axis normal to plane of travel
-            Vector3d normVec = Vector3d.Cross(targetRot * Vector3.forward, vesRefTrans.up).normalized;
+            // normVec = axis normal to desired plane of travel
+            Vector3d normVec = Vector3d.Cross(targetRot * Vector3d.forward, vesRefTrans.up).normalized;
             // rotation with Pitch and Yaw elements removed (facing aligned)
-            Quaternion targetDeRotated = Quaternion.AngleAxis((float)angleError, normVec) * targetRot;
-            // signed angle difference between vessel.right and deRotated.right
-            double rollError = Utils.headingClamp(Vector3d.Angle(vesRefTrans.right, targetDeRotated * Vector3d.right) * Math.Sign(Vector3d.Dot(targetDeRotated * Vector3d.right, vesRefTrans.forward)), 180);
+            Quaternion rollTargetRot = Quaternion.AngleAxis((float)angleError, normVec) * targetRot;
+            // signed angle difference between vessel.right and rollTargetRot.right
+            double rollError = Utils.headingClamp(Vector3d.Angle(vesRefTrans.right, rollTargetRot * Vector3d.right) * Math.Sign(Vector3d.Dot(rollTargetRot * Vector3d.right, vesRefTrans.forward)), 180);
             //================================
 
             setCtrlState(SASList.Bank, rollError, FlightData.thisVessel.angularVelocity.y * Mathf.Rad2Deg, ref state.roll);
-            setCtrlState(SASList.Pitch, PYError.y, FlightData.thisVessel.angularVelocity.x * Mathf.Rad2Deg, ref state.pitch);
-            setCtrlState(SASList.Hdg, PYError.x, FlightData.thisVessel.angularVelocity.z * Mathf.Rad2Deg, ref state.yaw);
+            setCtrlState(SASList.Pitch, PYerror.y, FlightData.thisVessel.angularVelocity.x * Mathf.Rad2Deg, ref state.pitch);
+            setCtrlState(SASList.Hdg, PYerror.x, FlightData.thisVessel.angularVelocity.z * Mathf.Rad2Deg, ref state.yaw);
         }
 
         void setCtrlState(SASList ID, double error, double rate, ref float ctrlState)

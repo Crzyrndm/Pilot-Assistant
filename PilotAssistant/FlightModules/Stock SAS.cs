@@ -30,7 +30,7 @@ namespace PilotAssistant.FlightModules
 
         public Rect StockSASwindow = new Rect(10, 505, 200, 30); // gui window rect
         Rect SASPresetwindow = new Rect(550, 50, 50, 50);
-        bool[] stockPIDDisplay = { true, false, false }; // which stock PID axes are visible
+        bool[] stockPIDDisplay = { false, false, false }; // which stock PID axes are visible
         bool bShowPresets = false;
         string newPresetName = "";
 
@@ -63,33 +63,35 @@ namespace PilotAssistant.FlightModules
 
         public void drawGUI()
         {
-            if (FlightData.thisVessel.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
+            if (PilotAssistantFlightCore.bDisplaySAS)
             {
-                if (PilotAssistantFlightCore.bDisplaySAS)
+                if (FlightData.thisVessel.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
+                {
                     StockSASwindow = GUILayout.Window(78934857, StockSASwindow, drawSASWindow, "Stock SAS", GUILayout.Height(0));
 
-                if (bShowPresets)
-                {
-                    SASPresetwindow = GUILayout.Window(78934858, SASPresetwindow, drawSASPresetWindow, "SAS Presets", GUILayout.Height(0));
-                    SASPresetwindow.x = StockSASwindow.x + StockSASwindow.width;
-                    SASPresetwindow.y = StockSASwindow.y;
+                    if (bShowPresets)
+                    {
+                        SASPresetwindow = GUILayout.Window(78934858, SASPresetwindow, drawSASPresetWindow, "SAS Presets", GUILayout.Height(0));
+                        SASPresetwindow.x = StockSASwindow.x + StockSASwindow.width;
+                        SASPresetwindow.y = StockSASwindow.y;
+                    }
                 }
-            }
-            else
-            {
-                if (PilotAssistantFlightCore.bDisplaySAS)
+                else
+                {
+
                     StockSASwindow = GUILayout.Window(78934857, StockSASwindow, drawRSASWindow, "Stock SAS", GUILayout.Height(0));
 
-                if (bShowPresets)
-                {
-                    SASPresetwindow = GUILayout.Window(78934858, SASPresetwindow, drawRSASPresetWindow, "SAS Presets", GUILayout.Height(0));
-                    SASPresetwindow.x = StockSASwindow.x + StockSASwindow.width;
-                    SASPresetwindow.y = StockSASwindow.y;
+                    if (bShowPresets)
+                    {
+                        SASPresetwindow = GUILayout.Window(78934858, SASPresetwindow, drawRSASPresetWindow, "SAS Presets", GUILayout.Height(0));
+                        SASPresetwindow.x = StockSASwindow.x + StockSASwindow.width;
+                        SASPresetwindow.y = StockSASwindow.y;
+                    }
                 }
-            }
 
-            if (tooltip != "" && PilotAssistantFlightCore.showTooltips)
-                GUILayout.Window(34246, new Rect(StockSASwindow.x + StockSASwindow.width, Screen.height - Input.mousePosition.y, 0, 0), tooltipWindow, "", GeneralUI.UISkin.label, GUILayout.Height(0), GUILayout.Width(300));
+                if (tooltip != "" && PilotAssistantFlightCore.showTooltips)
+                    GUILayout.Window(34246, new Rect(StockSASwindow.x + StockSASwindow.width, Screen.height - Input.mousePosition.y, 0, 0), tooltipWindow, "", GeneralUI.UISkin.label, GUILayout.Height(0), GUILayout.Width(300));
+            }
         }
 
         string tooltip = "";

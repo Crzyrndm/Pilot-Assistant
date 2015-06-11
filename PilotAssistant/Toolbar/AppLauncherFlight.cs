@@ -25,9 +25,12 @@ namespace PilotAssistant.Toolbar
 
         private ApplicationLauncherButton btnLauncher;
         
-        public void Start()
+        public void Awake()
         {
-            OnAppLauncherReady();
+            btnLauncher = ApplicationLauncher.Instance.AddModApplication(OnToggleTrue, OnToggleFalse,
+                                                                        null, null, null, null,
+                                                                        ApplicationLauncher.AppScenes.ALWAYS,
+                                                                        GameDatabase.Instance.GetTexture("Pilot Assistant/Icon/AppLauncherIcon", false));
         }
 
         public void OnDestroy()
@@ -36,15 +39,6 @@ namespace PilotAssistant.Toolbar
                 ApplicationLauncher.Instance.RemoveModApplication(btnLauncher);
             btnLauncher = null;
             instance = null;
-        }
-
-        private void OnAppLauncherReady()
-        {
-            GameEvents.onGUIApplicationLauncherReady.Remove(this.OnAppLauncherReady);
-            btnLauncher = ApplicationLauncher.Instance.AddModApplication(OnToggleTrue, OnToggleFalse,
-                                                                        null, null, null, null,
-                                                                        ApplicationLauncher.AppScenes.ALWAYS,
-                                                                        GameDatabase.Instance.GetTexture("Pilot Assistant/Icon/AppLauncherIcon", false));
         }
 
         void OnGameSceneChange(GameScenes scene)

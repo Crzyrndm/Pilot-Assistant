@@ -134,7 +134,7 @@ namespace PilotAssistant.PID
             rolling_diff = rolling_diff * rollingFactor + difference * (1 - rollingFactor); // rolling average sometimes helps smooth out a jumpy derivative response
             
             previous = input;
-            return rolling_diff * k_derivative / scale;
+            return difference * k_derivative / scale;
         }
 
         protected virtual double derivativeErrorRate(double rate)
