@@ -82,6 +82,7 @@ namespace PilotAssistant.FlightModules
 
         #region Update / Input monitoring
         VesselAutopilot.AutopilotMode currentMode = VesselAutopilot.AutopilotMode.StabilityAssist;
+        FlightUIController.SpeedDisplayModes referenceMode = FlightUIController.SpeedDisplayModes.Surface;
         public void Update()
         {
             if (GameSettings.MODIFIER_KEY.GetKey())
@@ -107,6 +108,11 @@ namespace PilotAssistant.FlightModules
                 if (currentMode == VesselAutopilot.AutopilotMode.StabilityAssist)
                     updateTarget();
             }
+            if (referenceMode == FlightUIController.SpeedDisplayModes.Surface && FlightUIController.speedDisplayMode != FlightUIController.SpeedDisplayModes.Surface)
+            {
+                orbitalTarget = controlledVessel.transform.rotation;
+            }
+            referenceMode = FlightUIController.speedDisplayMode;
         }
         #endregion
 
@@ -139,7 +145,7 @@ namespace PilotAssistant.FlightModules
             double rollError = Utils.headingClamp(Vector3d.Angle(vesRefTrans.right, rollTargetRot * Vector3d.right) * Math.Sign(Vector3d.Dot(rollTargetRot * Vector3d.right, vesRefTrans.forward)), 180);
             //================================
 
-            setCtrlState(SASList.Bank, rollError, controlledVessel.angularVelocity.y * Mathf.Rad2Deg, ref state.roll);
+            setCtrlState(SASList.Bank, rollError, controlledVessel.angularVelocity.y, ref state.roll);
             setCtrlState(SASList.Pitch, PYerror.y, controlledVessel.angularVelocity.x * Mathf.Rad2Deg, ref state.pitch);
             setCtrlState(SASList.Hdg, PYerror.x, controlledVessel.angularVelocity.z * Mathf.Rad2Deg, ref state.yaw);
         }
@@ -152,18 +158,24 @@ namespace PilotAssistant.FlightModules
                 ctrlState = 0; // kill off stock SAS inputs
         }
 
+        Quaternion orbitalTarget = Quaternion.identity;
         Quaternion TargetModeSwitch()
         {
             Quaternion target = Quaternion.identity;
             switch(controlledVessel.Autopilot.Mode)
             {
                 case VesselAutopilot.AutopilotMode.StabilityAssist:
-                    float hdgAngle = (float)(bActive[(int)SASList.Hdg] ? SASList.Hdg.GetSAS(this).SetPoint : vesRef.vesselData.heading);
-                    float pitchAngle = (float)(bActive[(int)SASList.Pitch] ? SASList.Pitch.GetSAS(this).SetPoint : vesRef.vesselData.pitch);
+                    if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
+                    {
+                        float hdgAngle = (float)(bActive[(int)SASList.Hdg] ? SASList.Hdg.GetSAS(this).SetPoint : vesRef.vesselData.heading);
+                        float pitchAngle = (float)(bActive[(int)SASList.Pitch] ? SASList.Pitch.GetSAS(this).SetPoint : vesRef.vesselData.pitch);
 
-                    target = Quaternion.LookRotation(vesRef.vesselData.planetNorth, vesRef.vesselData.planetUp);
-                    target = Quaternion.AngleAxis(hdgAngle, target * Vector3.up) * target; // heading rotation
-                    target = Quaternion.AngleAxis(pitchAngle, target * -Vector3.right) * target; // pitch rotation
+                        target = Quaternion.LookRotation(vesRef.vesselData.planetNorth, vesRef.vesselData.planetUp);
+                        target = Quaternion.AngleAxis(hdgAngle, target * Vector3.up) * target; // heading rotation
+                        target = Quaternion.AngleAxis(pitchAngle, target * -Vector3.right) * target; // pitch rotation
+                    }
+                    else
+                        return orbitalTarget * Quaternion.Euler(-90, 0, 0);
                     break;
                 case VesselAutopilot.AutopilotMode.Prograde:
                     if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit)
@@ -270,6 +282,7 @@ namespace PilotAssistant.FlightModules
             StartCoroutine(FadeInAxis(SASList.Pitch));
             StartCoroutine(FadeInAxis(SASList.Bank));
             StartCoroutine(FadeInAxis(SASList.Hdg));
+            orbitalTarget = controlledVessel.transform.rotation;
         }
 
         IEnumerator FadeInAxis(SASList axis)
@@ -280,6 +293,7 @@ namespace PilotAssistant.FlightModules
                 updateSetpoint(axis, Utils.getCurrentVal(axis, vesRef.vesselData));
                 yield return null;
             }
+            orbitalTarget = controlledVessel.transform.rotation;
         }
 
         void updateSetpoint(SASList ID, double setpoint)

@@ -71,8 +71,9 @@ namespace PilotAssistant
 
         public void Start()
         {
-            controlledVessels.Add(new AsstVesselModule(FlightGlobals.ActiveVessel));
-            controlledVessels[0].Start();
+            AsstVesselModule vsm = new AsstVesselModule(FlightGlobals.ActiveVessel);
+            controlledVessels.Add(vsm);
+            vsm.Start();
             BindingManager.Instance.Start();
 
             // don't put these in awake or they trigger on loading the vessel and everything gets wierd
@@ -83,8 +84,8 @@ namespace PilotAssistant
 
             LoadConfig();
 
-            PresetManager.loadCraftAsstPreset(controlledVessels[0].vesselAsst);
-            PresetManager.loadCraftSSASPreset(controlledVessels[0].vesselSSAS);
+            PresetManager.loadCraftAsstPreset(vsm.vesselAsst);
+            PresetManager.loadCraftSSASPreset(vsm.vesselSSAS);
 
             StartCoroutine(clearUnloadedVessels());
         }
@@ -95,7 +96,9 @@ namespace PilotAssistant
             {
                 for (int i = 0; i < 1000; i++)
                     yield return null;
+                Vessel ves = controlledVessels[selectedVesselIndex].vesselRef;
                 controlledVessels.RemoveAll(v => !v.vesselRef.loaded);
+                selectedVesselIndex = controlledVessels.FindIndex(vm => vm.vesselRef == ves);
             }
         }
 
@@ -148,7 +151,7 @@ namespace PilotAssistant
 
         void vesselSwitch(Vessel v)
         {
-            if (!controlledVessels.Any(ves => ves.vesselRef == v))
+            if (v.IsControllable && !controlledVessels.Any(ves => ves.vesselRef == v))
             {
                 AsstVesselModule newVesMod = new AsstVesselModule(v);
                 controlledVessels.Add(newVesMod);
@@ -194,7 +197,6 @@ namespace PilotAssistant
 
             GUI.skin = GeneralUI.UISkin;
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
-
             controlledVessels[selectedVesselIndex].OnGUI();
             Draw();
             BindingManager.Instance.Draw();
