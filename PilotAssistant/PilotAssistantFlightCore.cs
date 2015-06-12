@@ -153,6 +153,11 @@ namespace PilotAssistant
                 AsstVesselModule newVesMod = new AsstVesselModule(v);
                 controlledVessels.Add(newVesMod);
                 newVesMod.Start();
+                selectedVesselIndex = controlledVessels.Count - 1;
+            }
+            else
+            {
+                selectedVesselIndex = controlledVessels.FindIndex(vm => vm.vesselRef == v);
             }
         }
 
@@ -190,11 +195,7 @@ namespace PilotAssistant
             GUI.skin = GeneralUI.UISkin;
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
 
-            for (int i = 0; i < controlledVessels.Count; i++)
-            {
-                if (controlledVessels[i].vesselRef.isActiveVessel)
-                    controlledVessels[i].OnGUI();
-            }
+            controlledVessels[selectedVesselIndex].OnGUI();
             Draw();
             BindingManager.Instance.Draw();
         }
@@ -205,6 +206,7 @@ namespace PilotAssistant
                 window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
         }
 
+        int selectedVesselIndex = 0;
         private void optionsWindow(int id)
         {
             if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
@@ -217,6 +219,18 @@ namespace PilotAssistant
 
             if (GUILayout.Button("Update Defaults"))
                 PresetManager.updateDefaults();
+
+            GUILayout.BeginHorizontal();
+            for (int i = 0; i < controlledVessels.Count; i++)
+            {
+                if (controlledVessels[i].vesselRef.isActiveVessel)
+                    GUI.backgroundColor = Color.green;
+                bool tmp = GUILayout.Toggle(i == selectedVesselIndex, i.ToString(), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+                if (tmp)
+                    selectedVesselIndex = i;
+                GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+            }
+            GUILayout.EndHorizontal();
 
             GUI.DragWindow();
         }
