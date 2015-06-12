@@ -17,19 +17,19 @@ namespace PilotAssistant.PID
             : base(ID, gains)
         { }
 
-        public virtual double ResponseD(double error, double rate)
+        public virtual double ResponseD(double error, double rate, bool useIntegral)
         {
             double res_d, res_i, res_p;
             res_d = derivativeError(rate);
-            res_i = integralError(error);
+            res_i = integralError(error, useIntegral);
             res_p = proportionalError(error);
 
             return Utils.Clamp(res_p + res_i + res_d, OutMin, OutMax);
         }
 
-        public virtual float ResponseF(double error, double rate)
+        public virtual float ResponseF(double error, double rate, bool useIntegral)
         {
-            return (float)ResponseD(error, rate);
+            return (float)ResponseD(error, rate, useIntegral);
         }
 
         protected override double derivativeError(double rate)

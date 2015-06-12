@@ -10,45 +10,36 @@ namespace PilotAssistant.FlightModules
     using Utility;
     using Presets;
 
-    class Stock_SAS
+    public class Stock_SAS
     {
-        private static Stock_SAS instance;
-        public static Stock_SAS Instance
-        {
-            get
-            {
-                if (instance == null)
-                    instance = new Stock_SAS();
-                return instance;
-            }
-        }
+        AsstVesselModule vesselRef;
+        public Vessel controlledVessel;
 
         void StartCoroutine(IEnumerator routine) // quick access to coroutine now it doesn't inherit Monobehaviour
         {
             PilotAssistantFlightCore.Instance.StartCoroutine(routine);
         }
 
-        public Rect StockSASwindow = new Rect(10, 505, 200, 30); // gui window rect
-        Rect SASPresetwindow = new Rect(550, 50, 50, 50);
-        bool[] stockPIDDisplay = { false, false, false }; // which stock PID axes are visible
-        bool bShowPresets = false;
+        static public Rect StockSASwindow = new Rect(10, 505, 200, 30); // gui window rect
+        static Rect SASPresetwindow = new Rect(550, 50, 50, 50);
+        static bool[] stockPIDDisplay = { false, false, false }; // which stock PID axes are visible
+        static bool bShowPresets = false;
         string newPresetName = "";
 
         public void Start()
         {
-            instance = this;
             StartCoroutine(Initialise());
         }
 
         IEnumerator Initialise()
         {
-            while (FlightData.thisVessel.Autopilot.SAS.pidLockedPitch == null || FlightData.thisVessel.Autopilot.RSAS.pidPitch == null)
+            while (controlledVessel.Autopilot.SAS.pidLockedPitch == null || controlledVessel.Autopilot.RSAS.pidPitch == null)
                 yield return null;
 
-            PresetManager.initDefaultPresets(new SASPreset(FlightData.thisVessel.Autopilot.SAS, "stock"));
-            PresetManager.initDefaultPresets(new RSASPreset(FlightData.thisVessel.Autopilot.RSAS, "RSAS"));
+            PresetManager.initDefaultPresets(new SASPreset(controlledVessel.Autopilot.SAS, "stock"));
+            PresetManager.initDefaultPresets(new RSASPreset(controlledVessel.Autopilot.RSAS, "RSAS"));
 
-            PresetManager.loadCraftSASPreset();
+            PresetManager.loadCraftSASPreset(this);
         }
 
         public void vesselSwitch()
@@ -56,16 +47,11 @@ namespace PilotAssistant.FlightModules
             StartCoroutine(Initialise());
         }
 
-        public void OnDestroy()
-        {
-            instance = null;
-        }
-
         public void drawGUI()
         {
             if (PilotAssistantFlightCore.bDisplaySAS)
             {
-                if (FlightData.thisVessel.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
+                if (controlledVessel.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
                 {
                     StockSASwindow = GUILayout.Window(78934857, StockSASwindow, drawSASWindow, "Stock SAS", GUILayout.Height(0));
 
@@ -108,7 +94,7 @@ namespace PilotAssistant.FlightModules
 
             bShowPresets = GUILayout.Toggle(bShowPresets, bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
 
-            VesselAutopilot.VesselSAS sas = FlightData.thisVessel.Autopilot.SAS;
+            VesselAutopilot.VesselSAS sas = controlledVessel.Autopilot.SAS;
 
             drawPIDValues(sas.pidLockedPitch, "Pitch", SASList.Pitch);
             drawPIDValues(sas.pidLockedRoll, "Roll", SASList.Bank);
@@ -129,7 +115,7 @@ namespace PilotAssistant.FlightModules
                 if (PresetManager.Instance.activeSASPreset.name != "stock")
                 {
                     if (GUILayout.Button("Update Preset"))
-                        PresetManager.UpdateSASPreset();
+                        PresetManager.UpdateSASPreset(this);
                 }
                 GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
             }
@@ -137,13 +123,13 @@ namespace PilotAssistant.FlightModules
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-                PresetManager.newSASPreset(ref newPresetName);
+                PresetManager.newSASPreset(ref newPresetName, this.controlledVessel);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
             if (GUILayout.Button("Reset to Defaults"))
-                PresetManager.loadSASPreset(PresetManager.Instance.craftPresetDict["default"].SASPreset);
+                PresetManager.loadSASPreset(PresetManager.Instance.craftPresetDict["default"].SASPreset, this);
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
@@ -151,7 +137,7 @@ namespace PilotAssistant.FlightModules
             {
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(p.name))
-                    PresetManager.loadSASPreset(p);
+                    PresetManager.loadSASPreset(p, this);
                 else if (GUILayout.Button("x", GUILayout.Width(25)))
                     PresetManager.deleteSASPreset(p);
                 GUILayout.EndHorizontal();
@@ -167,7 +153,7 @@ namespace PilotAssistant.FlightModules
 
             bShowPresets = GUILayout.Toggle(bShowPresets, bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
 
-            VesselAutopilot.VesselRSAS rsas = FlightData.thisVessel.Autopilot.RSAS;
+            VesselAutopilot.VesselRSAS rsas = controlledVessel.Autopilot.RSAS;
             drawPIDValues(rsas.pidPitch, "Pitch", SASList.Pitch);
             drawPIDValues(rsas.pidRoll, "Roll", SASList.Bank);
             drawPIDValues(rsas.pidYaw, "Yaw", SASList.Hdg);
@@ -187,7 +173,7 @@ namespace PilotAssistant.FlightModules
                 if (PresetManager.Instance.activeRSASPreset.name != "stock")
                 {
                     if (GUILayout.Button("Update Preset"))
-                        PresetManager.UpdateRSASPreset();
+                        PresetManager.UpdateRSASPreset(this);
                 }
                 GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
             }
@@ -195,13 +181,13 @@ namespace PilotAssistant.FlightModules
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-                PresetManager.newRSASPreset(ref newPresetName);
+                PresetManager.newRSASPreset(ref newPresetName, this.controlledVessel);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
             if (GUILayout.Button("Reset to Defaults"))
-                PresetManager.loadRSASPreset(PresetManager.Instance.craftPresetDict["default"].RSASPreset);
+                PresetManager.loadRSASPreset(PresetManager.Instance.craftPresetDict["default"].RSASPreset, this);
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
 
@@ -209,7 +195,7 @@ namespace PilotAssistant.FlightModules
             {
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(p.name))
-                    PresetManager.loadRSASPreset(p);
+                    PresetManager.loadRSASPreset(p, this);
                 else if (GUILayout.Button("x", GUILayout.Width(25)))
                     PresetManager.deleteRSASPreset(p);
                 GUILayout.EndHorizontal();

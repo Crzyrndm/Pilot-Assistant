@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using UnityEngine;
 
@@ -70,17 +71,9 @@ namespace PilotAssistant
 
         public void Start()
         {
-            FlightData.thisVessel = FlightGlobals.ActiveVessel;
-
             controlledVessels.Add(new AsstVesselModule(FlightGlobals.ActiveVessel));
             controlledVessels[0].Start();
-
-            SurfSAS.Instance.Start();
-            Stock_SAS.Instance.Start();
             BindingManager.Instance.Start();
-            
-            FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(onPreAutoPilotUpdate);
-            FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(onPostAutoPilotUpdate);
 
             // don't put these in awake or they trigger on loading the vessel and everything gets wierd
             GameEvents.onHideUI.Add(hideUI);
@@ -91,7 +84,19 @@ namespace PilotAssistant
             LoadConfig();
 
             PresetManager.loadCraftAsstPreset(controlledVessels[0].vesselAsst);
-            PresetManager.loadCraftSSASPreset();
+            PresetManager.loadCraftSSASPreset(controlledVessels[0].vesselSSAS);
+
+            StartCoroutine(clearUnloadedVessels());
+        }
+
+        IEnumerator clearUnloadedVessels()
+        {
+            while (HighLogic.LoadedSceneIsFlight)
+            {
+                for (int i = 0; i < 1000; i++)
+                    yield return null;
+                controlledVessels.RemoveAll(v => !v.vesselRef.loaded);
+            }
         }
 
         public void LoadConfig()
@@ -109,8 +114,8 @@ namespace PilotAssistant
 
                 // windows
                 PilotAssistant.window = config.GetValue("AsstWindow", new Rect(300, 300, 0, 0));
-                SurfSAS.Instance.SSASwindow = config.GetValue("SSASWindow", new Rect(500, 300, 0, 0));
-                Stock_SAS.Instance.StockSASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
+                SurfSAS.SSASwindow = config.GetValue("SSASWindow", new Rect(500, 300, 0, 0));
+                Stock_SAS.StockSASwindow = config.GetValue("SASWindow", new Rect(500, 300, 0, 0));
                 BindingManager.Instance.windowRect = config.GetValue("BindingWindow", new Rect(300, 50, 0, 0));
                 window = config.GetValue("AppWindow", new Rect(100, 300, 0, 0));
 
@@ -139,26 +144,16 @@ namespace PilotAssistant
                 if (controlledVessels[i].vesselRef.loaded)
                     controlledVessels[i].Update();
             }
-            SurfSAS.Instance.Update();
         }
 
         void vesselSwitch(Vessel v)
         {
-            FlightData.thisVessel = v;
-
-            FlightData.thisVessel.OnPreAutopilotUpdate += new FlightInputCallback(onPreAutoPilotUpdate);
-            FlightData.thisVessel.OnPostAutopilotUpdate += new FlightInputCallback(onPostAutoPilotUpdate);
-
             if (!controlledVessels.Any(ves => ves.vesselRef == v))
             {
                 AsstVesselModule newVesMod = new AsstVesselModule(v);
                 controlledVessels.Add(newVesMod);
                 newVesMod.Start();
-                PresetManager.loadCraftAsstPreset(newVesMod.vesselAsst);
             }
-
-            PresetManager.loadCraftSASPreset();
-            Stock_SAS.Instance.vesselSwitch();
         }
 
         void warpRateChanged()
@@ -168,27 +163,24 @@ namespace PilotAssistant
                 if (controlledVessels[i].vesselRef.loaded)
                     controlledVessels[i].warpHandler();
             }
-            SurfSAS.Instance.warpHandler();
         }
 
         //public void FixedUpdate()
         //{
         //}
 
-        void onPreAutoPilotUpdate(FlightCtrlState state)
-        {
-            FlightData.updateAttitude();
-        }
+        //void onPreAutoPilotUpdate(FlightCtrlState state)
+        //{
+        //}
 
         //void onAutoPilotUpdate(FlightCtrlState state)
         //{
             
         //}
 
-        void onPostAutoPilotUpdate(FlightCtrlState state)
-        {
-            SurfSAS.Instance.SurfaceSAS(state);
-        }
+        //void onPostAutoPilotUpdate(FlightCtrlState state)
+        //{
+        //}
 
         public void OnGUI()
         {
@@ -200,11 +192,9 @@ namespace PilotAssistant
 
             for (int i = 0; i < controlledVessels.Count; i++)
             {
-                if (controlledVessels[i].vesselRef.loaded)
+                if (controlledVessels[i].vesselRef.isActiveVessel)
                     controlledVessels[i].OnGUI();
             }
-            SurfSAS.Instance.drawGUI();
-            Stock_SAS.Instance.drawGUI();
             Draw();
             BindingManager.Instance.Draw();
         }
@@ -249,9 +239,6 @@ namespace PilotAssistant
             {
                 controlledVessels[i].OnDestroy();
             }
-            //PilotAssistant.Instance.OnDestroy();
-            SurfSAS.Instance.OnDestroy();
-            Stock_SAS.Instance.OnDestroy();
             AppLauncherFlight.Instance.OnDestroy();
             if (Toolbar.ToolbarManager.ToolbarAvailable && !bUseStockToolbar)
                 ToolbarMod.Instance.OnDestroy();
@@ -282,8 +269,8 @@ namespace PilotAssistant
 
                 // window rects
                 config["AsstWindow"] = PilotAssistant.window;
-                config["SSASWindow"] = SurfSAS.Instance.SSASwindow;
-                config["SASWindow"] = Stock_SAS.Instance.StockSASwindow;
+                config["SSASWindow"] = SurfSAS.SSASwindow;
+                config["SASWindow"] = Stock_SAS.StockSASwindow;
                 config["AppWindow"] = window;
                 config["BindingWindow"] = BindingManager.Instance.windowRect;
 

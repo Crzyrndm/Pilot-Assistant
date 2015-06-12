@@ -66,7 +66,7 @@ namespace PilotAssistant.PID
             easing = gains[8];
         }
         
-        public virtual double ResponseD(double input)
+        public virtual double ResponseD(double input, bool useIntegral)
         {
             if (active_setpoint != target_setpoint)
             {
@@ -95,12 +95,12 @@ namespace PilotAssistant.PID
                 skipDerivative = false;
                 previous = input;
             }
-            return Clamp((proportionalError(error) + integralError(error) + derivativeError(input)), outMin, outMax);
+            return Clamp((proportionalError(error) + integralError(error, useIntegral) + derivativeError(input)), outMin, outMax);
         }
 
-        public virtual float ResponseF(double input)
+        public virtual float ResponseF(double input, bool useIntegral)
         {
-            return (float)ResponseD(input);
+            return (float)ResponseD(input, useIntegral);
         }
 
         protected virtual double proportionalError(double error)
@@ -108,9 +108,9 @@ namespace PilotAssistant.PID
             return error * k_proportional / scale;
         }
 
-        protected virtual double integralError(double error)
+        protected virtual double integralError(double error, bool useIntegral)
         {
-            if (k_integral == 0 || FlightData.thisVessel.checkLanded()|| !FlightData.thisVessel.IsControllable)
+            if (k_integral == 0 || !useIntegral)
             {
                 sum = 0;
                 return sum;

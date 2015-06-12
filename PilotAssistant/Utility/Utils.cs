@@ -35,9 +35,9 @@ namespace PilotAssistant.Utility
             return instance.controllers[(int)id];
         }
 
-        public static PIDErrorController GetSAS(this SASList id)
+        public static PIDErrorController GetSAS(this SASList id, SurfSAS instance)
         {
-            return SurfSAS.Instance.SASControllers[(int)id];
+            return instance.SASControllers[(int)id];
         }
 
         public static bool isFlightControlLocked()
@@ -62,19 +62,19 @@ namespace PilotAssistant.Utility
         /// <summary>
         /// Direction vector from a given heading
         /// </summary>
-        public static Vector3 vecHeading(double heading)
+        public static Vector3 vecHeading(double target, VesselData vd)
         {
-            double angleDiff = heading - FlightData.heading;
-            return Quaternion.AngleAxis((float)(angleDiff + 90), (Vector3)FlightData.planetUp) * FlightData.surfVesForward;
+            double angleDiff = target - vd.heading;
+            return Quaternion.AngleAxis((float)(angleDiff + 90), (Vector3)vd.planetUp) * vd.surfVesForward;
         }
 
         /// <summary>
         /// calculate current heading from target vector
         /// </summary>
-        public static double calculateTargetHeading(Vector3 direction)
+        public static double calculateTargetHeading(Vector3 direction, VesselData vd)
         {
-            Vector3 fwd = Vector3.Cross(FlightData.planetUp, direction);
-            double heading = -1 * Vector3.Angle(fwd, -FlightData.planetNorth) * Math.Sign(Vector3.Dot(fwd, FlightData.planetEast));
+            Vector3 fwd = Vector3.Cross(vd.planetUp, direction);
+            double heading = -1 * Vector3.Angle(fwd, -vd.planetNorth) * Math.Sign(Vector3.Dot(fwd, vd.planetEast));
             return heading.headingClamp(360);
         }
 
@@ -132,31 +132,31 @@ namespace PilotAssistant.Utility
             return GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey() || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown();
         }
 
-        public static double getCurrentVal(SASList ID)
+        public static double getCurrentVal(SASList ID, VesselData vd)
         {
             switch (ID)
             {
                 case SASList.Bank:
-                    return FlightData.bank;
+                    return vd.bank;
                 case SASList.Hdg:
-                    return FlightData.heading;
+                    return vd.heading;
                 case SASList.Pitch:
                 default:
-                    return FlightData.pitch;
+                    return vd.pitch;
             }
         }
 
-        public static double getCurrentRate(SASList ID)
+        public static double getCurrentRate(SASList ID, Vessel v)
         {
             switch (ID)
             {
                 case SASList.Bank:
-                    return FlightData.thisVessel.angularVelocity.y;
+                    return v.angularVelocity.y;
                 case SASList.Hdg:
-                    return FlightData.thisVessel.angularVelocity.z;
+                    return v.angularVelocity.z;
                 case SASList.Pitch:
                 default:
-                    return FlightData.thisVessel.angularVelocity.x;
+                    return v.angularVelocity.x;
             }
         }
     }

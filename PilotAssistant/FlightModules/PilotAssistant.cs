@@ -169,6 +169,8 @@ namespace PilotAssistant.FlightModules
             InputLockManager.RemoveControlLock(yawLockID);
             pitchLockEngaged = false;
             yawLockEngaged = false;
+
+            PresetManager.loadCraftAsstPreset(this);
         }
 
         public void OnDestroy()
@@ -217,10 +219,10 @@ namespace PilotAssistant.FlightModules
             if (HrztActive)
             {
                 if (vesRef.vesselRef.checkLanded())
-                    newDirectionTarget = currentDirectionTarget = Utils.vecHeading(vesRef.vesselData.heading);
+                    newDirectionTarget = currentDirectionTarget = Utils.vecHeading(vesRef.vesselData.heading, vesRef.vesselData);
                 if (CurrentHrztMode == HrztMode.Heading)
                 {
-                    AsstList.HdgBank.GetAsst(this).SetPoint = Utils.calculateTargetHeading(currentDirectionTarget);
+                    AsstList.HdgBank.GetAsst(this).SetPoint = Utils.calculateTargetHeading(currentDirectionTarget, vesRef.vesselData);
 
                     if (!headingEdit)
                         targetHeading = AsstList.HdgBank.GetAsst(this).SetPoint.ToString("0.00");
@@ -259,7 +261,7 @@ namespace PilotAssistant.FlightModules
 
                             if (headingTimeToCommit <= 0 && headingChangeToCommit != 0)
                             {
-                                StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newDirectionTarget) + headingChangeToCommit));
+                                StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newDirectionTarget, vesRef.vesselData) + headingChangeToCommit));
 
                                 headingChangeToCommit = 0;
                             }
@@ -523,7 +525,7 @@ namespace PilotAssistant.FlightModules
             pitchSet = state.pitch; // last pitch ouput, used for presetting the elevator
             if (bPause || controlledVessel.srfSpeed < 1 || !controlledVessel.IsControllable)
                 return;
-
+            bool useIntegral = !controlledVessel.checkLanded() && controlledVessel.IsControllable;
             // Heading Control
             if (HrztActive)
             {
@@ -532,12 +534,12 @@ namespace PilotAssistant.FlightModules
                     // calculate the bank angle response based on the current heading
                     double hdgBankResponse;
                     if (CurrentHrztMode == HrztMode.Heading)
-                        hdgBankResponse = AsstList.HdgBank.GetAsst(this).ResponseD(Utils.CurrentAngleTargetRel(vesRef.vesselData.progradeHeading, AsstList.HdgBank.GetAsst(this).SetPoint, 180));
+                        hdgBankResponse = AsstList.HdgBank.GetAsst(this).ResponseD(Utils.CurrentAngleTargetRel(vesRef.vesselData.progradeHeading, AsstList.HdgBank.GetAsst(this).SetPoint, 180), useIntegral);
                     else
-                        hdgBankResponse = AsstList.HdgBank.GetAsst(this).ResponseD(vesRef.vesselData.progradeHeading);
+                        hdgBankResponse = AsstList.HdgBank.GetAsst(this).ResponseD(vesRef.vesselData.progradeHeading, useIntegral);
                     // aileron setpoint updated, bank angle also used for yaw calculations (don't go direct to rudder because we want yaw stabilisation *or* turn assistance)
                     AsstList.BankToYaw.GetAsst(this).SetPoint = AsstList.Aileron.GetAsst(this).SetPoint = hdgBankResponse;
-                    AsstList.Rudder.GetAsst(this).SetPoint = -AsstList.BankToYaw.GetAsst(this).ResponseD(vesRef.vesselData.yaw);
+                    AsstList.Rudder.GetAsst(this).SetPoint = -AsstList.BankToYaw.GetAsst(this).ResponseD(vesRef.vesselData.yaw, useIntegral);
                 }
                 else
                 {
@@ -559,8 +561,8 @@ namespace PilotAssistant.FlightModules
 
                 if (!vesRef.vesselRef.checkLanded())
                 {
-                    state.roll = (AsstList.Aileron.GetAsst(this).ResponseF(-vesRef.vesselData.bank) + rollInput).Clamp(-1, 1);
-                    state.yaw = AsstList.Rudder.GetAsst(this).ResponseF(vesRef.vesselData.yaw).Clamp(-1, 1);
+                    state.roll = (AsstList.Aileron.GetAsst(this).ResponseF(-vesRef.vesselData.bank, useIntegral) + rollInput).Clamp(-1, 1);
+                    state.yaw = AsstList.Rudder.GetAsst(this).ResponseF(vesRef.vesselData.yaw, useIntegral).Clamp(-1, 1);
                 }
             }
 
@@ -569,15 +571,15 @@ namespace PilotAssistant.FlightModules
                 if (CurrentVertMode != VertMode.RadarAltitude)
                 {
                     if (CurrentVertMode == VertMode.Altitude)
-                        AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(-AsstList.Altitude.GetAsst(this).ResponseD(vesRef.vesselRef.altitude), vesRef.vesselRef.srfSpeed * -0.9, vesRef.vesselRef.srfSpeed * 0.9);
-                    AsstList.Elevator.GetAsst(this).SetPoint = -AsstList.VertSpeed.GetAsst(this).ResponseD(vesRef.vesselData.vertSpeed);
+                        AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(-AsstList.Altitude.GetAsst(this).ResponseD(vesRef.vesselRef.altitude, useIntegral), vesRef.vesselRef.srfSpeed * -0.9, vesRef.vesselRef.srfSpeed * 0.9);
+                    AsstList.Elevator.GetAsst(this).SetPoint = -AsstList.VertSpeed.GetAsst(this).ResponseD(vesRef.vesselData.vertSpeed, useIntegral);
                 }
                 else
                 {
-                    AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(getClimbRateForConstAltitude() - AsstList.Altitude.GetAsst(this).ResponseD(vesRef.vesselData.radarAlt * Vector3.Dot(vesRef.vesselData.surfVelForward, controlledVessel.srf_velocity.normalized)), -controlledVessel.srfSpeed * 0.95, controlledVessel.srfSpeed * 0.95);
-                    AsstList.Elevator.GetAsst(this).SetPoint = -AsstList.VertSpeed.GetAsst(this).ResponseD(vesRef.vesselData.vertSpeed);
+                    AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(getClimbRateForConstAltitude() - AsstList.Altitude.GetAsst(this).ResponseD(vesRef.vesselData.radarAlt * Vector3.Dot(vesRef.vesselData.surfVelForward, controlledVessel.srf_velocity.normalized), useIntegral), -controlledVessel.srfSpeed * 0.95, controlledVessel.srfSpeed * 0.95);
+                    AsstList.Elevator.GetAsst(this).SetPoint = -AsstList.VertSpeed.GetAsst(this).ResponseD(vesRef.vesselData.vertSpeed, useIntegral);
                 }
-                state.pitch = -AsstList.Elevator.GetAsst(this).ResponseF(vesRef.vesselData.AoA).Clamp(-1, 1);
+                state.pitch = -AsstList.Elevator.GetAsst(this).ResponseF(vesRef.vesselData.AoA, useIntegral).Clamp(-1, 1);
             }
 
             if (ThrtActive)
@@ -588,14 +590,14 @@ namespace PilotAssistant.FlightModules
                 {
                     if (!(AsstList.Speed.GetAsst(this).SetPoint == 0 && controlledVessel.srfSpeed < -AsstList.Acceleration.GetAsst(this).OutMin))
                     {
-                        AsstList.Acceleration.GetAsst(this).SetPoint = -AsstList.Speed.GetAsst(this).ResponseD(controlledVessel.srfSpeed);
-                        state.mainThrottle = (-AsstList.Acceleration.GetAsst(this).ResponseF(vesRef.vesselData.acceleration)).Clamp(0, 1);
+                        AsstList.Acceleration.GetAsst(this).SetPoint = -AsstList.Speed.GetAsst(this).ResponseD(controlledVessel.srfSpeed, useIntegral);
+                        state.mainThrottle = (-AsstList.Acceleration.GetAsst(this).ResponseF(vesRef.vesselData.acceleration, useIntegral)).Clamp(0, 1);
                     }
                     else
                         state.mainThrottle = 0;
                 }
                 else
-                    state.mainThrottle = (-AsstList.Acceleration.GetAsst(this).ResponseF(vesRef.vesselData.acceleration)).Clamp(0, 1);
+                    state.mainThrottle = (-AsstList.Acceleration.GetAsst(this).ResponseF(vesRef.vesselData.acceleration, useIntegral)).Clamp(0, 1);
             }
         }
 
@@ -607,33 +609,33 @@ namespace PilotAssistant.FlightModules
             if (hdgShiftIsRunning)
             {
                 // get current remainder
-                finalTarget = Utils.calculateTargetHeading(newDirectionTarget);
-                target = Utils.calculateTargetHeading(currentDirectionTarget);
+                finalTarget = Utils.calculateTargetHeading(newDirectionTarget, vesRef.vesselData);
+                target = Utils.calculateTargetHeading(currentDirectionTarget, vesRef.vesselData);
                 remainder = finalTarget - Utils.CurrentAngleTargetRel(target, finalTarget, 180);
                 // set new direction
-                newDirectionTarget = Utils.vecHeading(newHdg);
+                newDirectionTarget = Utils.vecHeading(newHdg, vesRef.vesselData);
                 // get new remainder, reset increment only if the sign changed
-                finalTarget = Utils.calculateTargetHeading(newDirectionTarget);
+                finalTarget = Utils.calculateTargetHeading(newDirectionTarget, vesRef.vesselData);
                 double tempRemainder = finalTarget - Utils.CurrentAngleTargetRel(target, finalTarget, 180);
                 if (Math.Sign(remainder) != Math.Sign(tempRemainder))
                 {
-                    currentDirectionTarget = Utils.vecHeading((vesRef.vesselData.heading + vesRef.vesselData.bank / AsstList.HdgBank.GetAsst(this).PGain).headingClamp(360));
+                    currentDirectionTarget = Utils.vecHeading((vesRef.vesselData.heading + vesRef.vesselData.bank / AsstList.HdgBank.GetAsst(this).PGain).headingClamp(360), vesRef.vesselData);
                     increment = 0;
                 }
                 yield break;
             }
             else
             {
-                currentDirectionTarget = Utils.vecHeading((vesRef.vesselData.heading - vesRef.vesselData.bank / AsstList.HdgBank.GetAsst(this).PGain).headingClamp(360));
-                newDirectionTarget = Utils.vecHeading(newHdg);
+                currentDirectionTarget = Utils.vecHeading((vesRef.vesselData.heading - vesRef.vesselData.bank / AsstList.HdgBank.GetAsst(this).PGain).headingClamp(360), vesRef.vesselData);
+                newDirectionTarget = Utils.vecHeading(newHdg, vesRef.vesselData);
                 increment = 0;
                 hdgShiftIsRunning = true;
             }
 
             while (!stopHdgShift && Math.Abs(Vector3.Angle(currentDirectionTarget, newDirectionTarget)) > 0.01)
             {
-                finalTarget = Utils.calculateTargetHeading(newDirectionTarget);
-                target = Utils.calculateTargetHeading(currentDirectionTarget);
+                finalTarget = Utils.calculateTargetHeading(newDirectionTarget, vesRef.vesselData);
+                target = Utils.calculateTargetHeading(currentDirectionTarget, vesRef.vesselData);
                 increment += AsstList.HdgBank.GetAsst(this).Easing * TimeWarp.fixedDeltaTime * 0.01;
 
                 remainder = finalTarget - Utils.CurrentAngleTargetRel(target, finalTarget, 180);
@@ -642,7 +644,7 @@ namespace PilotAssistant.FlightModules
                 else
                     target += Math.Min(increment, remainder);
 
-                currentDirectionTarget = Utils.vecHeading(target);
+                currentDirectionTarget = Utils.vecHeading(target, vesRef.vesselData);
                 yield return new WaitForFixedUpdate();
             }
             if (!stopHdgShift)
@@ -706,7 +708,7 @@ namespace PilotAssistant.FlightModules
         #region GUI
         public void drawGUI()
         {
-            if (!PilotAssistantFlightCore.bDisplayAssistant || !controlledVessel.isActiveVessel)
+            if (!PilotAssistantFlightCore.bDisplayAssistant)
                 return;
 
             if (Event.current.type == EventType.Layout)
@@ -869,7 +871,7 @@ namespace PilotAssistant.FlightModules
                         if (!hdgShiftIsRunning)
                             displayTargetDelta = AsstList.HdgBank.GetAsst(this).SetPoint - vesRef.vesselData.heading;
                         else
-                            displayTargetDelta = Utils.calculateTargetHeading(newDirectionTarget) - vesRef.vesselData.heading;
+                            displayTargetDelta = Utils.calculateTargetHeading(newDirectionTarget, vesRef.vesselData) - vesRef.vesselData.heading;
 
                         displayTargetDelta = displayTargetDelta.headingClamp(180);
                     }
@@ -877,9 +879,9 @@ namespace PilotAssistant.FlightModules
                     if (headingEdit)
                         displayTarget = targetHeading;
                     else if (headingChangeToCommit == 0 || controlledVessel.checkLanded())
-                        displayTarget = Utils.calculateTargetHeading(newDirectionTarget).ToString("0.00");
+                        displayTarget = Utils.calculateTargetHeading(newDirectionTarget, vesRef.vesselData).ToString("0.00");
                     else
-                        displayTarget = (Utils.calculateTargetHeading(newDirectionTarget) + headingChangeToCommit).headingClamp(360).ToString("0.00");
+                        displayTarget = (Utils.calculateTargetHeading(newDirectionTarget, vesRef.vesselData) + headingChangeToCommit).headingClamp(360).ToString("0.00");
 
                     targetHeading = GUILayout.TextField(displayTarget, GUILayout.Width(51));
                     if (targetHeading != displayTarget)
@@ -1216,7 +1218,7 @@ namespace PilotAssistant.FlightModules
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-                PresetManager.newAsstPreset(ref newPresetName, controllers);
+                PresetManager.newAsstPreset(ref newPresetName, controllers, controlledVessel);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10));

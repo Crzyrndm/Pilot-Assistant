@@ -11,24 +11,24 @@ namespace PilotAssistant.FlightModules
     {
         public Vessel vesselRef;
         public PilotAssistant vesselAsst;
-        //SurfSAS vesselSSAS;
-        //Stock_SAS vesselStockSAS;
+        public SurfSAS vesselSSAS;
+        Stock_SAS vesselStockSAS;
         public VesselData vesselData;
 
         public AsstVesselModule(Vessel ves)
         {
             vesselRef = ves;
             vesselAsst = new PilotAssistant();
-            //vesselSSAS = new SurfSAS();
-            //vesselStockSAS = new Stock_SAS();
+            vesselSSAS = new SurfSAS();
+            vesselStockSAS = new Stock_SAS();
             vesselData = new VesselData(ves);
         }
 
         public void Start()
         {
             vesselAsst.Start(this);
-            //vesselSSAS.Start();
-            //vesselStockSAS.Start();
+            vesselSSAS.Start(this);
+            vesselStockSAS.Start();
 
             vesselRef.OnPreAutopilotUpdate += new FlightInputCallback(preAutoPilotUpdate);
             vesselRef.OnPostAutopilotUpdate += new FlightInputCallback(postAutoPilotUpdate);
@@ -37,13 +37,13 @@ namespace PilotAssistant.FlightModules
         public void Update()
         {
             vesselAsst.Update();
-            //vesselSSAS.Update();
+            vesselSSAS.Update();
         }
 
         public void warpHandler()
         {
             vesselAsst.warpHandler();
-            //vesselSSAS.warpHandler();
+            vesselSSAS.warpHandler();
         }
 
         public void preAutoPilotUpdate(FlightCtrlState state)
@@ -53,27 +53,26 @@ namespace PilotAssistant.FlightModules
 
         public void postAutoPilotUpdate(FlightCtrlState state)
         {
-            //vesselSSAS.SurfaceSAS(state);
+            vesselSSAS.SurfaceSAS(state);
             vesselAsst.vesselController(state);
         }
 
         public void OnGUI()
         {
             vesselAsst.drawGUI();
-            //vesselSSAS.drawGUI();
-            //vesselStockSAS.drawGUI();
+            vesselSSAS.drawGUI();
+            vesselStockSAS.drawGUI();
         }
 
         public void OnDestroy()
         {
             vesselAsst.OnDestroy();
-            //vesselSSAS.OnDestroy();
-            //vesselStockSAS.OnDestroy();
+            vesselSSAS.OnDestroy();
         }
 
         public bool isActiveVessel()
         {
-            return vesselRef == FlightGlobals.ActiveVessel;
+            return vesselRef.isActiveVessel;
         }
     }
 }

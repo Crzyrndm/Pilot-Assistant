@@ -445,7 +445,7 @@ namespace PilotAssistant
         }
 
         #region AsstPreset
-        public static void newAsstPreset(ref string name, AsstController[] controllers)
+        public static void newAsstPreset(ref string name, AsstController[] controllers, Vessel v)
         {
             if (name == "")
                 return;
@@ -457,7 +457,7 @@ namespace PilotAssistant
                 return;
             }
             AsstPreset newPreset = new AsstPreset(controllers, name);
-            updateCraftPreset(newPreset);
+            updateCraftPreset(newPreset, v);
             Instance.AsstPresetList.Add(newPreset);
             Instance.activeAsstPreset = PresetManager.Instance.AsstPresetList.Last();
             saveToFile();
@@ -484,7 +484,7 @@ namespace PilotAssistant
             GeneralUI.postMessage("Loaded preset " + p.name);
             
             if (Instance.activeAsstPreset != Instance.craftPresetDict[craftDefaultName].AsstPreset)
-                updateCraftPreset(Instance.activeAsstPreset);
+                updateCraftPreset(Instance.activeAsstPreset, instance.vesRef.vesselRef);
             saveToFile();
         }
 
@@ -508,7 +508,7 @@ namespace PilotAssistant
         #endregion
 
         #region SAS Preset
-        public static void newSASPreset(ref string name)
+        public static void newSASPreset(ref string name, Vessel v)
         {
             if (string.IsNullOrEmpty(name))
                 return;
@@ -517,42 +517,42 @@ namespace PilotAssistant
             if (Instance.SASPresetList.Any(p => p.name == nameTest))
                 return;
 
-            SASPreset newPreset = new SASPreset(FlightData.thisVessel.Autopilot.SAS, name);
+            SASPreset newPreset = new SASPreset(v.Autopilot.SAS, name);
             Instance.SASPresetList.Add(newPreset);
-            updateCraftPreset(newPreset);
+            updateCraftPreset(newPreset, v);
             Instance.activeSASPreset = Instance.SASPresetList.Last();
 
             saveToFile();
             name = "";
         }
 
-        public static void loadSASPreset(SASPreset p)
+        public static void loadSASPreset(SASPreset p, Stock_SAS instance)
         {
-            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[(int)SASList.Pitch, 0];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[(int)SASList.Pitch, 1];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[(int)SASList.Pitch, 2];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[(int)SASList.Pitch, 3];
+            instance.controlledVessel.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[(int)SASList.Pitch, 0];
+            instance.controlledVessel.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[(int)SASList.Pitch, 1];
+            instance.controlledVessel.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[(int)SASList.Pitch, 2];
+            instance.controlledVessel.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[(int)SASList.Pitch, 3];
 
-            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[(int)SASList.Bank, 0];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[(int)SASList.Bank, 1];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[(int)SASList.Bank, 2];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[(int)SASList.Bank, 3];
+            instance.controlledVessel.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[(int)SASList.Bank, 0];
+            instance.controlledVessel.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[(int)SASList.Bank, 1];
+            instance.controlledVessel.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[(int)SASList.Bank, 2];
+            instance.controlledVessel.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[(int)SASList.Bank, 3];
 
-            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[(int)SASList.Hdg, 0];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[(int)SASList.Hdg, 1];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[(int)SASList.Hdg, 2];
-            FlightData.thisVessel.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)SASList.Hdg, 3];
+            instance.controlledVessel.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[(int)SASList.Hdg, 0];
+            instance.controlledVessel.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[(int)SASList.Hdg, 1];
+            instance.controlledVessel.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[(int)SASList.Hdg, 2];
+            instance.controlledVessel.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)SASList.Hdg, 3];
 
             Instance.activeSASPreset = p;
 
             if (Instance.activeSASPreset != Instance.craftPresetDict[craftDefaultName].SASPreset)
-                updateCraftPreset(p);
+                updateCraftPreset(p, instance.controlledVessel);
             saveToFile();
         }
 
-        public static void UpdateSASPreset()
+        public static void UpdateSASPreset(Stock_SAS instance)
         {
-            Instance.activeSASPreset.Update(FlightData.thisVessel.Autopilot.SAS);
+            Instance.activeSASPreset.Update(instance.controlledVessel.Autopilot.SAS);
             saveToFile();
         }
 
@@ -574,7 +574,7 @@ namespace PilotAssistant
         #endregion
 
         #region SSAS Preset
-        public static void newSSASPreset(ref string name, PIDErrorController[] controllers)
+        public static void newSSASPreset(ref string name, PIDErrorController[] controllers, Vessel v)
         {
             if (string.IsNullOrEmpty(name))
                 return;
@@ -585,15 +585,15 @@ namespace PilotAssistant
 
             SSASPreset newPreset = new SSASPreset(controllers, name);
             Instance.SSASPresetList.Add(newPreset);
-            updateCraftPreset(newPreset);
+            updateCraftPreset(newPreset, v);
             Instance.activeSSASPreset = Instance.SSASPresetList.Last();
             saveToFile();
             name = "";
         }
 
-        public static void loadSSASPreset(SSASPreset p)
+        public static void loadSSASPreset(SSASPreset p, SurfSAS instance)
         {
-            PIDErrorController[] c = SurfSAS.Instance.SASControllers;
+            PIDErrorController[] c = instance.SASControllers;
 
             foreach (SASList s in Enum.GetValues(typeof(SASList)))
             {
@@ -606,13 +606,13 @@ namespace PilotAssistant
             Instance.activeSSASPreset = p;
 
             if (Instance.activeSSASPreset != Instance.craftPresetDict[craftDefaultName].SSASPreset)
-                updateCraftPreset(p);
+                updateCraftPreset(p, instance.vesRef.vesselRef);
             saveToFile();
         }
 
-        public static void UpdateSSASPreset()
+        public static void UpdateSSASPreset(SurfSAS instance)
         {
-            Instance.activeSSASPreset.Update(SurfSAS.Instance.SASControllers);
+            Instance.activeSSASPreset.Update(instance.SASControllers);
             saveToFile();
         }
 
@@ -635,7 +635,7 @@ namespace PilotAssistant
         #endregion
 
         #region RSAS Preset
-        public static void newRSASPreset(ref string name)
+        public static void newRSASPreset(ref string name, Vessel v)
         {
             if (string.IsNullOrEmpty(name))
                 return;
@@ -644,31 +644,31 @@ namespace PilotAssistant
             if (Instance.RSASPresetList.Any(p => p.name == nameTest))
                 return;
 
-            RSASPreset newPreset = new RSASPreset(FlightData.thisVessel.Autopilot.RSAS, name);
+            RSASPreset newPreset = new RSASPreset(v.Autopilot.RSAS, name);
             Instance.RSASPresetList.Add(newPreset);
-            updateCraftPreset(newPreset);
+            updateCraftPreset(newPreset, v);
             Instance.activeRSASPreset = Instance.RSASPresetList.Last();
             
             saveToFile();
             name = "";
         }
 
-        public static void loadRSASPreset(RSASPreset p)
+        public static void loadRSASPreset(RSASPreset p, Stock_SAS instance)
         {
-            FlightData.thisVessel.Autopilot.RSAS.pidPitch.ReinitializePIDsOnly((float)p.PIDGains[(int)SASList.Pitch, 0], (float)p.PIDGains[(int)SASList.Pitch, 1], (float)p.PIDGains[(int)SASList.Pitch, 2]);
-            FlightData.thisVessel.Autopilot.RSAS.pidRoll.ReinitializePIDsOnly((float)p.PIDGains[(int)SASList.Bank, 0], (float)p.PIDGains[(int)SASList.Bank, 1], (float)p.PIDGains[(int)SASList.Bank, 2]);
-            FlightData.thisVessel.Autopilot.RSAS.pidYaw.ReinitializePIDsOnly((float)p.PIDGains[(int)SASList.Hdg, 0], (float)p.PIDGains[(int)SASList.Hdg, 1], (float)p.PIDGains[(int)SASList.Hdg, 2]);
+            instance.controlledVessel.Autopilot.RSAS.pidPitch.ReinitializePIDsOnly((float)p.PIDGains[(int)SASList.Pitch, 0], (float)p.PIDGains[(int)SASList.Pitch, 1], (float)p.PIDGains[(int)SASList.Pitch, 2]);
+            instance.controlledVessel.Autopilot.RSAS.pidRoll.ReinitializePIDsOnly((float)p.PIDGains[(int)SASList.Bank, 0], (float)p.PIDGains[(int)SASList.Bank, 1], (float)p.PIDGains[(int)SASList.Bank, 2]);
+            instance.controlledVessel.Autopilot.RSAS.pidYaw.ReinitializePIDsOnly((float)p.PIDGains[(int)SASList.Hdg, 0], (float)p.PIDGains[(int)SASList.Hdg, 1], (float)p.PIDGains[(int)SASList.Hdg, 2]);
 
             Instance.activeRSASPreset = p;
 
             if (Instance.activeRSASPreset != Instance.craftPresetDict[craftDefaultName].RSASPreset)
-                updateCraftPreset(p);
+                updateCraftPreset(p, instance.controlledVessel);
             saveToFile();
         }
 
-        public static void UpdateRSASPreset()
+        public static void UpdateRSASPreset(Stock_SAS instance)
         {
-            Instance.activeRSASPreset.Update(FlightData.thisVessel.Autopilot.RSAS);
+            Instance.activeRSASPreset.Update(instance.controlledVessel.Autopilot.RSAS);
             saveToFile();
         }
 
@@ -700,33 +700,33 @@ namespace PilotAssistant
                 loadAsstPreset(Instance.craftPresetDict[craftDefaultName].AsstPreset, instance);
         }
 
-        public static void loadCraftSSASPreset()
+        public static void loadCraftSSASPreset(SurfSAS instance)
         {
-            if (instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SSASPreset != null)
-                loadSSASPreset(instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SSASPreset);
+            if (Instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SSASPreset != null)
+                loadSSASPreset(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SSASPreset, instance);
             else
-                loadSSASPreset(instance.craftPresetDict[craftDefaultName].SSASPreset);
+                loadSSASPreset(Instance.craftPresetDict[craftDefaultName].SSASPreset, instance);
         }
 
         // called on vessel load
-        public static void loadCraftSASPreset()
+        public static void loadCraftSASPreset(Stock_SAS instance)
         {
-            if (instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName))
+            if (Instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName))
             {
-                if (instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SASPreset != null)
-                    loadSASPreset(instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SASPreset);
+                if (Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SASPreset != null)
+                    loadSASPreset(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SASPreset, instance);
                 else
-                    loadSASPreset(instance.craftPresetDict[craftDefaultName].SASPreset);
+                    loadSASPreset(Instance.craftPresetDict[craftDefaultName].SASPreset, instance);
 
-                if (instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].RSASPreset != null)
-                    loadRSASPreset(instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].RSASPreset);
+                if (Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].RSASPreset != null)
+                    loadRSASPreset(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].RSASPreset, instance);
                 else
-                    loadRSASPreset(instance.craftPresetDict[craftDefaultName].RSASPreset);
+                    loadRSASPreset(Instance.craftPresetDict[craftDefaultName].RSASPreset, instance);
             }
             else
             {
-                loadSASPreset(instance.craftPresetDict[craftDefaultName].SASPreset);
-                loadRSASPreset(instance.craftPresetDict[craftDefaultName].RSASPreset);
+                loadSASPreset(Instance.craftPresetDict[craftDefaultName].SASPreset, instance);
+                loadRSASPreset(Instance.craftPresetDict[craftDefaultName].RSASPreset, instance);
             }
         }
 
@@ -768,36 +768,36 @@ namespace PilotAssistant
                 Instance.craftPresetDict.Add("default", new CraftPreset("default", null, null, null, null));
         }
 
-        public static void updateCraftPreset(AsstPreset p)
+        public static void updateCraftPreset(AsstPreset p, Vessel v)
         {
-            initCraftPreset();
-            Instance.craftPresetDict[FlightData.thisVessel.vesselName].AsstPreset = p;
+            initCraftPreset(v);
+            Instance.craftPresetDict[v.vesselName].AsstPreset = p;
         }
 
-        public static void updateCraftPreset(SASPreset p)
+        public static void updateCraftPreset(SASPreset p, Vessel v)
         {
-            initCraftPreset();
-            Instance.craftPresetDict[FlightData.thisVessel.vesselName].SASPreset = p;
+            initCraftPreset(v);
+            Instance.craftPresetDict[v.vesselName].SASPreset = p;
         }
 
-        public static void updateCraftPreset(SSASPreset p)
+        public static void updateCraftPreset(SSASPreset p, Vessel v)
         {
-            initCraftPreset();
-            Instance.craftPresetDict[FlightData.thisVessel.vesselName].SSASPreset = p;
+            initCraftPreset(v);
+            Instance.craftPresetDict[v.vesselName].SSASPreset = p;
         }
 
-        public static void updateCraftPreset(RSASPreset p)
+        public static void updateCraftPreset(RSASPreset p, Vessel v)
         {
-            initCraftPreset();
-            Instance.craftPresetDict[FlightData.thisVessel.vesselName].RSASPreset = p;
+            initCraftPreset(v);
+            Instance.craftPresetDict[v.vesselName].RSASPreset = p;
         }
 
-        public static void initCraftPreset()
+        public static void initCraftPreset(Vessel v)
         {
-            if (!Instance.craftPresetDict.ContainsKey(FlightData.thisVessel.vesselName))
+            if (!Instance.craftPresetDict.ContainsKey(v.vesselName))
             {
-                Instance.craftPresetDict.Add(FlightData.thisVessel.vesselName,
-                                                new CraftPreset(FlightData.thisVessel.vesselName,
+                Instance.craftPresetDict.Add(v.vesselName,
+                                                new CraftPreset(v.vesselName,
                                                     Instance.activeAsstPreset == Instance.craftPresetDict[craftDefaultName].AsstPreset ? null : Instance.activeAsstPreset,
                                                     Instance.activeSSASPreset == Instance.craftPresetDict[craftDefaultName].SSASPreset ? null : Instance.activeSSASPreset,
                                                     Instance.activeSASPreset == Instance.craftPresetDict[craftDefaultName].SASPreset ? null : Instance.activeSASPreset,
