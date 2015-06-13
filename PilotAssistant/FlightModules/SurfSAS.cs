@@ -152,8 +152,12 @@ namespace PilotAssistant.FlightModules
 
         void setCtrlState(SASList ID, double error, double rate, ref float ctrlState)
         {
+            PIDmode mode = PIDmode.PID;
+            if (!controlledVessel.checkLanded() && controlledVessel.IsControllable)
+                mode = PIDmode.PD; // no integral when it can't do anything
+
             if (allowControl(ID))
-                ctrlState = ID.GetSAS(this).ResponseF(error, rate, !controlledVessel.checkLanded() && controlledVessel.IsControllable);
+                ctrlState = ID.GetSAS(this).ResponseF(error, rate, mode);
             else if (!Utils.hasInput(ID))
                 ctrlState = 0; // kill off stock SAS inputs
         }

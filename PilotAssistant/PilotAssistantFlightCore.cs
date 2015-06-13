@@ -94,11 +94,26 @@ namespace PilotAssistant
         {
             while (HighLogic.LoadedSceneIsFlight)
             {
-                for (int i = 0; i < 1000; i++)
+                for (int i = 0; i < 50; i++)
                     yield return null;
                 Vessel ves = controlledVessels[selectedVesselIndex].vesselRef;
-                controlledVessels.RemoveAll(v => !v.vesselRef.loaded);
+                controlledVessels.RemoveAll(v => v == null || v.vesselRef == null || !v.vesselRef.loaded);
                 selectedVesselIndex = controlledVessels.FindIndex(vm => vm.vesselRef == ves);
+            }
+        }
+
+        public void removeVessel(AsstVesselModule avm)
+        {
+            if (avm.vesselRef != controlledVessels[selectedVesselIndex].vesselRef)
+            {
+                Vessel ves = controlledVessels[selectedVesselIndex].vesselRef;
+                controlledVessels.Remove(avm);
+                selectedVesselIndex = controlledVessels.FindIndex(vm => vm.vesselRef == ves);
+            }
+            else
+            {
+                controlledVessels.Remove(avm);
+                selectedVesselIndex = 0;
             }
         }
 
@@ -151,16 +166,19 @@ namespace PilotAssistant
 
         void vesselSwitch(Vessel v)
         {
-            if (v.IsControllable && !controlledVessels.Any(ves => ves.vesselRef == v))
+            if (v.IsControllable)
             {
-                AsstVesselModule newVesMod = new AsstVesselModule(v);
-                controlledVessels.Add(newVesMod);
-                newVesMod.Start();
-                selectedVesselIndex = controlledVessels.Count - 1;
-            }
-            else
-            {
-                selectedVesselIndex = controlledVessels.FindIndex(vm => vm.vesselRef == v);
+                if (!controlledVessels.Any(ves => ves.vesselRef == v))
+                {
+                    AsstVesselModule newVesMod = new AsstVesselModule(v);
+                    controlledVessels.Add(newVesMod);
+                    newVesMod.Start();
+                    selectedVesselIndex = controlledVessels.Count - 1;
+                }
+                else
+                {
+                    selectedVesselIndex = controlledVessels.FindIndex(vm => vm.vesselRef == v);
+                }
             }
         }
 

@@ -68,6 +68,7 @@ namespace PilotAssistant.FlightModules
         {
             vesselAsst.OnDestroy();
             vesselSSAS.OnDestroy();
+            PilotAssistantFlightCore.Instance.removeVessel(this);
         }
 
         public bool isActiveVessel()
