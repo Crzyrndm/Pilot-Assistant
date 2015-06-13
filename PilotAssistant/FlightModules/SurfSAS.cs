@@ -398,12 +398,15 @@ namespace PilotAssistant.FlightModules
 
             if (bArmed)
             {
-                if (currentMode == VesselAutopilot.AutopilotMode.StabilityAssist)
+                if (!(FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit && currentMode == VesselAutopilot.AutopilotMode.StabilityAssist))
                 {
-                    SASList.Pitch.GetSAS(this).SetPoint = TogPlusNumBox("Pitch:", SASList.Pitch, vesRef.vesselData.pitch, 80, 70);
-                    SASList.Hdg.GetSAS(this).SetPoint = TogPlusNumBox("Heading:", SASList.Hdg, vesRef.vesselData.heading, 80, 70);
+                    if (currentMode == VesselAutopilot.AutopilotMode.StabilityAssist)
+                    {
+                        SASList.Pitch.GetSAS(this).SetPoint = TogPlusNumBox("Pitch:", SASList.Pitch, vesRef.vesselData.pitch, 80, 70);
+                        SASList.Hdg.GetSAS(this).SetPoint = TogPlusNumBox("Heading:", SASList.Hdg, vesRef.vesselData.heading, 80, 70);
+                    }
+                    SASList.Bank.GetSAS(this).SetPoint = TogPlusNumBox("Roll:", SASList.Bank, vesRef.vesselData.bank, 80, 70);
                 }
-                SASList.Bank.GetSAS(this).SetPoint = TogPlusNumBox("Roll:", SASList.Bank, vesRef.vesselData.bank, 80, 70);
 
                 GUILayout.Box("", GUILayout.Height(10)); // seperator
 
