@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 
@@ -36,16 +35,16 @@ namespace PilotAssistant.FlightModules
 
         readonly double bankAngleSynch = 5; // the bank angle below which pitch and yaw unlock seperately
 
-        public static Rect SSASwindow = new Rect(10, 505, 200, 30); // gui window rect
+        public static Rect SSASwindow = new Rect(10, 505, 100, 30); // gui window rect
         string newPresetName = "";
         static Rect SSASPresetwindow = new Rect(550, 50, 50, 50);
         static bool bShowSSASPresets = false;
 
         // initialisation and default presets stuff
         // kp, ki, kd, outMin, outMax, iMin, iMax, scalar, easing (unused)
-        public readonly static double[] defaultPitchGains = { 0.1, 0.01, 0.3, -1, 1, -1, 1, 1, 200 };
-        public readonly static double[] defaultRollGains = { 0.1, 0.01, 0.1, -1, 1, -1, 1, 1, 200 };
-        public readonly static double[] defaultHdgGains = { 0.1, 0.01, 0.3, -1, 1, -1, 1, 1, 200 };
+        public readonly static double[] defaultPitchGains = { 0.22, 0.12, 0.3, -1, 1, -1, 1, 1, 200 };
+        public readonly static double[] defaultRollGains = { 0.25, 0.1, 5, -1, 1, -1, 1, 1, 200 };
+        public readonly static double[] defaultHdgGains = { 0.22, 0.12, 0.3, -1, 1, -1, 1, 1, 200 };
 
         // will be added back soonish
         //public Vector3 currentDirectionTarget = Vector3.zero; // this is the vec the IEnumerator is moving
@@ -271,9 +270,9 @@ namespace PilotAssistant.FlightModules
                     StartCoroutine(FadeInAxis(SASList.Hdg));
             }
 
-            if (!bPause[(int)SASList.Bank] && Utils.hasRollInput())
+            if (!bPause[(int)SASList.Bank] && (Utils.hasRollInput() || (Math.Abs(vesRef.vesselData.pitch) > 70 && (Utils.hasPitchInput() || Utils.hasYawInput()))))
                 bPause[(int)SASList.Bank] = true;
-            else if (bPause[(int)SASList.Bank] && !Utils.hasRollInput())
+            else if (bPause[(int)SASList.Bank] && !(Utils.hasRollInput() || (Math.Abs(vesRef.vesselData.pitch) > 70 && (Utils.hasPitchInput() || Utils.hasYawInput()))))
             {
                 bPause[(int)SASList.Bank] = false;
                 if (bActive[(int)SASList.Bank])

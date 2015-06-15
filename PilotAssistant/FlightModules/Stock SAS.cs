@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections;
-using System.Linq;
 using UnityEngine;
 
 namespace PilotAssistant.FlightModules
 {
-    using PID;
     using Utility;
     using Presets;
 
@@ -26,8 +23,10 @@ namespace PilotAssistant.FlightModules
         static bool bShowPresets = false;
         string newPresetName = "";
 
-        public void Start()
+        public void Start(AsstVesselModule vsm)
         {
+            vesselRef = vsm;
+            controlledVessel = vsm.vesselRef;
             StartCoroutine(Initialise());
         }
 

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
@@ -51,18 +50,8 @@ namespace PilotAssistant
         public void Awake()
         {
             instance = this;
-            if (config == null)
-            {
-                config = KSP.IO.PluginConfiguration.CreateForType<PilotAssistantFlightCore>();
-                config.load();
-            }
-            bUseStockToolbar = config.GetValue("UseStockToolbar", true);
-
-            blizMenuTexPath = config.GetValue("blizMenuIcon", "Pilot Assistant/Icon/BlizzyIcon");
-            blizAsstTexPath = config.GetValue("blizAsstIcon", "Pilot Assistant/Icon/BlizzyIcon");
-            blizSSASTexPath = config.GetValue("blizSSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
-            blizSASTexPath = config.GetValue("blizSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
-
+            LoadConfig();
+            
             if (!bUseStockToolbar && ToolbarManager.ToolbarAvailable)
                 ToolbarMod.Instance.Awake();
             else
@@ -81,25 +70,6 @@ namespace PilotAssistant
             GameEvents.onShowUI.Add(showUI);
             GameEvents.onVesselChange.Add(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Add(warpRateChanged);
-
-            LoadConfig();
-
-            PresetManager.loadCraftAsstPreset(vsm.vesselAsst);
-            PresetManager.loadCraftSSASPreset(vsm.vesselSSAS);
-
-            StartCoroutine(clearUnloadedVessels());
-        }
-
-        IEnumerator clearUnloadedVessels()
-        {
-            while (HighLogic.LoadedSceneIsFlight)
-            {
-                for (int i = 0; i < 50; i++)
-                    yield return null;
-                Vessel ves = controlledVessels[selectedVesselIndex].vesselRef;
-                controlledVessels.RemoveAll(v => v == null || v.vesselRef == null || !v.vesselRef.loaded);
-                selectedVesselIndex = controlledVessels.FindIndex(vm => vm.vesselRef == ves);
-            }
         }
 
         public void removeVessel(AsstVesselModule avm)
@@ -121,7 +91,20 @@ namespace PilotAssistant
         {
             try
             {
+                if (config == null)
+                {
+                    config = KSP.IO.PluginConfiguration.CreateForType<PilotAssistantFlightCore>();
+                }
+                config.load();
+
                 showTooltips = config.GetValue("AsstTooltips", true);
+
+                bUseStockToolbar = config.GetValue("UseStockToolbar", true);
+
+                blizMenuTexPath = config.GetValue("blizMenuIcon", "Pilot Assistant/Icon/BlizzyIcon");
+                blizAsstTexPath = config.GetValue("blizAsstIcon", "Pilot Assistant/Icon/BlizzyIcon");
+                blizSSASTexPath = config.GetValue("blizSSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
+                blizSASTexPath = config.GetValue("blizSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
 
                 PilotAssistant.doublesided = config.GetValue("AsstDoublesided", false);
                 PilotAssistant.showPIDLimits = config.GetValue("AsstLimits", false);
@@ -157,6 +140,11 @@ namespace PilotAssistant
 
         public void Update()
         {
+            Vessel ves = controlledVessels[selectedVesselIndex].vesselRef;
+            int numRemoved = controlledVessels.RemoveAll(v => v == null || v.vesselRef == null || !v.vesselRef.loaded);
+            if (numRemoved > 0)
+                selectedVesselIndex = controlledVessels.FindIndex(vm => vm.vesselRef == ves);
+
             for (int i = 0; i < controlledVessels.Count; i++)
             {
                 if (controlledVessels[i].vesselRef.loaded)
@@ -239,19 +227,20 @@ namespace PilotAssistant
 
             if (GUILayout.Button("Update Defaults"))
                 PresetManager.updateDefaults();
-
-            GUILayout.BeginHorizontal();
-            for (int i = 0; i < controlledVessels.Count; i++)
+            if (controlledVessels.Count > 1)
             {
-                if (controlledVessels[i].vesselRef.isActiveVessel)
-                    GUI.backgroundColor = Color.green;
-                bool tmp = GUILayout.Toggle(i == selectedVesselIndex, i.ToString(), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-                if (tmp)
-                    selectedVesselIndex = i;
-                GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+                GUILayout.BeginHorizontal();
+                for (int i = 0; i < controlledVessels.Count; i++)
+                {
+                    if (controlledVessels[i].vesselRef.isActiveVessel)
+                        GUI.backgroundColor = Color.green;
+                    bool tmp = GUILayout.Toggle(i == selectedVesselIndex, i.ToString(), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+                    if (tmp)
+                        selectedVesselIndex = i;
+                    GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
+                }
+                GUILayout.EndHorizontal();
             }
-            GUILayout.EndHorizontal();
-
             GUI.DragWindow();
         }
 

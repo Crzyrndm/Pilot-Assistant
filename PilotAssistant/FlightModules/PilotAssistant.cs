@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
-using KSP.IO;
 
 namespace PilotAssistant.FlightModules
 {
+    using PID;
     using Presets;
     using Utility;
-    using PID;
 
     public enum AsstList
     {

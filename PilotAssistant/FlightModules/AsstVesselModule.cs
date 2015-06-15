@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-
+﻿
 namespace PilotAssistant.FlightModules
 {
-    using Utility;
 
     public class AsstVesselModule
     {
@@ -28,7 +23,7 @@ namespace PilotAssistant.FlightModules
         {
             vesselAsst.Start(this);
             vesselSSAS.Start(this);
-            vesselStockSAS.Start();
+            vesselStockSAS.Start(this);
 
             vesselRef.OnPreAutopilotUpdate += new FlightInputCallback(preAutoPilotUpdate);
             vesselRef.OnPostAutopilotUpdate += new FlightInputCallback(postAutoPilotUpdate);
