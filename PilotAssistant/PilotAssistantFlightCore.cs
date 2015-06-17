@@ -55,7 +55,7 @@ namespace PilotAssistant
             if (!bUseStockToolbar && ToolbarManager.ToolbarAvailable)
                 ToolbarMod.Instance.Awake();
             else
-                AppLauncherFlight.Instance.Awake();
+                AppLauncherFlight.Awake();
         }
 
         public void Start()
@@ -262,7 +262,6 @@ namespace PilotAssistant
             {
                 controlledVessels[i].OnDestroy();
             }
-            AppLauncherFlight.Instance.OnDestroy();
             if (Toolbar.ToolbarManager.ToolbarAvailable && !bUseStockToolbar)
                 ToolbarMod.Instance.OnDestroy();
             BindingManager.Instance.OnDestroy();
