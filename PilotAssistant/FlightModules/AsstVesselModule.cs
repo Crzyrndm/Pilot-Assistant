@@ -52,6 +52,14 @@ namespace PilotAssistant.FlightModules
             vesselAsst.vesselController(state);
         }
 
+        public void vesselSwitch(Vessel v)
+        {
+            if (v == vesselRef)
+            {
+                vesselAsst.vesselSwitch(v);
+            }
+        }
+
         public void OnGUI()
         {
             vesselAsst.drawGUI();
@@ -62,7 +70,6 @@ namespace PilotAssistant.FlightModules
         public void OnDestroy()
         {
             vesselAsst.OnDestroy();
-            vesselSSAS.OnDestroy();
             PilotAssistantFlightCore.Instance.removeVessel(this);
         }
 

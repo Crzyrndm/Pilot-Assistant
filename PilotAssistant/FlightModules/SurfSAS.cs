@@ -50,6 +50,9 @@ namespace PilotAssistant.FlightModules
         //public Vector3 currentDirectionTarget = Vector3.zero; // this is the vec the IEnumerator is moving
         //public Vector3 newDirectionTarget = Vector3.zero; // this is the vec we are moving to
 
+        VesselAutopilot.AutopilotMode currentMode = VesselAutopilot.AutopilotMode.StabilityAssist;
+        FlightUIController.SpeedDisplayModes referenceMode = FlightUIController.SpeedDisplayModes.Surface;
+
         #endregion
 
         public void Start(AsstVesselModule avm)
@@ -60,8 +63,8 @@ namespace PilotAssistant.FlightModules
             SASControllers[(int)SASList.Pitch] = new PIDErrorController(SASList.Pitch, defaultPitchGains);
             SASControllers[(int)SASList.Bank] = new PIDErrorController(SASList.Bank, defaultRollGains);
             SASControllers[(int)SASList.Hdg] = new PIDErrorController(SASList.Hdg, defaultHdgGains);
-            if (!PresetManager.Instance.craftPresetDict.ContainsKey("default") || PresetManager.Instance.craftPresetDict["default"].SSASPreset == null)
-                PresetManager.initDefaultPresets(new SSASPreset(SASControllers, "SSAS"));
+            
+            PresetManager.initDefaultPresets(new SSASPreset(SASControllers, "SSAS"));
             PresetManager.loadCraftSSASPreset(this);
             
             tooltip = "";
@@ -73,15 +76,11 @@ namespace PilotAssistant.FlightModules
                 updateTarget();
         }
 
-        public void OnDestroy()
-        {
-            bArmed = false;
-            controlledVessel.OnAutopilotUpdate -= new FlightInputCallback(SurfaceSAS);
-        }
+        //public void OnDestroy()
+        //{
+        //}
 
         #region Update / Input monitoring
-        VesselAutopilot.AutopilotMode currentMode = VesselAutopilot.AutopilotMode.StabilityAssist;
-        FlightUIController.SpeedDisplayModes referenceMode = FlightUIController.SpeedDisplayModes.Surface;
         public void Update()
         {
             if (GameSettings.MODIFIER_KEY.GetKey())

@@ -192,8 +192,7 @@ namespace PilotAssistant.FlightModules
             controllers[(int)AsstList.Acceleration] = new AsstController(AsstList.Acceleration, defaultAccelGains);
 
             // Set up a default preset that can be easily returned to
-            if (!PresetManager.Instance.craftPresetDict.ContainsKey("default") || PresetManager.Instance.craftPresetDict["default"].AsstPreset == null)
-                PresetManager.initDefaultPresets(new AsstPreset(controllers, "default"));
+            PresetManager.initDefaultPresets(new AsstPreset(controllers, "default"));
         }
 
         public void warpHandler()
@@ -205,6 +204,14 @@ namespace PilotAssistant.FlightModules
                 VertActive = false;
                 ThrtActive = false;
             }
+        }
+
+        public void vesselSwitch(Vessel v)
+        {
+            if (HrztActive)
+                InputLockManager.SetControlLock(ControlTypes.YAW, yawLockID);
+            if (VertActive)
+                InputLockManager.SetControlLock(ControlTypes.PITCH, pitchLockID);
         }
 
         #region Update / Input Monitoring
@@ -390,7 +397,7 @@ namespace PilotAssistant.FlightModules
             }
             else
             {
-                if (active && !HrztActive)
+                if (!yawLockEngaged)
                 {
                     InputLockManager.SetControlLock(ControlTypes.YAW, yawLockID);
                     yawLockEngaged = true;

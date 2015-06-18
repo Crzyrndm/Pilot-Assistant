@@ -169,6 +169,7 @@ namespace PilotAssistant
                 {
                     selectedVesselIndex = controlledVessels.FindIndex(vm => vm.vesselRef == v);
                 }
+                controlledVessels[selectedVesselIndex].vesselSwitch(v);
             }
         }
 
