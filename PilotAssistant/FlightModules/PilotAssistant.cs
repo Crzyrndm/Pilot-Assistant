@@ -192,7 +192,7 @@ namespace PilotAssistant.FlightModules
             controllers[(int)AsstList.Acceleration] = new AsstController(AsstList.Acceleration, defaultAccelGains);
 
             // Set up a default preset that can be easily returned to
-            if (PresetManager.Instance.craftPresetDict["default"].AsstPreset == null)
+            if (!PresetManager.Instance.craftPresetDict.ContainsKey("default") || PresetManager.Instance.craftPresetDict["default"].AsstPreset == null)
                 PresetManager.initDefaultPresets(new AsstPreset(controllers, "default"));
         }
 

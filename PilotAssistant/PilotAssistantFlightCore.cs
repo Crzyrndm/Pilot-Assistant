@@ -40,6 +40,8 @@ namespace PilotAssistant
         public static bool bDisplaySAS = false;
         public static bool bDisplaySSAS = false;
 
+        public static bool calculateDirection = true;
+
         public string blizMenuTexPath;
         public string blizAsstTexPath;
         public string blizSSASTexPath;
@@ -178,23 +180,6 @@ namespace PilotAssistant
                     controlledVessels[i].warpHandler();
             }
         }
-
-        //public void FixedUpdate()
-        //{
-        //}
-
-        //void onPreAutoPilotUpdate(FlightCtrlState state)
-        //{
-        //}
-
-        //void onAutoPilotUpdate(FlightCtrlState state)
-        //{
-            
-        //}
-
-        //void onPostAutoPilotUpdate(FlightCtrlState state)
-        //{
-        //}
 
         public void OnGUI()
         {
