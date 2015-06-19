@@ -43,12 +43,11 @@ namespace PilotAssistant.FlightModules
         // initialisation and default presets stuff
         // kp, ki, kd, outMin, outMax, iMin, iMax, scalar, easing (unused)
         public readonly static double[] defaultPitchGains = { 0.22, 0.12, 0.3, -1, 1, -1, 1, 1, 200 };
-        public readonly static double[] defaultRollGains = { 0.25, 0.1, 5, -1, 1, -1, 1, 1, 200 };
+        public readonly static double[] defaultRollGains = { 0.25, 0.1, 0.09, -1, 1, -1, 1, 1, 200 };
         public readonly static double[] defaultHdgGains = { 0.22, 0.12, 0.3, -1, 1, -1, 1, 1, 200 };
 
         // will be added back soonish
-        //public Vector3 currentDirectionTarget = Vector3.zero; // this is the vec the IEnumerator is moving
-        //public Vector3 newDirectionTarget = Vector3.zero; // this is the vec we are moving to
+        public Quaternion currentTarget = Quaternion.identity;
 
         VesselAutopilot.AutopilotMode currentMode = VesselAutopilot.AutopilotMode.StabilityAssist;
         FlightUIController.SpeedDisplayModes referenceMode = FlightUIController.SpeedDisplayModes.Surface;
@@ -76,10 +75,6 @@ namespace PilotAssistant.FlightModules
                 updateTarget();
         }
 
-        //public void OnDestroy()
-        //{
-        //}
-
         #region Update / Input monitoring
         public void Update()
         {
@@ -100,17 +95,15 @@ namespace PilotAssistant.FlightModules
                         updateTarget();
                 }
             }
-            if (currentMode != controlledVessel.Autopilot.Mode)
-            {
-                currentMode = controlledVessel.Autopilot.Mode;
-                if (currentMode == VesselAutopilot.AutopilotMode.StabilityAssist)
-                    updateTarget();
-            }
+            if (currentMode != controlledVessel.Autopilot.Mode && currentMode == VesselAutopilot.AutopilotMode.StabilityAssist)
+                updateTarget();
             if (referenceMode == FlightUIController.SpeedDisplayModes.Surface && FlightUIController.speedDisplayMode != FlightUIController.SpeedDisplayModes.Surface)
-            {
                 orbitalTarget = controlledVessel.transform.rotation;
-            }
+            currentMode = controlledVessel.Autopilot.Mode;
             referenceMode = FlightUIController.speedDisplayMode;
+
+            if (bActive[(int)SASList.Hdg])
+                SASList.Hdg.GetSAS(this).SetPoint = Utils.calculateTargetHeading(currentTarget, vesRef.vesselData);
         }
         #endregion
 
@@ -143,7 +136,7 @@ namespace PilotAssistant.FlightModules
             double rollError = Utils.headingClamp(Vector3d.Angle(vesRefTrans.right, rollTargetRot * Vector3d.right) * Math.Sign(Vector3d.Dot(rollTargetRot * Vector3d.right, vesRefTrans.forward)), 180);
             //================================
 
-            setCtrlState(SASList.Bank, rollError, controlledVessel.angularVelocity.y, ref state.roll);
+            setCtrlState(SASList.Bank, rollError, controlledVessel.angularVelocity.y * Mathf.Rad2Deg, ref state.roll);
             setCtrlState(SASList.Pitch, PYerror.y, controlledVessel.angularVelocity.x * Mathf.Rad2Deg, ref state.pitch);
             setCtrlState(SASList.Hdg, PYerror.x, controlledVessel.angularVelocity.z * Mathf.Rad2Deg, ref state.yaw);
         }
@@ -269,9 +262,11 @@ namespace PilotAssistant.FlightModules
                     StartCoroutine(FadeInAxis(SASList.Hdg));
             }
 
+            // if the roll control is not paused, and there is roll input or thevessel pitch is > 70 degrees and there is pitch/yaw input
             if (!bPause[(int)SASList.Bank] && (Utils.hasRollInput() || (Math.Abs(vesRef.vesselData.pitch) > 70 && (Utils.hasPitchInput() || Utils.hasYawInput()))))
                 bPause[(int)SASList.Bank] = true;
-            else if (bPause[(int)SASList.Bank] && !(Utils.hasRollInput() || (Math.Abs(vesRef.vesselData.pitch) > 70 && (Utils.hasPitchInput() || Utils.hasYawInput()))))
+            // if the roll control is paused, and there is not roll input and not any pitch/yaw input if pitch < 60 degrees
+            else if (bPause[(int)SASList.Bank] && !(Utils.hasRollInput() || (Math.Abs(vesRef.vesselData.pitch) > 60 && (Utils.hasPitchInput() || Utils.hasYawInput()))))
             {
                 bPause[(int)SASList.Bank] = false;
                 if (bActive[(int)SASList.Bank])
@@ -287,6 +282,9 @@ namespace PilotAssistant.FlightModules
             orbitalTarget = controlledVessel.transform.rotation;
         }
 
+        /// <summary>
+        /// wait for rate of rotation to fall below 10 degres / s before locking in the target. Derivative only action until that time
+        /// </summary>
         IEnumerator FadeInAxis(SASList axis)
         {
             updateSetpoint(axis, Utils.getCurrentVal(axis, vesRef.vesselData));
@@ -296,6 +294,8 @@ namespace PilotAssistant.FlightModules
                 yield return null;
             }
             orbitalTarget = controlledVessel.transform.rotation;
+            if (axis == SASList.Hdg)
+                currentTarget = Utils.getPlaneRotation(vesRef.vesselData.heading, vesRef.vesselData);
         }
 
         void updateSetpoint(SASList ID, double setpoint)
@@ -336,7 +336,6 @@ namespace PilotAssistant.FlightModules
         /// <summary>
         /// set stock SAS state
         /// </summary>
-        /// <param name="state"></param>
         public void setStockSAS(bool state)
         {
             controlledVessel.ActionGroups.SetGroup(KSPActionGroup.SAS, state);
@@ -346,7 +345,7 @@ namespace PilotAssistant.FlightModules
         public void drawGUI()
         {
             // SAS toggle button
-            // is before the bDisplay check so it can be up without the GUI
+            // is before the bDisplay check so it can be up without the rest of the UI
             if (bArmed && FlightUIModeController.Instance.navBall.expanded)
             {
                 if (ActivityCheck())
@@ -355,9 +354,7 @@ namespace PilotAssistant.FlightModules
                     GUI.backgroundColor = GeneralUI.InActiveBackground;
 
                 if (GUI.Button(new Rect(Screen.width / 2 + 50, Screen.height - 200, 50, 30), "SSAS"))
-                {
                     ActivitySwitch(!ActivityCheck());
-                }
                 GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             }
 
@@ -401,7 +398,7 @@ namespace PilotAssistant.FlightModules
                     if (currentMode == VesselAutopilot.AutopilotMode.StabilityAssist)
                     {
                         SASList.Pitch.GetSAS(this).SetPoint = TogPlusNumBox("Pitch:", SASList.Pitch, vesRef.vesselData.pitch, 80, 70);
-                        SASList.Hdg.GetSAS(this).SetPoint = TogPlusNumBox("Heading:", SASList.Hdg, vesRef.vesselData.heading, 80, 70);
+                        currentTarget = Utils.getPlaneRotation(TogPlusNumBox("Heading:", SASList.Hdg, vesRef.vesselData.heading, 80, 70), vesRef.vesselData);
                     }
                     SASList.Bank.GetSAS(this).SetPoint = TogPlusNumBox("Roll:", SASList.Bank, vesRef.vesselData.bank, 80, 70);
                 }

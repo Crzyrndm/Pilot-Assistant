@@ -12,7 +12,7 @@ namespace PilotAssistant.FlightModules
             v = ves;
         }
 
-        Vessel v;
+        public Vessel v;
 
         public double radarAlt = 0;
         public double pitch = 0;
@@ -121,25 +121,28 @@ namespace PilotAssistant.FlightModules
                     offset = partOffset;
                 }
             }
-            // closest part now lists the part that is probably the closest to the CoM on the vessel (if the part tree moves away from the CoM first and then towards the CoM that branch could be closer
-            // but is someone really goig to try fly a monstrosity like that)
-            //
-            // now require two things, accounting for any rotation in part placement, and interpolating with surrounding parts (parent/children/symmetry counterparts) to "shift" the location to the CoM
-            // accounting for rotation is the most important, the nearby position will work for now.
-            //Vector3 location = closestPart.partTransform.position - v.CurrentCoM;
+            ///
+            /// now require two things, accounting for any rotation in part placement, and interpolating with surrounding parts (parent/children/symmetry counterparts) to "shift" the location to the CoM
+            /// accounting for rotation is the most important, the nearby position will work for now.
+            /// Vector3 location = closestPart.partTransform.position - v.CurrentCoM;
+            /// 
             Quaternion fixedRotation = closestPart.transform.localRotation * closestPart.orgRot.Inverse();
             vesselFacingAxis = fixedRotation * Vector3.up;
         }
 
         ArrowPointer pointer;
-        public void drawArrow(Vector3 dir, Part p)
+        public void drawArrow(Vector3 dir, Transform t)
         {
             if (pointer == null)
-                pointer = ArrowPointer.Create(p.partTransform, Vector3.zero, dir, 100, Color.red, true);
+                pointer = ArrowPointer.Create(t, Vector3.zero, dir, 100, Color.red, true);
             else
-            {
                 pointer.Direction = dir;
-            }
+        }
+
+        public void destroyArrow()
+        {
+            UnityEngine.Object.Destroy(pointer);
+            pointer = null;
         }
     }
 }

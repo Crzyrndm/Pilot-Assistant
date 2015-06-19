@@ -60,7 +60,7 @@ namespace PilotAssistant.Utility
         }
 
         /// <summary>
-        /// Direction vector from a given heading
+        /// Plane normal vector from a given heading (surface right vector)
         /// </summary>
         public static Vector3 vecHeading(double target, VesselData vd)
         {
@@ -69,11 +69,21 @@ namespace PilotAssistant.Utility
         }
 
         /// <summary>
-        /// calculate current heading from target vector
+        /// calculate current heading from plane normal vector
         /// </summary>
         public static double calculateTargetHeading(Vector3 direction, VesselData vd)
         {
             Vector3 fwd = Vector3.Cross(vd.planetUp, direction);
+            double heading = -1 * Vector3.Angle(fwd, -vd.planetNorth) * Math.Sign(Vector3.Dot(fwd, vd.planetEast));
+            return heading.headingClamp(360);
+        }
+
+        /// <summary>
+        /// calculate current heading from plane rotation
+        /// </summary>
+        public static double calculateTargetHeading(Quaternion rotation, VesselData vd)
+        {
+            Vector3 fwd = Vector3.Cross(vd.planetUp, getPlaneNormal(rotation, vd));
             double heading = -1 * Vector3.Angle(fwd, -vd.planetNorth) * Math.Sign(Vector3.Dot(fwd, vd.planetEast));
             return heading.headingClamp(360);
         }
@@ -91,6 +101,27 @@ namespace PilotAssistant.Utility
                 return current + 360;
             else
                 return current;
+        }
+
+        /// <summary>
+        /// calculate the planet relative rotation from the plane normal vector
+        /// </summary>
+        public static Quaternion getPlaneRotation(Vector3 planeNormal, VesselData vd)
+        {
+            Vector3 referenceVec = vd.v.mainBody.transform.right;
+            Quaternion rotation = Quaternion.FromToRotation(referenceVec, planeNormal);
+            return rotation;
+        }
+
+        public static Quaternion getPlaneRotation(double heading, VesselData vd)
+        {
+            Vector3 planeNormal = vecHeading(heading, vd);
+            return getPlaneRotation(planeNormal, vd);
+        }
+
+        public static Vector3 getPlaneNormal(Quaternion rotation, VesselData vd)
+        {
+            return rotation * vd.v.mainBody.transform.right;
         }
 
         public static bool IsNeutral(AxisBinding axis)
