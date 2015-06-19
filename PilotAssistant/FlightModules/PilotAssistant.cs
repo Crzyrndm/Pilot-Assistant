@@ -256,7 +256,7 @@ namespace PilotAssistant.FlightModules
                         // ============================================================ Vertical Controls ============================================================
                         if (VertActive && Utils.hasPitchInput())
                         {
-                            double vert = GameSettings.PITCH_DOWN.GetKey() ? vertScale * scale : 0;
+                            double vert = GameSettings.PITCH_DOWN.GetKey() ? -vertScale * scale : 0;
                             vert += GameSettings.PITCH_UP.GetKey() ? vertScale * scale : 0;
                             vert += !Utils.IsNeutral(GameSettings.AXIS_PITCH) ? vertScale * scale * GameSettings.AXIS_PITCH.GetAxis() : 0;
 

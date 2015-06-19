@@ -46,7 +46,6 @@ namespace PilotAssistant.FlightModules
         public readonly static double[] defaultRollGains = { 0.25, 0.1, 0.09, -1, 1, -1, 1, 1, 200 };
         public readonly static double[] defaultHdgGains = { 0.22, 0.12, 0.3, -1, 1, -1, 1, 1, 200 };
 
-        // will be added back soonish
         public Quaternion currentTarget = Quaternion.identity;
 
         VesselAutopilot.AutopilotMode currentMode = VesselAutopilot.AutopilotMode.StabilityAssist;
