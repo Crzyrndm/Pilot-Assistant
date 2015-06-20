@@ -113,26 +113,20 @@ namespace PilotAssistant.FlightModules
                 return;
 
             pauseManager();
+            // facing vectors : vessel (vesRefTrans.up) and target (targetRot * Vector3.forward)
             Transform vesRefTrans = controlledVessel.ReferenceTransform.transform;
-
             Quaternion targetRot = TargetModeSwitch();
-            Quaternion rotDiff = vesRefTrans.rotation.Inverse() * targetRot;
-
+            double angleError = Vector3d.Angle(vesRefTrans.up, targetRot * Vector3d.forward);
             //================================
             // pitch / yaw response ratio. Original method from MJ attitude controller
-            Vector3d target = rotDiff * Vector3d.forward;
-            double angleError = Math.Abs(Vector3d.Angle(Vector3d.up, target));
-            Vector2d PYerror = (new Vector2d(target.x, -target.z)).normalized * angleError;
+            Vector3d relativeTargetFacing = vesRefTrans.rotation.Inverse() * targetRot * Vector3d.forward;
+            Vector2d PYerror = (new Vector2d(relativeTargetFacing.x, -relativeTargetFacing.z)).normalized * angleError;
             //================================
-
-            //================================
-            // facing vectors for vessel (vesRefTrans.up) and target (targetRot * Vector3.forward)
-            // normVec = axis normal to desired plane of travel
-            Vector3d normVec = Vector3d.Cross(targetRot * Vector3d.forward, vesRefTrans.up).normalized;
-            // rotation with Pitch and Yaw elements removed (facing aligned)
-            Quaternion rollTargetRot = Quaternion.AngleAxis((float)angleError, normVec) * targetRot;
-            // signed angle difference between vessel.right and rollTargetRot.right
-            double rollError = Utils.headingClamp(Vector3d.Angle(vesRefTrans.right, rollTargetRot * Vector3d.right) * Math.Sign(Vector3d.Dot(rollTargetRot * Vector3d.right, vesRefTrans.forward)), 180);
+            // roll error is dependant on path taken in pitch/yaw plane. Minimise unnecesary rotation by evaluating the roll error relative to that path
+            Vector3d normVec = Vector3d.Cross(targetRot * Vector3d.forward, vesRefTrans.up).normalized; // axis normal to desired plane of travel
+            //Quaternion rollTargetRot = Quaternion.AngleAxis((float)angleError, normVec) * targetRot; // rotation with facing aligned. Direction is taken care of by the orientation of the normVec
+            Vector3d rollTargetRight = Quaternion.AngleAxis((float)angleError, normVec) * targetRot * Vector3d.right;
+            double rollError = Vector3d.Angle(vesRefTrans.right, rollTargetRight) * Math.Sign(Vector3d.Dot(rollTargetRight, vesRefTrans.forward)); // signed angle difference between vessel.right and rollTargetRot.right
             //================================
 
             setCtrlState(SASList.Bank, rollError, controlledVessel.angularVelocity.y * Mathf.Rad2Deg, ref state.roll);
@@ -140,16 +134,17 @@ namespace PilotAssistant.FlightModules
             setCtrlState(SASList.Hdg, PYerror.x, controlledVessel.angularVelocity.z * Mathf.Rad2Deg, ref state.yaw);
         }
 
-        void setCtrlState(SASList ID, double error, double rate, ref float ctrlState)
+        void setCtrlState(SASList ID, double error, double rate, ref float axisCtrlState)
         {
             PIDmode mode = PIDmode.PID;
             if (!controlledVessel.checkLanded() && controlledVessel.IsControllable)
-                mode = PIDmode.PD; // no integral when it can't do anything
+                mode = PIDmode.PD; // no integral when it can't do anything useful
 
             if (allowControl(ID))
-                ctrlState = ID.GetSAS(this).ResponseF(error, rate, mode);
+                axisCtrlState = ID.GetSAS(this).ResponseF(error, rate, mode);
             else if (!Utils.hasInput(ID))
-                ctrlState = 0; // kill off stock SAS inputs
+                axisCtrlState = 0; // kill off stock SAS inputs
+            // nothing happens if player input is present
         }
 
         Quaternion orbitalTarget = Quaternion.identity;

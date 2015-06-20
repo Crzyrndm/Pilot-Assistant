@@ -246,10 +246,9 @@ namespace PilotAssistant.FlightModules
                         // ============================================================ Hrzt Controls ============================================================
                         if (HrztActive && !controlledVessel.checkLanded() && Utils.hasYawInput())
                         {
-                            double headingChangeToCommit = GameSettings.YAW_LEFT.GetKey() ? hrztScale * scale : 0;
+                            double headingChangeToCommit = GameSettings.YAW_LEFT.GetKey() ? -hrztScale * scale : 0;
                             headingChangeToCommit += GameSettings.YAW_RIGHT.GetKey() ? hrztScale * scale : 0;
                             headingChangeToCommit += hrztScale * scale * GameSettings.AXIS_YAW.GetAxis();
-                            headingChangeToCommit = headingChangeToCommit.headingClamp(180);
                             StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newTarget, vesRef.vesselData) + headingChangeToCommit));
                         }
 
@@ -277,8 +276,8 @@ namespace PilotAssistant.FlightModules
                         {
                             double speed = GameSettings.THROTTLE_UP.GetKey() ? throttleScale * scale : 0;
                             speed -= GameSettings.THROTTLE_DOWN.GetKey() ? throttleScale * scale : 0;
-                            speed += GameSettings.THROTTLE_FULL.GetKeyDown() ? 100 : 0;
-                            speed = (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) ? 0 : speed;
+                            speed += GameSettings.THROTTLE_FULL.GetKeyDown() ? 100  * scale : 0;
+                            speed -= (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) ? 100 * scale : 0;
 
                             if (CurrentThrottleMode == ThrottleMode.Speed)
                             {
@@ -539,6 +538,7 @@ namespace PilotAssistant.FlightModules
                         AsstList.Acceleration.GetAsst(this).SetPoint = -AsstList.Speed.GetAsst(this).ResponseD(controlledVessel.srfSpeed, useIntegral);
                     state.mainThrottle = (-AsstList.Acceleration.GetAsst(this).ResponseF(vesRef.vesselData.acceleration, useIntegral)).Clamp(0, 1);
                 }
+                FlightInputHandler.state.mainThrottle = state.mainThrottle; // set throttle state permanently
             }
         }
 
