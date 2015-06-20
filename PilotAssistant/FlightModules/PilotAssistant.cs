@@ -553,7 +553,7 @@ namespace PilotAssistant.FlightModules
             double val = lastCtrlOutput.x;
             int sign = Math.Sign(val);
             yield return new WaitForFixedUpdate();
-            while (!VertActive && Math.Sign(val) == sign)
+            while (!VertActive && Math.Sign(val) == sign && controlledVessel.atmDensity != 0)
             {
                 yield return new WaitForFixedUpdate();
                 val -= step;
