@@ -235,7 +235,7 @@ namespace PilotAssistant.FlightModules
             while (HighLogic.LoadedSceneIsFlight)
             {
                 yield return null;
-                if (vesRef.isActiveVessel() && !(bLockInput || Utils.isFlightControlLocked()))
+                if (vesRef.isActiveVessel() && !(bLockInput || Utils.isFlightControlLocked()) && FlightGlobals.ready)
                 {
                     if (!bPause)
                     {
@@ -389,6 +389,8 @@ namespace PilotAssistant.FlightModules
                 AsstList.Altitude.GetAsst(this).Clear();
                 AsstList.VertSpeed.GetAsst(this).Clear();
                 AsstList.Elevator.GetAsst(this).Clear();
+                Debug.Log("start");
+                StartCoroutine(fadeOutPitch());
             }
             else
             {
@@ -478,6 +480,7 @@ namespace PilotAssistant.FlightModules
 
         #region Control / Fixed Update
 
+        Vector3 lastCtrlOutput = new Vector3(); // pitch, roll, yaw
         public void vesselController(FlightCtrlState state)
         {
             if (!HighLogic.LoadedSceneIsFlight)
@@ -514,8 +517,8 @@ namespace PilotAssistant.FlightModules
                 rollInput += !Utils.IsNeutral(GameSettings.AXIS_ROLL) ? GameSettings.AXIS_ROLL.GetAxis() : 0;
                 rollInput *= FlightInputHandler.fetch.precisionMode ? 0.33f : 1;
 
-                state.roll = (AsstList.Aileron.GetAsst(this).ResponseF(-vesRef.vesselData.bank, useIntegral) + rollInput).Clamp(-1, 1);
-                state.yaw = AsstList.Rudder.GetAsst(this).ResponseF(vesRef.vesselData.yaw, useIntegral).Clamp(-1, 1);
+                lastCtrlOutput.y = state.roll = (AsstList.Aileron.GetAsst(this).ResponseF(-vesRef.vesselData.bank, useIntegral) + rollInput).Clamp(-1, 1);
+                lastCtrlOutput.z = state.yaw = AsstList.Rudder.GetAsst(this).ResponseF(vesRef.vesselData.yaw, useIntegral).Clamp(-1, 1);
             }
 
             if (VertActive)
@@ -525,8 +528,10 @@ namespace PilotAssistant.FlightModules
                 else if (CurrentVertMode == VertMode.RadarAltitude)
                     AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(getClimbRateForConstAltitude() - AsstList.Altitude.GetAsst(this).ResponseD(vesRef.vesselData.radarAlt * Vector3.Dot(vesRef.vesselData.surfVelForward, controlledVessel.srf_velocity.normalized), useIntegral), -controlledVessel.srfSpeed * 0.95, controlledVessel.srfSpeed * 0.95);
                 AsstList.Elevator.GetAsst(this).SetPoint = -AsstList.VertSpeed.GetAsst(this).ResponseD(vesRef.vesselData.vertSpeed, useIntegral);
-                state.pitch = -AsstList.Elevator.GetAsst(this).ResponseF(vesRef.vesselData.AoA, useIntegral).Clamp(-1, 1);
+                lastCtrlOutput.x = state.pitch = -AsstList.Elevator.GetAsst(this).ResponseF(vesRef.vesselData.AoA, useIntegral).Clamp(-1, 1);
             }
+            else
+                state.pitch = Mathf.Clamp(state.pitch + lastCtrlOutput.x, -1, 1);
 
             if (ThrtActive)
             {
@@ -540,6 +545,21 @@ namespace PilotAssistant.FlightModules
                 }
                 FlightInputHandler.state.mainThrottle = state.mainThrottle; // set throttle state permanently
             }
+        }
+
+        IEnumerator fadeOutPitch()
+        {
+            double step = lastCtrlOutput.x * TimeWarp.fixedDeltaTime / 10;
+            double val = lastCtrlOutput.x;
+            int sign = Math.Sign(val);
+            yield return new WaitForFixedUpdate();
+            while (!VertActive && Math.Sign(val) == sign)
+            {
+                yield return new WaitForFixedUpdate();
+                val -= step;
+                lastCtrlOutput.x = (float)val;
+            }
+            lastCtrlOutput.x = 0;
         }
 
         IEnumerator shiftHeadingTarget(double newHdg)
