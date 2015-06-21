@@ -1,8 +1,9 @@
-﻿
+﻿using UnityEngine;
+
 namespace PilotAssistant.FlightModules
 {
 
-    public class AsstVesselModule
+    public class AsstVesselModule : VesselModule
     {
         public Vessel vesselRef;
         public PilotAssistant vesselAsst;
@@ -10,13 +11,15 @@ namespace PilotAssistant.FlightModules
         Stock_SAS vesselStockSAS;
         public VesselData vesselData;
 
-        public AsstVesselModule(Vessel ves)
+        public void Awake()
         {
-            vesselRef = ves;
+            vesselRef = GetComponent<Vessel>();
             vesselAsst = new PilotAssistant();
             vesselSSAS = new SurfSAS();
             vesselStockSAS = new Stock_SAS();
-            vesselData = new VesselData(ves);
+            vesselData = new VesselData(vesselRef);
+            
+            PilotAssistantFlightCore.Instance.addVessel(this);
         }
 
         public void Start()
@@ -27,6 +30,9 @@ namespace PilotAssistant.FlightModules
 
             vesselRef.OnPreAutopilotUpdate += new FlightInputCallback(preAutoPilotUpdate);
             vesselRef.OnPostAutopilotUpdate += new FlightInputCallback(postAutoPilotUpdate);
+
+            GameEvents.onVesselChange.Add(vesselSwitch);
+            GameEvents.onTimeWarpRateChanged.Add(warpHandler);
         }
 
         public void Update()
@@ -55,13 +61,13 @@ namespace PilotAssistant.FlightModules
         public void vesselSwitch(Vessel v)
         {
             if (v == vesselRef)
-            {
                 vesselAsst.vesselSwitch(v);
-            }
         }
 
         public void OnGUI()
         {
+            if (PilotAssistantFlightCore.bHideUI)
+                return;
             vesselAsst.drawGUI();
             vesselSSAS.drawGUI();
             vesselStockSAS.drawGUI();
@@ -69,8 +75,11 @@ namespace PilotAssistant.FlightModules
 
         public void OnDestroy()
         {
-            vesselAsst.OnDestroy();
+            if (vesselAsst != null)
+                vesselAsst.OnDestroy();
             PilotAssistantFlightCore.Instance.removeVessel(this);
+            GameEvents.onVesselChange.Remove(vesselSwitch);
+            GameEvents.onTimeWarpRateChanged.Remove(warpHandler);
         }
 
         public bool isActiveVessel()

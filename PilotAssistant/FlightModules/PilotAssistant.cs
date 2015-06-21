@@ -389,7 +389,6 @@ namespace PilotAssistant.FlightModules
                 AsstList.Altitude.GetAsst(this).Clear();
                 AsstList.VertSpeed.GetAsst(this).Clear();
                 AsstList.Elevator.GetAsst(this).Clear();
-                Debug.Log("start");
                 StartCoroutine(fadeOutPitch());
             }
             else

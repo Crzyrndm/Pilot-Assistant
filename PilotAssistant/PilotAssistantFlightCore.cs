@@ -29,7 +29,7 @@ namespace PilotAssistant
         }
 
         public static bool showTooltips = true;
-        bool bHideUI = false;
+        public static bool bHideUI = false;
         public static KSP.IO.PluginConfiguration config;
         public Rect window;
         public bool bUseStockToolbar = true;
@@ -52,6 +52,7 @@ namespace PilotAssistant
         public void Awake()
         {
             instance = this;
+            bHideUI = false;
             LoadConfig();
             
             if (!bUseStockToolbar && ToolbarManager.ToolbarAvailable)
@@ -62,16 +63,17 @@ namespace PilotAssistant
 
         public void Start()
         {
-            AsstVesselModule vsm = new AsstVesselModule(FlightGlobals.ActiveVessel);
-            controlledVessels.Add(vsm);
-            vsm.Start();
             BindingManager.Instance.Start();
 
             // don't put these in awake or they trigger on loading the vessel and everything gets wierd
             GameEvents.onHideUI.Add(hideUI);
             GameEvents.onShowUI.Add(showUI);
-            GameEvents.onVesselChange.Add(vesselSwitch);
-            GameEvents.onTimeWarpRateChanged.Add(warpRateChanged);
+        }
+
+        public void addVessel(AsstVesselModule avm)
+        {
+            controlledVessels.Add(avm);
+            selectedVesselIndex = controlledVessels.Count - 1;
         }
 
         public void removeVessel(AsstVesselModule avm)
@@ -140,48 +142,6 @@ namespace PilotAssistant
             }
         }
 
-        public void Update()
-        {
-            Vessel ves = controlledVessels[selectedVesselIndex].vesselRef;
-            int numRemoved = controlledVessels.RemoveAll(v => v == null || v.vesselRef == null || !v.vesselRef.loaded);
-            if (numRemoved > 0)
-                selectedVesselIndex = controlledVessels.FindIndex(vm => vm.vesselRef == ves);
-
-            for (int i = 0; i < controlledVessels.Count; i++)
-            {
-                if (controlledVessels[i].vesselRef.loaded)
-                    controlledVessels[i].Update();
-            }
-        }
-
-        void vesselSwitch(Vessel v)
-        {
-            if (v.IsControllable)
-            {
-                if (!controlledVessels.Any(ves => ves.vesselRef == v))
-                {
-                    AsstVesselModule newVesMod = new AsstVesselModule(v);
-                    controlledVessels.Add(newVesMod);
-                    newVesMod.Start();
-                    selectedVesselIndex = controlledVessels.Count - 1;
-                }
-                else
-                {
-                    selectedVesselIndex = controlledVessels.FindIndex(vm => vm.vesselRef == v);
-                }
-                controlledVessels[selectedVesselIndex].vesselSwitch(v);
-            }
-        }
-
-        void warpRateChanged()
-        {
-            for (int i = 0; i < controlledVessels.Count; i++)
-            {
-                if (controlledVessels[i].vesselRef.loaded)
-                    controlledVessels[i].warpHandler();
-            }
-        }
-
         public void OnGUI()
         {
             if (bHideUI)
@@ -189,7 +149,6 @@ namespace PilotAssistant
 
             GUI.skin = GeneralUI.UISkin;
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
-            controlledVessels[selectedVesselIndex].OnGUI();
             Draw();
             BindingManager.Instance.Draw();
         }
@@ -243,19 +202,12 @@ namespace PilotAssistant
         public void OnDestroy()
         {
             SaveConfig();
-
-            for (int i = 0; i < controlledVessels.Count; i++)
-            {
-                controlledVessels[i].OnDestroy();
-            }
             if (Toolbar.ToolbarManager.ToolbarAvailable && !bUseStockToolbar)
                 ToolbarMod.Instance.OnDestroy();
             BindingManager.Instance.OnDestroy();
 
             GameEvents.onHideUI.Remove(hideUI);
             GameEvents.onShowUI.Remove(showUI);
-            GameEvents.onVesselChange.Remove(vesselSwitch);
-            GameEvents.onTimeWarpRateChanged.Remove(warpRateChanged);
             
             PresetManager.saveToFile();
             instance = null;
