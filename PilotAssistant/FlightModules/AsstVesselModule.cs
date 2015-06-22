@@ -8,7 +8,7 @@ namespace PilotAssistant.FlightModules
         public Vessel vesselRef;
         public PilotAssistant vesselAsst;
         public SurfSAS vesselSSAS;
-        Stock_SAS vesselStockSAS;
+        public Stock_SAS vesselStockSAS;
         public VesselData vesselData;
 
         public void Awake()
@@ -75,11 +75,13 @@ namespace PilotAssistant.FlightModules
 
         public void OnDestroy()
         {
-            if (vesselAsst != null)
-                vesselAsst.OnDestroy();
-            PilotAssistantFlightCore.Instance.removeVessel(this);
+            Debug.Log("Asst Vessel Module Destroyed");
             GameEvents.onVesselChange.Remove(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Remove(warpHandler);
+            if (vesselAsst != null)
+                vesselAsst.OnDestroy();
+            if (PilotAssistantFlightCore.Instance != null)
+                PilotAssistantFlightCore.Instance.removeVessel(this);
         }
 
         public bool isActiveVessel()

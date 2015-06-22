@@ -168,10 +168,13 @@ namespace PilotAssistant.FlightModules
 
         public void OnDestroy()
         {
-            InputLockManager.RemoveControlLock(pitchLockID);
-            InputLockManager.RemoveControlLock(yawLockID);
-            pitchLockEngaged = false;
-            yawLockEngaged = false;
+            if (controlledVessel == FlightGlobals.ActiveVessel)
+            {
+                InputLockManager.RemoveControlLock(pitchLockID);
+                InputLockManager.RemoveControlLock(yawLockID);
+                pitchLockEngaged = false;
+                yawLockEngaged = false;
+            }
         }
 
         void Initialise()
