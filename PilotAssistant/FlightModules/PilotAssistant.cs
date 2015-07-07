@@ -33,7 +33,7 @@ namespace PilotAssistant.FlightModules
     public enum HrztMode
     {
         ToggleOn = -1,
-        WingsLevel = 0,
+        Bank = 0,
         Heading = 1,
         HeadingNum = 2
     }
@@ -43,6 +43,21 @@ namespace PilotAssistant.FlightModules
         ToggleOn = -1,
         Speed = 0,
         Acceleration = 1
+    }
+
+    public enum SpeedUnits
+    {
+        mSec,
+        mach,
+        kmph,
+        mph,
+        knots,
+    }
+
+    public enum SpeedMode
+    {
+        Equivalent,
+        True
     }
 
     public class PilotAssistant
@@ -62,7 +77,7 @@ namespace PilotAssistant.FlightModules
 
         public bool HrztActive = false;
         public HrztMode CurrentHrztMode = HrztMode.Heading;
-        static GUIContent[] hrztLabels = new GUIContent[3] { new GUIContent("Lvl", "Mode: Wing Leveller"), new GUIContent("Hdg", "Mode: Heading Control - Dirction"), new GUIContent("Hdg#", "Mode: Heading control - Value") };
+        static GUIContent[] hrztLabels = new GUIContent[3] { new GUIContent("Bank", "Mode: Bank Angle Control"), new GUIContent("Hdg", "Mode: Heading Control - Dirction"), new GUIContent("Hdg#", "Mode: Heading control - Value") };
 
         public bool VertActive = false;
         public VertMode CurrentVertMode = VertMode.VSpeed;
@@ -91,7 +106,7 @@ namespace PilotAssistant.FlightModules
         // rate values for keyboard input
         const double hrztScale = 0.4;
         const double vertScale = 0.4; // altitude rate is x10
-        const double throttleScale = 0.4;
+        const double throttleScale = 0.4; // acceleration rate is x0.1
 
         // Direction control vars
         Quaternion currentTarget = Quaternion.identity; // this is the body relative rotation the control is aimed at
@@ -130,11 +145,11 @@ namespace PilotAssistant.FlightModules
         float pitchSet = 0;
 
         // Kp, Ki, Kd, Min Out, Max Out, I Min, I Max, Scalar, Easing
-        public static readonly double[] defaultHdgBankGains = { 2, 0.1, 0, -30, 30, -0.5, 0.5, 1, 1 };
-        public static readonly double[] defaultBankToYawGains = { 0, 0, 0.01, -2, 2, -0.5, 0.5, 1, 1 };
+        public static readonly double[] defaultHdgBankGains = { 2, 0, 0, -30, 30, -1, 1, 1, 1 };
+        public static readonly double[] defaultBankToYawGains = { 0, 0, 0, -2, 2, -0.5, 0.5, 1, 1 };
         public static readonly double[] defaultAileronGains = { 0.02, 0.005, 0.01, -1, 1, -1, 1, 1, 1 };
-        public static readonly double[] defaultRudderGains = { 0.1, 0.08, 0.05, -1, 1, -1, 1, 1, 1 };
-        public static readonly double[] defaultAltitudeGains = { 0.15, 0.01, 0, -50, 50, 0, 0, 1, 100 };
+        public static readonly double[] defaultRudderGains = { 0.1, 0.025, 0.05, -1, 1, -1, 1, 1, 1 };
+        public static readonly double[] defaultAltitudeGains = { 0.15, 0, 0, -50, 50, 0, 0, 1, 100 };
         public static readonly double[] defaultVSpeedGains = { 2, 0.8, 2, -15, 15, -10, 10, 1, 10 };
         public static readonly double[] defaultElevatorGains = { 0.05, 0.01, 0.1, -1, 1, -1, 1, 2, 1 };
         public static readonly double[] defaultSpeedGains = { 0.2, 0.0, 0.0, -10, 10, -10, 10, 1, 10 };
@@ -154,9 +169,6 @@ namespace PilotAssistant.FlightModules
             AsstList.Altitude.GetAsst(this).InMin = 0;
             AsstList.Speed.GetAsst(this).InMin = 0;
             AsstList.HdgBank.GetAsst(this).isHeadingControl = true; // fix for derivative freaking out when heading target flickers across 0/360
-
-            // start the WASD monitor
-            StartCoroutine(InputResponse());
 
             InputLockManager.RemoveControlLock(pitchLockID);
             InputLockManager.RemoveControlLock(yawLockID);
@@ -215,6 +227,8 @@ namespace PilotAssistant.FlightModules
         #region Update / Input Monitoring
         public void Update()
         {
+            InputResponse();
+
             if (bPause)
                 return;
 
@@ -233,104 +247,100 @@ namespace PilotAssistant.FlightModules
             }
         }
 
-        IEnumerator InputResponse()
+        public void InputResponse()
         {
-            while (HighLogic.LoadedSceneIsFlight)
+            if (!vesRef.isActiveVessel() || bLockInput || Utils.isFlightControlLocked() || !FlightGlobals.ready)
+                return;
+
+            if (BindingManager.bindings[(int)bindingIndex.Pause].isPressed && !MapView.MapIsEnabled)
             {
-                yield return null;
-                if (vesRef.isActiveVessel() && !(bLockInput || Utils.isFlightControlLocked()) && FlightGlobals.ready)
+                bPause = !bPause;
+                GeneralUI.postMessage(bPause ? "Pilot Assistant: Control Paused" : "Pilot Assistant: Control Unpaused");
+
+                if (bPause)
                 {
-                    if (!bPause)
+                    InputLockManager.RemoveControlLock(yawLockID);
+                    InputLockManager.RemoveControlLock(pitchLockID);
+                    pitchLockEngaged = false;
+                    yawLockEngaged = false;
+                }
+                else
+                {
+                    hdgModeChanged(CurrentHrztMode, HrztActive);
+                    vertModeChanged(CurrentVertMode, VertActive);
+                    throttleModeChanged(CurrentThrottleMode, ThrtActive);
+                    if (HrztActive)
                     {
-                        double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1; // normally *1, with alt is *10
-                        if (FlightInputHandler.fetch.precisionMode)
-                            scale = 0.1 / scale; // normally *0.1, with alt is *0.01
-
-                        // ============================================================ Hrzt Controls ============================================================
-                        if (HrztActive && !controlledVessel.checkLanded() && Utils.hasYawInput())
-                        {
-                            double headingChangeToCommit = GameSettings.YAW_LEFT.GetKey() ? -hrztScale * scale : 0;
-                            headingChangeToCommit += GameSettings.YAW_RIGHT.GetKey() ? hrztScale * scale : 0;
-                            headingChangeToCommit += hrztScale * scale * GameSettings.AXIS_YAW.GetAxis();
-                            StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newTarget, vesRef.vesselData) + headingChangeToCommit));
-                        }
-
-                        // ============================================================ Vertical Controls ============================================================
-                        if (VertActive && Utils.hasPitchInput())
-                        {
-                            double vert = GameSettings.PITCH_DOWN.GetKey() ? -vertScale * scale : 0;
-                            vert += GameSettings.PITCH_UP.GetKey() ? vertScale * scale : 0;
-                            vert += !Utils.IsNeutral(GameSettings.AXIS_PITCH) ? vertScale * scale * GameSettings.AXIS_PITCH.GetAxis() : 0;
-
-                            if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
-                            {
-                                AsstList.Altitude.GetAsst(this).SetPoint = Math.Max(AsstList.Altitude.GetAsst(this).SetPoint + vert * 10, 0);
-                                targetVert = AsstList.Altitude.GetAsst(this).SetPoint.ToString("0.00");
-                            }
-                            else
-                            {
-                                AsstList.VertSpeed.GetAsst(this).SetPoint += vert;
-                                targetVert = AsstList.VertSpeed.GetAsst(this).SetPoint.ToString("0.00");
-                            }
-                        }
-
-                        // ============================================================ Throttle Controls ============================================================
-                        if (ThrtActive && Utils.hasThrottleInput())
-                        {
-                            double speed = GameSettings.THROTTLE_UP.GetKey() ? throttleScale * scale : 0;
-                            speed -= GameSettings.THROTTLE_DOWN.GetKey() ? throttleScale * scale : 0;
-                            speed += GameSettings.THROTTLE_FULL.GetKeyDown() ? 100  * scale : 0;
-                            speed -= (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) ? 100 * scale : 0;
-
-                            if (CurrentThrottleMode == ThrottleMode.Speed)
-                            {
-                                AsstList.Speed.GetAsst(this).SetPoint = Math.Max(AsstList.Speed.GetAsst(this).SetPoint + speed, 0);
-                                targetSpeed = AsstList.Speed.GetAsst(this).SetPoint.ToString("0.00");
-                            }
-                            else
-                            {
-                                AsstList.Acceleration.GetAsst(this).SetPoint += speed / 10;
-                                targetSpeed = AsstList.Acceleration.GetAsst(this).SetPoint.ToString("0.00");
-                            }
-                        }
+                        InputLockManager.SetControlLock(ControlTypes.YAW, yawLockID);
+                        yawLockEngaged = true;
                     }
-                    if (BindingManager.bindings[(int)bindingIndex.Pause].isPressed && !MapView.MapIsEnabled)
+                    if (VertActive)
                     {
-                        bPause = !bPause;
-                        GeneralUI.postMessage(bPause ? "Pilot Assistant: Control Paused" : "Pilot Assistant: Control Unpaused");
-
-                        if (bPause)
-                        {
-                            InputLockManager.RemoveControlLock(yawLockID);
-                            InputLockManager.RemoveControlLock(pitchLockID);
-                            pitchLockEngaged = false;
-                            yawLockEngaged = false;
-                        }
-                        else
-                        {
-
-                            hdgModeChanged(CurrentHrztMode, HrztActive);
-                            vertModeChanged(CurrentVertMode, VertActive);
-                            throttleModeChanged(CurrentThrottleMode, ThrtActive);
-                            if (HrztActive)
-                            {
-                                InputLockManager.SetControlLock(ControlTypes.YAW, yawLockID);
-                                yawLockEngaged = true;
-                            }
-                            if (VertActive)
-                            {
-                                InputLockManager.SetControlLock(ControlTypes.PITCH, pitchLockID);
-                                pitchLockEngaged = true;
-                            }
-                        }
+                        InputLockManager.SetControlLock(ControlTypes.PITCH, pitchLockID);
+                        pitchLockEngaged = true;
                     }
+                }
+            }
 
-                    if (BindingManager.bindings[(int)bindingIndex.HdgTgl].isPressed)
-                        hdgModeChanged(CurrentHrztMode, !HrztActive);
-                    if (BindingManager.bindings[(int)bindingIndex.VertTgl].isPressed)
-                        vertModeChanged(CurrentVertMode, !VertActive);
-                    if (BindingManager.bindings[(int)bindingIndex.ThrtTgl].isPressed)
-                        throttleModeChanged(CurrentThrottleMode, !ThrtActive);
+            if (BindingManager.bindings[(int)bindingIndex.HdgTgl].isPressed)
+                hdgModeChanged(CurrentHrztMode, !HrztActive);
+            if (BindingManager.bindings[(int)bindingIndex.VertTgl].isPressed)
+                vertModeChanged(CurrentVertMode, !VertActive);
+            if (BindingManager.bindings[(int)bindingIndex.ThrtTgl].isPressed)
+                throttleModeChanged(CurrentThrottleMode, !ThrtActive);
+
+            if (bPause)
+                return;
+
+            double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1; // normally *1, with alt is *10
+            if (FlightInputHandler.fetch.precisionMode)
+                scale = 0.1 / scale; // normally *0.1, with alt is *0.01
+
+            // ============================================================ Hrzt Controls ============================================================
+            if (HrztActive && !controlledVessel.checkLanded() && Utils.hasYawInput())
+            {
+                double headingChangeToCommit = GameSettings.YAW_LEFT.GetKey() ? -hrztScale * scale : 0;
+                headingChangeToCommit += GameSettings.YAW_RIGHT.GetKey() ? hrztScale * scale : 0;
+                headingChangeToCommit += hrztScale * scale * GameSettings.AXIS_YAW.GetAxis();
+                StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newTarget, vesRef.vesselData) + headingChangeToCommit));
+            }
+
+            // ============================================================ Vertical Controls ============================================================
+            if (VertActive && Utils.hasPitchInput())
+            {
+                double vert = GameSettings.PITCH_DOWN.GetKey() ? -vertScale * scale : 0;
+                vert += GameSettings.PITCH_UP.GetKey() ? vertScale * scale : 0;
+                vert += !Utils.IsNeutral(GameSettings.AXIS_PITCH) ? vertScale * scale * GameSettings.AXIS_PITCH.GetAxis() : 0;
+
+                if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
+                {
+                    AsstList.Altitude.GetAsst(this).SetPoint = Math.Max(AsstList.Altitude.GetAsst(this).SetPoint + vert * 10, 0);
+                    targetVert = AsstList.Altitude.GetAsst(this).SetPoint.ToString("0.00");
+                }
+                else
+                {
+                    AsstList.VertSpeed.GetAsst(this).SetPoint += vert;
+                    targetVert = AsstList.VertSpeed.GetAsst(this).SetPoint.ToString("0.00");
+                }
+            }
+
+            // ============================================================ Throttle Controls ============================================================
+            if (ThrtActive && Utils.hasThrottleInput())
+            {
+                double speed = GameSettings.THROTTLE_UP.GetKey() ? throttleScale * scale : 0;
+                speed -= GameSettings.THROTTLE_DOWN.GetKey() ? throttleScale * scale : 0;
+                speed += GameSettings.THROTTLE_FULL.GetKeyDown() ? 100 * scale : 0;
+                speed -= (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) ? 100 * scale : 0;
+
+                if (CurrentThrottleMode == ThrottleMode.Speed)
+                {
+                    AsstList.Speed.GetAsst(this).SetPoint = Math.Max(AsstList.Speed.GetAsst(this).SetPoint + speed, 0);
+                    targetSpeed = AsstList.Speed.GetAsst(this).SetPoint.ToString("0.00");
+                }
+                else
+                {
+                    AsstList.Acceleration.GetAsst(this).SetPoint += speed / 10;
+                    targetSpeed = AsstList.Acceleration.GetAsst(this).SetPoint.ToString("0.00");
                 }
             }
         }
@@ -369,7 +379,7 @@ namespace PilotAssistant.FlightModules
                         if (setTarget)
                             StartCoroutine(shiftHeadingTarget(vesRef.vesselData.heading));
                         break;
-                    case HrztMode.WingsLevel:
+                    case HrztMode.Bank:
                         break;
                 }
             }
@@ -477,9 +487,9 @@ namespace PilotAssistant.FlightModules
                 return;
 
             pitchSet = state.pitch; // last pitch ouput, used for presetting the elevator
-            if (bPause || controlledVessel.srfSpeed < 1 || !controlledVessel.IsControllable)
+            if (bPause || !controlledVessel.IsControllable)
                 return;
-            bool useIntegral = !controlledVessel.checkLanded() && controlledVessel.IsControllable;
+            bool useIntegral = !controlledVessel.checkLanded();
             // Heading Control
             if (HrztActive && useIntegral)
             {
@@ -497,7 +507,6 @@ namespace PilotAssistant.FlightModules
                 }
                 else
                 {
-                    AsstList.Aileron.GetAsst(this).SetPoint = 0;
                     AsstList.Rudder.GetAsst(this).SetPoint = 0;
                 }
 
@@ -666,7 +675,7 @@ namespace PilotAssistant.FlightModules
             if (bShowHdg && dragID != 1)
             {
                 hdgScrollHeight = 0; // no controllers visible when in wing lvl mode unless ctrl surf's are there
-                if (CurrentHrztMode != HrztMode.WingsLevel)
+                if (CurrentHrztMode != HrztMode.Bank)
                 {
                     hdgScrollHeight += AsstList.HdgBank.GetAsst(this).bShow ? 168 : 29;
                     hdgScrollHeight += AsstList.BankToYaw.GetAsst(this).bShow ? 140 : 27;
@@ -719,7 +728,7 @@ namespace PilotAssistant.FlightModules
             {
                 case AsstList.HdgBank:
                 case AsstList.BankToYaw:
-                    return bShowHdg && CurrentHrztMode != HrztMode.WingsLevel;
+                    return bShowHdg && CurrentHrztMode != HrztMode.Bank;
                 case AsstList.Aileron:
                 case AsstList.Rudder:
                     return bShowHdg && showControlSurfaces;
@@ -800,33 +809,54 @@ namespace PilotAssistant.FlightModules
 
                     double displayTargetDelta = 0; // active setpoint or absolute value to change (yaw L/R input)
                     string displayTarget = "0.00"; // target setpoint or setpoint to commit as target setpoint
-                    
-                    if (CurrentHrztMode == HrztMode.Heading)
+                    if (HrztActive)
                     {
-                        if (!hdgShiftIsRunning)
-                            displayTargetDelta = AsstList.HdgBank.GetAsst(this).SetPoint - vesRef.vesselData.heading;
+                        if (CurrentHrztMode == HrztMode.Heading)
+                        {
+                            if (!hdgShiftIsRunning)
+                                displayTargetDelta = AsstList.HdgBank.GetAsst(this).SetPoint - vesRef.vesselData.heading;
+                            else
+                                displayTargetDelta = Utils.calculateTargetHeading(newTarget, vesRef.vesselData) - vesRef.vesselData.heading;
+
+                            displayTargetDelta = displayTargetDelta.headingClamp(180);
+                        }
+
+                        if (headingEdit)
+                            displayTarget = targetHeading;
                         else
-                            displayTargetDelta = Utils.calculateTargetHeading(newTarget, vesRef.vesselData) - vesRef.vesselData.heading;
-
-                        displayTargetDelta = displayTargetDelta.headingClamp(180);
+                            displayTarget = Utils.calculateTargetHeading(newTarget, vesRef.vesselData).ToString("0.00");
                     }
-
-                    if (headingEdit)
-                        displayTarget = targetHeading;
-                    else
-                        displayTarget = Utils.calculateTargetHeading(newTarget, vesRef.vesselData).ToString("0.00");
-
                     targetHeading = GUILayout.TextField(displayTarget, GUILayout.Width(51));
                     if (targetHeading != displayTarget)
                         headingEdit = true;
                     GUILayout.Label(displayTargetDelta.ToString("0.00"), GeneralUI.UISkin.customStyles[(int)myStyles.greenTextBox], GUILayout.Width(51));
                     GUILayout.EndHorizontal();
                 }
+                else
+                {
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Target Bank: ", GUILayout.Width(90)))
+                    {
+                        double newBank;
+                        if (double.TryParse(targetHeading, out newBank))
+                        {
+                            AsstList.Aileron.GetAsst(this).BumplessSetPoint = -newBank;
+                            hdgModeChanged(CurrentHrztMode, true, false);
+                            GUI.FocusControl("Target Hdg: ");
+                            GUI.UnfocusWindow();
+                        }
+                    }
+                    string displayTarget = headingEdit ? targetHeading : (-AsstList.Aileron.GetAsst(this).SetPoint).ToString("0.00");
+                    targetHeading = GUILayout.TextField(displayTarget, GUILayout.Width(51));
+                    if (targetHeading != displayTarget)
+                        headingEdit = true;
+                    GUILayout.EndHorizontal();
+                }
 
                 if (!bMinimiseHdg)
                 {
                     HdgScrollbar = GUILayout.BeginScrollView(HdgScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(hdgScrollHeight, maxHdgScrollbarHeight)));
-                    if (CurrentHrztMode != HrztMode.WingsLevel)
+                    if (CurrentHrztMode != HrztMode.Bank)
                     {
                         drawPIDvalues(AsstList.HdgBank, "Heading", "\u00B0", vesRef.vesselData.heading, 2, "Bank", "\u00B0");
                         drawPIDvalues(AsstList.BankToYaw, "Yaw", "\u00B0", vesRef.vesselData.yaw, 2, "Yaw", "\u00B0", true, false);
