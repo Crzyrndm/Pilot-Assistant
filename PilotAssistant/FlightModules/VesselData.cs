@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace PilotAssistant.FlightModules
 {
+    using Utility;
     public class VesselData
     {
         public VesselData(Vessel ves)
@@ -43,30 +44,34 @@ namespace PilotAssistant.FlightModules
         public Vector3 srfRadial = Vector3.zero;
         public Vector3 srfNormal = Vector3.zero;
 
+        /// <summary>
+        /// Called in OnPreAutoPilotUpdate. Do not call multiple times per physics frame or the "lastPlanetUp" vector will not be correct and VSpeed will not be calculated correctly
+        /// Can't just leave it to a Coroutine becuase it has to be called before anything else
+        /// </summary>
         public void updateAttitude()
         {
             //if (PilotAssistantFlightCore.calculateDirection)
-            //    findVesselFwdAxis(v);
+            findVesselFwdAxis(v);
             //else
-            vesselFacingAxis = v.transform.up;
+            //vesselFacingAxis = v.transform.up;
 
             // 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
-            // Called in OnPreAutoPilotUpdate. Do not call multiple times per physics frame or the "lastPlanetUp" vector will not be correct and VSpeed will not be calculated correctly
-            // Can't just leave it to a Coroutine becuase it has to be called before anything else
             radarAlt = v.altitude - (v.mainBody.ocean ? Math.Max(v.pqsAltitude, 0) : v.pqsAltitude);
             velocity = v.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
             acceleration = acceleration * 0.8 + 0.2 * (v.srfSpeed - oldSpd) / TimeWarp.fixedDeltaTime; // vessel.acceleration.magnitude includes acceleration by gravity
-            vertSpeed = Vector3d.Dot((planetUp + lastPlanetUp) / 2, velocity);
+            vertSpeed = Vector3d.Dot((planetUp + lastPlanetUp) / 2, velocity); // this corrects for the slight angle between planetup and the direction of travel at constant altitude
 
             // surface vectors
             lastPlanetUp = planetUp;
             planetUp = (v.rootPart.transform.position - v.mainBody.position).normalized;
             planetEast = v.mainBody.getRFrmVel(v.findWorldCenterOfMass()).normalized;
             planetNorth = Vector3d.Cross(planetEast, planetUp).normalized;
-            // Velocity forward and right parallel to the surface
-            surfVelForward = Vector3.ProjectOnPlane(v.srf_velocity, planetUp).normalized;
-            surfVelRight = Vector3d.Cross(planetUp, surfVelForward).normalized;
-            // Vessel forward and right vetors, parallel to the surface
+            
+            // Velocity forward and right vectors parallel to the surface
+            surfVelRight = Vector3d.Cross(planetUp, v.srf_velocity).normalized;
+            surfVelForward = Vector3d.Cross(surfVelRight, planetUp).normalized;
+                        
+            // Vessel forward and right vectors parallel to the surface
             surfVesRight = Vector3d.Cross(planetUp, vesselFacingAxis).normalized;
             surfVesForward = Vector3d.Cross(surfVesRight, planetUp).normalized;
 
@@ -76,24 +81,16 @@ namespace PilotAssistant.FlightModules
             srfRadial = Vector3.Cross(v.srf_velocity, srfNormal).normalized;
 
             pitch = 90 - Vector3d.Angle(planetUp, vesselFacingAxis);
-            heading = -1 * Vector3d.Angle(-surfVesForward, -planetNorth) * Math.Sign(Vector3d.Dot(-surfVesForward, planetEast));
-            if (heading < 0)
-                heading += 360; // offset -ve heading by 360 degrees
-
-            progradeHeading = -1 * Vector3d.Angle(-surfVelForward, -planetNorth) * Math.Sign(Vector3d.Dot(-surfVelForward, planetEast));
-            if (progradeHeading < 0)
-                progradeHeading += 360; // offset -ve heading by 360 degrees
-
+            heading = (Vector3d.Angle(surfVesForward, planetNorth) * Math.Sign(Vector3d.Dot(surfVesForward, planetEast))).headingClamp(360);
+            progradeHeading = (Vector3d.Angle(surfVelForward, planetNorth) * Math.Sign(Vector3d.Dot(surfVelForward, planetEast))).headingClamp(360);
             bank = Vector3d.Angle(surfVesRight, v.ReferenceTransform.right) * Math.Sign(Vector3d.Dot(surfVesRight, -v.ReferenceTransform.forward));
 
             if (v.srfSpeed > 1)
             {
-                Vector3d AoAVec = (Vector3d)vesselFacingAxis * Vector3d.Dot(vesselFacingAxis, v.srf_velocity.normalized) +
-                                    (Vector3d)v.ReferenceTransform.forward * Vector3d.Dot(v.ReferenceTransform.forward, v.srf_velocity.normalized);   //velocity vector projected onto a plane that divides the airplane into left and right halves
+                Vector3d AoAVec = v.srf_velocity.projectOnPlane(v.ReferenceTransform.right);
                 AoA = Vector3d.Angle(AoAVec, vesselFacingAxis) * Math.Sign(Vector3d.Dot(AoAVec, v.ReferenceTransform.forward));
 
-                Vector3d yawVec = (Vector3d)vesselFacingAxis * Vector3d.Dot(vesselFacingAxis, v.srf_velocity.normalized) +
-                                    (Vector3d)v.ReferenceTransform.right * Vector3d.Dot(v.ReferenceTransform.right, v.srf_velocity.normalized);     //velocity vector projected onto the vehicle-horizontal plane
+                Vector3d yawVec = v.srf_velocity.projectOnPlane(v.ReferenceTransform.forward);
                 yaw = Vector3d.Angle(yawVec, vesselFacingAxis) * Math.Sign(Vector3d.Dot(yawVec, v.ReferenceTransform.right));
             }
             else
@@ -126,8 +123,15 @@ namespace PilotAssistant.FlightModules
             /// accounting for rotation is the most important, the nearby position will work for now.
             /// Vector3 location = closestPart.partTransform.position - v.CurrentCoM;
             /// 
-            Quaternion fixedRotation = closestPart.transform.localRotation * closestPart.orgRot.Inverse();
-            vesselFacingAxis = fixedRotation * Vector3.up;
+            vesselFacingAxis = closestPart.transform.localRotation * closestPart.orgRot.Inverse() * Vector3.up;
+            if (closestPart.symmetryCounterparts != null)
+            {
+                for (int i = 0; i < closestPart.symmetryCounterparts.Count; i++)
+                {
+                    vesselFacingAxis += closestPart.symmetryCounterparts[i].transform.localRotation * closestPart.symmetryCounterparts[i].orgRot.Inverse() * Vector3.up;
+                }
+                vesselFacingAxis /= (closestPart.symmetryCounterparts.Count + 1);
+            }
         }
 
         ArrowPointer pointer;

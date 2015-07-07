@@ -361,17 +361,15 @@ namespace PilotAssistant.FlightModules
                     InputLockManager.SetControlLock(ControlTypes.YAW, yawLockID);
                     yawLockEngaged = true;
                 }
-
+                bPause = false;
                 switch (newMode)
                 {
                     case HrztMode.HeadingNum:
                     case HrztMode.Heading:
                         if (setTarget)
                             StartCoroutine(shiftHeadingTarget(vesRef.vesselData.heading));
-                        bPause = false;
                         break;
                     case HrztMode.WingsLevel:
-                        bPause = false;
                         break;
                 }
             }
@@ -401,44 +399,37 @@ namespace PilotAssistant.FlightModules
                     InputLockManager.SetControlLock(ControlTypes.PITCH, pitchLockID);
                     pitchLockEngaged = true;
                 }
+                bPause = false;
+                AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
+                AsstList.VertSpeed.GetAsst(this).Preset(-vesRef.vesselData.AoA);
+                AsstList.Elevator.GetAsst(this).Preset(-pitchSet);
 
                 switch (newMode)
                 {
                     case VertMode.VSpeed:
+                        if (setTarget)
                         {
-                            bPause = false;
-                            AsstList.VertSpeed.GetAsst(this).Preset(-vesRef.vesselData.AoA);
-                            AsstList.Elevator.GetAsst(this).Preset(pitchSet);
-                            if (setTarget)
-                            {
-                                AsstList.VertSpeed.GetAsst(this).SetPoint = vesRef.vesselData.vertSpeed + vesRef.vesselData.AoA / AsstList.VertSpeed.GetAsst(this).PGain;
-                                AsstList.VertSpeed.GetAsst(this).BumplessSetPoint = vesRef.vesselData.vertSpeed;
-                            }
-                            targetVert = AsstList.VertSpeed.GetAsst(this).SetPoint.ToString("0.00");
-                            break;
+                            AsstList.VertSpeed.GetAsst(this).SetPoint = vesRef.vesselData.vertSpeed + vesRef.vesselData.AoA / AsstList.VertSpeed.GetAsst(this).PGain;
+                            AsstList.VertSpeed.GetAsst(this).BumplessSetPoint = vesRef.vesselData.vertSpeed;
                         }
+                        targetVert = AsstList.VertSpeed.GetAsst(this).SetPoint.ToString("0.00");
+                        break;
                     case VertMode.Altitude:
+                        if (setTarget)
                         {
-                            bPause = false;
-                            AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
-                            AsstList.VertSpeed.GetAsst(this).Preset(-vesRef.vesselData.AoA);
-                            AsstList.Elevator.GetAsst(this).Preset(pitchSet);
-                            if (setTarget)
-                            {
-                                AsstList.Altitude.GetAsst(this).SetPoint = controlledVessel.altitude + vesRef.vesselData.vertSpeed / AsstList.Altitude.GetAsst(this).PGain;
-                                AsstList.Altitude.GetAsst(this).BumplessSetPoint = controlledVessel.altitude;
-                            }
-                            targetVert = AsstList.Altitude.GetAsst(this).SetPoint.ToString("0.00");
-                            break;
+                            AsstList.Altitude.GetAsst(this).SetPoint = controlledVessel.altitude + vesRef.vesselData.vertSpeed / AsstList.Altitude.GetAsst(this).PGain;
+                            AsstList.Altitude.GetAsst(this).BumplessSetPoint = controlledVessel.altitude;
                         }
+                        targetVert = AsstList.Altitude.GetAsst(this).SetPoint.ToString("0.00");
+                        break;
                     case VertMode.RadarAltitude:
+                        if (setTarget)
                         {
-                            if (setTarget)
-                                AsstList.Altitude.GetAsst(this).SetPoint = vesRef.vesselData.radarAlt;
-                            targetVert = AsstList.Altitude.GetAsst(this).SetPoint.ToString("0.00");
-                            bPause = false;
-                            break;
+                            AsstList.Altitude.GetAsst(this).SetPoint = vesRef.vesselData.radarAlt + vesRef.vesselData.vertSpeed / AsstList.Altitude.GetAsst(this).PGain;
+                            AsstList.Altitude.GetAsst(this).BumplessSetPoint = vesRef.vesselData.radarAlt;
                         }
+                        targetVert = AsstList.Altitude.GetAsst(this).SetPoint.ToString("0.00");
+                        break;
                 }
             }
             VertActive = active;
@@ -457,22 +448,19 @@ namespace PilotAssistant.FlightModules
             }
             else
             {
+                bPause = false;
                 switch (newMode)
                 {
                     case ThrottleMode.Speed:
-                        {
-                            if (setTarget)
-                                AsstList.Speed.GetAsst(this).SetPoint = controlledVessel.srfSpeed;
-                            targetSpeed = AsstList.Speed.GetAsst(this).SetPoint.ToString("0.00");
-                            break;
-                        }
+                        if (setTarget)
+                            AsstList.Speed.GetAsst(this).SetPoint = controlledVessel.srfSpeed;
+                        targetSpeed = AsstList.Speed.GetAsst(this).SetPoint.ToString("0.00");
+                        break;
                     case ThrottleMode.Acceleration:
-                        {
-                            if (setTarget)
-                                AsstList.Acceleration.GetAsst(this).SetPoint = vesRef.vesselData.acceleration;
-                            targetSpeed = AsstList.Acceleration.GetAsst(this).SetPoint.ToString("0.00");
-                            break;
-                        }
+                        if (setTarget)
+                            AsstList.Acceleration.GetAsst(this).SetPoint = vesRef.vesselData.acceleration;
+                        targetSpeed = AsstList.Acceleration.GetAsst(this).SetPoint.ToString("0.00");
+                        break;
                 }
             }
             ThrtActive = active;
@@ -566,21 +554,16 @@ namespace PilotAssistant.FlightModules
 
         IEnumerator shiftHeadingTarget(double newHdg)
         {
-            double finalTarget, target, remainder;
             headingEdit = false;
             stopHdgShift = false;
             if (hdgShiftIsRunning)
             {
-                // get current remainder
-                finalTarget = Utils.calculateTargetHeading(newTarget, vesRef.vesselData);
-                target = Utils.calculateTargetHeading(currentTarget, vesRef.vesselData);
-                remainder = finalTarget - Utils.CurrentAngleTargetRel(target, finalTarget, 180);
+                double remainder = Quaternion.Angle(newTarget, currentTarget);
                 // set new direction
                 newTarget = Utils.getPlaneRotation(newHdg, vesRef.vesselData);
                 // get new remainder, reset increment only if the sign changed
-                finalTarget = Utils.calculateTargetHeading(newTarget, vesRef.vesselData);
-                double tempRemainder = finalTarget - Utils.CurrentAngleTargetRel(target, finalTarget, 180);
-                if (Math.Sign(remainder) != Math.Sign(tempRemainder))
+                double tempRemainder = Quaternion.Angle(newTarget, currentTarget);
+                if (tempRemainder < 0.5 * AsstList.HdgBank.GetAsst(this).OutMax && tempRemainder < 0.5 * remainder)
                 {
                     currentTarget = Utils.getPlaneRotation((vesRef.vesselData.heading + vesRef.vesselData.bank / AsstList.HdgBank.GetAsst(this).PGain).headingClamp(360), vesRef.vesselData);
                     increment = 0;
@@ -597,14 +580,8 @@ namespace PilotAssistant.FlightModules
 
             while (!stopHdgShift && Math.Abs(Quaternion.Angle(currentTarget, newTarget)) > 0.01)
             {
-                finalTarget = Utils.calculateTargetHeading(newTarget, vesRef.vesselData);
-                target = Utils.calculateTargetHeading(currentTarget, vesRef.vesselData);
-                increment += AsstList.HdgBank.GetAsst(this).Easing * TimeWarp.fixedDeltaTime * 0.01;
-
-                remainder = finalTarget - Utils.CurrentAngleTargetRel(target, finalTarget, 180);
-                target += Utils.Clamp(remainder, -increment, increment);
-
-                currentTarget = Utils.getPlaneRotation(target, vesRef.vesselData);
+                currentTarget = Quaternion.RotateTowards(currentTarget, newTarget, (float)increment);
+                increment += AsstList.HdgBank.GetAsst(this).Easing * TimeWarp.fixedDeltaTime * 0.2;
                 yield return new WaitForFixedUpdate();
             }
             if (!stopHdgShift)

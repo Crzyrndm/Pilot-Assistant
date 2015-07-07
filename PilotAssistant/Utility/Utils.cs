@@ -73,8 +73,8 @@ namespace PilotAssistant.Utility
         /// </summary>
         public static double calculateTargetHeading(Vector3 direction, VesselData vd)
         {
-            Vector3 fwd = Vector3.Cross(vd.planetUp, direction);
-            double heading = -1 * Vector3.Angle(fwd, -vd.planetNorth) * Math.Sign(Vector3.Dot(fwd, vd.planetEast));
+            Vector3 fwd = Vector3.Cross(direction, vd.planetUp);
+            double heading = Vector3.Angle(fwd, vd.planetNorth) * Math.Sign(Vector3.Dot(fwd, vd.planetEast));
             return heading.headingClamp(360);
         }
 
@@ -83,8 +83,8 @@ namespace PilotAssistant.Utility
         /// </summary>
         public static double calculateTargetHeading(Quaternion rotation, VesselData vd)
         {
-            Vector3 fwd = Vector3.Cross(vd.planetUp, getPlaneNormal(rotation, vd));
-            double heading = -1 * Vector3.Angle(fwd, -vd.planetNorth) * Math.Sign(Vector3.Dot(fwd, vd.planetEast));
+            Vector3 fwd = Vector3.Cross(getPlaneNormal(rotation, vd), vd.planetUp);
+            double heading = Vector3.Angle(fwd, vd.planetNorth) * Math.Sign(Vector3.Dot(fwd, vd.planetEast));
             return heading.headingClamp(360);
         }
 
@@ -108,9 +108,7 @@ namespace PilotAssistant.Utility
         /// </summary>
         public static Quaternion getPlaneRotation(Vector3 planeNormal, VesselData vd)
         {
-            Vector3 referenceVec = vd.v.mainBody.transform.right;
-            Quaternion rotation = Quaternion.FromToRotation(referenceVec, planeNormal);
-            return rotation;
+            return Quaternion.FromToRotation(vd.v.mainBody.transform.right, planeNormal);
         }
 
         public static Quaternion getPlaneRotation(double heading, VesselData vd)
@@ -189,6 +187,11 @@ namespace PilotAssistant.Utility
                 default:
                     return v.angularVelocity.x;
             }
+        }
+
+        public static Vector3d projectOnPlane(this Vector3d vector, Vector3d planeNormal)
+        {
+            return vector - Vector3d.Project(vector, planeNormal);
         }
     }
 }
