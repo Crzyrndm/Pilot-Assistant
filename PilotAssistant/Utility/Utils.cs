@@ -193,5 +193,83 @@ namespace PilotAssistant.Utility
         {
             return vector - Vector3d.Project(vector, planeNormal);
         }
+
+        public static double speedUnitTransform(SpeedUnits units, double soundSpeed)
+        {
+            switch (units)
+            {
+                case SpeedUnits.mSec:
+                    return 1;
+                case SpeedUnits.knots:
+                    return 1.943844492440604768413343347219;
+                case SpeedUnits.kmph:
+                    return 3.6;
+                case SpeedUnits.mph:
+                    return 2.236936;
+                case SpeedUnits.mach:
+                    return 1 / soundSpeed;
+            }
+            return 1;
+        }
+
+        public static double mSecToSpeedUnit(this double mSec, SpeedMode mode, SpeedUnits units, VesselData vd)
+        {
+            if (mode == SpeedMode.Mach)
+                return mSec / vd.v.speedOfSound;
+            else
+            {
+                double speed = mSec * speedUnitTransform(units, vd.v.speedOfSound);
+                switch (mode)
+                {
+                    case SpeedMode.True:
+                        return speed;
+                    case SpeedMode.Indicated:
+                        double stagnationPres = Math.Pow(((vd.v.mainBody.atmosphereAdiabaticIndex - 1) * vd.v.mach * vd.v.mach * 0.5) + 1, vd.v.mainBody.atmosphereAdiabaticIndex / (vd.v.mainBody.atmosphereAdiabaticIndex - 1));
+                        return speed * Math.Sqrt(vd.v.atmDensity / 1.225) * stagnationPres;
+                    case SpeedMode.Equivalent:
+                        return speed * Math.Sqrt(vd.v.atmDensity / 1.225);
+                }
+                return 0;
+            }
+        }
+
+        public static double SpeedUnitToMSec(this double speedUnit, SpeedMode mode, SpeedUnits units, VesselData vd)
+        {
+            if (mode == SpeedMode.Mach)
+                return speedUnit * vd.v.speedOfSound;
+            else
+            {
+                double speed = speedUnit / speedUnitTransform(units, vd.v.speedOfSound);
+                switch (mode)
+                {
+                    case SpeedMode.True:
+                        return speed;
+                    case SpeedMode.Indicated:
+                        double stagnationPres = Math.Pow(((vd.v.mainBody.atmosphereAdiabaticIndex - 1) * vd.v.mach * vd.v.mach * 0.5) + 1, vd.v.mainBody.atmosphereAdiabaticIndex / (vd.v.mainBody.atmosphereAdiabaticIndex - 1));
+                        return speed / (Math.Sqrt(vd.v.atmDensity / 1.225) * stagnationPres);
+                    case SpeedMode.Equivalent:
+                        return speed / Math.Sqrt(vd.v.atmDensity / 1.225);
+                }
+                return 0;
+            }
+        }
+
+        public static string unitString(SpeedUnits unit)
+        {
+            switch(unit)
+            {
+                case SpeedUnits.mSec:
+                    return "m/s";
+                case SpeedUnits.mach:
+                    return "mach";
+                case SpeedUnits.knots:
+                    return "knots";
+                case SpeedUnits.kmph:
+                    return "km/h";
+                case SpeedUnits.mph:
+                    return "mph";
+            }
+            return "";
+        }
     }
 }

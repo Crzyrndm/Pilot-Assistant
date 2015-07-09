@@ -48,16 +48,18 @@ namespace PilotAssistant.FlightModules
     public enum SpeedUnits
     {
         mSec,
-        mach,
         kmph,
         mph,
         knots,
+        mach
     }
 
     public enum SpeedMode
     {
+        True,
+        Indicated,
         Equivalent,
-        True
+        Mach
     }
 
     public class PilotAssistant
@@ -97,6 +99,9 @@ namespace PilotAssistant.FlightModules
         string targetVert = "0.00";
         string targetHeading = "0.00";
         string targetSpeed = "0.00";
+
+        SpeedUnits unit = SpeedUnits.mSec;
+        SpeedMode speedMode = SpeedMode.True;
 
         const string yawLockID = "Pilot Assistant Yaw Lock";
         public static bool yawLockEngaged = false;
@@ -463,13 +468,13 @@ namespace PilotAssistant.FlightModules
                 {
                     case ThrottleMode.Speed:
                         if (setTarget)
-                            AsstList.Speed.GetAsst(this).SetPoint = controlledVessel.srfSpeed;
-                        targetSpeed = AsstList.Speed.GetAsst(this).SetPoint.ToString("0.00");
+                            AsstList.Speed.GetAsst(this).SetPoint = Utils.mSecToSpeedUnit(controlledVessel.srfSpeed, speedMode, SpeedUnits.mSec, vesRef.vesselData);
+                        targetSpeed = Utils.mSecToSpeedUnit(AsstList.Speed.GetAsst(this).SetPoint, speedMode, unit, vesRef.vesselData).ToString("0.00");
                         break;
                     case ThrottleMode.Acceleration:
                         if (setTarget)
-                            AsstList.Acceleration.GetAsst(this).SetPoint = vesRef.vesselData.acceleration;
-                        targetSpeed = AsstList.Acceleration.GetAsst(this).SetPoint.ToString("0.00");
+                            AsstList.Acceleration.GetAsst(this).SetPoint = Utils.mSecToSpeedUnit(vesRef.vesselData.acceleration, speedMode, SpeedUnits.mSec, vesRef.vesselData);
+                        targetSpeed = Utils.mSecToSpeedUnit(AsstList.Acceleration.GetAsst(this).SetPoint, speedMode, unit, vesRef.vesselData).ToString("0.00");
                         break;
                 }
             }
@@ -539,8 +544,8 @@ namespace PilotAssistant.FlightModules
                 else
                 {
                     if (CurrentThrottleMode == ThrottleMode.Speed)
-                        AsstList.Acceleration.GetAsst(this).SetPoint = -AsstList.Speed.GetAsst(this).ResponseD(controlledVessel.srfSpeed, useIntegral);
-                    state.mainThrottle = (-AsstList.Acceleration.GetAsst(this).ResponseF(vesRef.vesselData.acceleration, useIntegral)).Clamp(0, 1);
+                        AsstList.Acceleration.GetAsst(this).SetPoint = -AsstList.Speed.GetAsst(this).ResponseD(Utils.mSecToSpeedUnit(controlledVessel.srfSpeed, speedMode, SpeedUnits.mSec, vesRef.vesselData), useIntegral);
+                    state.mainThrottle = (-AsstList.Acceleration.GetAsst(this).ResponseF(Utils.mSecToSpeedUnit(vesRef.vesselData.acceleration, speedMode, SpeedUnits.mSec, vesRef.vesselData), useIntegral)).Clamp(0, 1);
                 }
                 FlightInputHandler.state.mainThrottle = state.mainThrottle; // set throttle state permanently
             }
@@ -1034,12 +1039,12 @@ namespace PilotAssistant.FlightModules
                     if (CurrentThrottleMode != ThrottleMode.Acceleration)
                     {
                         AsstList.Speed.GetAsst(this).SetPoint = controlledVessel.srfSpeed;
-                        AsstList.Speed.GetAsst(this).BumplessSetPoint = newVal;
+                        AsstList.Speed.GetAsst(this).BumplessSetPoint = Utils.SpeedUnitToMSec(newVal, speedMode, unit, vesRef.vesselData);
                     }
                     else
                     {
                         AsstList.Acceleration.GetAsst(this).SetPoint = vesRef.vesselData.acceleration;
-                        AsstList.Acceleration.GetAsst(this).BumplessSetPoint = newVal;
+                        AsstList.Acceleration.GetAsst(this).BumplessSetPoint = Utils.SpeedUnitToMSec(newVal, speedMode, unit, vesRef.vesselData);
                     }
                     throttleModeChanged(CurrentThrottleMode, true, false);
 
@@ -1053,11 +1058,11 @@ namespace PilotAssistant.FlightModules
                 {
                     ThrtScrollbar = GUILayout.BeginScrollView(ThrtScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(thrtScrollHeight, maxThrtScrollbarHeight)));
                     if (CurrentThrottleMode == ThrottleMode.Speed)
-                        drawPIDvalues(AsstList.Speed, "Speed", "m/s", controlledVessel.srfSpeed, 2, "Accel ", "m/s", true);
-                    drawPIDvalues(AsstList.Acceleration, "Acceleration", " m/s/s", vesRef.vesselData.acceleration, 1, "Throttle ", "%", true);
+                        drawPIDvalues(AsstList.Speed, "Speed", Utils.unitString(unit), Utils.mSecToSpeedUnit(controlledVessel.srfSpeed, speedMode, unit, vesRef.vesselData), 2, "Accel ", Utils.unitString(unit) + "/s", true);
+                    drawPIDvalues(AsstList.Acceleration, "Acceleration", Utils.unitString(unit) + "/s", Utils.mSecToSpeedUnit(vesRef.vesselData.acceleration, speedMode, unit, vesRef.vesselData), 1, "Throttle ", "%", true);
                     // can't have people bugging things out now can we...
                     AsstList.Acceleration.GetAsst(this).OutMax = AsstList.Speed.GetAsst(this).OutMax.Clamp(-1, 0);
-                    AsstList.Acceleration.GetAsst(this).OutMax = AsstList.Speed.GetAsst(this).OutMax.Clamp(-1, 0);
+                    AsstList.Acceleration.GetAsst(this).OutMin = AsstList.Speed.GetAsst(this).OutMin.Clamp(-1, 0);
 
                     GUILayout.EndScrollView();
                 }

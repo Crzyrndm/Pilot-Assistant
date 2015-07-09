@@ -51,7 +51,7 @@
     <Compile Include="FlightModules\AsstVesselModule.cs" />
     <Compile Include="PID\PIDErrorController.cs" />
     <Compile Include="Toolbar\AppLauncherFlight.cs" />
-    <Compile Include="FlightModules\BindingManager.cs" />
+    <Compile Include="BindingManager.cs" />
     <Compile Include="PilotAssistantFlightCore.cs" />
     <Compile Include="Presets\CraftPreset.cs" />
     <Compile Include="Presets\RSASPreset.cs" />
