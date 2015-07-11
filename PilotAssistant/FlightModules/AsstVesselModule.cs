@@ -14,19 +14,19 @@ namespace PilotAssistant.FlightModules
         public void Awake()
         {
             vesselRef = GetComponent<Vessel>();
-            vesselAsst = new PilotAssistant();
-            vesselSSAS = new SurfSAS();
-            vesselStockSAS = new Stock_SAS();
-            vesselData = new VesselData(vesselRef);
+            vesselAsst = new PilotAssistant(this);
+            vesselSSAS = new SurfSAS(this);
+            vesselStockSAS = new Stock_SAS(this);
+            vesselData = new VesselData(this);
             
             PilotAssistantFlightCore.Instance.addVessel(this);
         }
 
         public void Start()
         {
-            vesselAsst.Start(this);
-            vesselSSAS.Start(this);
-            vesselStockSAS.Start(this);
+            vesselAsst.Start();
+            vesselSSAS.Start();
+            vesselStockSAS.Start();
 
             vesselRef.OnPreAutopilotUpdate += new FlightInputCallback(preAutoPilotUpdate);
             vesselRef.OnPostAutopilotUpdate += new FlightInputCallback(postAutoPilotUpdate);
@@ -37,6 +37,8 @@ namespace PilotAssistant.FlightModules
 
         public void Update()
         {
+            if (vesselRef == null)
+                return;
             vesselAsst.Update();
             vesselSSAS.Update();
         }
@@ -78,6 +80,7 @@ namespace PilotAssistant.FlightModules
             Debug.Log("Asst Vessel Module Destroyed");
             GameEvents.onVesselChange.Remove(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Remove(warpHandler);
+
             if (vesselAsst != null)
                 vesselAsst.OnDestroy();
             if (PilotAssistantFlightCore.Instance != null)

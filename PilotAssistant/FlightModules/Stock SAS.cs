@@ -9,8 +9,7 @@ namespace PilotAssistant.FlightModules
 
     public class Stock_SAS
     {
-        AsstVesselModule vesselRef;
-        public Vessel controlledVessel;
+        AsstVesselModule vesRef;
 
         void StartCoroutine(IEnumerator routine) // quick access to coroutine now it doesn't inherit Monobehaviour
         {
@@ -23,20 +22,23 @@ namespace PilotAssistant.FlightModules
         static bool bShowPresets = false;
         string newPresetName = "";
 
-        public void Start(AsstVesselModule vsm)
+        public Stock_SAS(AsstVesselModule avm)
         {
-            vesselRef = vsm;
-            controlledVessel = vsm.vesselRef;
+            vesRef = avm;
+        }
+
+        public void Start()
+        {
             StartCoroutine(Initialise());
         }
 
         IEnumerator Initialise()
         {
-            while (controlledVessel.Autopilot.SAS.pidLockedPitch == null || controlledVessel.Autopilot.RSAS.pidPitch == null)
+            while (vesRef.vesselRef.Autopilot.SAS.pidLockedPitch == null || vesRef.vesselRef.Autopilot.RSAS.pidPitch == null)
                 yield return null;
 
-            PresetManager.initDefaultPresets(new SASPreset(controlledVessel.Autopilot.SAS, "stock"));
-            PresetManager.initDefaultPresets(new RSASPreset(controlledVessel.Autopilot.RSAS, "RSAS"));
+            PresetManager.initDefaultPresets(new SASPreset(vesRef.vesselRef.Autopilot.SAS, "stock"));
+            PresetManager.initDefaultPresets(new RSASPreset(vesRef.vesselRef.Autopilot.RSAS, "RSAS"));
 
             PresetManager.loadCraftSASPreset(this);
         }
@@ -50,7 +52,7 @@ namespace PilotAssistant.FlightModules
         {
             if (PilotAssistantFlightCore.bDisplaySAS)
             {
-                if (controlledVessel.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
+                if (vesRef.vesselRef.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
                 {
                     StockSASwindow = GUILayout.Window(78934857, StockSASwindow, drawSASWindow, "Stock SAS", GUILayout.Height(0));
 
@@ -93,7 +95,7 @@ namespace PilotAssistant.FlightModules
 
             bShowPresets = GUILayout.Toggle(bShowPresets, bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
 
-            VesselAutopilot.VesselSAS sas = controlledVessel.Autopilot.SAS;
+            VesselAutopilot.VesselSAS sas = vesRef.vesselRef.Autopilot.SAS;
 
             drawPIDValues(sas.pidLockedPitch, "Pitch", SASList.Pitch);
             drawPIDValues(sas.pidLockedRoll, "Roll", SASList.Bank);
@@ -122,7 +124,7 @@ namespace PilotAssistant.FlightModules
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-                PresetManager.newSASPreset(ref newPresetName, this.controlledVessel);
+                PresetManager.newSASPreset(ref newPresetName, this.vesRef.vesselRef);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
@@ -152,7 +154,7 @@ namespace PilotAssistant.FlightModules
 
             bShowPresets = GUILayout.Toggle(bShowPresets, bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
 
-            VesselAutopilot.VesselRSAS rsas = controlledVessel.Autopilot.RSAS;
+            VesselAutopilot.VesselRSAS rsas = vesRef.vesselRef.Autopilot.RSAS;
             drawPIDValues(rsas.pidPitch, "Pitch", SASList.Pitch);
             drawPIDValues(rsas.pidRoll, "Roll", SASList.Bank);
             drawPIDValues(rsas.pidYaw, "Yaw", SASList.Hdg);
@@ -180,7 +182,7 @@ namespace PilotAssistant.FlightModules
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-                PresetManager.newRSASPreset(ref newPresetName, this.controlledVessel);
+                PresetManager.newRSASPreset(ref newPresetName, this.vesRef.vesselRef);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));

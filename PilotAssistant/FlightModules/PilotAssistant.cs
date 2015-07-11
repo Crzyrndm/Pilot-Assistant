@@ -66,7 +66,6 @@ namespace PilotAssistant.FlightModules
     {
         #region Globals
         public AsstVesselModule vesRef;
-        Vessel controlledVessel;
         void StartCoroutine(IEnumerator routine) // quick access to coroutine now it doesn't inherit Monobehaviour
         {
             PilotAssistantFlightCore.Instance.StartCoroutine(routine);
@@ -161,11 +160,13 @@ namespace PilotAssistant.FlightModules
         public static readonly double[] defaultAccelGains = { 0.2, 0.08, 0.0, -1, 0, -1, 1, 1, 1 };
 
         #endregion
-
-        public void Start(AsstVesselModule vesRef)
+        public PilotAssistant(AsstVesselModule avm)
         {
-            this.vesRef = vesRef;
-            controlledVessel = vesRef.vesselRef;
+            vesRef = avm;
+        }
+
+        public void Start()
+        {
             Initialise();
 
             // Input clamps aren't part of the presets (there's no reason for them to be...). Just some sanity checking
@@ -185,7 +186,7 @@ namespace PilotAssistant.FlightModules
 
         public void OnDestroy()
         {
-            if (controlledVessel == FlightGlobals.ActiveVessel)
+            if (vesRef.vesselRef == FlightGlobals.ActiveVessel)
             {
                 InputLockManager.RemoveControlLock(pitchLockID);
                 InputLockManager.RemoveControlLock(yawLockID);
@@ -241,7 +242,7 @@ namespace PilotAssistant.FlightModules
             if (HrztActive)
             {
                 if (vesRef.vesselRef.checkLanded())
-                    newTarget = currentTarget = Utils.getPlaneRotation(controlledVessel.transform.right, vesRef.vesselData);
+                    newTarget = currentTarget = Utils.getPlaneRotation(vesRef.vesselRef.transform.right, vesRef.vesselData);
                 if (CurrentHrztMode == HrztMode.Heading)
                 {
                     AsstList.HdgBank.GetAsst(this).SetPoint = Utils.calculateTargetHeading(currentTarget, vesRef.vesselData);
@@ -302,7 +303,7 @@ namespace PilotAssistant.FlightModules
                 scale = 0.1 / scale; // normally *0.1, with alt is *0.01
 
             // ============================================================ Hrzt Controls ============================================================
-            if (HrztActive && !controlledVessel.checkLanded() && Utils.hasYawInput())
+            if (HrztActive && !vesRef.vesselRef.checkLanded() && Utils.hasYawInput())
             {
                 double headingChangeToCommit = GameSettings.YAW_LEFT.GetKey() ? -hrztScale * scale : 0;
                 headingChangeToCommit += GameSettings.YAW_RIGHT.GetKey() ? hrztScale * scale : 0;
@@ -432,8 +433,8 @@ namespace PilotAssistant.FlightModules
                     case VertMode.Altitude:
                         if (setTarget)
                         {
-                            AsstList.Altitude.GetAsst(this).SetPoint = controlledVessel.altitude + vesRef.vesselData.vertSpeed / AsstList.Altitude.GetAsst(this).PGain;
-                            AsstList.Altitude.GetAsst(this).BumplessSetPoint = controlledVessel.altitude;
+                            AsstList.Altitude.GetAsst(this).SetPoint = vesRef.vesselRef.altitude + vesRef.vesselData.vertSpeed / AsstList.Altitude.GetAsst(this).PGain;
+                            AsstList.Altitude.GetAsst(this).BumplessSetPoint = vesRef.vesselRef.altitude;
                         }
                         targetVert = AsstList.Altitude.GetAsst(this).SetPoint.ToString("0.00");
                         break;
@@ -468,13 +469,13 @@ namespace PilotAssistant.FlightModules
                 {
                     case ThrottleMode.Speed:
                         if (setTarget)
-                            AsstList.Speed.GetAsst(this).SetPoint = Utils.mSecToSpeedUnit(controlledVessel.srfSpeed, speedMode, SpeedUnits.mSec, vesRef.vesselData);
-                        targetSpeed = Utils.mSecToSpeedUnit(AsstList.Speed.GetAsst(this).SetPoint, speedMode, unit, vesRef.vesselData).ToString("0.00");
+                            AsstList.Speed.GetAsst(this).SetPoint = vesRef.vesselRef.srfSpeed;
+                        targetSpeed = AsstList.Speed.GetAsst(this).SetPoint.ToString("0.00");
                         break;
                     case ThrottleMode.Acceleration:
                         if (setTarget)
-                            AsstList.Acceleration.GetAsst(this).SetPoint = Utils.mSecToSpeedUnit(vesRef.vesselData.acceleration, speedMode, SpeedUnits.mSec, vesRef.vesselData);
-                        targetSpeed = Utils.mSecToSpeedUnit(AsstList.Acceleration.GetAsst(this).SetPoint, speedMode, unit, vesRef.vesselData).ToString("0.00");
+                            AsstList.Acceleration.GetAsst(this).SetPoint = vesRef.vesselData.acceleration;
+                        targetSpeed = AsstList.Acceleration.GetAsst(this).SetPoint.ToString("0.00");
                         break;
                 }
             }
@@ -492,9 +493,9 @@ namespace PilotAssistant.FlightModules
                 return;
 
             pitchSet = state.pitch; // last pitch ouput, used for presetting the elevator
-            if (bPause || !controlledVessel.IsControllable)
+            if (bPause || !vesRef.vesselRef.IsControllable)
                 return;
-            bool useIntegral = !controlledVessel.checkLanded();
+            bool useIntegral = !vesRef.vesselRef.checkLanded();
             // Heading Control
             if (HrztActive && useIntegral)
             {
@@ -530,7 +531,7 @@ namespace PilotAssistant.FlightModules
                 if (CurrentVertMode == VertMode.Altitude)
                     AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(-AsstList.Altitude.GetAsst(this).ResponseD(vesRef.vesselRef.altitude, useIntegral), vesRef.vesselRef.srfSpeed * -0.9, vesRef.vesselRef.srfSpeed * 0.9);
                 else if (CurrentVertMode == VertMode.RadarAltitude)
-                    AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(getClimbRateForConstAltitude() - AsstList.Altitude.GetAsst(this).ResponseD(vesRef.vesselData.radarAlt * Vector3.Dot(vesRef.vesselData.surfVelForward, controlledVessel.srf_velocity.normalized), useIntegral), -controlledVessel.srfSpeed * 0.95, controlledVessel.srfSpeed * 0.95);
+                    AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(getClimbRateForConstAltitude() - AsstList.Altitude.GetAsst(this).ResponseD(vesRef.vesselData.radarAlt * Vector3.Dot(vesRef.vesselData.surfVelForward, vesRef.vesselRef.srf_velocity.normalized), useIntegral), -vesRef.vesselRef.srfSpeed * 0.95, vesRef.vesselRef.srfSpeed * 0.95);
                 AsstList.Elevator.GetAsst(this).SetPoint = -AsstList.VertSpeed.GetAsst(this).ResponseD(vesRef.vesselData.vertSpeed, useIntegral);
                 lastCtrlOutput.x = state.pitch = -AsstList.Elevator.GetAsst(this).ResponseF(vesRef.vesselData.AoA, useIntegral).Clamp(-1, 1);
             }
@@ -539,13 +540,13 @@ namespace PilotAssistant.FlightModules
 
             if (ThrtActive)
             {
-                if (controlledVessel.ActionGroups[KSPActionGroup.Brakes] || (AsstList.Speed.GetAsst(this).SetPoint == 0 && controlledVessel.srfSpeed < -AsstList.Acceleration.GetAsst(this).OutMin))
+                if (vesRef.vesselRef.ActionGroups[KSPActionGroup.Brakes] || (AsstList.Speed.GetAsst(this).SetPoint == 0 && vesRef.vesselRef.srfSpeed < -AsstList.Acceleration.GetAsst(this).OutMin))
                     state.mainThrottle = 0;
                 else
                 {
                     if (CurrentThrottleMode == ThrottleMode.Speed)
-                        AsstList.Acceleration.GetAsst(this).SetPoint = -AsstList.Speed.GetAsst(this).ResponseD(Utils.mSecToSpeedUnit(controlledVessel.srfSpeed, speedMode, SpeedUnits.mSec, vesRef.vesselData), useIntegral);
-                    state.mainThrottle = (-AsstList.Acceleration.GetAsst(this).ResponseF(Utils.mSecToSpeedUnit(vesRef.vesselData.acceleration, speedMode, SpeedUnits.mSec, vesRef.vesselData), useIntegral)).Clamp(0, 1);
+                        AsstList.Acceleration.GetAsst(this).SetPoint = -AsstList.Speed.GetAsst(this).ResponseD(vesRef.vesselRef.srfSpeed, useIntegral);
+                    state.mainThrottle = (-AsstList.Acceleration.GetAsst(this).ResponseF(vesRef.vesselData.acceleration, useIntegral)).Clamp(0, 1);
                 }
                 FlightInputHandler.state.mainThrottle = state.mainThrottle; // set throttle state permanently
             }
@@ -557,7 +558,7 @@ namespace PilotAssistant.FlightModules
             double val = lastCtrlOutput.x;
             int sign = Math.Sign(val);
             yield return new WaitForFixedUpdate();
-            while (!VertActive && Math.Sign(val) == sign && controlledVessel.atmDensity != 0)
+            while (!VertActive && Math.Sign(val) == sign && vesRef.vesselRef.atmDensity != 0)
             {
                 yield return new WaitForFixedUpdate();
                 val -= step;
@@ -606,14 +607,14 @@ namespace PilotAssistant.FlightModules
         double getClimbRateForConstAltitude()
         {
             // work out angle for ~1s to approach the point
-            double angle = Math.Min(Math.Atan(4 * controlledVessel.horizontalSrfSpeed / vesRef.vesselData.radarAlt), 1.55); // 1.55 is ~89 degrees
+            double angle = Math.Min(Math.Atan(4 * vesRef.vesselRef.horizontalSrfSpeed / vesRef.vesselData.radarAlt), 1.55); // 1.55 is ~89 degrees
             if (double.IsNaN(angle) || angle < 0.25) // 0.25 is 14.3 degrees
                 return 0; // fly without predictive if high/slow
             else
             {
                 double slope = 0;
                 terrainSlope(angle, out slope);
-                return slope * controlledVessel.horizontalSrfSpeed;
+                return slope * vesRef.vesselRef.horizontalSrfSpeed;
             }
         }
         
@@ -634,8 +635,8 @@ namespace PilotAssistant.FlightModules
             else
             {
                 AltAhead = RayDist * Math.Cos(angle);
-                if (controlledVessel.mainBody.ocean)
-                    AltAhead = Math.Min(AltAhead, controlledVessel.altitude);
+                if (vesRef.vesselRef.mainBody.ocean)
+                    AltAhead = Math.Min(AltAhead, vesRef.vesselRef.altitude);
             }
             slope = (vesRef.vesselData.radarAlt - AltAhead) / (AltAhead * Math.Tan(angle));
             return true;
@@ -647,7 +648,7 @@ namespace PilotAssistant.FlightModules
         float findTerrainDistAtAngle(float angle, float maxDist)
         {
             Vector3 direction = Quaternion.AngleAxis(angle, -vesRef.vesselData.surfVelRight) * -vesRef.vesselData.planetUp;
-            Vector3 origin = controlledVessel.rootPart.transform.position;
+            Vector3 origin = vesRef.vesselRef.rootPart.transform.position;
             RaycastHit hitInfo;
             if (FlightGlobals.ready && Physics.Raycast(origin, direction, out hitInfo, maxDist, ~1)) // ~1 masks off layer 0 which is apparently the parts on the current vessel. Seems to work
                 return hitInfo.distance;
@@ -946,12 +947,12 @@ namespace PilotAssistant.FlightModules
                     if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
                     {
                         if (CurrentVertMode == VertMode.Altitude)
-                            AsstList.Altitude.GetAsst(this).SetPoint = controlledVessel.altitude;
+                            AsstList.Altitude.GetAsst(this).SetPoint = vesRef.vesselRef.altitude;
                         AsstList.Altitude.GetAsst(this).BumplessSetPoint = newVal;
                     }
                     else
                     {
-                        AsstList.VertSpeed.GetAsst(this).SetPoint = controlledVessel.verticalSpeed + vesRef.vesselData.AoA / AsstList.VertSpeed.GetAsst(this).PGain;
+                        AsstList.VertSpeed.GetAsst(this).SetPoint = vesRef.vesselRef.verticalSpeed + vesRef.vesselData.AoA / AsstList.VertSpeed.GetAsst(this).PGain;
                         AsstList.VertSpeed.GetAsst(this).BumplessSetPoint = newVal;
                     }
                     vertModeChanged(CurrentVertMode, true, false);
@@ -968,7 +969,7 @@ namespace PilotAssistant.FlightModules
                     if (CurrentVertMode == VertMode.RadarAltitude)
                         drawPIDvalues(AsstList.Altitude, "RAltitude", "m", vesRef.vesselData.radarAlt, 2, "Speed ", "m/s", true);
                     if (CurrentVertMode == VertMode.Altitude)
-                        drawPIDvalues(AsstList.Altitude, "Altitude", "m", controlledVessel.altitude, 2, "Speed ", "m/s", true);
+                        drawPIDvalues(AsstList.Altitude, "Altitude", "m", vesRef.vesselRef.altitude, 2, "Speed ", "m/s", true);
                     drawPIDvalues(AsstList.VertSpeed, "Vertical Speed", "m/s", vesRef.vesselData.vertSpeed, 2, "AoA", "\u00B0", true);
 
                     if (showControlSurfaces)
@@ -1038,13 +1039,13 @@ namespace PilotAssistant.FlightModules
                     double.TryParse(targetSpeed, out newVal);
                     if (CurrentThrottleMode != ThrottleMode.Acceleration)
                     {
-                        AsstList.Speed.GetAsst(this).SetPoint = controlledVessel.srfSpeed;
-                        AsstList.Speed.GetAsst(this).BumplessSetPoint = Utils.SpeedUnitToMSec(newVal, speedMode, unit, vesRef.vesselData);
+                        AsstList.Speed.GetAsst(this).SetPoint = vesRef.vesselRef.srfSpeed;
+                        AsstList.Speed.GetAsst(this).BumplessSetPoint = newVal;
                     }
                     else
                     {
                         AsstList.Acceleration.GetAsst(this).SetPoint = vesRef.vesselData.acceleration;
-                        AsstList.Acceleration.GetAsst(this).BumplessSetPoint = Utils.SpeedUnitToMSec(newVal, speedMode, unit, vesRef.vesselData);
+                        AsstList.Acceleration.GetAsst(this).BumplessSetPoint = newVal;
                     }
                     throttleModeChanged(CurrentThrottleMode, true, false);
 
@@ -1058,8 +1059,8 @@ namespace PilotAssistant.FlightModules
                 {
                     ThrtScrollbar = GUILayout.BeginScrollView(ThrtScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(thrtScrollHeight, maxThrtScrollbarHeight)));
                     if (CurrentThrottleMode == ThrottleMode.Speed)
-                        drawPIDvalues(AsstList.Speed, "Speed", Utils.unitString(unit), Utils.mSecToSpeedUnit(controlledVessel.srfSpeed, speedMode, unit, vesRef.vesselData), 2, "Accel ", Utils.unitString(unit) + "/s", true);
-                    drawPIDvalues(AsstList.Acceleration, "Acceleration", Utils.unitString(unit) + "/s", Utils.mSecToSpeedUnit(vesRef.vesselData.acceleration, speedMode, unit, vesRef.vesselData), 1, "Throttle ", "%", true);
+                        drawPIDvalues(AsstList.Speed, "Speed", " m/s", vesRef.vesselRef.srfSpeed, 2, "Accel ", " m/s", true);
+                    drawPIDvalues(AsstList.Acceleration, "Acceleration", " m/s", vesRef.vesselData.acceleration, 1, "Throttle ", "%", true);
                     // can't have people bugging things out now can we...
                     AsstList.Acceleration.GetAsst(this).OutMax = AsstList.Speed.GetAsst(this).OutMax.Clamp(-1, 0);
                     AsstList.Acceleration.GetAsst(this).OutMin = AsstList.Speed.GetAsst(this).OutMin.Clamp(-1, 0);
@@ -1186,7 +1187,7 @@ namespace PilotAssistant.FlightModules
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-                PresetManager.newAsstPreset(ref newPresetName, controllers, controlledVessel);
+                PresetManager.newAsstPreset(ref newPresetName, controllers, vesRef.vesselRef);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10));
