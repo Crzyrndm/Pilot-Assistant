@@ -68,7 +68,7 @@ namespace PilotAssistant.FlightModules
         public AsstVesselModule vesRef;
         void StartCoroutine(IEnumerator routine) // quick access to coroutine now it doesn't inherit Monobehaviour
         {
-            PilotAssistantFlightCore.Instance.StartCoroutine(routine);
+            vesRef.StartCoroutine(routine);
         }
 
         public AsstController[] controllers = new AsstController[9];
@@ -242,10 +242,10 @@ namespace PilotAssistant.FlightModules
             if (HrztActive)
             {
                 if (vesRef.vesselRef.checkLanded())
-                    newTarget = currentTarget = Utils.getPlaneRotation(vesRef.vesselRef.transform.right, vesRef.vesselData);
+                    newTarget = currentTarget = Utils.getPlaneRotation(vesRef.vesselRef.transform.right, vesRef);
                 if (CurrentHrztMode == HrztMode.Heading)
                 {
-                    AsstList.HdgBank.GetAsst(this).SetPoint = Utils.calculateTargetHeading(currentTarget, vesRef.vesselData);
+                    AsstList.HdgBank.GetAsst(this).SetPoint = Utils.calculateTargetHeading(currentTarget, vesRef);
 
                     if (!headingEdit)
                         targetHeading = AsstList.HdgBank.GetAsst(this).SetPoint.ToString("0.00");
@@ -298,7 +298,7 @@ namespace PilotAssistant.FlightModules
             if (bPause)
                 return;
 
-            double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1; // normally *1, with alt is *10
+            double scale = GameSettings.MODIFIER_KEY.GetKey() ? 10 : 1; // normally *1, with LAlt is *10
             if (FlightInputHandler.fetch.precisionMode)
                 scale = 0.1 / scale; // normally *0.1, with alt is *0.01
 
@@ -308,7 +308,13 @@ namespace PilotAssistant.FlightModules
                 double headingChangeToCommit = GameSettings.YAW_LEFT.GetKey() ? -hrztScale * scale : 0;
                 headingChangeToCommit += GameSettings.YAW_RIGHT.GetKey() ? hrztScale * scale : 0;
                 headingChangeToCommit += hrztScale * scale * GameSettings.AXIS_YAW.GetAxis();
-                StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newTarget, vesRef.vesselData) + headingChangeToCommit));
+                if (CurrentHrztMode == HrztMode.Bank)
+                {
+                    AsstList.Aileron.GetAsst(this).SetPoint = Utils.headingClamp(AsstList.Aileron.GetAsst(this).SetPoint + headingChangeToCommit / 10, 180);
+                    targetHeading = AsstList.Aileron.GetAsst(this).SetPoint.ToString("0.00");
+                }
+                else
+                    StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newTarget, vesRef) + headingChangeToCommit));
             }
 
             // ============================================================ Vertical Controls ============================================================
@@ -386,6 +392,9 @@ namespace PilotAssistant.FlightModules
                             StartCoroutine(shiftHeadingTarget(vesRef.vesselData.heading));
                         break;
                     case HrztMode.Bank:
+                        if (setTarget)
+                            AsstList.Aileron.GetAsst(this).SetPoint = -vesRef.vesselData.bank;
+                        targetHeading = AsstList.Aileron.GetAsst(this).SetPoint.ToString("0.00");
                         break;
                 }
             }
@@ -575,20 +584,20 @@ namespace PilotAssistant.FlightModules
             {
                 double remainder = Quaternion.Angle(newTarget, currentTarget);
                 // set new direction
-                newTarget = Utils.getPlaneRotation(newHdg, vesRef.vesselData);
+                newTarget = Utils.getPlaneRotation(newHdg, vesRef);
                 // get new remainder, reset increment only if the sign changed
                 double tempRemainder = Quaternion.Angle(newTarget, currentTarget);
                 if (tempRemainder < 0.5 * AsstList.HdgBank.GetAsst(this).OutMax && tempRemainder < 0.5 * remainder)
                 {
-                    currentTarget = Utils.getPlaneRotation((vesRef.vesselData.heading + vesRef.vesselData.bank / AsstList.HdgBank.GetAsst(this).PGain).headingClamp(360), vesRef.vesselData);
+                    currentTarget = Utils.getPlaneRotation((vesRef.vesselData.heading + vesRef.vesselData.bank / AsstList.HdgBank.GetAsst(this).PGain).headingClamp(360), vesRef);
                     increment = 0;
                 }
                 yield break;
             }
             else
             {
-                currentTarget = Utils.getPlaneRotation((vesRef.vesselData.heading + vesRef.vesselData.bank / AsstList.HdgBank.GetAsst(this).PGain).headingClamp(360), vesRef.vesselData);
-                newTarget = Utils.getPlaneRotation(newHdg, vesRef.vesselData);
+                currentTarget = Utils.getPlaneRotation((vesRef.vesselData.heading + vesRef.vesselData.bank / AsstList.HdgBank.GetAsst(this).PGain).headingClamp(360), vesRef);
+                newTarget = Utils.getPlaneRotation(newHdg, vesRef);
                 increment = 0;
                 hdgShiftIsRunning = true;
             }
@@ -822,7 +831,7 @@ namespace PilotAssistant.FlightModules
                             if (!hdgShiftIsRunning)
                                 displayTargetDelta = AsstList.HdgBank.GetAsst(this).SetPoint - vesRef.vesselData.heading;
                             else
-                                displayTargetDelta = Utils.calculateTargetHeading(newTarget, vesRef.vesselData) - vesRef.vesselData.heading;
+                                displayTargetDelta = Utils.calculateTargetHeading(newTarget, vesRef) - vesRef.vesselData.heading;
 
                             displayTargetDelta = displayTargetDelta.headingClamp(180);
                         }
@@ -830,7 +839,7 @@ namespace PilotAssistant.FlightModules
                         if (headingEdit)
                             displayTarget = targetHeading;
                         else
-                            displayTarget = Utils.calculateTargetHeading(newTarget, vesRef.vesselData).ToString("0.00");
+                            displayTarget = Utils.calculateTargetHeading(newTarget, vesRef).ToString("0.00");
                     }
                     targetHeading = GUILayout.TextField(displayTarget, GUILayout.Width(51));
                     if (targetHeading != displayTarget)

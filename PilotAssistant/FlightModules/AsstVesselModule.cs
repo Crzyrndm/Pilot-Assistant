@@ -18,12 +18,12 @@ namespace PilotAssistant.FlightModules
             vesselSSAS = new SurfSAS(this);
             vesselStockSAS = new Stock_SAS(this);
             vesselData = new VesselData(this);
-            
-            PilotAssistantFlightCore.Instance.addVessel(this);
         }
 
         public void Start()
         {
+            PilotAssistantFlightCore.Instance.addVessel(this);
+
             vesselAsst.Start();
             vesselSSAS.Start();
             vesselStockSAS.Start();
@@ -68,7 +68,7 @@ namespace PilotAssistant.FlightModules
 
         public void OnGUI()
         {
-            if (PilotAssistantFlightCore.bHideUI)
+            if (PilotAssistantFlightCore.bHideUI || PilotAssistantFlightCore.Instance.controlledVessels[PilotAssistantFlightCore.Instance.selectedVesselIndex] != this)
                 return;
             vesselAsst.drawGUI();
             vesselSSAS.drawGUI();

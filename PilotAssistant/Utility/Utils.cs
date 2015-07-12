@@ -62,29 +62,29 @@ namespace PilotAssistant.Utility
         /// <summary>
         /// Plane normal vector from a given heading (surface right vector)
         /// </summary>
-        public static Vector3 vecHeading(double target, VesselData vd)
+        public static Vector3 vecHeading(double target, AsstVesselModule avm)
         {
-            double angleDiff = target - vd.heading;
-            return Quaternion.AngleAxis((float)(angleDiff + 90), (Vector3)vd.planetUp) * vd.surfVesForward;
+            double angleDiff = target - avm.vesselData.heading;
+            return Quaternion.AngleAxis((float)(angleDiff + 90), (Vector3)avm.vesselData.planetUp) * avm.vesselData.surfVesForward;
         }
 
         /// <summary>
         /// calculate current heading from plane normal vector
         /// </summary>
-        public static double calculateTargetHeading(Vector3 direction, VesselData vd)
+        public static double calculateTargetHeading(Vector3 direction, AsstVesselModule avm)
         {
-            Vector3 fwd = Vector3.Cross(direction, vd.planetUp);
-            double heading = Vector3.Angle(fwd, vd.planetNorth) * Math.Sign(Vector3.Dot(fwd, vd.planetEast));
+            Vector3 fwd = Vector3.Cross(direction, avm.vesselData.planetUp);
+            double heading = Vector3.Angle(fwd, avm.vesselData.planetNorth) * Math.Sign(Vector3.Dot(fwd, avm.vesselData.planetEast));
             return heading.headingClamp(360);
         }
 
         /// <summary>
         /// calculate current heading from plane rotation
         /// </summary>
-        public static double calculateTargetHeading(Quaternion rotation, VesselData vd)
+        public static double calculateTargetHeading(Quaternion rotation, AsstVesselModule avm)
         {
-            Vector3 fwd = Vector3.Cross(getPlaneNormal(rotation, vd), vd.planetUp);
-            double heading = Vector3.Angle(fwd, vd.planetNorth) * Math.Sign(Vector3.Dot(fwd, vd.planetEast));
+            Vector3 fwd = Vector3.Cross(getPlaneNormal(rotation, avm), avm.vesselData.planetUp);
+            double heading = Vector3.Angle(fwd, avm.vesselData.planetNorth) * Math.Sign(Vector3.Dot(fwd, avm.vesselData.planetEast));
             return heading.headingClamp(360);
         }
 
@@ -106,20 +106,20 @@ namespace PilotAssistant.Utility
         /// <summary>
         /// calculate the planet relative rotation from the plane normal vector
         /// </summary>
-        public static Quaternion getPlaneRotation(Vector3 planeNormal, VesselData vd)
+        public static Quaternion getPlaneRotation(Vector3 planeNormal, AsstVesselModule avm)
         {
-            return Quaternion.FromToRotation(vd.v.mainBody.transform.right, planeNormal);
+            return Quaternion.FromToRotation(avm.vesselRef.mainBody.transform.right, planeNormal);
         }
 
-        public static Quaternion getPlaneRotation(double heading, VesselData vd)
+        public static Quaternion getPlaneRotation(double heading, AsstVesselModule avm)
         {
-            Vector3 planeNormal = vecHeading(heading, vd);
-            return getPlaneRotation(planeNormal, vd);
+            Vector3 planeNormal = vecHeading(heading, avm);
+            return getPlaneRotation(planeNormal, avm);
         }
 
-        public static Vector3 getPlaneNormal(Quaternion rotation, VesselData vd)
+        public static Vector3 getPlaneNormal(Quaternion rotation, AsstVesselModule avm)
         {
-            return rotation * vd.v.mainBody.transform.right;
+            return rotation * avm.vesselRef.mainBody.transform.right;
         }
 
         public static bool IsNeutral(AxisBinding axis)
@@ -212,43 +212,43 @@ namespace PilotAssistant.Utility
             return 1;
         }
 
-        public static double mSecToSpeedUnit(this double mSec, SpeedMode mode, SpeedUnits units, VesselData vd)
+        public static double mSecToSpeedUnit(this double mSec, SpeedMode mode, SpeedUnits units, AsstVesselModule avm)
         {
             if (mode == SpeedMode.Mach)
-                return mSec / vd.v.speedOfSound;
+                return mSec / avm.vesselRef.speedOfSound;
             else
             {
-                double speed = mSec * speedUnitTransform(units, vd.v.speedOfSound);
+                double speed = mSec * speedUnitTransform(units, avm.vesselRef.speedOfSound);
                 switch (mode)
                 {
                     case SpeedMode.True:
                         return speed;
                     case SpeedMode.Indicated:
-                        double stagnationPres = Math.Pow(((vd.v.mainBody.atmosphereAdiabaticIndex - 1) * vd.v.mach * vd.v.mach * 0.5) + 1, vd.v.mainBody.atmosphereAdiabaticIndex / (vd.v.mainBody.atmosphereAdiabaticIndex - 1));
-                        return speed * Math.Sqrt(vd.v.atmDensity / 1.225) * stagnationPres;
+                        double stagnationPres = Math.Pow(((avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1) * avm.vesselRef.mach * avm.vesselRef.mach * 0.5) + 1, avm.vesselRef.mainBody.atmosphereAdiabaticIndex / (avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1));
+                        return speed * Math.Sqrt(avm.vesselRef.atmDensity / 1.225) * stagnationPres;
                     case SpeedMode.Equivalent:
-                        return speed * Math.Sqrt(vd.v.atmDensity / 1.225);
+                        return speed * Math.Sqrt(avm.vesselRef.atmDensity / 1.225);
                 }
                 return 0;
             }
         }
 
-        public static double SpeedUnitToMSec(this double speedUnit, SpeedMode mode, SpeedUnits units, VesselData vd)
+        public static double SpeedUnitToMSec(this double speedUnit, SpeedMode mode, SpeedUnits units, AsstVesselModule avm)
         {
             if (mode == SpeedMode.Mach)
-                return speedUnit * vd.v.speedOfSound;
+                return speedUnit * avm.vesselRef.speedOfSound;
             else
             {
-                double speed = speedUnit / speedUnitTransform(units, vd.v.speedOfSound);
+                double speed = speedUnit / speedUnitTransform(units, avm.vesselRef.speedOfSound);
                 switch (mode)
                 {
                     case SpeedMode.True:
                         return speed;
                     case SpeedMode.Indicated:
-                        double stagnationPres = Math.Pow(((vd.v.mainBody.atmosphereAdiabaticIndex - 1) * vd.v.mach * vd.v.mach * 0.5) + 1, vd.v.mainBody.atmosphereAdiabaticIndex / (vd.v.mainBody.atmosphereAdiabaticIndex - 1));
-                        return speed / (Math.Sqrt(vd.v.atmDensity / 1.225) * stagnationPres);
+                        double stagnationPres = Math.Pow(((avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1) * avm.vesselRef.mach * avm.vesselRef.mach * 0.5) + 1, avm.vesselRef.mainBody.atmosphereAdiabaticIndex / (avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1));
+                        return speed / (Math.Sqrt(avm.vesselRef.atmDensity / 1.225) * stagnationPres);
                     case SpeedMode.Equivalent:
-                        return speed / Math.Sqrt(vd.v.atmDensity / 1.225);
+                        return speed / Math.Sqrt(avm.vesselRef.atmDensity / 1.225);
                 }
                 return 0;
             }
@@ -270,6 +270,78 @@ namespace PilotAssistant.Utility
                     return "mph";
             }
             return "";
+        }
+
+
+        public static string TryGetValue(this ConfigNode node, string key, string defaultValue)
+        {
+            if (node.HasValue(key))
+                return node.GetValue(key);
+            return defaultValue;
+        }
+
+        public static bool TryGetValue(this ConfigNode node, string key, bool defaultValue)
+        {
+            bool val;
+            if (node.HasValue(key) && bool.TryParse(node.GetValue(key), out val))
+                return val;
+            return defaultValue;
+        }
+
+        public static int TryGetValue(this ConfigNode node, string key, int defaultValue)
+        {
+            int val;
+            if (node.HasValue(key) && int.TryParse(node.GetValue(key), out val))
+                return val;
+            return defaultValue;
+        }
+
+        public static float TryGetValue(this ConfigNode node, string key, float defaultValue)
+        {
+            float val;
+            if (node.HasValue(key) && float.TryParse(node.GetValue(key), out val))
+                return val;
+            return defaultValue;
+        }
+
+        public static double TryGetValue(this ConfigNode node, string key, double defaultValue)
+        {
+            double val;
+            if (node.HasValue(key) && double.TryParse(node.GetValue(key), out val))
+                return val;
+            return defaultValue;
+        }
+
+        public static KeyCode TryGetValue(this ConfigNode node, string key, KeyCode defaultValue)
+        {
+            if (node.HasValue(key))
+            {
+                try
+                {
+                    KeyCode val = (KeyCode)System.Enum.Parse(typeof(KeyCode), node.GetValue(key));
+                    return val;
+                }
+                catch { }
+            }
+            return defaultValue;
+        }
+
+        public static Rect TryGetValue(this ConfigNode node, string key, Rect defaultValue)
+        {
+            if (node.HasValue(key))
+            {
+                string[] stringVals = node.GetValue(key).Split(',').Select(s => s.Trim( new char[] {' ', '(', ')' })).ToArray();
+                if (stringVals.Length != 4)
+                    return defaultValue;
+                float x = 0, y = 0, w = 0, h = 0;
+                if (!float.TryParse(stringVals[0].Substring(2), out x) || !float.TryParse(stringVals[1].Substring(2), out y) || !float.TryParse(stringVals[2].Substring(6), out w) || !float.TryParse(stringVals[3].Substring(7), out h))
+                {
+                    Debug.LogError(x + "," + y + "," + w + "," + h);
+                    return defaultValue;
+                }
+                return new Rect(x, y, w, h);
+            }
+            return defaultValue;
         }
     }
 }

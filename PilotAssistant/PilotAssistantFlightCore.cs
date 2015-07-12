@@ -30,7 +30,7 @@ namespace PilotAssistant
 
         public static bool showTooltips = true;
         public static bool bHideUI = false;
-        public static KSP.IO.PluginConfiguration config;
+        public static ConfigNode config;
         public Rect window;
         public bool bUseStockToolbar = true;
 
@@ -47,14 +47,26 @@ namespace PilotAssistant
         public string blizSSASTexPath;
         public string blizSASTexPath;
 
-        List<AsstVesselModule> controlledVessels = new List<AsstVesselModule>();
+        public List<AsstVesselModule> controlledVessels = new List<AsstVesselModule>();
+        public int selectedVesselIndex = 0;
 
         public void Awake()
         {
             instance = this;
             bHideUI = false;
-            LoadConfig();
-            
+
+            config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
+            if (config == null)
+                config = new ConfigNode("");
+            if (config != null)
+            {
+                bUseStockToolbar = config.TryGetValue("UseStockToolbar", true);
+
+                blizMenuTexPath = config.TryGetValue("blizMenuIcon", "Pilot Assistant/Icon/BlizzyIcon");
+                blizAsstTexPath = config.TryGetValue("blizAsstIcon", "Pilot Assistant/Icon/BlizzyIcon");
+                blizSSASTexPath = config.TryGetValue("blizSSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
+                blizSASTexPath = config.TryGetValue("blizSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
+            }
             if (!bUseStockToolbar && ToolbarManager.ToolbarAvailable)
                 ToolbarMod.Instance.Awake();
             else
@@ -64,6 +76,7 @@ namespace PilotAssistant
         public void Start()
         {
             BindingManager.Instance.Start();
+            LoadConfig();
 
             // don't put these in awake or they trigger on loading the vessel and everything gets wierd
             GameEvents.onHideUI.Add(hideUI);
@@ -73,7 +86,6 @@ namespace PilotAssistant
         public void addVessel(AsstVesselModule avm)
         {
             controlledVessels.Add(avm);
-            selectedVesselIndex = controlledVessels.Count - 1;
         }
 
         public void removeVessel(AsstVesselModule avm)
@@ -95,50 +107,43 @@ namespace PilotAssistant
         {
             try
             {
+                config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
                 if (config == null)
+                    config = new ConfigNode("");
+                if (config != null)
                 {
-                    config = KSP.IO.PluginConfiguration.CreateForType<PilotAssistantFlightCore>();
+                    showTooltips = config.TryGetValue("AsstTooltips", true);
+
+                    PilotAssistant.doublesided = config.TryGetValue("AsstDoublesided", false);
+                    PilotAssistant.showPIDLimits = config.TryGetValue("AsstLimits", false);
+                    PilotAssistant.showControlSurfaces = config.TryGetValue("AsstControlSurfaces", false);
+                    PilotAssistant.maxHdgScrollbarHeight = config.TryGetValue("maxHdgHeight", 55);
+                    PilotAssistant.maxVertScrollbarHeight = config.TryGetValue("maxVertHeight", 55);
+                    PilotAssistant.maxThrtScrollbarHeight = config.TryGetValue("maxThrtHeight", 55);
+
+                    // windows
+                    PilotAssistant.window = config.TryGetValue("AsstWindow", new Rect(300, 300, 0, 0));
+                    SurfSAS.SSASwindow = config.TryGetValue("SSASWindow", new Rect(500, 300, 0, 0));
+                    Stock_SAS.StockSASwindow = config.TryGetValue("SASWindow", new Rect(500, 300, 0, 0));
+                    BindingManager.Instance.windowRect = config.TryGetValue("BindingWindow", new Rect(300, 50, 0, 0));
+                    window = config.TryGetValue("AppWindow", new Rect(100, 300, 0, 0));
+
+                    // key bindings
+                    BindingManager.bindings[(int)bindingIndex.Pause].primaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("pausePrimary", KeyCode.Tab.ToString()));
+                    BindingManager.bindings[(int)bindingIndex.Pause].secondaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("pauseSecondary", KeyCode.None.ToString()));
+                    BindingManager.bindings[(int)bindingIndex.HdgTgl].primaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("hdgTglPrimary", KeyCode.Keypad9.ToString()));
+                    BindingManager.bindings[(int)bindingIndex.HdgTgl].secondaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("hdgTglSecondary", KeyCode.LeftAlt.ToString()));
+                    BindingManager.bindings[(int)bindingIndex.VertTgl].primaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("vertTglPrimary", KeyCode.Keypad6.ToString()));
+                    BindingManager.bindings[(int)bindingIndex.VertTgl].secondaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("vertTglSecondary", KeyCode.LeftAlt.ToString()));
+                    BindingManager.bindings[(int)bindingIndex.ThrtTgl].primaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("thrtTglPrimary", KeyCode.Keypad3.ToString()));
+                    BindingManager.bindings[(int)bindingIndex.ThrtTgl].secondaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("thrtTglSecondary", KeyCode.LeftAlt.ToString()));
+                    BindingManager.bindings[(int)bindingIndex.ArmSSAS].primaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("SSASArmPrimary", GameSettings.SAS_TOGGLE.primary.ToString()));
+                    BindingManager.bindings[(int)bindingIndex.ArmSSAS].secondaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("SSASArmSecondary", KeyCode.LeftAlt.ToString()));
                 }
-                config.load();
-
-                showTooltips = config.GetValue<bool>("AsstTooltips", true);
-
-                bUseStockToolbar = config.GetValue<bool>("UseStockToolbar", true);
-
-                blizMenuTexPath = config.GetValue("blizMenuIcon", "Pilot Assistant/Icon/BlizzyIcon");
-                blizAsstTexPath = config.GetValue("blizAsstIcon", "Pilot Assistant/Icon/BlizzyIcon");
-                blizSSASTexPath = config.GetValue("blizSSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
-                blizSASTexPath = config.GetValue("blizSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
-
-                PilotAssistant.doublesided = config.GetValue<bool>("AsstDoublesided", false);
-                PilotAssistant.showPIDLimits = config.GetValue<bool>("AsstLimits", false);
-                PilotAssistant.showControlSurfaces = config.GetValue<bool>("AsstControlSurfaces", false);
-                PilotAssistant.maxHdgScrollbarHeight = config.GetValue<float>("maxHdgHeight", 55);
-                PilotAssistant.maxVertScrollbarHeight = config.GetValue<float>("maxVertHeight", 55);
-                PilotAssistant.maxThrtScrollbarHeight = config.GetValue<float>("maxThrtHeight", 55);
-
-                // windows
-                PilotAssistant.window = config.GetValue<Rect>("AsstWindow", new Rect(300, 300, 0, 0));
-                SurfSAS.SSASwindow = config.GetValue<Rect>("SSASWindow", new Rect(500, 300, 0, 0));
-                Stock_SAS.StockSASwindow = config.GetValue<Rect>("SASWindow", new Rect(500, 300, 0, 0));
-                BindingManager.Instance.windowRect = config.GetValue<Rect>("BindingWindow", new Rect(300, 50, 0, 0));
-                window = config.GetValue<Rect>("AppWindow", new Rect(100, 300, 0, 0));
-
-                // key bindings
-                BindingManager.bindings[(int)bindingIndex.Pause].primaryBindingCode = config.GetValue<KeyCode>("pausePrimary", KeyCode.Tab);
-                BindingManager.bindings[(int)bindingIndex.Pause].secondaryBindingCode = config.GetValue<KeyCode>("pauseSecondary", KeyCode.None);
-                BindingManager.bindings[(int)bindingIndex.HdgTgl].primaryBindingCode = config.GetValue<KeyCode>("hdgTglPrimary", KeyCode.Keypad9);
-                BindingManager.bindings[(int)bindingIndex.HdgTgl].secondaryBindingCode = config.GetValue<KeyCode>("hdgTglSecondary", KeyCode.LeftAlt);
-                BindingManager.bindings[(int)bindingIndex.VertTgl].primaryBindingCode = config.GetValue<KeyCode>("vertTglPrimary", KeyCode.Keypad6);
-                BindingManager.bindings[(int)bindingIndex.VertTgl].secondaryBindingCode = config.GetValue<KeyCode>("vertTglSecondary", KeyCode.LeftAlt);
-                BindingManager.bindings[(int)bindingIndex.ThrtTgl].primaryBindingCode = config.GetValue<KeyCode>("thrtTglPrimary", KeyCode.Keypad3);
-                BindingManager.bindings[(int)bindingIndex.ThrtTgl].secondaryBindingCode = config.GetValue<KeyCode>("thrtTglSecondary", KeyCode.LeftAlt);
-                BindingManager.bindings[(int)bindingIndex.ArmSSAS].primaryBindingCode = config.GetValue<KeyCode>("SSASArmPrimary", GameSettings.SAS_TOGGLE.primary);
-                BindingManager.bindings[(int)bindingIndex.ArmSSAS].secondaryBindingCode = config.GetValue<KeyCode>("SSASArmSecondary", KeyCode.LeftAlt);
             }
             catch
             {
-                Debug.Log("Pilot Assistant: Config load failed");
+                Debug.LogError("Pilot Assistant: Config load failed");
             }
         }
 
@@ -146,46 +151,51 @@ namespace PilotAssistant
         {
             try
             {
-                config["AsstTooltips"] = showTooltips;
-                config["UseStockToolbar"] = bUseStockToolbar;
+                if (config == null)
+                    config = new ConfigNode("");
+                if (config != null)
+                {
+                    config.SetValue("AsstTooltips", showTooltips.ToString(), true);
+                    config.SetValue("UseStockToolbar", bUseStockToolbar.ToString(), true);
 
-                config["AsstDoublesided"] = PilotAssistant.doublesided;
-                config["AsstLimits"] = PilotAssistant.showPIDLimits;
-                config["AsstControlSurfaces"] = PilotAssistant.showControlSurfaces;
-                config["maxHdgHeight"] = PilotAssistant.maxHdgScrollbarHeight;
-                config["maxVertHeight"] = PilotAssistant.maxVertScrollbarHeight;
-                config["maxThrtHeight"] = PilotAssistant.maxThrtScrollbarHeight;
+                    config.SetValue("AsstDoublesided", PilotAssistant.doublesided.ToString(), true);
+                    config.SetValue("AsstLimits", PilotAssistant.showPIDLimits.ToString(), true);
+                    config.SetValue("AsstControlSurfaces", PilotAssistant.showControlSurfaces.ToString(), true);
+                    config.SetValue("maxHdgHeight", PilotAssistant.maxHdgScrollbarHeight.ToString(), true);
+                    config.SetValue("maxVertHeight", PilotAssistant.maxVertScrollbarHeight.ToString(), true);
+                    config.SetValue("maxThrtHeight", PilotAssistant.maxThrtScrollbarHeight.ToString(), true);
 
-                // window rects
-                config["AsstWindow"] = PilotAssistant.window;
-                config["SSASWindow"] = SurfSAS.SSASwindow;
-                config["SASWindow"] = Stock_SAS.StockSASwindow;
-                config["AppWindow"] = window;
-                config["BindingWindow"] = BindingManager.Instance.windowRect;
+                    // window rects
+                    config.SetValue("AsstWindow", PilotAssistant.window.ToString(), true);
+                    config.SetValue("SSASWindow", SurfSAS.SSASwindow.ToString(), true);
+                    config.SetValue("SASWindow", Stock_SAS.StockSASwindow.ToString(), true);
+                    config.SetValue("AppWindow", window.ToString(), true);
+                    config.SetValue("BindingWindow", BindingManager.Instance.windowRect.ToString(), true);
 
-                // key bindings
-                config["pausePrimary"] = BindingManager.bindings[(int)bindingIndex.Pause].primaryBindingCode;
-                config["pauseSecondary"] = BindingManager.bindings[(int)bindingIndex.Pause].secondaryBindingCode;
-                config["hdgTglPrimary"] = BindingManager.bindings[(int)bindingIndex.HdgTgl].primaryBindingCode;
-                config["hdgTglSecondary"] = BindingManager.bindings[(int)bindingIndex.HdgTgl].secondaryBindingCode;
-                config["vertTglPrimary"] = BindingManager.bindings[(int)bindingIndex.VertTgl].primaryBindingCode;
-                config["vertTglSecondary"] = BindingManager.bindings[(int)bindingIndex.VertTgl].secondaryBindingCode;
-                config["thrtTglPrimary"] = BindingManager.bindings[(int)bindingIndex.ThrtTgl].primaryBindingCode;
-                config["thrtTglSecondary"] = BindingManager.bindings[(int)bindingIndex.ThrtTgl].secondaryBindingCode;
-                config["SSASArmPrimary"] = BindingManager.bindings[(int)bindingIndex.ArmSSAS].primaryBindingCode;
-                config["SSASArmSecondary"] = BindingManager.bindings[(int)bindingIndex.ArmSSAS].secondaryBindingCode;
+                    // key bindings
+                    config.SetValue("pausePrimary", BindingManager.bindings[(int)bindingIndex.Pause].primaryBindingCode.ToString(), true);
+                    config.SetValue("pauseSecondary", BindingManager.bindings[(int)bindingIndex.Pause].secondaryBindingCode.ToString(), true);
+                    config.SetValue("hdgTglPrimary", BindingManager.bindings[(int)bindingIndex.HdgTgl].primaryBindingCode.ToString(), true);
+                    config.SetValue("hdgTglSecondary", BindingManager.bindings[(int)bindingIndex.HdgTgl].secondaryBindingCode.ToString(), true);
+                    config.SetValue("vertTglPrimary", BindingManager.bindings[(int)bindingIndex.VertTgl].primaryBindingCode.ToString(), true);
+                    config.SetValue("vertTglSecondary", BindingManager.bindings[(int)bindingIndex.VertTgl].secondaryBindingCode.ToString(), true);
+                    config.SetValue("thrtTglPrimary", BindingManager.bindings[(int)bindingIndex.ThrtTgl].primaryBindingCode.ToString(), true);
+                    config.SetValue("thrtTglSecondary", BindingManager.bindings[(int)bindingIndex.ThrtTgl].secondaryBindingCode.ToString(), true);
+                    config.SetValue("SSASArmPrimary", BindingManager.bindings[(int)bindingIndex.ArmSSAS].primaryBindingCode.ToString(), true);
+                    config.SetValue("SSASArmSecondary", BindingManager.bindings[(int)bindingIndex.ArmSSAS].secondaryBindingCode.ToString(), true);
 
-                // bliz toolbar icons
-                config["blizMenuIcon"] = blizMenuTexPath;
-                config["blizAsstIcon"] = blizAsstTexPath;
-                config["blizSSASIcon"] = blizSSASTexPath;
-                config["blizSASIcon"] = blizSASTexPath;
+                    // bliz toolbar icons
+                    config.SetValue("blizMenuIcon", blizMenuTexPath, true);
+                    config.SetValue("blizAsstIcon", blizAsstTexPath, true);
+                    config.SetValue("blizSSASIcon", blizSSASTexPath, true);
+                    config.SetValue("blizSASIcon", blizSASTexPath, true);
 
-                config.save();
+                    config.Save(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
+                }
             }
             catch
             {
-                Debug.Log("Pilot Assistant: Save failed");
+                Debug.LogError("Pilot Assistant save failed");
             }
         }
 
@@ -206,7 +216,6 @@ namespace PilotAssistant
                 window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
         }
 
-        int selectedVesselIndex = 0;
         private void optionsWindow(int id)
         {
             if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))

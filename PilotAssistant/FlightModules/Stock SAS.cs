@@ -9,11 +9,11 @@ namespace PilotAssistant.FlightModules
 
     public class Stock_SAS
     {
-        AsstVesselModule vesRef;
+        public AsstVesselModule vesRef;
 
         void StartCoroutine(IEnumerator routine) // quick access to coroutine now it doesn't inherit Monobehaviour
         {
-            PilotAssistantFlightCore.Instance.StartCoroutine(routine);
+            vesRef.StartCoroutine(routine);
         }
 
         static public Rect StockSASwindow = new Rect(10, 505, 200, 30); // gui window rect

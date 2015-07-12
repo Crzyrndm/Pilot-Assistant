@@ -21,7 +21,7 @@ namespace PilotAssistant.FlightModules
 
         void StartCoroutine(IEnumerator routine) // quick access to coroutine now it doesn't inherit Monobehaviour
         {
-            PilotAssistantFlightCore.Instance.StartCoroutine(routine);
+            vesRef.StartCoroutine(routine);
         }
         public AsstVesselModule vesRef;
         public PIDErrorController[] SASControllers = new PIDErrorController[3]; // controller per axis
@@ -94,7 +94,7 @@ namespace PilotAssistant.FlightModules
             referenceMode = FlightUIController.speedDisplayMode;
 
             if (bActive[(int)SASList.Hdg])
-                SASList.Hdg.GetSAS(this).SetPoint = Utils.calculateTargetHeading(currentTarget, vesRef.vesselData);
+                SASList.Hdg.GetSAS(this).SetPoint = Utils.calculateTargetHeading(currentTarget, vesRef);
         }
         #endregion
 
@@ -281,7 +281,7 @@ namespace PilotAssistant.FlightModules
             }
             orbitalTarget = vesRef.vesselRef.transform.rotation;
             if (axis == SASList.Hdg)
-                currentTarget = Utils.getPlaneRotation(vesRef.vesselData.heading, vesRef.vesselData);
+                currentTarget = Utils.getPlaneRotation(vesRef.vesselData.heading, vesRef);
         }
 
         void updateSetpoint(SASList ID, double setpoint)
@@ -384,7 +384,7 @@ namespace PilotAssistant.FlightModules
                     if (currentMode == VesselAutopilot.AutopilotMode.StabilityAssist)
                     {
                         SASList.Pitch.GetSAS(this).SetPoint = TogPlusNumBox("Pitch:", SASList.Pitch, vesRef.vesselData.pitch, 80, 70);
-                        currentTarget = Utils.getPlaneRotation(TogPlusNumBox("Heading:", SASList.Hdg, vesRef.vesselData.heading, 80, 70), vesRef.vesselData);
+                        currentTarget = Utils.getPlaneRotation(TogPlusNumBox("Heading:", SASList.Hdg, vesRef.vesselData.heading, 80, 70), vesRef);
                     }
                     SASList.Bank.GetSAS(this).SetPoint = TogPlusNumBox("Roll:", SASList.Bank, vesRef.vesselData.bank, 80, 70);
                 }
