@@ -310,7 +310,7 @@ namespace PilotAssistant.FlightModules
                 headingChangeToCommit += hrztScale * scale * GameSettings.AXIS_YAW.GetAxis();
                 if (CurrentHrztMode == HrztMode.Bank)
                 {
-                    AsstList.Aileron.GetAsst(this).SetPoint = Utils.headingClamp(AsstList.Aileron.GetAsst(this).SetPoint + headingChangeToCommit / 10, 180);
+                    AsstList.Aileron.GetAsst(this).SetPoint = Utils.headingClamp(AsstList.Aileron.GetAsst(this).SetPoint - headingChangeToCommit / 4, 180);
                     targetHeading = AsstList.Aileron.GetAsst(this).SetPoint.ToString("0.00");
                 }
                 else
