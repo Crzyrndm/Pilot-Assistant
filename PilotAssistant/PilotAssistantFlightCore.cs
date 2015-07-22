@@ -58,15 +58,14 @@ namespace PilotAssistant
             config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
             if (config == null)
                 config = new ConfigNode("");
-            if (config != null)
-            {
-                bUseStockToolbar = config.TryGetValue("UseStockToolbar", true);
 
-                blizMenuTexPath = config.TryGetValue("blizMenuIcon", "Pilot Assistant/Icon/BlizzyIcon");
-                blizAsstTexPath = config.TryGetValue("blizAsstIcon", "Pilot Assistant/Icon/BlizzyIcon");
-                blizSSASTexPath = config.TryGetValue("blizSSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
-                blizSASTexPath = config.TryGetValue("blizSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
-            }
+            bUseStockToolbar = config.TryGetValue("UseStockToolbar", true);
+
+            blizMenuTexPath = config.TryGetValue("blizMenuIcon", "Pilot Assistant/Icon/BlizzyIcon");
+            blizAsstTexPath = config.TryGetValue("blizAsstIcon", "Pilot Assistant/Icon/BlizzyIcon");
+            blizSSASTexPath = config.TryGetValue("blizSSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
+            blizSASTexPath = config.TryGetValue("blizSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
+
             if (!bUseStockToolbar && ToolbarManager.ToolbarAvailable)
                 ToolbarMod.Instance.Awake();
             else

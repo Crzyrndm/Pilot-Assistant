@@ -122,10 +122,11 @@ namespace PilotAssistant
                 gains.Add(controllerGains(node.GetNode(speedCtrlr), AsstList.Speed));
                 gains.Add(controllerGains(node.GetNode(accelCtrlr), AsstList.Acceleration));
 
-                if (node.GetValue("name") == asstDefaultName)
-                    asstDefault = new AsstPreset(gains, node.GetValue("name"));
-                else if (!instance.AsstPresetList.Any(p => p.name == node.GetValue("name")))
-                    instance.AsstPresetList.Add(new AsstPreset(gains, node.GetValue("name")));
+                string name = node.GetValue("name");
+                if (name == asstDefaultName)
+                    asstDefault = new AsstPreset(gains, name);
+                else if (!instance.AsstPresetList.Any(p => p.name == name))
+                    instance.AsstPresetList.Add(new AsstPreset(gains, name));
             }
 
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(sasPresetNodeName))
@@ -138,10 +139,11 @@ namespace PilotAssistant
                 gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), SASList.Bank));
                 gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), SASList.Hdg));
 
-                if (node.GetValue("name") == SASDefaultName)
-                    SASDefault = new SASPreset(gains, node.GetValue("name"));
-                else if (!instance.SASPresetList.Any(p=> p.name == node.GetValue("name")))
-                    instance.SASPresetList.Add(new SASPreset(gains, node.GetValue("name")));
+                string name = node.GetValue("name");
+                if (name == SASDefaultName)
+                    SASDefault = new SASPreset(gains, name);
+                else if (!instance.SASPresetList.Any(p => p.name == name))
+                    instance.SASPresetList.Add(new SASPreset(gains, name));
             }
 
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(ssasPresetNodeName))
@@ -153,11 +155,12 @@ namespace PilotAssistant
                 gains.Add(controllerSASGains(node.GetNode(elevCtrlr), SASList.Pitch));
                 gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), SASList.Bank));
                 gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), SASList.Hdg));
-                
-                if (node.GetValue("name") == ssasDefaultName)
-                    SSASDefault = new SSASPreset(gains, node.GetValue("name"));
-                else if (!instance.SSASPresetList.Any(p => p.name == node.GetValue("name")))
-                    instance.SSASPresetList.Add(new SSASPreset(gains, node.GetValue("name")));
+
+                string name = node.GetValue("name");
+                if (name == ssasDefaultName)
+                    SSASDefault = new SSASPreset(gains, name);
+                else if (!instance.SSASPresetList.Any(p => p.name == name))
+                    instance.SSASPresetList.Add(new SSASPreset(gains, name));
             }
 
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(rsasPresetNodeName))
@@ -169,10 +172,12 @@ namespace PilotAssistant
                 gains.Add(controllerSASGains(node.GetNode(elevCtrlr), SASList.Pitch));
                 gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), SASList.Bank));
                 gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), SASList.Hdg));
-                if (node.GetValue("name") == RSASDefaultName)
-                    RSASDefault = new RSASPreset(gains, node.GetValue("name"));
-                else if (!instance.RSASPresetList.Any(p => p.name == node.GetValue("name")))
-                    instance.RSASPresetList.Add(new RSASPreset(gains, node.GetValue("name")));
+
+                string name = node.GetValue("name");
+                if (name == RSASDefaultName)
+                    RSASDefault = new RSASPreset(gains, name);
+                else if (!instance.RSASPresetList.Any(p => p.name == name))
+                    instance.RSASPresetList.Add(new RSASPreset(gains, name));
             }
 
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(craftPresetNodeName))
@@ -180,11 +185,12 @@ namespace PilotAssistant
                 if (node == null || instance.craftPresetDict.ContainsKey(node.GetValue("name")))
                     continue;
 
-                if (node.GetValue("name") == craftDefaultName)
+                string name = node.GetValue("name");
+                if (name == craftDefaultName)
                     instance.craftPresetDict.Add(craftDefaultName, new CraftPreset(craftDefaultName, asstDefault, SSASDefault, SASDefault, RSASDefault));
                 else
                 {
-                    CraftPreset cP = new CraftPreset(node.GetValue("name"),
+                    CraftPreset cP = new CraftPreset(name,
                                             instance.AsstPresetList.FirstOrDefault(p => p.name == node.GetValue(craftAsstKey)),
                                             instance.SSASPresetList.FirstOrDefault(p => p.name == node.GetValue(craftSSASKey)),
                                             instance.SASPresetList.FirstOrDefault(p => p.name == node.GetValue(craftSASKey)),

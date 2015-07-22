@@ -77,7 +77,6 @@ namespace PilotAssistant.FlightModules
 
         public void OnDestroy()
         {
-            Debug.Log("Asst Vessel Module Destroyed");
             GameEvents.onVesselChange.Remove(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Remove(warpHandler);
 
@@ -85,11 +84,6 @@ namespace PilotAssistant.FlightModules
                 vesselAsst.OnDestroy();
             if (PilotAssistantFlightCore.Instance != null)
                 PilotAssistantFlightCore.Instance.removeVessel(this);
-        }
-
-        public bool isActiveVessel()
-        {
-            return vesselRef.isActiveVessel;
         }
     }
 }

@@ -78,7 +78,7 @@ namespace PilotAssistant.FlightModules
 
         public bool HrztActive = false;
         public HrztMode CurrentHrztMode = HrztMode.Heading;
-        static GUIContent[] hrztLabels = new GUIContent[3] { new GUIContent("Bank", "Mode: Bank Angle Control"), new GUIContent("Hdg", "Mode: Heading Control - Dirction"), new GUIContent("Hdg#", "Mode: Heading control - Value") };
+        static GUIContent[] hrztLabels = new GUIContent[3] { new GUIContent("Bank", "Mode: Bank Angle Control"), new GUIContent("Hdg", "Mode: Heading Control - Direction"), new GUIContent("Hdg#", "Mode: Heading control - Value") };
 
         public bool VertActive = false;
         public VertMode CurrentVertMode = VertMode.VSpeed;
@@ -120,7 +120,7 @@ namespace PilotAssistant.FlightModules
         bool stopHdgShift = false;
 
         // don't update hdg display if true
-        bool headingEdit = false;
+        bool headingEdit = true;
 
         bool bShowHdg = true;
         bool bShowVert = true;
@@ -255,7 +255,7 @@ namespace PilotAssistant.FlightModules
 
         public void InputResponse()
         {
-            if (!vesRef.isActiveVessel() || bLockInput || Utils.isFlightControlLocked() || !FlightGlobals.ready)
+            if (!vesRef.vesselRef.isActiveVessel || bLockInput || Utils.isFlightControlLocked() || !FlightGlobals.ready)
                 return;
 
             if (BindingManager.bindings[(int)bindingIndex.Pause].isPressed && !MapView.MapIsEnabled)
@@ -305,18 +305,17 @@ namespace PilotAssistant.FlightModules
             // ============================================================ Hrzt Controls ============================================================
             if (HrztActive && !vesRef.vesselRef.checkLanded() && Utils.hasYawInput())
             {
-                double headingChangeToCommit = GameSettings.YAW_LEFT.GetKey() ? -hrztScale * scale : 0;
-                headingChangeToCommit += GameSettings.YAW_RIGHT.GetKey() ? hrztScale * scale : 0;
-                headingChangeToCommit += hrztScale * scale * GameSettings.AXIS_YAW.GetAxis();
+                double hdg = GameSettings.YAW_LEFT.GetKey() ? -hrztScale * scale : 0;
+                hdg += GameSettings.YAW_RIGHT.GetKey() ? hrztScale * scale : 0;
+                hdg += hrztScale * scale * GameSettings.AXIS_YAW.GetAxis();
                 if (CurrentHrztMode == HrztMode.Bank)
                 {
-                    AsstList.Aileron.GetAsst(this).SetPoint = Utils.headingClamp(AsstList.Aileron.GetAsst(this).SetPoint - headingChangeToCommit / 4, 180);
+                    AsstList.Aileron.GetAsst(this).SetPoint = Utils.headingClamp(AsstList.Aileron.GetAsst(this).SetPoint - hdg / 4, 180);
                     targetHeading = AsstList.Aileron.GetAsst(this).SetPoint.ToString("0.00");
                 }
                 else
-                    StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newTarget, vesRef) + headingChangeToCommit));
+                    StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newTarget, vesRef) + hdg));
             }
-
             // ============================================================ Vertical Controls ============================================================
             if (VertActive && Utils.hasPitchInput())
             {
@@ -335,7 +334,6 @@ namespace PilotAssistant.FlightModules
                     targetVert = AsstList.VertSpeed.GetAsst(this).SetPoint.ToString("0.00");
                 }
             }
-
             // ============================================================ Throttle Controls ============================================================
             if (ThrtActive && Utils.hasThrottleInput())
             {
@@ -359,8 +357,6 @@ namespace PilotAssistant.FlightModules
 
         private void hdgModeChanged(HrztMode newMode, bool active, bool setTarget = true)
         {
-            headingEdit = false;
-
             AsstList.HdgBank.GetAsst(this).skipDerivative = true;
             AsstList.BankToYaw.GetAsst(this).skipDerivative = true;
             AsstList.Aileron.GetAsst(this).skipDerivative = true;
@@ -371,6 +367,7 @@ namespace PilotAssistant.FlightModules
                 InputLockManager.RemoveControlLock(yawLockID);
                 yawLockEngaged = false;
                 stopHdgShift = true;
+                headingEdit = true;
                 AsstList.HdgBank.GetAsst(this).Clear();
                 AsstList.BankToYaw.GetAsst(this).Clear();
                 AsstList.Aileron.GetAsst(this).Clear();
@@ -824,23 +821,21 @@ namespace PilotAssistant.FlightModules
 
                     double displayTargetDelta = 0; // active setpoint or absolute value to change (yaw L/R input)
                     string displayTarget = "0.00"; // target setpoint or setpoint to commit as target setpoint
-                    if (HrztActive)
+                    if (CurrentHrztMode == HrztMode.Heading)
                     {
-                        if (CurrentHrztMode == HrztMode.Heading)
-                        {
-                            if (!hdgShiftIsRunning)
-                                displayTargetDelta = AsstList.HdgBank.GetAsst(this).SetPoint - vesRef.vesselData.heading;
-                            else
-                                displayTargetDelta = Utils.calculateTargetHeading(newTarget, vesRef) - vesRef.vesselData.heading;
-
-                            displayTargetDelta = displayTargetDelta.headingClamp(180);
-                        }
-
-                        if (headingEdit)
-                            displayTarget = targetHeading;
+                        if (!hdgShiftIsRunning)
+                            displayTargetDelta = AsstList.HdgBank.GetAsst(this).SetPoint - vesRef.vesselData.heading;
                         else
-                            displayTarget = Utils.calculateTargetHeading(newTarget, vesRef).ToString("0.00");
+                            displayTargetDelta = Utils.calculateTargetHeading(newTarget, vesRef) - vesRef.vesselData.heading;
+
+                        displayTargetDelta = displayTargetDelta.headingClamp(180);
                     }
+
+                    if (headingEdit)
+                        displayTarget = targetHeading;
+                    else
+                        displayTarget = Utils.calculateTargetHeading(newTarget, vesRef).ToString("0.00");
+
                     targetHeading = GUILayout.TextField(displayTarget, GUILayout.Width(51));
                     if (targetHeading != displayTarget)
                         headingEdit = true;
@@ -857,7 +852,7 @@ namespace PilotAssistant.FlightModules
                         {
                             AsstList.Aileron.GetAsst(this).BumplessSetPoint = -newBank;
                             hdgModeChanged(CurrentHrztMode, true, false);
-                            GUI.FocusControl("Target Hdg: ");
+                            GUI.FocusControl("Target Bank: ");
                             GUI.UnfocusWindow();
                         }
                     }
@@ -865,6 +860,12 @@ namespace PilotAssistant.FlightModules
                     targetHeading = GUILayout.TextField(displayTarget, GUILayout.Width(51));
                     if (targetHeading != displayTarget)
                         headingEdit = true;
+
+                    if (GUILayout.Button("Level", GUILayout.Width(51)))
+                    {
+                        AsstList.Aileron.GetAsst(this).BumplessSetPoint = 0;
+                        hdgModeChanged(CurrentHrztMode, true, false);
+                    }
                     GUILayout.EndHorizontal();
                 }
 
