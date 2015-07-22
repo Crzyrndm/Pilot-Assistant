@@ -25,9 +25,10 @@ namespace PilotAssistant.FlightModules
     public enum VertMode
     {
         ToggleOn = -1,
-        VSpeed = 0,
-        Altitude = 1,
-        RadarAltitude = 2
+        Pitch = 0,
+        VSpeed = 1,
+        Altitude = 2,
+        RadarAltitude = 3
     }
 
     public enum HrztMode
@@ -82,7 +83,7 @@ namespace PilotAssistant.FlightModules
 
         public bool VertActive = false;
         public VertMode CurrentVertMode = VertMode.VSpeed;
-        static GUIContent[] vertLabels = new GUIContent[3] { new GUIContent("VSpd", "Mode: Vertical Speed Control"), new GUIContent("Alt", "Mode: Altitude Control"), new GUIContent("RAlt", "Mode: Radar Altitude Control") };
+        static GUIContent[] vertLabels = new GUIContent[4] { new GUIContent("Pitch", "Mode: Pitch Control"), new GUIContent("VSpd", "Mode: Vertical Speed Control"), new GUIContent("Alt", "Mode: Altitude Control"), new GUIContent("RAlt", "Mode: Radar Altitude Control") };
 
         public bool ThrtActive = false;
         public ThrottleMode CurrentThrottleMode = ThrottleMode.Speed;
@@ -209,6 +210,14 @@ namespace PilotAssistant.FlightModules
 
             // Set up a default preset that can be easily returned to
             PresetManager.initDefaultPresets(new AsstPreset(controllers, "default"));
+
+            AsstList.BankToYaw.GetAsst(this).invertOutput = true;
+            AsstList.Aileron.GetAsst(this).invertInput = true;
+            AsstList.Altitude.GetAsst(this).invertOutput = true;
+            AsstList.VertSpeed.GetAsst(this).invertOutput = true;
+            AsstList.Elevator.GetAsst(this).invertOutput = true;
+            AsstList.Speed.GetAsst(this).invertOutput = true;
+            AsstList.Acceleration.GetAsst(this).invertOutput = true;
         }
 
         public void warpHandler()
@@ -310,7 +319,7 @@ namespace PilotAssistant.FlightModules
                 hdg += hrztScale * scale * GameSettings.AXIS_YAW.GetAxis();
                 if (CurrentHrztMode == HrztMode.Bank)
                 {
-                    AsstList.Aileron.GetAsst(this).SetPoint = Utils.headingClamp(AsstList.Aileron.GetAsst(this).SetPoint - hdg / 4, 180);
+                    AsstList.Aileron.GetAsst(this).SetPoint = Utils.headingClamp(AsstList.Aileron.GetAsst(this).SetPoint + hdg / 4, 180);
                     targetHeading = AsstList.Aileron.GetAsst(this).SetPoint.ToString("0.00");
                 }
                 else
@@ -328,10 +337,15 @@ namespace PilotAssistant.FlightModules
                     AsstList.Altitude.GetAsst(this).SetPoint = Math.Max(AsstList.Altitude.GetAsst(this).SetPoint + vert * 10, 0);
                     targetVert = AsstList.Altitude.GetAsst(this).SetPoint.ToString("0.00");
                 }
-                else
+                else if (CurrentVertMode == VertMode.VSpeed)
                 {
                     AsstList.VertSpeed.GetAsst(this).SetPoint += vert;
                     targetVert = AsstList.VertSpeed.GetAsst(this).SetPoint.ToString("0.00");
+                }
+                else
+                {
+                    AsstList.Elevator.GetAsst(this).SetPoint = Utils.Clamp(AsstList.Elevator.GetAsst(this).SetPoint + vert, -90, 90);
+                    targetVert = AsstList.Elevator.GetAsst(this).SetPoint.ToString("0.00");
                 }
             }
             // ============================================================ Throttle Controls ============================================================
@@ -390,7 +404,7 @@ namespace PilotAssistant.FlightModules
                         break;
                     case HrztMode.Bank:
                         if (setTarget)
-                            AsstList.Aileron.GetAsst(this).SetPoint = -vesRef.vesselData.bank;
+                            AsstList.Aileron.GetAsst(this).SetPoint = vesRef.vesselData.bank;
                         targetHeading = AsstList.Aileron.GetAsst(this).SetPoint.ToString("0.00");
                         break;
                 }
@@ -422,12 +436,32 @@ namespace PilotAssistant.FlightModules
                     pitchLockEngaged = true;
                 }
                 bPause = false;
-                AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
-                AsstList.VertSpeed.GetAsst(this).Preset(-vesRef.vesselData.AoA);
-                AsstList.Elevator.GetAsst(this).Preset(-pitchSet);
 
+                #warning presets need to account for flying upside down
+                if (VertActive && (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude))
+                    AsstList.Altitude.GetAsst(this).Preset();
+                else
+                    AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
+                if (VertActive && (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude || CurrentVertMode == VertMode.VSpeed))
+                    AsstList.VertSpeed.GetAsst(this).Preset();
+                else
+                    AsstList.VertSpeed.GetAsst(this).Preset(-vesRef.vesselData.AoA);
+                if (VertActive)
+                    AsstList.Elevator.GetAsst(this).Preset();
+                else
+                    AsstList.Elevator.GetAsst(this).Preset(-pitchSet);
+                
                 switch (newMode)
                 {
+                    case VertMode.Pitch:
+                        {
+                            if (setTarget)
+                            {
+                                AsstList.Elevator.GetAsst(this).SetPoint = vesRef.vesselData.pitch;
+                            }
+                            targetVert = AsstList.Elevator.GetAsst(this).SetPoint.ToString("0.00");
+                        }
+                        break;
                     case VertMode.VSpeed:
                         if (setTarget)
                         {
@@ -492,7 +526,6 @@ namespace PilotAssistant.FlightModules
 
         #region Control / Fixed Update
 
-        Vector3 lastCtrlOutput = new Vector3(); // pitch, roll, yaw
         public void vesselController(FlightCtrlState state)
         {
             if (!HighLogic.LoadedSceneIsFlight)
@@ -515,7 +548,7 @@ namespace PilotAssistant.FlightModules
                         hdgBankResponse = AsstList.HdgBank.GetAsst(this).ResponseD(vesRef.vesselData.progradeHeading, useIntegral);
                     // aileron setpoint updated, bank angle also used for yaw calculations (don't go direct to rudder because we want yaw stabilisation *or* turn assistance)
                     AsstList.BankToYaw.GetAsst(this).SetPoint = AsstList.Aileron.GetAsst(this).SetPoint = hdgBankResponse;
-                    AsstList.Rudder.GetAsst(this).SetPoint = -AsstList.BankToYaw.GetAsst(this).ResponseD(vesRef.vesselData.yaw, useIntegral);
+                    AsstList.Rudder.GetAsst(this).SetPoint = AsstList.BankToYaw.GetAsst(this).ResponseD(vesRef.vesselData.yaw, useIntegral);
                 }
                 else
                 {
@@ -528,21 +561,33 @@ namespace PilotAssistant.FlightModules
                 rollInput += !Utils.IsNeutral(GameSettings.AXIS_ROLL) ? GameSettings.AXIS_ROLL.GetAxis() : 0;
                 rollInput *= FlightInputHandler.fetch.precisionMode ? 0.33f : 1;
 
-                lastCtrlOutput.y = state.roll = (AsstList.Aileron.GetAsst(this).ResponseF(-vesRef.vesselData.bank, useIntegral) + rollInput).Clamp(-1, 1);
-                lastCtrlOutput.z = state.yaw = AsstList.Rudder.GetAsst(this).ResponseF(vesRef.vesselData.yaw, useIntegral).Clamp(-1, 1);
+                #warning Reacts badly to -180 degrees
+                state.roll = (AsstList.Aileron.GetAsst(this).ResponseF(Utils.CurrentAngleTargetRel(vesRef.vesselData.bank, AsstList.Aileron.GetAsst(this).SetPoint, 180), useIntegral) + rollInput).Clamp(-1, 1);
+                state.yaw = AsstList.Rudder.GetAsst(this).ResponseF(vesRef.vesselData.yaw, useIntegral).Clamp(-1, 1);
             }
 
             if (VertActive)
             {
-                if (CurrentVertMode == VertMode.Altitude)
-                    AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(-AsstList.Altitude.GetAsst(this).ResponseD(vesRef.vesselRef.altitude, useIntegral), vesRef.vesselRef.srfSpeed * -0.9, vesRef.vesselRef.srfSpeed * 0.9);
-                else if (CurrentVertMode == VertMode.RadarAltitude)
-                    AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(getClimbRateForConstAltitude() - AsstList.Altitude.GetAsst(this).ResponseD(vesRef.vesselData.radarAlt * Vector3.Dot(vesRef.vesselData.surfVelForward, vesRef.vesselRef.srf_velocity.normalized), useIntegral), -vesRef.vesselRef.srfSpeed * 0.95, vesRef.vesselRef.srfSpeed * 0.95);
-                AsstList.Elevator.GetAsst(this).SetPoint = -AsstList.VertSpeed.GetAsst(this).ResponseD(vesRef.vesselData.vertSpeed, useIntegral);
-                lastCtrlOutput.x = state.pitch = -AsstList.Elevator.GetAsst(this).ResponseF(vesRef.vesselData.AoA, useIntegral).Clamp(-1, 1);
+                if (CurrentVertMode != VertMode.Pitch)
+                {
+                    if (CurrentVertMode == VertMode.Altitude)
+                        AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(AsstList.Altitude.GetAsst(this).ResponseD(vesRef.vesselRef.altitude, useIntegral), vesRef.vesselRef.srfSpeed * -0.9, vesRef.vesselRef.srfSpeed * 0.9);
+                    else if (CurrentVertMode == VertMode.RadarAltitude)
+                        AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(getClimbRateForConstAltitude() + AsstList.Altitude.GetAsst(this).ResponseD(vesRef.vesselData.radarAlt * Vector3.Dot(vesRef.vesselData.surfVelForward, vesRef.vesselRef.srf_velocity.normalized), useIntegral), -vesRef.vesselRef.srfSpeed * 0.9, vesRef.vesselRef.srfSpeed * 0.9);
+                    AsstList.Elevator.GetAsst(this).SetPoint = AsstList.VertSpeed.GetAsst(this).ResponseD(vesRef.vesselData.vertSpeed, useIntegral);
+                    if (Math.Abs(vesRef.vesselData.bank) > 90)
+                        AsstList.Elevator.GetAsst(this).SetPoint *= -1; // flying upside down
+                    state.pitch = AsstList.Elevator.GetAsst(this).ResponseF(vesRef.vesselData.AoA, useIntegral).Clamp(-1, 1);
+                }
+                else
+                {
+                    state.pitch = AsstList.Elevator.GetAsst(this).ResponseF(vesRef.vesselData.pitch, useIntegral).Clamp(-1, 1);
+                    if (Math.Abs(vesRef.vesselData.bank) > 90)
+                        state.pitch *= -1; // flying upside down
+                }
             }
             else
-                state.pitch = Mathf.Clamp(state.pitch + lastCtrlOutput.x, -1, 1);
+                state.pitch = Mathf.Clamp(state.pitch + pitchHold, -1, 1);
 
             if (ThrtActive)
             {
@@ -551,26 +596,27 @@ namespace PilotAssistant.FlightModules
                 else
                 {
                     if (CurrentThrottleMode == ThrottleMode.Speed)
-                        AsstList.Acceleration.GetAsst(this).SetPoint = -AsstList.Speed.GetAsst(this).ResponseD(vesRef.vesselRef.srfSpeed, useIntegral);
-                    state.mainThrottle = (-AsstList.Acceleration.GetAsst(this).ResponseF(vesRef.vesselData.acceleration, useIntegral)).Clamp(0, 1);
+                        AsstList.Acceleration.GetAsst(this).SetPoint = AsstList.Speed.GetAsst(this).ResponseD(vesRef.vesselRef.srfSpeed, useIntegral);
+                    state.mainThrottle = AsstList.Acceleration.GetAsst(this).ResponseF(vesRef.vesselData.acceleration, useIntegral).Clamp(0, 1);
                 }
                 FlightInputHandler.state.mainThrottle = state.mainThrottle; // set throttle state permanently
             }
         }
 
+        float pitchHold = 0;
         IEnumerator fadeOutPitch()
         {
-            double step = lastCtrlOutput.x * TimeWarp.fixedDeltaTime / 10;
-            double val = lastCtrlOutput.x;
+            double val = AsstList.Elevator.GetAsst(this).lastOutput;
+            double step = val * TimeWarp.fixedDeltaTime / 10;
             int sign = Math.Sign(val);
             yield return new WaitForFixedUpdate();
             while (!VertActive && Math.Sign(val) == sign && vesRef.vesselRef.atmDensity != 0)
             {
                 yield return new WaitForFixedUpdate();
                 val -= step;
-                lastCtrlOutput.x = (float)val;
+                pitchHold = (float)val;
             }
-            lastCtrlOutput.x = 0;
+            pitchHold = 0;
         }
 
         IEnumerator shiftHeadingTarget(double newHdg)
@@ -703,7 +749,8 @@ namespace PilotAssistant.FlightModules
                 vertScrollHeight = 0;
                 if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
                     vertScrollHeight += AsstList.Altitude.GetAsst(this).bShow ? 168 : 27;
-                vertScrollHeight += AsstList.VertSpeed.GetAsst(this).bShow ? 168 : 29;
+                if (CurrentVertMode != VertMode.Pitch)
+                    vertScrollHeight += AsstList.VertSpeed.GetAsst(this).bShow ? 168 : 29;
                 if (showControlSurfaces)
                     vertScrollHeight += AsstList.Elevator.GetAsst(this).bShow ? 168 : 27;
             }
@@ -850,13 +897,13 @@ namespace PilotAssistant.FlightModules
                         double newBank;
                         if (double.TryParse(targetHeading, out newBank))
                         {
-                            AsstList.Aileron.GetAsst(this).BumplessSetPoint = -newBank;
+                            AsstList.Aileron.GetAsst(this).BumplessSetPoint = newBank;
                             hdgModeChanged(CurrentHrztMode, true, false);
                             GUI.FocusControl("Target Bank: ");
                             GUI.UnfocusWindow();
                         }
                     }
-                    string displayTarget = headingEdit ? targetHeading : (-AsstList.Aileron.GetAsst(this).SetPoint).ToString("0.00");
+                    string displayTarget = headingEdit ? targetHeading : (AsstList.Aileron.GetAsst(this).SetPoint).ToString("0.00");
                     targetHeading = GUILayout.TextField(displayTarget, GUILayout.Width(51));
                     if (targetHeading != displayTarget)
                         headingEdit = true;
@@ -935,7 +982,7 @@ namespace PilotAssistant.FlightModules
             {
                 if (!bMinimiseVert)
                 {
-                    VertMode tempMode = (VertMode)GUILayout.SelectionGrid((int)CurrentVertMode, vertLabels, 3, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
+                    VertMode tempMode = (VertMode)GUILayout.SelectionGrid((int)CurrentVertMode, vertLabels, 4, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
                     if (tempMode != CurrentVertMode)
                         vertModeChanged(tempMode, VertActive);
                 }
@@ -947,6 +994,8 @@ namespace PilotAssistant.FlightModules
                     buttonString += "Altitude";
                 else if (CurrentVertMode == VertMode.RadarAltitude)
                     buttonString += "Radar Alt";
+                else if (CurrentVertMode == VertMode.Pitch)
+                    buttonString += "Pitch";
 
                 if (GUILayout.Button(buttonString, GUILayout.Width(118)))
                 {
@@ -960,10 +1009,14 @@ namespace PilotAssistant.FlightModules
                             AsstList.Altitude.GetAsst(this).SetPoint = vesRef.vesselRef.altitude;
                         AsstList.Altitude.GetAsst(this).BumplessSetPoint = newVal;
                     }
-                    else
+                    else if (CurrentVertMode == VertMode.VSpeed)
                     {
                         AsstList.VertSpeed.GetAsst(this).SetPoint = vesRef.vesselRef.verticalSpeed + vesRef.vesselData.AoA / AsstList.VertSpeed.GetAsst(this).PGain;
                         AsstList.VertSpeed.GetAsst(this).BumplessSetPoint = newVal;
+                    }
+                    else
+                    {
+                        AsstList.Elevator.GetAsst(this).SetPoint = newVal;
                     }
                     vertModeChanged(CurrentVertMode, true, false);
 
@@ -980,13 +1033,14 @@ namespace PilotAssistant.FlightModules
                         drawPIDvalues(AsstList.Altitude, "RAltitude", "m", vesRef.vesselData.radarAlt, 2, "Speed ", "m/s", true);
                     if (CurrentVertMode == VertMode.Altitude)
                         drawPIDvalues(AsstList.Altitude, "Altitude", "m", vesRef.vesselRef.altitude, 2, "Speed ", "m/s", true);
-                    drawPIDvalues(AsstList.VertSpeed, "Vertical Speed", "m/s", vesRef.vesselData.vertSpeed, 2, "AoA", "\u00B0", true);
+                    if (CurrentVertMode != VertMode.Pitch)
+                        drawPIDvalues(AsstList.VertSpeed, "Vertical Speed", "m/s", vesRef.vesselData.vertSpeed, 2, "AoA", "\u00B0", true);
 
                     if (showControlSurfaces)
-                        drawPIDvalues(AsstList.Elevator, "Angle of Attack", "\u00B0", vesRef.vesselData.AoA, 3, "Deflection", "\u00B0", true);
+                        drawPIDvalues(AsstList.Elevator, "Angle of Attack", "\u00B0", CurrentVertMode == VertMode.Pitch ? vesRef.vesselData.pitch : vesRef.vesselData.AoA, 3, "Deflection", "\u00B0", true);
 
-                    AsstList.Elevator.GetAsst(this).OutMin = Math.Min(Math.Max(AsstList.Elevator.GetAsst(this).OutMin, -1), 1);
-                    AsstList.Elevator.GetAsst(this).OutMax = Math.Min(Math.Max(AsstList.Elevator.GetAsst(this).OutMax, -1), 1);
+                    AsstList.Elevator.GetAsst(this).OutMin = Utils.Clamp(AsstList.Elevator.GetAsst(this).OutMin, -1, 1);
+                    AsstList.Elevator.GetAsst(this).OutMax = Utils.Clamp(AsstList.Elevator.GetAsst(this).OutMax, -1, 1);
 
                     GUILayout.EndScrollView();
                 }

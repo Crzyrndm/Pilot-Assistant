@@ -36,6 +36,9 @@ namespace PilotAssistant.PID
         protected double easing = 1;
         protected double increment = 0;
 
+        public double lastOutput { get; protected set; }
+        public bool invertInput { get; set; }
+        public bool invertOutput { get; set; }
         public bool bShow { get; set; }
         public bool skipDerivative { get; set; }
         public bool isHeadingControl { get; set; }
@@ -86,7 +89,7 @@ namespace PilotAssistant.PID
                         active_setpoint -= increment;
                 }
             }
-            input = Clamp(input, inMin, inMax);
+            input = (invertInput ? -1 : 1) * Utils.Clamp(input, inMin, inMax);
             dt = TimeWarp.fixedDeltaTime;
             error = input - active_setpoint;
 
@@ -95,7 +98,9 @@ namespace PilotAssistant.PID
                 skipDerivative = false;
                 previous = input;
             }
-            return Clamp((proportionalError(error) + integralError(error, useIntegral) + derivativeError(input)), outMin, outMax);
+
+            lastOutput = (invertOutput ? -1 : 1) * Utils.Clamp((proportionalError(error) + integralError(error, useIntegral) + derivativeError(input)), outMin, outMax);
+            return lastOutput;
         }
 
         public virtual float ResponseF(double input, bool useIntegral)
@@ -117,7 +122,7 @@ namespace PilotAssistant.PID
             }
 
             sum += error * dt * k_integral / scale;
-            sum = Clamp(sum, integralClampLower, integralClampUpper); // AIW
+            sum = Utils.Clamp(sum, integralClampLower, integralClampUpper); // AIW
             return sum;
         }
 
@@ -147,56 +152,41 @@ namespace PilotAssistant.PID
             sum = 0;
         }
 
+        public virtual void Preset()
+        {
+            sum = lastOutput;
+        }
+
         public virtual void Preset(double target)
         {
             sum = target;
         }
-
-        #region utility functions
-
-        /// <summary>
-        /// Clamp double input between maximum and minimum value
-        /// </summary>
-        /// <param name="val">variable to be clamped</param>
-        /// <param name="min">minimum output value of the variable</param>
-        /// <param name="max">maximum output value of the variable</param>
-        /// <returns>val clamped between max and min</returns>
-        protected static double Clamp(double val, double min, double max)
-        {
-            if (val < min)
-                return min;
-            else if (val > max)
-                return max;
-            else
-                return val;
-        }
-
-        #endregion
 
         #region properties
         public virtual double SetPoint
         {
             get
             {
-                return target_setpoint;
+                return invertInput ? -target_setpoint : target_setpoint;
             }
             set
             {
-                target_setpoint = value;
-                active_setpoint = value;
+                active_setpoint = target_setpoint = invertInput ? -value : value;
             }
         }
 
-        // let active setpoint move to match the target to smooth the transition
+        /// <summary>
+        /// let active setpoint move to match the target to smooth the transition
+        /// </summary>
         public virtual double BumplessSetPoint
         {
             get
             {
-                return active_setpoint;
+                return invertInput ? -active_setpoint : active_setpoint;
             }
             set
             {
-                target_setpoint = value;
+                target_setpoint = invertInput ? -value : value;
                 increment = 0;
             }
         }

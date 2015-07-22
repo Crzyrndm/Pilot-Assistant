@@ -27,6 +27,12 @@ namespace PilotAssistant.PID
 
         public virtual double ResponseD(double error, double rate, PIDmode mode)
         {
+            if (invertInput)
+            {
+                error *= -1;
+                rate *= -1;
+            }
+
             double res_d = 0, res_i = 0, res_p = 0;
             res_d = derivativeError(rate);
             if (mode == PIDmode.PID)
@@ -34,7 +40,8 @@ namespace PilotAssistant.PID
             if (mode == PIDmode.PD || mode == PIDmode.PID)
                 res_p = proportionalError(error);
 
-            return Utils.Clamp(res_p + res_i + res_d, OutMin, OutMax);
+            lastOutput = (invertOutput ? -1 : 1) * Utils.Clamp(res_p + res_i + res_d, OutMin, OutMax);
+            return lastOutput;
         }
 
         public virtual float ResponseF(double error, double rate, PIDmode mode)
