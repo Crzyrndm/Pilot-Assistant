@@ -171,11 +171,6 @@ namespace PilotAssistant.FlightModules
             Initialise();
 
             // Input clamps aren't part of the presets (there's no reason for them to be...). Just some sanity checking
-            AsstList.Aileron.GetAsst(this).InMax = 180;
-            AsstList.Aileron.GetAsst(this).InMin = -180;
-            AsstList.Altitude.GetAsst(this).InMin = 0;
-            AsstList.Speed.GetAsst(this).InMin = 0;
-            AsstList.HdgBank.GetAsst(this).isHeadingControl = true; // fix for derivative freaking out when heading target flickers across 0/360
 
             InputLockManager.RemoveControlLock(pitchLockID);
             InputLockManager.RemoveControlLock(yawLockID);
@@ -211,6 +206,7 @@ namespace PilotAssistant.FlightModules
             // Set up a default preset that can be easily returned to
             PresetManager.initDefaultPresets(new AsstPreset(controllers, "default"));
 
+            AsstList.HdgBank.GetAsst(this).invertOutput = true;
             AsstList.BankToYaw.GetAsst(this).invertOutput = true;
             AsstList.Aileron.GetAsst(this).invertInput = true;
             AsstList.Altitude.GetAsst(this).invertOutput = true;
@@ -218,6 +214,12 @@ namespace PilotAssistant.FlightModules
             AsstList.Elevator.GetAsst(this).invertOutput = true;
             AsstList.Speed.GetAsst(this).invertOutput = true;
             AsstList.Acceleration.GetAsst(this).invertOutput = true;
+
+            AsstList.Aileron.GetAsst(this).InMax = 180;
+            AsstList.Aileron.GetAsst(this).InMin = -180;
+            AsstList.Altitude.GetAsst(this).InMin = 0;
+            AsstList.Speed.GetAsst(this).InMin = 0;
+            AsstList.HdgBank.GetAsst(this).isHeadingControl = true; // fix for derivative freaking out when heading target flickers across 0/360
         }
 
         public void warpHandler()
@@ -322,8 +324,13 @@ namespace PilotAssistant.FlightModules
                     AsstList.Aileron.GetAsst(this).SetPoint = Utils.headingClamp(AsstList.Aileron.GetAsst(this).SetPoint + hdg / 4, 180);
                     targetHeading = AsstList.Aileron.GetAsst(this).SetPoint.ToString("0.00");
                 }
-                else
+                else if (CurrentHrztMode == HrztMode.Heading)
                     StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newTarget, vesRef) + hdg));
+                else
+                {
+                    AsstList.HdgBank.GetAsst(this).SetPoint = (AsstList.HdgBank.GetAsst(this).SetPoint + hdg).headingClamp(360);
+                    targetHeading = AsstList.HdgBank.GetAsst(this).SetPoint.ToString("0.00");
+                }
             }
             // ============================================================ Vertical Controls ============================================================
             if (VertActive && Utils.hasPitchInput())
@@ -398,6 +405,10 @@ namespace PilotAssistant.FlightModules
                 switch (newMode)
                 {
                     case HrztMode.HeadingNum:
+                        if (setTarget)
+                            AsstList.HdgBank.GetAsst(this).SetPoint = vesRef.vesselData.heading;
+                        targetHeading = AsstList.HdgBank.GetAsst(this).SetPoint.ToString("0.00");
+                        break;
                     case HrztMode.Heading:
                         if (setTarget)
                             StartCoroutine(shiftHeadingTarget(vesRef.vesselData.heading));
@@ -454,13 +465,11 @@ namespace PilotAssistant.FlightModules
                 switch (newMode)
                 {
                     case VertMode.Pitch:
+                        if (setTarget)
                         {
-                            if (setTarget)
-                            {
-                                AsstList.Elevator.GetAsst(this).SetPoint = vesRef.vesselData.pitch;
-                            }
-                            targetVert = AsstList.Elevator.GetAsst(this).SetPoint.ToString("0.00");
+                            AsstList.Elevator.GetAsst(this).SetPoint = vesRef.vesselData.pitch;
                         }
+                        targetVert = AsstList.Elevator.GetAsst(this).SetPoint.ToString("0.00");
                         break;
                     case VertMode.VSpeed:
                         if (setTarget)
@@ -858,7 +867,10 @@ namespace PilotAssistant.FlightModules
                         double newHdg;
                         if (double.TryParse(targetHeading, out newHdg))
                         {
-                            StartCoroutine(shiftHeadingTarget(newHdg.headingClamp(360)));
+                            if (CurrentHrztMode == HrztMode.Heading)
+                                StartCoroutine(shiftHeadingTarget(newHdg.headingClamp(360)));
+                            else
+                                AsstList.HdgBank.GetAsst(this).SetPoint = newHdg.headingClamp(360);
                             hdgModeChanged(CurrentHrztMode, true, false);
 
                             GUI.FocusControl("Target Hdg: ");
@@ -876,12 +888,24 @@ namespace PilotAssistant.FlightModules
                             displayTargetDelta = Utils.calculateTargetHeading(newTarget, vesRef) - vesRef.vesselData.heading;
 
                         displayTargetDelta = displayTargetDelta.headingClamp(180);
+
+                        if (headingEdit)
+                            displayTarget = targetHeading;
+                        else
+                            displayTarget = Utils.calculateTargetHeading(newTarget, vesRef).ToString("0.00");
+                    }
+                    else
+                    {
+                        displayTargetDelta = AsstList.HdgBank.GetAsst(this).SetPoint - vesRef.vesselData.heading;
+                        displayTargetDelta = displayTargetDelta.headingClamp(180);
+
+                        if (headingEdit)
+                            displayTarget = targetHeading;
+                        else
+                            displayTarget = AsstList.HdgBank.GetAsst(this).SetPoint.ToString("0.00");
                     }
 
-                    if (headingEdit)
-                        displayTarget = targetHeading;
-                    else
-                        displayTarget = Utils.calculateTargetHeading(newTarget, vesRef).ToString("0.00");
+                    
 
                     targetHeading = GUILayout.TextField(displayTarget, GUILayout.Width(51));
                     if (targetHeading != displayTarget)
