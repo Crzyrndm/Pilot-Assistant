@@ -95,9 +95,10 @@ namespace PilotAssistant.Utility
         /// </summary>
         public static double CurrentAngleTargetRel(double current, double target, double maxAngle)
         {
-            if (target - current < maxAngle - 360)
+            double diff = target - current;
+            if (diff < maxAngle - 360)
                 return current - 360;
-            else if (target - current > maxAngle)
+            else if (diff > maxAngle)
                 return current + 360;
             else
                 return current;

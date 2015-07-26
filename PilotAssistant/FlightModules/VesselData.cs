@@ -51,9 +51,9 @@ namespace PilotAssistant.FlightModules
         public void updateAttitude()
         {
             //if (PilotAssistantFlightCore.calculateDirection)
-            findVesselFwdAxis(vRef.vesselRef);
+            //findVesselFwdAxis(vRef.vesselRef);
             //else
-            //vesselFacingAxis = v.transform.up;
+            vesselFacingAxis = vRef.vesselRef.transform.up;
 
             // 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
             radarAlt = vRef.vesselRef.altitude - (vRef.vesselRef.mainBody.ocean ? Math.Max(vRef.vesselRef.pqsAltitude, 0) : vRef.vesselRef.pqsAltitude);
@@ -103,8 +103,10 @@ namespace PilotAssistant.FlightModules
         /// <summary>
         /// Find the vessel orientation at the CoM by interpolating from surrounding part transforms
         /// This orientation should be significantly more resistant to vessel flex/wobble than the vessel transform (root part) as a free body rotates about it's CoM
+        /// 
+        /// Has an issue with the origin shifter causing random bounces
         /// </summary>
-        void findVesselFwdAxis(Vessel v)
+        public void findVesselFwdAxis(Vessel v)
         {
             Part closestPart = v.rootPart;
             float offset = (closestPart.transform.position - v.CurrentCoM).sqrMagnitude; // only comparing magnitude, sign and actual value don't matter
