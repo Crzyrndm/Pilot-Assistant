@@ -6,7 +6,7 @@ using UnityEngine;
 namespace PilotAssistant.FlightModules
 {
     using PID;
-    using Presets;
+    using PID.Presets;
     using Utility;
 
     public enum AsstList
@@ -170,8 +170,6 @@ namespace PilotAssistant.FlightModules
         {
             Initialise();
 
-            // Input clamps aren't part of the presets (there's no reason for them to be...). Just some sanity checking
-
             InputLockManager.RemoveControlLock(pitchLockID);
             InputLockManager.RemoveControlLock(yawLockID);
             pitchLockEngaged = false;
@@ -215,8 +213,8 @@ namespace PilotAssistant.FlightModules
             AsstList.Speed.GetAsst(this).invertOutput = true;
             AsstList.Acceleration.GetAsst(this).invertOutput = true;
 
-            AsstList.Aileron.GetAsst(this).InMax = 180;
             AsstList.Aileron.GetAsst(this).InMin = -180;
+            AsstList.Aileron.GetAsst(this).InMax = 180;
             AsstList.Altitude.GetAsst(this).InMin = 0;
             AsstList.Speed.GetAsst(this).InMin = 0;
             AsstList.HdgBank.GetAsst(this).isHeadingControl = true; // fix for derivative freaking out when heading target flickers across 0/360
@@ -448,7 +446,7 @@ namespace PilotAssistant.FlightModules
                 }
                 bPause = false;
 
-                #warning presets need to account for flying upside down
+                #warning preset needs to account for flying upside down
                 if (VertActive && (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude))
                     AsstList.Altitude.GetAsst(this).Preset();
                 else
@@ -570,7 +568,7 @@ namespace PilotAssistant.FlightModules
                 rollInput += !Utils.IsNeutral(GameSettings.AXIS_ROLL) ? GameSettings.AXIS_ROLL.GetAxis() : 0;
                 rollInput *= FlightInputHandler.fetch.precisionMode ? 0.33f : 1;
 
-                #warning Reacts badly to -180 degrees
+                #warning Reacts incorrectly to -180/180 degrees
                 state.roll = (AsstList.Aileron.GetAsst(this).ResponseF(Utils.CurrentAngleTargetRel(vesRef.vesselData.bank, AsstList.Aileron.GetAsst(this).SetPoint, 180), useIntegral) + rollInput).Clamp(-1, 1);
                 state.yaw = AsstList.Rudder.GetAsst(this).ResponseF(vesRef.vesselData.yaw, useIntegral).Clamp(-1, 1);
             }
@@ -867,10 +865,7 @@ namespace PilotAssistant.FlightModules
                         double newHdg;
                         if (double.TryParse(targetHeading, out newHdg))
                         {
-                            if (CurrentHrztMode == HrztMode.Heading)
-                                StartCoroutine(shiftHeadingTarget(newHdg.headingClamp(360)));
-                            else
-                                AsstList.HdgBank.GetAsst(this).SetPoint = newHdg.headingClamp(360);
+                            StartCoroutine(shiftHeadingTarget(newHdg.headingClamp(360)));
                             hdgModeChanged(CurrentHrztMode, true, false);
 
                             GUI.FocusControl("Target Hdg: ");
@@ -904,8 +899,6 @@ namespace PilotAssistant.FlightModules
                         else
                             displayTarget = AsstList.HdgBank.GetAsst(this).SetPoint.ToString("0.00");
                     }
-
-                    
 
                     targetHeading = GUILayout.TextField(displayTarget, GUILayout.Width(51));
                     if (targetHeading != displayTarget)

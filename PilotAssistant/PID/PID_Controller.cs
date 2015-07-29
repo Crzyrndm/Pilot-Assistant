@@ -6,6 +6,18 @@ namespace PilotAssistant.PID
     using Utility;
     using FlightModules;
 
+    [Flags]
+    public enum PIDmode
+    {
+        P = 1,
+        I = 2,
+        PI = 3,
+        D = 4,
+        PD = 5,
+        ID = 6,
+        PID = 7
+    }
+
     public class PID_Controller : MonoBehaviour
     {
         protected double target_setpoint = 0; // target setpoint
@@ -43,7 +55,7 @@ namespace PilotAssistant.PID
         public bool skipDerivative { get; set; }
         public bool isHeadingControl { get; set; }
 
-        public PID_Controller(double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double easing = 1)
+        public PID_Controller(double Kp, double Ki, double Kd, double OutputMin = -1, double OutputMax = 1, double intClampLower = -1, double intClampUpper = 1, double scalar = 1, double easing = 1)
         {
             k_proportional = Kp;
             k_integral = Ki;
@@ -334,22 +346,6 @@ namespace PilotAssistant.PID
         }
 
         public AsstController(AsstList ID, double[] gains) : base (gains)
-        {
-            ctrlID = ID;
-        }
-    }
-
-    public class SASController : PID_Controller
-    {
-        public SASList ctrlID { get; set; }
-
-        public SASController(SASList ID, double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double easing = 1)
-                            : base (Kp, Ki, Kd, OutputMin, OutputMax, intClampLower, intClampUpper, scalar, easing)
-        {            
-            ctrlID = ID;
-        }
-
-        public SASController(SASList ID, double[] gains) : base(gains)
         {
             ctrlID = ID;
         }

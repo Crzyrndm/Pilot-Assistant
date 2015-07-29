@@ -6,8 +6,8 @@ using UnityEngine;
 namespace PilotAssistant
 {
     using PID;
+    using PID.Presets;
     using Utility;
-    using Presets;
     using FlightModules;
 
     [KSPAddon(KSPAddon.Startup.MainMenu, true)]
@@ -135,9 +135,9 @@ namespace PilotAssistant
                     continue;
 
                 List<double[]> gains = new List<double[]>();
-                gains.Add(controllerSASGains(node.GetNode(elevCtrlr), SASList.Pitch));
-                gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), SASList.Bank));
-                gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), SASList.Hdg));
+                gains.Add(controllerSASGains(node.GetNode(elevCtrlr), Attitude_Controller.Axis.Pitch));
+                gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), Attitude_Controller.Axis.Roll));
+                gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), Attitude_Controller.Axis.Yaw));
 
                 string name = node.GetValue("name");
                 if (name == SASDefaultName)
@@ -152,9 +152,9 @@ namespace PilotAssistant
                     continue;
 
                 List<double[]> gains = new List<double[]>();
-                gains.Add(controllerSASGains(node.GetNode(elevCtrlr), SASList.Pitch));
-                gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), SASList.Bank));
-                gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), SASList.Hdg));
+                gains.Add(controllerSASGains(node.GetNode(elevCtrlr), Attitude_Controller.Axis.Pitch));
+                gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), Attitude_Controller.Axis.Roll));
+                gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), Attitude_Controller.Axis.Yaw));
 
                 string name = node.GetValue("name");
                 if (name == ssasDefaultName)
@@ -169,9 +169,9 @@ namespace PilotAssistant
                     continue;
 
                 List<double[]> gains = new List<double[]>();
-                gains.Add(controllerSASGains(node.GetNode(elevCtrlr), SASList.Pitch));
-                gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), SASList.Bank));
-                gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), SASList.Hdg));
+                gains.Add(controllerSASGains(node.GetNode(elevCtrlr), Attitude_Controller.Axis.Pitch));
+                gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), Attitude_Controller.Axis.Roll));
+                gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), Attitude_Controller.Axis.Yaw));
 
                 string name = node.GetValue("name");
                 if (name == RSASDefaultName)
@@ -306,7 +306,7 @@ namespace PilotAssistant
             }
         }
 
-        public static double[] controllerSASGains(ConfigNode node, SASList type)
+        public static double[] controllerSASGains(ConfigNode node, Attitude_Controller.Axis type)
         {
             double[] gains = new double[5];
 
@@ -322,15 +322,15 @@ namespace PilotAssistant
             return gains;
         }
 
-        public static double[] defaultControllerGains(SASList type)
+        public static double[] defaultControllerGains(Attitude_Controller.Axis type)
         {
             switch (type)
             {
-                case SASList.Pitch:
+                case Attitude_Controller.Axis.Pitch:
                     return Instance.defaultPresetPitchGains;
-                case SASList.Bank:
+                case Attitude_Controller.Axis.Roll:
                     return Instance.defaultPresetRollGains;
-                case SASList.Hdg:
+                case Attitude_Controller.Axis.Yaw:
                     return Instance.defaultPresetHdgGains;
                 default:
                     return Instance.defaultPresetPitchGains;
@@ -358,9 +358,9 @@ namespace PilotAssistant
         {
             ConfigNode node = new ConfigNode(sasPresetNodeName);
             node.AddValue("name", preset.name);
-            node.AddNode(PIDnode(aileronCtrlr, (int)SASList.Bank, preset));
-            node.AddNode(PIDnode(rudderCtrlr, (int)SASList.Hdg, preset));
-            node.AddNode(PIDnode(elevCtrlr, (int)SASList.Pitch, preset));
+            node.AddNode(PIDnode(aileronCtrlr, (int)Attitude_Controller.Axis.Roll, preset));
+            node.AddNode(PIDnode(rudderCtrlr, (int)Attitude_Controller.Axis.Yaw, preset));
+            node.AddNode(PIDnode(elevCtrlr, (int)Attitude_Controller.Axis.Pitch, preset));
 
             return node;
         }
@@ -369,9 +369,9 @@ namespace PilotAssistant
         {
             ConfigNode node = new ConfigNode(ssasPresetNodeName);
             node.AddValue("name", preset.name);
-            node.AddNode(PIDnode(aileronCtrlr, (int)SASList.Bank, preset));
-            node.AddNode(PIDnode(rudderCtrlr, (int)SASList.Hdg, preset));
-            node.AddNode(PIDnode(elevCtrlr, (int)SASList.Pitch, preset));
+            node.AddNode(PIDnode(aileronCtrlr, (int)Attitude_Controller.Axis.Roll, preset));
+            node.AddNode(PIDnode(rudderCtrlr, (int)Attitude_Controller.Axis.Yaw, preset));
+            node.AddNode(PIDnode(elevCtrlr, (int)Attitude_Controller.Axis.Pitch, preset));
 
             return node;
         }
@@ -380,9 +380,9 @@ namespace PilotAssistant
         {
             ConfigNode node = new ConfigNode(rsasPresetNodeName);
             node.AddValue("name", preset.name);
-            node.AddNode(PIDnode(aileronCtrlr, (int)SASList.Bank, preset));
-            node.AddNode(PIDnode(rudderCtrlr, (int)SASList.Hdg, preset));
-            node.AddNode(PIDnode(elevCtrlr, (int)SASList.Pitch, preset));
+            node.AddNode(PIDnode(aileronCtrlr, (int)Attitude_Controller.Axis.Roll, preset));
+            node.AddNode(PIDnode(rudderCtrlr, (int)Attitude_Controller.Axis.Yaw, preset));
+            node.AddNode(PIDnode(elevCtrlr, (int)Attitude_Controller.Axis.Pitch, preset));
 
             return node;
         }
@@ -405,29 +405,29 @@ namespace PilotAssistant
         public static ConfigNode PIDnode(string name, int index, SASPreset preset)
         {
             ConfigNode node = new ConfigNode(name);
-            node.AddValue(pGain, preset.PIDGains[index, 0]);
-            node.AddValue(iGain, preset.PIDGains[index, 1]);
-            node.AddValue(dGain, preset.PIDGains[index, 2]);
-            node.AddValue(scalar, preset.PIDGains[index, 3]);
+            node.AddValue(pGain, preset.PIDGains[index].KP);
+            node.AddValue(iGain, preset.PIDGains[index].KI);
+            node.AddValue(dGain, preset.PIDGains[index].KD);
+            node.AddValue(scalar, preset.PIDGains[index].Scalar);
             return node;
         }
 
         public static ConfigNode PIDnode(string name, int index, SSASPreset preset)
         {
             ConfigNode node = new ConfigNode(name);
-            node.AddValue(pGain, preset.PIDGains[index, 0]);
-            node.AddValue(iGain, preset.PIDGains[index, 1]);
-            node.AddValue(dGain, preset.PIDGains[index, 2]);
-            node.AddValue(scalar, preset.PIDGains[index, 3]);
+            node.AddValue(pGain, preset.PIDGains[index].KP);
+            node.AddValue(iGain, preset.PIDGains[index].KI);
+            node.AddValue(dGain, preset.PIDGains[index].KD);
+            node.AddValue(scalar, preset.PIDGains[index].Scalar);
             return node;
         }
 
         public static ConfigNode PIDnode(string name, int index, RSASPreset preset)
         {
             ConfigNode node = new ConfigNode(name);
-            node.AddValue(pGain, preset.PIDGains[index, 0]);
-            node.AddValue(iGain, preset.PIDGains[index, 1]);
-            node.AddValue(dGain, preset.PIDGains[index, 2]);
+            node.AddValue(pGain, preset.PIDGains[index].KP);
+            node.AddValue(iGain, preset.PIDGains[index].KI);
+            node.AddValue(dGain, preset.PIDGains[index].KD);
             return node;
         }
 
@@ -534,20 +534,20 @@ namespace PilotAssistant
 
         public static void loadSASPreset(SASPreset p, Stock_SAS instance)
         {
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[(int)SASList.Pitch, 0];
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[(int)SASList.Pitch, 1];
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[(int)SASList.Pitch, 2];
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[(int)SASList.Pitch, 3];
+            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KP;
+            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KI;
+            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KD;
+            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[(int)Attitude_Controller.Axis.Pitch].Scalar;
 
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[(int)SASList.Bank, 0];
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[(int)SASList.Bank, 1];
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[(int)SASList.Bank, 2];
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[(int)SASList.Bank, 3];
+            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[(int)Attitude_Controller.Axis.Roll].KP;
+            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[(int)Attitude_Controller.Axis.Roll].KI;
+            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[(int)Attitude_Controller.Axis.Roll].KD;
+            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[(int)Attitude_Controller.Axis.Roll].Scalar;
 
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[(int)SASList.Hdg, 0];
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[(int)SASList.Hdg, 1];
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[(int)SASList.Hdg, 2];
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)SASList.Hdg, 3];
+            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KP;
+            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KI;
+            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KD;
+            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)Attitude_Controller.Axis.Yaw].Scalar;
 
             Instance.activeSASPreset = p;
 
@@ -580,33 +580,33 @@ namespace PilotAssistant
         #endregion
 
         #region SSAS Preset
-        public static void newSSASPreset(ref string name, PIDErrorController[] controllers, Vessel v)
+        public static string newSSASPreset(string name, Attitude_Controller controller, Vessel v)
         {
             if (string.IsNullOrEmpty(name))
-                return;
+                return "";
 
             string nameTest = name;
             if (Instance.SSASPresetList.Any(p => p.name == nameTest))
-                return;
+                return name;
 
-            SSASPreset newPreset = new SSASPreset(controllers, name);
+            SSASPreset newPreset = new SSASPreset(controller, name);
             Instance.SSASPresetList.Add(newPreset);
             updateCraftPreset(newPreset, v);
             Instance.activeSSASPreset = Instance.SSASPresetList.Last();
             saveToFile();
-            name = "";
+            return "";
         }
 
         public static void loadSSASPreset(SSASPreset p, SurfSAS instance)
         {
-            PIDErrorController[] c = instance.SASControllers;
+            Attitude_Controller c = instance.controller;
 
-            foreach (SASList s in Enum.GetValues(typeof(SASList)))
+            foreach (Attitude_Controller.Axis s in Enum.GetValues(typeof(Attitude_Controller.Axis)))
             {
-                c[(int)s].PGain = p.PIDGains[(int)s, 0];
-                c[(int)s].IGain = p.PIDGains[(int)s, 1];
-                c[(int)s].DGain = p.PIDGains[(int)s, 2];
-                c[(int)s].Scalar = p.PIDGains[(int)s, 3];
+                c.GetCtrl(s).Constants.KP = p.PIDGains[(int)s].KP;
+                c.GetCtrl(s).Constants.KI = p.PIDGains[(int)s].KI;
+                c.GetCtrl(s).Constants.KD = p.PIDGains[(int)s].KD;
+                c.GetCtrl(s).Constants.Scalar = p.PIDGains[(int)s].Scalar;
             }
 
             Instance.activeSSASPreset = p;
@@ -618,7 +618,7 @@ namespace PilotAssistant
 
         public static void UpdateSSASPreset(SurfSAS instance)
         {
-            Instance.activeSSASPreset.Update(instance.SASControllers);
+            Instance.activeSSASPreset.Update(instance.controller);
             saveToFile();
         }
 
@@ -661,9 +661,9 @@ namespace PilotAssistant
 
         public static void loadRSASPreset(RSASPreset p, Stock_SAS instance)
         {
-            instance.vesRef.vesselRef.Autopilot.RSAS.pidPitch.ReinitializePIDsOnly((float)p.PIDGains[(int)SASList.Pitch, 0], (float)p.PIDGains[(int)SASList.Pitch, 1], (float)p.PIDGains[(int)SASList.Pitch, 2]);
-            instance.vesRef.vesselRef.Autopilot.RSAS.pidRoll.ReinitializePIDsOnly((float)p.PIDGains[(int)SASList.Bank, 0], (float)p.PIDGains[(int)SASList.Bank, 1], (float)p.PIDGains[(int)SASList.Bank, 2]);
-            instance.vesRef.vesselRef.Autopilot.RSAS.pidYaw.ReinitializePIDsOnly((float)p.PIDGains[(int)SASList.Hdg, 0], (float)p.PIDGains[(int)SASList.Hdg, 1], (float)p.PIDGains[(int)SASList.Hdg, 2]);
+            instance.vesRef.vesselRef.Autopilot.RSAS.pidPitch.ReinitializePIDsOnly((float)p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KP, (float)p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KI, (float)p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KD);
+            instance.vesRef.vesselRef.Autopilot.RSAS.pidRoll.ReinitializePIDsOnly((float)p.PIDGains[(int)Attitude_Controller.Axis.Roll].KP, (float)p.PIDGains[(int)Attitude_Controller.Axis.Roll].KI, (float)p.PIDGains[(int)Attitude_Controller.Axis.Roll].KD);
+            instance.vesRef.vesselRef.Autopilot.RSAS.pidYaw.ReinitializePIDsOnly((float)p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KP, (float)p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KI, (float)p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KD);
 
             Instance.activeRSASPreset = p;
 

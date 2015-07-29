@@ -4,9 +4,13 @@ using UnityEngine;
 
 namespace PilotAssistant.FlightModules
 {
+    using PID;
     using Utility;
-    using Presets;
+    using PID.Presets;
 
+    /// <summary>
+    /// provides a UI for tuning, and a save/load mechanism for the stock SAS systems. Just windows and a few calls to PresetManager
+    /// </summary>
     public class Stock_SAS
     {
         public AsstVesselModule vesRef;
@@ -97,9 +101,9 @@ namespace PilotAssistant.FlightModules
 
             VesselAutopilot.VesselSAS sas = vesRef.vesselRef.Autopilot.SAS;
 
-            drawPIDValues(sas.pidLockedPitch, "Pitch", SASList.Pitch);
-            drawPIDValues(sas.pidLockedRoll, "Roll", SASList.Bank);
-            drawPIDValues(sas.pidLockedYaw, "Yaw", SASList.Hdg);
+            drawPIDValues(sas.pidLockedPitch, "Pitch", Attitude_Controller.Axis.Pitch);
+            drawPIDValues(sas.pidLockedRoll, "Roll", Attitude_Controller.Axis.Roll);
+            drawPIDValues(sas.pidLockedYaw, "Yaw", Attitude_Controller.Axis.Yaw);
 
             GUI.DragWindow();
             tooltip = GUI.tooltip;
@@ -155,9 +159,9 @@ namespace PilotAssistant.FlightModules
             bShowPresets = GUILayout.Toggle(bShowPresets, bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
 
             VesselAutopilot.VesselRSAS rsas = vesRef.vesselRef.Autopilot.RSAS;
-            drawPIDValues(rsas.pidPitch, "Pitch", SASList.Pitch);
-            drawPIDValues(rsas.pidRoll, "Roll", SASList.Bank);
-            drawPIDValues(rsas.pidYaw, "Yaw", SASList.Hdg);
+            drawPIDValues(rsas.pidPitch, "Pitch", Attitude_Controller.Axis.Pitch);
+            drawPIDValues(rsas.pidRoll, "Roll", Attitude_Controller.Axis.Roll);
+            drawPIDValues(rsas.pidYaw, "Yaw", Attitude_Controller.Axis.Yaw);
 
             GUI.DragWindow();
             tooltip = GUI.tooltip;
@@ -204,7 +208,7 @@ namespace PilotAssistant.FlightModules
         }
         #endregion
 
-        private void drawPIDValues(PIDclamp controller, string inputName, SASList controllerID)
+        private void drawPIDValues(PIDclamp controller, string inputName, Attitude_Controller.Axis controllerID)
         {
             stockPIDDisplay[(int)controllerID] = GUILayout.Toggle(stockPIDDisplay[(int)controllerID], inputName, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
 
@@ -217,7 +221,7 @@ namespace PilotAssistant.FlightModules
             }
         }
 
-        private void drawPIDValues(PIDRclamp controller, string inputName, SASList controllerID)
+        private void drawPIDValues(PIDRclamp controller, string inputName, Attitude_Controller.Axis controllerID)
         {
             stockPIDDisplay[(int)controllerID] = GUILayout.Toggle(stockPIDDisplay[(int)controllerID], inputName, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
 

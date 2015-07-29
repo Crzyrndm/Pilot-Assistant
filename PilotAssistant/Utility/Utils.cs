@@ -35,11 +35,6 @@ namespace PilotAssistant.Utility
             return instance.controllers[(int)id];
         }
 
-        public static PIDErrorController GetSAS(this SASList id, SurfSAS instance)
-        {
-            return instance.SASControllers[(int)id];
-        }
-
         public static bool isFlightControlLocked()
         {
             return (InputLockManager.IsLocked(ControlTypes.PITCH) && !PilotAssistant.pitchLockEngaged) || InputLockManager.IsLocked(ControlTypes.ROLL)
@@ -51,6 +46,19 @@ namespace PilotAssistant.Utility
         /// maxHeading is the top limit, bottom limit is maxHeading - 360
         /// </summary>
         public static double headingClamp(this double valToClamp, double maxHeading)
+        {
+            while (valToClamp > maxHeading)
+                valToClamp -= 360;
+            while (valToClamp < (maxHeading - 360))
+                valToClamp += 360;
+            return valToClamp;
+        }
+
+        /// <summary>
+        /// Circular rounding to keep compass measurements within a 360 degree range
+        /// maxHeading is the top limit, bottom limit is maxHeading - 360
+        /// </summary>
+        public static float headingClamp(this float valToClamp, float maxHeading)
         {
             while (valToClamp > maxHeading)
                 valToClamp -= 360;
@@ -128,15 +136,15 @@ namespace PilotAssistant.Utility
             return axis.IsNeutral() && Math.Abs(axis.GetAxis()) < 0.00001;
         }
 
-        public static bool hasInput(SASList ID)
+        public static bool hasInput(Attitude_Controller.Axis ID)
         {
             switch (ID)
             {
-                case SASList.Bank:
+                case Attitude_Controller.Axis.Roll:
                     return hasRollInput();
-                case SASList.Hdg:
+                case Attitude_Controller.Axis.Yaw:
                     return hasYawInput();
-                case SASList.Pitch:
+                case Attitude_Controller.Axis.Pitch:
                 default:
                     return hasPitchInput();
             }
@@ -162,29 +170,29 @@ namespace PilotAssistant.Utility
             return GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey() || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown();
         }
 
-        public static double getCurrentVal(SASList ID, VesselData vd)
+        public static double getCurrentVal(Attitude_Controller.Axis ID, VesselData vd)
         {
             switch (ID)
             {
-                case SASList.Bank:
+                case Attitude_Controller.Axis.Roll:
                     return vd.bank;
-                case SASList.Hdg:
+                case Attitude_Controller.Axis.Yaw:
                     return vd.heading;
-                case SASList.Pitch:
+                case Attitude_Controller.Axis.Pitch:
                 default:
                     return vd.pitch;
             }
         }
 
-        public static double getCurrentRate(SASList ID, Vessel v)
+        public static double getCurrentRate(Attitude_Controller.Axis ID, Vessel v)
         {
             switch (ID)
             {
-                case SASList.Bank:
+                case Attitude_Controller.Axis.Roll:
                     return v.angularVelocity.y;
-                case SASList.Hdg:
+                case Attitude_Controller.Axis.Yaw:
                     return v.angularVelocity.z;
-                case SASList.Pitch:
+                case Attitude_Controller.Axis.Pitch:
                 default:
                     return v.angularVelocity.x;
             }
