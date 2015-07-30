@@ -14,14 +14,22 @@ namespace PilotAssistant.FlightModules
         public void Awake()
         {
             vesselRef = GetComponent<Vessel>();
-            vesselAsst = new PilotAssistant(this);
-            vesselSSAS = new SurfSAS(this);
-            vesselStockSAS = new Stock_SAS(this);
-            vesselData = new VesselData(this);
+            if (vesselRef.isEVA)
+                vesselRef = null;
+            else
+            {
+                vesselAsst = new PilotAssistant(this);
+                vesselSSAS = new SurfSAS(this);
+                vesselStockSAS = new Stock_SAS(this);
+                vesselData = new VesselData(this);
+            }
         }
 
         public void Start()
         {
+            if (vesselRef == null)
+                return;
+
             PilotAssistantFlightCore.Instance.addVessel(this);
 
             vesselAsst.Start();

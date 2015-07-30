@@ -263,7 +263,7 @@ namespace PilotAssistant
 
             GameEvents.onHideUI.Remove(hideUI);
             GameEvents.onShowUI.Remove(showUI);
-            
+
             PresetManager.saveToFile();
             instance = null;
         }

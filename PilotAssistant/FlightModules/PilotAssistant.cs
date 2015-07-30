@@ -537,12 +537,10 @@ namespace PilotAssistant.FlightModules
 
         public void vesselController(FlightCtrlState state)
         {
-            if (!HighLogic.LoadedSceneIsFlight)
-                return;
-
             pitchSet = state.pitch; // last pitch ouput, used for presetting the elevator
             if (bPause || !vesRef.vesselRef.IsControllable)
                 return;
+
             bool useIntegral = !vesRef.vesselRef.checkLanded();
             // Heading Control
             if (HrztActive && useIntegral)
