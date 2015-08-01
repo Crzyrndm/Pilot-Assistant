@@ -7,17 +7,74 @@ using PilotAssistant.FlightModules;
 
 namespace PilotAssistant.PID
 {
+    /// <summary>
+    /// Attitude controller calculates the position independent vessel relative error in rotation space. The action on each axis for that error is then calculated and output
+    /// </summary>
     public class Attitude_Controller
     {
-        protected Quaternion HeadingNormalRotation = Quaternion.identity;
+        /// <summary>
+        /// facing target in orbital mode or the direction plane normal in surface mode
+        /// </summary>
+        public Quaternion Target { get; protected set; }
 
+        /// <summary>
+        /// The heading the controller is locked to
+        /// </summary>
         public float Heading { get; protected set; }
+
+        /// <summary>
+        /// The pitch the controller is locked to
+        /// </summary>
         public float Pitch { get; protected set; }
+
+        /// <summary>
+        /// The roll the controller is locked to
+        /// </summary>
         public float Roll { get; protected set; }
+
         /// <summary>
         /// rate limit for target shifting
         /// </summary>
         public float maxDelta { get; set; }
+
+        /// <summary>
+        /// surface, orbital, or target mode
+        /// </summary>
+        private VesselAutopilot.AutopilotMode targetMode;
+        public VesselAutopilot.AutopilotMode TargetMode
+        {
+            get
+            {
+                return targetMode;
+            }
+            set
+            {
+                if (value != targetMode)
+                {
+                    targetMode = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// operating mode
+        /// </summary>
+        public FlightUIController.SpeedDisplayModes speedMode;
+        public FlightUIController.SpeedDisplayModes SpeedMode
+        {
+            get
+            {
+                return speedMode;
+            }
+            set
+            {
+                if (value != speedMode)
+                {
+                    speedMode = value;
+                    SetTarget(data.pitch, data.heading, data.bank);
+                }
+            }
+        }
 
         /// <summary>
         /// target to calculate off, moves towards the final target if not equal to it
@@ -25,7 +82,7 @@ namespace PilotAssistant.PID
         Quaternion curTargetFacing;
 
         /// <summary>
-        /// the previous error for yaw, pitch, and roll
+        /// the error for yaw, pitch, and roll calculated on the last update
         /// </summary>
         Vector3d lastError;
 
@@ -48,7 +105,6 @@ namespace PilotAssistant.PID
 
         public Attitude_Controller(VesselData Data, PIDConstants Pitch, PIDConstants Roll, PIDConstants Yaw)
         {
-            maxDelta = 1;
             data = Data;
             for (int i = 0; i < 3; i++)
                 controllers[i] = new Axis_Controller((Axis)i);
@@ -57,6 +113,12 @@ namespace PilotAssistant.PID
 
         protected void Initialise(PIDConstants Pitch, PIDConstants Roll, PIDConstants Yaw)
         {
+            TargetMode = VesselAutopilot.AutopilotMode.StabilityAssist;
+            SpeedMode = FlightUIController.SpeedDisplayModes.Surface;
+            maxDelta = 180;
+
+            Target = Quaternion.identity;
+
             if (Pitch != null)
                 controllers[(int)Axis.Pitch].Initialise(Pitch);
             if (Roll != null)
@@ -66,40 +128,45 @@ namespace PilotAssistant.PID
         }
 
         /// <summary>
-        /// 
+        /// main control calculations. 
         /// </summary>
         /// <param name="facing">the vessel transform.rotation parameter.</param>
         /// <param name="turnRate">the vessel angularVelocity parameter</param>
         /// <param name="activeAxis">which axes are active and should be assigned</param>
-        /// <returns>(pitch, roll, yaw) control outputs</returns>
+        /// <returns>Vector3(pitch, roll, yaw)</returns>
         public Vector3d ResponseD(Quaternion facing, Vector3 turnRate, bool[] activeAxis)
         {
+            // process inputs
             turnRate = turnRate * (float)(180 / Math.PI); // turn rate is given in rad/s
-            facing = facing * Quaternion.Euler(-90, 0, 0);
+            facing = facing * Quaternion.Euler(-90, 0, 0); // vessel forward axis is pointing down, rotate it so it points forward
 
+            // limit speed of rotation to a new target
             Quaternion targetFacing = TargetModeSwitch();
             if (curTargetFacing != targetFacing)
-                curTargetFacing = Quaternion.RotateTowards(curTargetFacing, targetFacing, 180);
+                curTargetFacing = Quaternion.RotateTowards(curTargetFacing, targetFacing, maxDelta);
 
+            // common helper vars
             Vector3 tgtFwd = curTargetFacing * Vector3.forward;
             Vector3 curFwd = facing * Vector3.forward;
 
+            // calculate pitch and yaw error
             double angleError = Vector3d.Angle(curFwd, tgtFwd);
             Vector3d errorRot = facing.Inverse() * curTargetFacing * Vector3d.forward;
-            lastError = (new Vector3d(-errorRot.y, 0, errorRot.x)).normalized * angleError;
+            lastError = (new Vector3d(errorRot.y, 0, errorRot.x)).normalized * angleError;
 
+            // calculate roll error
             Vector3d rollTargetRight = Quaternion.AngleAxis((float)angleError, Vector3d.Cross(tgtFwd, curFwd)) * curTargetFacing * Vector3d.right;
             lastError.y = Vector3d.Angle(facing * Vector3d.right, rollTargetRight) * Math.Sign(Vector3d.Dot(facing * -Vector3.up, rollTargetRight));
 
-            PIDmode mode = (data.vRef.vesselRef.LandedOrSplashed || !data.vRef.vesselRef.IsControllable) ? PIDmode.PD : PIDmode.PID;
-            Vector3d response = Vector3d.zero;
+            // prevent integral windup where it makes no difference
+            PIDmode mode = (data.parent.vesselRef.LandedOrSplashed || !data.parent.vesselRef.IsControllable) ? PIDmode.PD : PIDmode.PID;
 
+            // calculate axis output
+            Vector3d response = Vector3d.zero;
             if (activeAxis[(int)Axis.Pitch])
                 response[(int)Axis.Pitch] = controllers[(int)Axis.Pitch].ResponseD(lastError.x, turnRate.x, mode);
-
             if (activeAxis[(int)Axis.Roll])
                 response[(int)Axis.Roll] = controllers[(int)Axis.Roll].ResponseD(lastError.y, turnRate.y, mode);
-
             if (activeAxis[(int)Axis.Yaw])
                 response[(int)Axis.Yaw] = controllers[(int)Axis.Yaw].ResponseD(lastError.z, turnRate.z, mode);
 
@@ -123,50 +190,76 @@ namespace PilotAssistant.PID
                 state.yaw = output[(int)Axis.Yaw];
         }
 
+        /// <summary>
+        /// get the PID controller for a single vessel axis
+        /// </summary>
+        /// <param name="ctrlAxis">which axis to return</param>
+        /// <returns>the specified axis controller</returns>
         public Axis_Controller GetCtrl(Axis ctrlAxis)
         {
             return controllers[(int)ctrlAxis];
         }
+
 
         public void SetTarget(double pitch, double heading, double roll)
         {
             Pitch = (float)pitch;
             Roll = (float)roll;
             Heading = (float)heading;
-            HeadingNormalRotation = Utils.getPlaneRotation(heading, data.vRef);
+            if (speedMode == FlightUIController.SpeedDisplayModes.Surface)
+            {
+                Target = Utils.getPlaneRotation(heading, data.parent);
+            }
+            else
+            {
+                Target = Quaternion.LookRotation(data.planetNorth, data.planetUp);
+                Target = Quaternion.AngleAxis(Heading, Target * Vector3.up) * Target;
+                Target = Quaternion.AngleAxis(Pitch, Target * -Vector3.right) * Target;
+                Target = Quaternion.AngleAxis(Roll, Target * -Vector3.forward) * Target;
+            }
+        }
+
+        public void SetTarget (Quaternion facing)
+        {
+            if (speedMode == FlightUIController.SpeedDisplayModes.Surface)
+            {
+                facing = facing * Quaternion.Euler(-90, 0, 0);
+                Target = Utils.getPlaneRotation(facing * Vector3.forward, data.parent);
+            }
+            else
+            {
+                Target = facing;
+                Vector3 fwd = Target * Vector3.up;
+                Vector3 srfRgt = Vector3.Cross(data.planetUp, fwd);
+                Vector3 srfFwd = Vector3.Cross(srfRgt, data.planetUp);
+                Pitch = 90 - Vector3.Angle(data.planetUp, fwd);
+                Heading = (Vector3.Angle(srfFwd, data.planetNorth) * Math.Sign(Vector3d.Dot(srfFwd, data.planetEast))).headingClamp(360);
+                Roll = Vector3.Angle(srfRgt, Target * Vector3.right) * Math.Sign(Vector3.Dot(srfRgt, Target * Vector3.up));
+            }
         }
 
         /// <summary>
         /// preserves surface relative rotation
         /// </summary>
-        public void UpdateSrf()
+        public void Update()
         {
-            Heading = (float)Utils.calculateTargetHeading(HeadingNormalRotation, data.vRef);
+            if (speedMode == FlightUIController.SpeedDisplayModes.Surface)
+                Heading = (float)Utils.calculateTargetHeading(Target, data.parent);
+            else
+            {
+                Vector3 fwd = Target * Vector3.up;
+                Vector3 srfRgt = Vector3.Cross(data.planetUp, fwd);
+                Vector3 srfFwd = Vector3.Cross(srfRgt, data.planetUp);
+                Pitch = 90 - Vector3.Angle(data.planetUp, fwd);
+                Heading = (Vector3.Angle(srfFwd, data.planetNorth) * Math.Sign(Vector3d.Dot(srfFwd, data.planetEast))).headingClamp(360);
+                Roll = Vector3.Angle(srfRgt, Target * Vector3.right) * Math.Sign(Vector3.Dot(srfRgt, Target * Vector3.up));
+            }
         }
 
-        /// <summary>
-        /// only updates the pitch/heading/roll values, facing is unchanged
-        /// </summary>
-        //public void UpdateObt()
-        //{
-        //    Vector3 fwd = targetFacing * Vector3.forward;
-        //    Vector3 srfRgt = Vector3.Cross(data.planetUp, fwd);
-        //    Vector3 srfFwd = Vector3.Cross(srfRgt, data.planetUp);
-        //    Pitch = 90 - Vector3.Angle(data.planetUp, fwd);
-        //    Heading = (Vector3.Angle(srfFwd, data.planetNorth) * Math.Sign(Vector3d.Dot(srfFwd, data.planetEast))).headingClamp(360);
-        //    Roll = Vector3.Angle(srfRgt, targetFacing * Vector3.right) * Math.Sign(Vector3.Dot(srfRgt, targetFacing * Vector3.up));
-        //}
-
-        //public Quaternion GetTarget()
-        //{
-        //    return targetFacing;
-        //}
-
-        Quaternion orbitalTarget = Quaternion.identity;
         Quaternion TargetModeSwitch()
         {
             Quaternion target = Quaternion.identity;
-            switch (data.vRef.vesselRef.Autopilot.Mode)
+            switch (data.parent.vesselRef.Autopilot.Mode)
             {
                 case VesselAutopilot.AutopilotMode.StabilityAssist:
                     if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
@@ -179,63 +272,63 @@ namespace PilotAssistant.PID
                         target = Quaternion.AngleAxis(pitchAngle, target * -Vector3.right) * target; // pitch rotation
                     }
                     else
-                        return orbitalTarget * Quaternion.Euler(-90, 0, 0);
+                        return Target * Quaternion.Euler(-90, 0, 0);
                     break;
                 case VesselAutopilot.AutopilotMode.Prograde:
                     if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit)
-                        target = Quaternion.LookRotation(data.vRef.vesselRef.obt_velocity, data.planetUp);
+                        target = Quaternion.LookRotation(data.parent.vesselRef.obt_velocity, data.planetUp);
                     else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
-                        target = Quaternion.LookRotation(data.vRef.vesselRef.srf_velocity, data.planetUp);
+                        target = Quaternion.LookRotation(data.parent.vesselRef.srf_velocity, data.planetUp);
                     else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Target)
-                        target = Quaternion.LookRotation(data.vRef.vesselRef.obt_velocity - data.vRef.vesselRef.targetObject.GetVessel().obt_velocity, data.planetUp);
+                        target = Quaternion.LookRotation(data.parent.vesselRef.obt_velocity - data.parent.vesselRef.targetObject.GetVessel().obt_velocity, data.planetUp);
                     break;
                 case VesselAutopilot.AutopilotMode.Retrograde:
                     if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit)
-                        target = Quaternion.LookRotation(-data.vRef.vesselRef.obt_velocity, data.planetUp);
+                        target = Quaternion.LookRotation(-data.parent.vesselRef.obt_velocity, data.planetUp);
                     else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
-                        target = Quaternion.LookRotation(data.vRef.vesselRef.srf_velocity, data.planetUp);
+                        target = Quaternion.LookRotation(data.parent.vesselRef.srf_velocity, data.planetUp);
                     else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Target)
-                        target = Quaternion.LookRotation(data.vRef.vesselRef.targetObject.GetVessel().obt_velocity - data.vRef.vesselRef.obt_velocity, data.planetUp);
+                        target = Quaternion.LookRotation(data.parent.vesselRef.targetObject.GetVessel().obt_velocity - data.parent.vesselRef.obt_velocity, data.planetUp);
                     break;
                 case VesselAutopilot.AutopilotMode.RadialOut:
                     if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit || FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Target)
-                        target = Quaternion.LookRotation(data.vRef.vesselData.obtRadial, data.planetUp);
+                        target = Quaternion.LookRotation(data.parent.vesselData.obtRadial, data.planetUp);
                     else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
-                        target = Quaternion.LookRotation(data.vRef.vesselData.srfRadial, data.planetUp);
+                        target = Quaternion.LookRotation(data.parent.vesselData.srfRadial, data.planetUp);
                     break;
                 case VesselAutopilot.AutopilotMode.RadialIn:
                     if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit || FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Target)
-                        target = Quaternion.LookRotation(-data.vRef.vesselData.obtRadial, data.planetUp);
+                        target = Quaternion.LookRotation(-data.parent.vesselData.obtRadial, data.planetUp);
                     else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
-                        target = Quaternion.LookRotation(-data.vRef.vesselData.srfRadial, data.planetUp);
+                        target = Quaternion.LookRotation(-data.parent.vesselData.srfRadial, data.planetUp);
                     break;
                 case VesselAutopilot.AutopilotMode.Normal:
                     if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit || FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Target)
-                        target = Quaternion.LookRotation(data.vRef.vesselData.obtNormal, data.planetUp);
+                        target = Quaternion.LookRotation(data.parent.vesselData.obtNormal, data.planetUp);
                     else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
-                        target = Quaternion.LookRotation(data.vRef.vesselData.srfNormal, data.planetUp);
+                        target = Quaternion.LookRotation(data.parent.vesselData.srfNormal, data.planetUp);
                     break;
                 case VesselAutopilot.AutopilotMode.Antinormal:
                     if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit || FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Target)
-                        target = Quaternion.LookRotation(-data.vRef.vesselData.obtNormal, data.planetUp);
+                        target = Quaternion.LookRotation(-data.parent.vesselData.obtNormal, data.planetUp);
                     else if (FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Surface)
-                        target = Quaternion.LookRotation(-data.vRef.vesselData.srfNormal, data.planetUp);
+                        target = Quaternion.LookRotation(-data.parent.vesselData.srfNormal, data.planetUp);
                     break;
                 case VesselAutopilot.AutopilotMode.Target:
-                    if (data.vRef.vesselRef.targetObject != null)
-                        target = Quaternion.LookRotation(data.vRef.vesselRef.targetObject.GetVessel().GetWorldPos3D() - data.vRef.vesselRef.GetWorldPos3D(), data.planetUp);
+                    if (data.parent.vesselRef.targetObject != null)
+                        target = Quaternion.LookRotation(data.parent.vesselRef.targetObject.GetVessel().GetWorldPos3D() - data.parent.vesselRef.GetWorldPos3D(), data.planetUp);
                     break;
                 case VesselAutopilot.AutopilotMode.AntiTarget:
-                    if (data.vRef.vesselRef.targetObject != null)
-                        target = Quaternion.LookRotation(data.vRef.vesselRef.GetWorldPos3D() - data.vRef.vesselRef.targetObject.GetVessel().GetWorldPos3D(), data.planetUp);
+                    if (data.parent.vesselRef.targetObject != null)
+                        target = Quaternion.LookRotation(data.parent.vesselRef.GetWorldPos3D() - data.parent.vesselRef.targetObject.GetVessel().GetWorldPos3D(), data.planetUp);
                     break;
                 case VesselAutopilot.AutopilotMode.Maneuver:
-                    if (data.vRef.vesselRef.patchedConicSolver.maneuverNodes != null && data.vRef.vesselRef.patchedConicSolver.maneuverNodes.Count > 0)
-                        target = data.vRef.vesselRef.patchedConicSolver.maneuverNodes[0].nodeRotation;
+                    if (data.parent.vesselRef.patchedConicSolver.maneuverNodes != null && data.parent.vesselRef.patchedConicSolver.maneuverNodes.Count > 0)
+                        target = data.parent.vesselRef.patchedConicSolver.maneuverNodes[0].nodeRotation;
                     break;
             }
             float rollAngle = (float)(GetCtrl(Attitude_Controller.Axis.Roll).Active ? Roll : data.bank);
-            target = Quaternion.AngleAxis(-rollAngle, target * Vector3.forward) * target; // roll rotation
+            target = Quaternion.AngleAxis(-rollAngle, target * Vector3.forward) * target;
             return target;
         }
 
@@ -251,7 +344,7 @@ namespace PilotAssistant.PID
                     break;
                 case Axis.Yaw:
                     Heading = value;
-                    HeadingNormalRotation = Utils.getPlaneRotation(value, data.vRef);
+                    Target = Utils.getPlaneRotation(value, data.parent);
                     break;
             }
         }

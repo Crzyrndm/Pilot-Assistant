@@ -490,7 +490,7 @@ namespace PilotAssistant
             GeneralUI.postMessage("Loaded preset " + p.name);
             
             if (Instance.activeAsstPreset != Instance.craftPresetDict[craftDefaultName].AsstPreset)
-                updateCraftPreset(Instance.activeAsstPreset, instance.vesRef.vesselRef);
+                updateCraftPreset(Instance.activeAsstPreset, instance.parent.vesselRef);
             saveToFile();
         }
 
@@ -534,31 +534,31 @@ namespace PilotAssistant
 
         public static void loadSASPreset(SASPreset p, Stock_SAS instance)
         {
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KP;
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KI;
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KD;
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[(int)Attitude_Controller.Axis.Pitch].Scalar;
+            instance.parent.vesselRef.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KP;
+            instance.parent.vesselRef.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KI;
+            instance.parent.vesselRef.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KD;
+            instance.parent.vesselRef.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[(int)Attitude_Controller.Axis.Pitch].Scalar;
 
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[(int)Attitude_Controller.Axis.Roll].KP;
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[(int)Attitude_Controller.Axis.Roll].KI;
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[(int)Attitude_Controller.Axis.Roll].KD;
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[(int)Attitude_Controller.Axis.Roll].Scalar;
+            instance.parent.vesselRef.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[(int)Attitude_Controller.Axis.Roll].KP;
+            instance.parent.vesselRef.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[(int)Attitude_Controller.Axis.Roll].KI;
+            instance.parent.vesselRef.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[(int)Attitude_Controller.Axis.Roll].KD;
+            instance.parent.vesselRef.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[(int)Attitude_Controller.Axis.Roll].Scalar;
 
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KP;
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KI;
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KD;
-            instance.vesRef.vesselRef.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)Attitude_Controller.Axis.Yaw].Scalar;
+            instance.parent.vesselRef.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KP;
+            instance.parent.vesselRef.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KI;
+            instance.parent.vesselRef.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KD;
+            instance.parent.vesselRef.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)Attitude_Controller.Axis.Yaw].Scalar;
 
             Instance.activeSASPreset = p;
 
             if (Instance.activeSASPreset != Instance.craftPresetDict[craftDefaultName].SASPreset)
-                updateCraftPreset(p, instance.vesRef.vesselRef);
+                updateCraftPreset(p, instance.parent.vesselRef);
             saveToFile();
         }
 
         public static void UpdateSASPreset(Stock_SAS instance)
         {
-            Instance.activeSASPreset.Update(instance.vesRef.vesselRef.Autopilot.SAS);
+            Instance.activeSASPreset.Update(instance.parent.vesselRef.Autopilot.SAS);
             saveToFile();
         }
 
@@ -612,7 +612,7 @@ namespace PilotAssistant
             Instance.activeSSASPreset = p;
 
             if (Instance.activeSSASPreset != Instance.craftPresetDict[craftDefaultName].SSASPreset)
-                updateCraftPreset(p, instance.vesRef.vesselRef);
+                updateCraftPreset(p, instance.parent.vesselRef);
             saveToFile();
         }
 
@@ -661,20 +661,20 @@ namespace PilotAssistant
 
         public static void loadRSASPreset(RSASPreset p, Stock_SAS instance)
         {
-            instance.vesRef.vesselRef.Autopilot.RSAS.pidPitch.ReinitializePIDsOnly((float)p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KP, (float)p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KI, (float)p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KD);
-            instance.vesRef.vesselRef.Autopilot.RSAS.pidRoll.ReinitializePIDsOnly((float)p.PIDGains[(int)Attitude_Controller.Axis.Roll].KP, (float)p.PIDGains[(int)Attitude_Controller.Axis.Roll].KI, (float)p.PIDGains[(int)Attitude_Controller.Axis.Roll].KD);
-            instance.vesRef.vesselRef.Autopilot.RSAS.pidYaw.ReinitializePIDsOnly((float)p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KP, (float)p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KI, (float)p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KD);
+            instance.parent.vesselRef.Autopilot.RSAS.pidPitch.ReinitializePIDsOnly((float)p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KP, (float)p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KI, (float)p.PIDGains[(int)Attitude_Controller.Axis.Pitch].KD);
+            instance.parent.vesselRef.Autopilot.RSAS.pidRoll.ReinitializePIDsOnly((float)p.PIDGains[(int)Attitude_Controller.Axis.Roll].KP, (float)p.PIDGains[(int)Attitude_Controller.Axis.Roll].KI, (float)p.PIDGains[(int)Attitude_Controller.Axis.Roll].KD);
+            instance.parent.vesselRef.Autopilot.RSAS.pidYaw.ReinitializePIDsOnly((float)p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KP, (float)p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KI, (float)p.PIDGains[(int)Attitude_Controller.Axis.Yaw].KD);
 
             Instance.activeRSASPreset = p;
 
             if (Instance.activeRSASPreset != Instance.craftPresetDict[craftDefaultName].RSASPreset)
-                updateCraftPreset(p, instance.vesRef.vesselRef);
+                updateCraftPreset(p, instance.parent.vesselRef);
             saveToFile();
         }
 
         public static void UpdateRSASPreset(Stock_SAS instance)
         {
-            Instance.activeRSASPreset.Update(instance.vesRef.vesselRef.Autopilot.RSAS);
+            Instance.activeRSASPreset.Update(instance.parent.vesselRef.Autopilot.RSAS);
             saveToFile();
         }
 

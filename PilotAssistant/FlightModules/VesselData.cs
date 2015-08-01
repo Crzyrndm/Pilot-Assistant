@@ -10,10 +10,10 @@ namespace PilotAssistant.FlightModules
     {
         public VesselData(AsstVesselModule avm)
         {
-            vRef = avm;
+            parent = avm;
         }
 
-        public AsstVesselModule vRef;
+        public AsstVesselModule parent;
 
         public double radarAlt = 0;
         public double pitch = 0;
@@ -53,50 +53,50 @@ namespace PilotAssistant.FlightModules
             //if (PilotAssistantFlightCore.calculateDirection)
             //findVesselFwdAxis(vRef.vesselRef);
             //else
-            vesselFacingAxis = vRef.vesselRef.transform.up;
+            vesselFacingAxis = parent.vesselRef.transform.up;
 
             // 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
-            radarAlt = vRef.vesselRef.altitude - (vRef.vesselRef.mainBody.ocean ? Math.Max(vRef.vesselRef.pqsAltitude, 0) : vRef.vesselRef.pqsAltitude);
-            velocity = vRef.vesselRef.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
-            acceleration = acceleration * 0.8 + 0.2 * (vRef.vesselRef.srfSpeed - oldSpd) / TimeWarp.fixedDeltaTime; // vessel.acceleration.magnitude includes acceleration by gravity
+            radarAlt = parent.vesselRef.altitude - (parent.vesselRef.mainBody.ocean ? Math.Max(parent.vesselRef.pqsAltitude, 0) : parent.vesselRef.pqsAltitude);
+            velocity = parent.vesselRef.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
+            acceleration = acceleration * 0.8 + 0.2 * (parent.vesselRef.srfSpeed - oldSpd) / TimeWarp.fixedDeltaTime; // vessel.acceleration.magnitude includes acceleration by gravity
             vertSpeed = Vector3d.Dot((planetUp + lastPlanetUp) / 2, velocity); // this corrects for the slight angle between planetup and the direction of travel at constant altitude
 
             // surface vectors
             lastPlanetUp = planetUp;
-            planetUp = (vRef.vesselRef.rootPart.transform.position - vRef.vesselRef.mainBody.position).normalized;
-            planetEast = vRef.vesselRef.mainBody.getRFrmVel(vRef.vesselRef.findWorldCenterOfMass()).normalized;
+            planetUp = (parent.vesselRef.rootPart.transform.position - parent.vesselRef.mainBody.position).normalized;
+            planetEast = parent.vesselRef.mainBody.getRFrmVel(parent.vesselRef.findWorldCenterOfMass()).normalized;
             planetNorth = Vector3d.Cross(planetEast, planetUp).normalized;
             
             // Velocity forward and right vectors parallel to the surface
-            surfVelRight = Vector3d.Cross(planetUp, vRef.vesselRef.srf_velocity).normalized;
+            surfVelRight = Vector3d.Cross(planetUp, parent.vesselRef.srf_velocity).normalized;
             surfVelForward = Vector3d.Cross(surfVelRight, planetUp).normalized;
                         
             // Vessel forward and right vectors parallel to the surface
             surfVesRight = Vector3d.Cross(planetUp, vesselFacingAxis).normalized;
             surfVesForward = Vector3d.Cross(surfVesRight, planetUp).normalized;
 
-            obtNormal = Vector3.Cross(vRef.vesselRef.obt_velocity, planetUp).normalized;
-            obtRadial = Vector3.Cross(vRef.vesselRef.obt_velocity, obtNormal).normalized;
-            srfNormal = Vector3.Cross(vRef.vesselRef.srf_velocity, planetUp).normalized;
-            srfRadial = Vector3.Cross(vRef.vesselRef.srf_velocity, srfNormal).normalized;
+            obtNormal = Vector3.Cross(parent.vesselRef.obt_velocity, planetUp).normalized;
+            obtRadial = Vector3.Cross(parent.vesselRef.obt_velocity, obtNormal).normalized;
+            srfNormal = Vector3.Cross(parent.vesselRef.srf_velocity, planetUp).normalized;
+            srfRadial = Vector3.Cross(parent.vesselRef.srf_velocity, srfNormal).normalized;
 
             pitch = 90 - Vector3d.Angle(planetUp, vesselFacingAxis);
             heading = (Vector3d.Angle(surfVesForward, planetNorth) * Math.Sign(Vector3d.Dot(surfVesForward, planetEast))).headingClamp(360);
             progradeHeading = (Vector3d.Angle(surfVelForward, planetNorth) * Math.Sign(Vector3d.Dot(surfVelForward, planetEast))).headingClamp(360);
-            bank = Vector3d.Angle(surfVesRight, vRef.vesselRef.ReferenceTransform.right) * Math.Sign(Vector3d.Dot(surfVesRight, -vRef.vesselRef.ReferenceTransform.forward));
+            bank = Vector3d.Angle(surfVesRight, parent.vesselRef.ReferenceTransform.right) * Math.Sign(Vector3d.Dot(surfVesRight, -parent.vesselRef.ReferenceTransform.forward));
 
-            if (vRef.vesselRef.srfSpeed > 1)
+            if (parent.vesselRef.srfSpeed > 1)
             {
-                Vector3d AoAVec = vRef.vesselRef.srf_velocity.projectOnPlane(vRef.vesselRef.ReferenceTransform.right);
-                AoA = Vector3d.Angle(AoAVec, vesselFacingAxis) * Math.Sign(Vector3d.Dot(AoAVec, vRef.vesselRef.ReferenceTransform.forward));
+                Vector3d AoAVec = parent.vesselRef.srf_velocity.projectOnPlane(parent.vesselRef.ReferenceTransform.right);
+                AoA = Vector3d.Angle(AoAVec, vesselFacingAxis) * Math.Sign(Vector3d.Dot(AoAVec, parent.vesselRef.ReferenceTransform.forward));
 
-                Vector3d yawVec = vRef.vesselRef.srf_velocity.projectOnPlane(vRef.vesselRef.ReferenceTransform.forward);
-                yaw = Vector3d.Angle(yawVec, vesselFacingAxis) * Math.Sign(Vector3d.Dot(yawVec, vRef.vesselRef.ReferenceTransform.right));
+                Vector3d yawVec = parent.vesselRef.srf_velocity.projectOnPlane(parent.vesselRef.ReferenceTransform.forward);
+                yaw = Vector3d.Angle(yawVec, vesselFacingAxis) * Math.Sign(Vector3d.Dot(yawVec, parent.vesselRef.ReferenceTransform.right));
             }
             else
                 AoA = yaw = 0;
 
-            oldSpd = vRef.vesselRef.srfSpeed;
+            oldSpd = parent.vesselRef.srfSpeed;
         }
 
         Vector3 vesselFacingAxis = new Vector3();

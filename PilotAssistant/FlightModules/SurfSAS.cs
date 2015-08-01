@@ -14,9 +14,10 @@ namespace PilotAssistant.FlightModules
 
         void StartCoroutine(IEnumerator routine) // quick access to coroutine now it doesn't inherit Monobehaviour
         {
-            vesRef.StartCoroutine(routine);
+            parent.StartCoroutine(routine);
         }
-        public AsstVesselModule vesRef;
+
+        public AsstVesselModule parent;
         public Attitude_Controller controller;
 
         public bool bArmed = false; // if armed, SAS toggles activate/deactivate SSAS
@@ -37,13 +38,12 @@ namespace PilotAssistant.FlightModules
         public readonly static double[] defaultRollGains = { 0.25, 0.1, 0.09, -1, 1, -1, 1, 1, 200 };
         public readonly static double[] defaultHdgGains = { 0.22, 0.12, 0.3, -1, 1, -1, 1, 1, 200 };
 
-        VesselAutopilot.AutopilotMode currentMode = VesselAutopilot.AutopilotMode.StabilityAssist;
-        FlightUIController.SpeedDisplayModes referenceMode = FlightUIController.SpeedDisplayModes.Surface;
+        
 
         #endregion
         public SurfSAS(AsstVesselModule avm)
         {
-            vesRef = avm;
+            parent = avm;
         }
 
         public void Start()
@@ -51,7 +51,7 @@ namespace PilotAssistant.FlightModules
             PIDConstants pitch = new PIDConstants(defaultPitchGains);
             PIDConstants yaw = new PIDConstants(defaultHdgGains);
             PIDConstants roll = new PIDConstants(defaultRollGains);
-            controller = new Attitude_Controller(vesRef.vesselData, pitch, yaw, roll);
+            controller = new Attitude_Controller(parent.vesselData, pitch, yaw, roll);
             
             PresetManager.initDefaultPresets(new SSASPreset(pitch, yaw, roll, "SSAS"));
             PresetManager.loadCraftSSASPreset(this);
@@ -65,7 +65,6 @@ namespace PilotAssistant.FlightModules
                 updateTarget();
         }
 
-        #region Update / Input monitoring
         public void Update()
         {
             if (GameSettings.MODIFIER_KEY.GetKey() && GameSettings.SAS_TOGGLE.GetKeyDown())
@@ -77,31 +76,31 @@ namespace PilotAssistant.FlightModules
                 if (GameSettings.SAS_HOLD.GetKey())
                     updateTarget();
             }
-            
-            #warning do not remove, part of Attitude controller that needs shifting
-            //if (currentMode != vesRef.vesselRef.Autopilot.Mode && currentMode == VesselAutopilot.AutopilotMode.StabilityAssist)
-            //    updateTarget();
-            //if (referenceMode == FlightUIController.SpeedDisplayModes.Surface && FlightUIController.speedDisplayMode != FlightUIController.SpeedDisplayModes.Surface)
-            //    orbitalTarget = vesRef.vesselRef.transform.rotation;
-            //currentMode = vesRef.vesselRef.Autopilot.Mode;
-            //referenceMode = FlightUIController.speedDisplayMode;
 
-            controller.UpdateSrf();
+            if (controller.TargetMode != parent.vesselRef.Autopilot.Mode)
+                updateTarget();
+
+            controller.TargetMode = parent.vesselRef.Autopilot.Mode;
+            controller.SpeedMode = FlightUIController.speedDisplayMode;
+
+            controller.Update();
         }
-        #endregion
 
-        #region Fixed Update / Control
         public void SurfaceSAS(FlightCtrlState state)
         {
-            if (!bArmed || !ActivityCheck() || !vesRef.vesselRef.IsControllable)
+            if (!bArmed || !ActivityCheck() || !parent.vesselRef.IsControllable)
                 return;
 
             pauseManager();
-            Vector3 orgState = new Vector3(state.pitch, state.roll, state.yaw);
             bool[] active = new bool[3] { allowControl(Attitude_Controller.Axis.Pitch), allowControl(Attitude_Controller.Axis.Roll), allowControl(Attitude_Controller.Axis.Yaw) };
+            controller.ResponseF(parent.vesselRef.ReferenceTransform.transform.rotation, parent.vesselRef.angularVelocity, active, state);
 
-            Vessel v = vesRef.vesselRef;
-            controller.ResponseF(v.ReferenceTransform.transform.rotation, v.angularVelocity, active, state);
+            if (!Utils.hasInput(Attitude_Controller.Axis.Pitch))
+                state.pitch = state.pitchTrim;
+            if (!Utils.hasInput(Attitude_Controller.Axis.Roll))
+                state.roll = state.rollTrim;
+            if (!Utils.hasInput(Attitude_Controller.Axis.Yaw))
+                state.yaw = state.yawTrim;
         }
 
        
@@ -117,14 +116,14 @@ namespace PilotAssistant.FlightModules
 
         private void pauseManager()
         {
-            if (Utils.isFlightControlLocked() && vesRef.vesselRef.isActiveVessel)
+            if (Utils.isFlightControlLocked() && parent.vesselRef.isActiveVessel)
                 return;
 
             // if the pitch control is not paused, and there is pitch input or there is yaw input and the bank angle is greater than 5 degrees, pause the pitch lock
-            if (!bPause[(int)Attitude_Controller.Axis.Pitch] && (Utils.hasPitchInput() || (Utils.hasYawInput() && Math.Abs(vesRef.vesselData.bank) > bankAngleSynch)))
+            if (!bPause[(int)Attitude_Controller.Axis.Pitch] && (Utils.hasPitchInput() || (Utils.hasYawInput() && Math.Abs(parent.vesselData.bank) > bankAngleSynch)))
                 bPause[(int)Attitude_Controller.Axis.Pitch] = true;
             // if the pitch control is paused, and there is no pitch input, and there is no yaw input or the bank angle is less than 5 degrees, unpause the pitch lock
-            else if (bPause[(int)Attitude_Controller.Axis.Pitch] && !Utils.hasPitchInput() && (!Utils.hasYawInput() || Math.Abs(vesRef.vesselData.bank) <= bankAngleSynch))
+            else if (bPause[(int)Attitude_Controller.Axis.Pitch] && !Utils.hasPitchInput() && (!Utils.hasYawInput() || Math.Abs(parent.vesselData.bank) <= bankAngleSynch))
             {
                 bPause[(int)Attitude_Controller.Axis.Pitch] = false;
                 if (controller.GetCtrl(Attitude_Controller.Axis.Pitch).Active)
@@ -132,10 +131,10 @@ namespace PilotAssistant.FlightModules
             }
 
             // if the heading control is not paused, and there is yaw input input or there is pitch input and the bank angle is greater than 5 degrees, pause the heading lock
-            if (!bPause[(int)Attitude_Controller.Axis.Yaw] && (Utils.hasYawInput() || (Utils.hasPitchInput() && Math.Abs(vesRef.vesselData.bank) > bankAngleSynch)))
+            if (!bPause[(int)Attitude_Controller.Axis.Yaw] && (Utils.hasYawInput() || (Utils.hasPitchInput() && Math.Abs(parent.vesselData.bank) > bankAngleSynch)))
                 bPause[(int)Attitude_Controller.Axis.Yaw] = true;
             // if the heading control is paused, and there is no yaw input, and there is no pitch input or the bank angle is less than 5 degrees, unpause the heading lock
-            else if (bPause[(int)Attitude_Controller.Axis.Yaw] && !Utils.hasYawInput() && (!Utils.hasPitchInput() || Math.Abs(vesRef.vesselData.bank) <= bankAngleSynch))
+            else if (bPause[(int)Attitude_Controller.Axis.Yaw] && !Utils.hasYawInput() && (!Utils.hasPitchInput() || Math.Abs(parent.vesselData.bank) <= bankAngleSynch))
             {
                 bPause[(int)Attitude_Controller.Axis.Yaw] = false;
                 if (controller.GetCtrl(Attitude_Controller.Axis.Pitch).Active)
@@ -143,10 +142,10 @@ namespace PilotAssistant.FlightModules
             }
 
             // if the roll control is not paused, and there is roll input or thevessel pitch is > 70 degrees and there is pitch/yaw input
-            if (!bPause[(int)Attitude_Controller.Axis.Roll] && (Utils.hasRollInput() || (Math.Abs(vesRef.vesselData.pitch) > 70 && (Utils.hasPitchInput() || Utils.hasYawInput()))))
+            if (!bPause[(int)Attitude_Controller.Axis.Roll] && (Utils.hasRollInput() || (Math.Abs(parent.vesselData.pitch) > 70 && (Utils.hasPitchInput() || Utils.hasYawInput()))))
                 bPause[(int)Attitude_Controller.Axis.Roll] = true;
             // if the roll control is paused, and there is not roll input and not any pitch/yaw input if pitch < 60 degrees
-            else if (bPause[(int)Attitude_Controller.Axis.Roll] && !(Utils.hasRollInput() || (Math.Abs(vesRef.vesselData.pitch) > 60 && (Utils.hasPitchInput() || Utils.hasYawInput()))))
+            else if (bPause[(int)Attitude_Controller.Axis.Roll] && !(Utils.hasRollInput() || (Math.Abs(parent.vesselData.pitch) > 60 && (Utils.hasPitchInput() || Utils.hasYawInput()))))
             {
                 bPause[(int)Attitude_Controller.Axis.Roll] = false;
                 if (controller.GetCtrl(Attitude_Controller.Axis.Roll).Active)
@@ -159,8 +158,6 @@ namespace PilotAssistant.FlightModules
             StartCoroutine(FadeInAxis(Attitude_Controller.Axis.Pitch));
             StartCoroutine(FadeInAxis(Attitude_Controller.Axis.Roll));
             StartCoroutine(FadeInAxis(Attitude_Controller.Axis.Yaw));
-            #warning Do not remove, part of attitude controller that needs shifting
-            // orbitalTarget = vesRef.vesselRef.transform.rotation;
         }
 
         /// <summary>
@@ -168,10 +165,10 @@ namespace PilotAssistant.FlightModules
         /// </summary>
         IEnumerator FadeInAxis(Attitude_Controller.Axis axis)
         {
-            updateSetpoint(axis, Utils.getCurrentVal(axis, vesRef.vesselData));
-            while (Math.Abs(Utils.getCurrentRate(axis, vesRef.vesselRef) * Mathf.Rad2Deg) > 10)
+            updateSetpoint(axis, Utils.getCurrentVal(axis, parent.vesselData));
+            while (Math.Abs(Utils.getCurrentRate(axis, parent.vesselRef) * Mathf.Rad2Deg) > 10)
             {
-                updateSetpoint(axis, Utils.getCurrentVal(axis, vesRef.vesselData));
+                updateSetpoint(axis, Utils.getCurrentVal(axis, parent.vesselData));
                 yield return null;
             }
         }
@@ -181,7 +178,6 @@ namespace PilotAssistant.FlightModules
             controller.Setpoint(ID, (float)setpoint);
             targets[(int)ID] = setpoint.ToString("0.00");
         }
-        #endregion
 
         /// <summary>
         /// Set SSAS mode
@@ -190,10 +186,9 @@ namespace PilotAssistant.FlightModules
         public void ActivitySwitch(bool enable)
         {
             controller.GetCtrl(Attitude_Controller.Axis.Pitch).Active = controller.GetCtrl(Attitude_Controller.Axis.Roll).Active = controller.GetCtrl(Attitude_Controller.Axis.Yaw).Active = enable;
-            if (enable)                
-                updateTarget();
-
             setStockSAS(enable);
+            if (enable)
+                updateTarget();
         }
 
         /// <summary>
@@ -210,7 +205,7 @@ namespace PilotAssistant.FlightModules
         /// </summary>
         public void setStockSAS(bool state)
         {
-            vesRef.vesselRef.ActionGroups.SetGroup(KSPActionGroup.SAS, state);
+            parent.vesselRef.ActionGroups.SetGroup(KSPActionGroup.SAS, state);
         }
 
         #region GUI
@@ -257,21 +252,24 @@ namespace PilotAssistant.FlightModules
             if (GUILayout.Button(bArmed ? "Disarm SAS" : "Arm SAS"))
             {
                 bArmed = !bArmed;
-                ActivitySwitch(vesRef.vesselRef.ActionGroups[KSPActionGroup.SAS]);
+                ActivitySwitch(parent.vesselRef.ActionGroups[KSPActionGroup.SAS]);
                 GeneralUI.postMessage(bArmed ? "SSAS Armed" : "SSAS Disarmed");
             }
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
 
             if (bArmed)
             {
-                if (!(FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit && currentMode == VesselAutopilot.AutopilotMode.StabilityAssist))
+                if (!(FlightUIController.speedDisplayMode == FlightUIController.SpeedDisplayModes.Orbit && controller.TargetMode == VesselAutopilot.AutopilotMode.StabilityAssist))
                 {
-                    if (currentMode == VesselAutopilot.AutopilotMode.StabilityAssist)
+                    bool tmpState = ActivityCheck();
+                    if (controller.TargetMode == VesselAutopilot.AutopilotMode.StabilityAssist)
                     {
-                        TogPlusNumBox("Pitch:", Attitude_Controller.Axis.Pitch, vesRef.vesselData.pitch, 80, 70);
-                        TogPlusNumBox("Heading:", Attitude_Controller.Axis.Yaw, vesRef.vesselData.heading, 80, 70);
+                        TogPlusNumBox("Pitch:", Attitude_Controller.Axis.Pitch, parent.vesselData.pitch, 80, 70);
+                        TogPlusNumBox("Heading:", Attitude_Controller.Axis.Yaw, parent.vesselData.heading, 80, 70);
                     }
-                    TogPlusNumBox("Roll:", Attitude_Controller.Axis.Roll, vesRef.vesselData.bank, 80, 70);
+                    TogPlusNumBox("Roll:", Attitude_Controller.Axis.Roll, parent.vesselData.bank, 80, 70);
+                    if (tmpState != ActivityCheck())
+                        setStockSAS(!tmpState);
                 }
 
                 GUILayout.Box("", GUILayout.Height(10)); // seperator
@@ -324,7 +322,7 @@ namespace PilotAssistant.FlightModules
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-                newPresetName = PresetManager.newSSASPreset(newPresetName, controller, vesRef.vesselRef);
+                newPresetName = PresetManager.newSSASPreset(newPresetName, controller, parent.vesselRef);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
