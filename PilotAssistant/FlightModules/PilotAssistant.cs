@@ -73,6 +73,7 @@ namespace PilotAssistant.FlightModules
         }
 
         public AsstController[] controllers = new AsstController[9];
+        public Attitude_Controller controller;
 
         public bool bPause = false;
         public bool bLockInput = false;
@@ -170,10 +171,13 @@ namespace PilotAssistant.FlightModules
         {
             Initialise();
 
-            InputLockManager.RemoveControlLock(pitchLockID);
-            InputLockManager.RemoveControlLock(yawLockID);
-            pitchLockEngaged = false;
-            yawLockEngaged = false;
+            if (parent.vesselRef == FlightGlobals.ActiveVessel)
+            {
+                InputLockManager.RemoveControlLock(pitchLockID);
+                InputLockManager.RemoveControlLock(yawLockID);
+                pitchLockEngaged = false;
+                yawLockEngaged = false;
+            }
 
             PresetManager.loadCraftAsstPreset(this);
         }
@@ -200,6 +204,8 @@ namespace PilotAssistant.FlightModules
             controllers[(int)AsstList.Elevator] = new AsstController(AsstList.Elevator, defaultElevatorGains);
             controllers[(int)AsstList.Speed] = new AsstController(AsstList.Speed, defaultSpeedGains);
             controllers[(int)AsstList.Acceleration] = new AsstController(AsstList.Acceleration, defaultAccelGains);
+
+            controller = new Attitude_Controller(parent.vesselData, new PIDConstants(defaultElevatorGains), new PIDConstants(defaultAileronGains), new PIDConstants(defaultRudderGains));
 
             // Set up a default preset that can be easily returned to
             PresetManager.initDefaultPresets(new AsstPreset(controllers, "default"));
@@ -608,6 +614,11 @@ namespace PilotAssistant.FlightModules
                 }
                 FlightInputHandler.state.mainThrottle = state.mainThrottle; // set throttle state permanently
             }
+
+            controller.Setpoint(Attitude_Controller.Axis.Yaw, parent.vesselData.progradeHeading - AsstList.Rudder.GetAsst(this).SetPoint);
+            controller.Setpoint(Attitude_Controller.Axis.Roll, AsstList.Aileron.GetAsst(this).SetPoint);
+            controller.Setpoint(Attitude_Controller.Axis.Pitch, parent.vesselData.pitch + AsstList.Elevator.GetAsst(this).SetPoint);
+            controller.ResponseF(parent.vesselRef.transform.rotation, parent.vesselRef.angularVelocity, new bool[3] { VertActive, HrztActive, HrztActive }, state);
         }
 
         float pitchHold = 0;

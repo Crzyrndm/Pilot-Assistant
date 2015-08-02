@@ -205,7 +205,7 @@ namespace PilotAssistant.PID
         {
             Pitch = (float)pitch;
             Roll = (float)roll;
-            Heading = (float)heading;
+            Heading = Utils.headingClamp((float)heading, 360);
             if (speedMode == FlightUIController.SpeedDisplayModes.Surface)
             {
                 Target = Utils.getPlaneRotation(heading, data.parent);
@@ -332,18 +332,18 @@ namespace PilotAssistant.PID
             return target;
         }
 
-        public void Setpoint(Axis id, float value)
+        public void Setpoint(Axis id, double value)
         {
             switch (id)
             {
                 case Axis.Pitch:
-                    Pitch = value;
+                    Pitch = (float)value;
                     break;
                 case Axis.Roll:
-                    Roll = value;
+                    Roll = (float)value;
                     break;
                 case Axis.Yaw:
-                    Heading = value;
+                    Heading = (float)Utils.headingClamp(value, 360);
                     Target = Utils.getPlaneRotation(value, data.parent);
                     break;
             }

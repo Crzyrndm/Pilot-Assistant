@@ -142,14 +142,20 @@ namespace PilotAssistant.FlightModules
             }
 
             // if the roll control is not paused, and there is roll input or thevessel pitch is > 70 degrees and there is pitch/yaw input
-            if (!bPause[(int)Attitude_Controller.Axis.Roll] && (Utils.hasRollInput() || (Math.Abs(parent.vesselData.pitch) > 70 && (Utils.hasPitchInput() || Utils.hasYawInput()))))
-                bPause[(int)Attitude_Controller.Axis.Roll] = true;
-            // if the roll control is paused, and there is not roll input and not any pitch/yaw input if pitch < 60 degrees
-            else if (bPause[(int)Attitude_Controller.Axis.Roll] && !(Utils.hasRollInput() || (Math.Abs(parent.vesselData.pitch) > 60 && (Utils.hasPitchInput() || Utils.hasYawInput()))))
+            if (!bPause[(int)Attitude_Controller.Axis.Roll])
             {
-                bPause[(int)Attitude_Controller.Axis.Roll] = false;
-                if (controller.GetCtrl(Attitude_Controller.Axis.Roll).Active)
-                    StartCoroutine(FadeInAxis(Attitude_Controller.Axis.Roll));
+                if (Utils.hasRollInput() || (Math.Abs(parent.vesselData.pitch) > 70 && (Utils.hasPitchInput() || Utils.hasYawInput())))
+                    bPause[(int)Attitude_Controller.Axis.Roll] = true;
+            }
+            // if the roll control is paused, and there is not roll input and not any pitch/yaw input if pitch < 60 degrees
+            else
+            {
+                if (!(Utils.hasRollInput() || (Math.Abs(parent.vesselData.pitch) > 60 && (Utils.hasPitchInput() || Utils.hasYawInput()))))
+                {
+                    bPause[(int)Attitude_Controller.Axis.Roll] = false;
+                    if (controller.GetCtrl(Attitude_Controller.Axis.Roll).Active)
+                        StartCoroutine(FadeInAxis(Attitude_Controller.Axis.Roll));
+                }
             }
         }
 
