@@ -170,8 +170,6 @@ namespace PilotAssistant.FlightModules
         {
             Initialise();
 
-            // Input clamps aren't part of the presets (there's no reason for them to be...). Just some sanity checking
-
             InputLockManager.RemoveControlLock(pitchLockID);
             InputLockManager.RemoveControlLock(yawLockID);
             pitchLockEngaged = false;
@@ -537,12 +535,10 @@ namespace PilotAssistant.FlightModules
 
         public void vesselController(FlightCtrlState state)
         {
-            if (!HighLogic.LoadedSceneIsFlight)
-                return;
-
             pitchSet = state.pitch; // last pitch ouput, used for presetting the elevator
             if (bPause || !vesRef.vesselRef.IsControllable)
                 return;
+
             bool useIntegral = !vesRef.vesselRef.checkLanded();
             // Heading Control
             if (HrztActive && useIntegral)
