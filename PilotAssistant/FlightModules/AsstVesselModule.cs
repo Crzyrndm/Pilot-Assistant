@@ -29,6 +29,11 @@ namespace PilotAssistant.FlightModules
         {
             if (vesselRef == null)
                 return;
+            if (vesselRef.isEVA)
+            {
+                vesselRef = null;
+                return;
+            }
 
             PilotAssistantFlightCore.Instance.addVessel(this);
 
