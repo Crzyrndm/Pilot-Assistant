@@ -424,9 +424,9 @@ namespace PilotAssistant.FlightModules
 
         private void vertModeChanged(VertMode newMode, bool active, bool setTarget = true)
         {
-            AsstList.VertSpeed.GetAsst(this).skipDerivative = true;
-            AsstList.Elevator.GetAsst(this).skipDerivative = true;
-            AsstList.Altitude.GetAsst(this).skipDerivative = true;
+            //AsstList.VertSpeed.GetAsst(this).skipDerivative = true;
+            //AsstList.Elevator.GetAsst(this).skipDerivative = true;
+            //AsstList.Altitude.GetAsst(this).skipDerivative = true;
 
             if (!active)
             {
@@ -447,7 +447,10 @@ namespace PilotAssistant.FlightModules
                 bPause = false;
 
                 #warning presets need to account for flying upside down
-                AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
+                if (VertActive && (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude))
+                    AsstList.Altitude.GetAsst(this).Preset();
+                else
+                    AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
                 if (VertActive && (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude || CurrentVertMode == VertMode.VSpeed))
                     AsstList.VertSpeed.GetAsst(this).Preset();
                 else
