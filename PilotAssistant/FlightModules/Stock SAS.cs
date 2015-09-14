@@ -34,7 +34,7 @@ namespace PilotAssistant.FlightModules
 
         IEnumerator Initialise()
         {
-            while (vesRef.vesselRef.Autopilot.SAS.pidLockedPitch == null || vesRef.vesselRef.Autopilot.RSAS.pidPitch == null)
+            while (ReferenceEquals(vesRef.vesselRef.Autopilot.SAS.pidLockedPitch, null) || ReferenceEquals(vesRef.vesselRef.Autopilot.RSAS.pidPitch, null))
                 yield return null;
 
             PresetManager.initDefaultPresets(new SASPreset(vesRef.vesselRef.Autopilot.SAS, "stock"));

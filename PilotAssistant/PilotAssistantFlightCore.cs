@@ -56,7 +56,7 @@ namespace PilotAssistant
             bHideUI = false;
 
             config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
-            if (config == null)
+            if (ReferenceEquals(config, null))
                 config = new ConfigNode("");
 
             bUseStockToolbar = config.TryGetValue("UseStockToolbar", true);
@@ -107,9 +107,9 @@ namespace PilotAssistant
             try
             {
                 config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
-                if (config == null)
+                if (ReferenceEquals(config, null))
                     config = new ConfigNode("");
-                if (config != null)
+                if (!ReferenceEquals(config, null))
                 {
                     showTooltips = config.TryGetValue("AsstTooltips", true);
 
@@ -150,9 +150,9 @@ namespace PilotAssistant
         {
             try
             {
-                if (config == null)
+                if (ReferenceEquals(config, null))
                     config = new ConfigNode("");
-                if (config != null)
+                if (!ReferenceEquals(config, null))
                 {
                     config.SetValue("AsstTooltips", showTooltips.ToString(), true);
                     config.SetValue("UseStockToolbar", bUseStockToolbar.ToString(), true);

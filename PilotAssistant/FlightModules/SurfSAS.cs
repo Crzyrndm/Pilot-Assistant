@@ -199,15 +199,15 @@ namespace PilotAssistant.FlightModules
                         target = Quaternion.LookRotation(-vesRef.vesselData.srfNormal, vesRef.vesselData.planetUp);
                     break;
                 case VesselAutopilot.AutopilotMode.Target:
-                    if (vesRef.vesselRef.targetObject != null)
+                    if (!ReferenceEquals(vesRef.vesselRef.targetObject, null))
                         target = Quaternion.LookRotation(vesRef.vesselRef.targetObject.GetVessel().GetWorldPos3D() - vesRef.vesselRef.GetWorldPos3D(), vesRef.vesselData.planetUp);
                     break;
                 case VesselAutopilot.AutopilotMode.AntiTarget:
-                    if (vesRef.vesselRef.targetObject != null)
+                    if (!ReferenceEquals(vesRef.vesselRef.targetObject, null))
                         target = Quaternion.LookRotation(vesRef.vesselRef.GetWorldPos3D() - vesRef.vesselRef.targetObject.GetVessel().GetWorldPos3D(), vesRef.vesselData.planetUp);
                     break;
                 case VesselAutopilot.AutopilotMode.Maneuver:
-                    if (vesRef.vesselRef.patchedConicSolver.maneuverNodes != null && vesRef.vesselRef.patchedConicSolver.maneuverNodes.Count > 0)
+                    if (!ReferenceEquals(vesRef.vesselRef.patchedConicSolver.maneuverNodes, null) && vesRef.vesselRef.patchedConicSolver.maneuverNodes.Count > 0)
                         target = vesRef.vesselRef.patchedConicSolver.maneuverNodes[0].nodeRotation;
                     break;
             }
@@ -425,7 +425,7 @@ namespace PilotAssistant.FlightModules
             if (GUI.Button(new Rect(SSASPresetwindow.width - 16, 2, 14, 14), ""))
                 bShowSSASPresets = false;
 
-            if (PresetManager.Instance.activeSSASPreset != null)
+            if (!ReferenceEquals(PresetManager.Instance.activeSSASPreset, null))
             {
                 GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.Instance.activeSSASPreset.name));
                 if (PresetManager.Instance.activeSSASPreset.name != "SSAS")
