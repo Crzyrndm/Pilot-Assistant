@@ -1067,7 +1067,7 @@ namespace PilotAssistant.FlightModules
                         drawPIDvalues(AsstList.VertSpeed, "Vertical Speed", "m/s", vesRef.vesselData.vertSpeed, 2, "AoA", "\u00B0", true);
 
                     if (showControlSurfaces)
-                        drawPIDvalues(AsstList.Elevator, "Angle of Attack", "\u00B0", CurrentVertMode == VertMode.Pitch ? vesRef.vesselData.pitch : vesRef.vesselData.AoA, 3, "Deflection", "\u00B0", true);
+                        drawPIDvalues(AsstList.Elevator, CurrentVertMode != VertMode.Pitch ? "Angle of Attack" : "Pitch", "\u00B0", CurrentVertMode == VertMode.Pitch ? vesRef.vesselData.pitch : vesRef.vesselData.AoA, 3, "Deflection", "\u00B0", true);
 
                     AsstList.Elevator.GetAsst(this).OutMin = Utils.Clamp(AsstList.Elevator.GetAsst(this).OutMin, -1, 1);
                     AsstList.Elevator.GetAsst(this).OutMax = Utils.Clamp(AsstList.Elevator.GetAsst(this).OutMax, -1, 1);
