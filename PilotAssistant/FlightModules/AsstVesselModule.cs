@@ -64,11 +64,15 @@ namespace PilotAssistant.FlightModules
 
         public void preAutoPilotUpdate(FlightCtrlState state)
         {
+            if (vesselRef.HoldPhysics)
+                return;
             vesselData.updateAttitude();
         }
 
         public void postAutoPilotUpdate(FlightCtrlState state)
         {
+            if (vesselRef.HoldPhysics)
+                return;
             vesselSSAS.SurfaceSAS(state);
             vesselAsst.vesselController(state);
         }

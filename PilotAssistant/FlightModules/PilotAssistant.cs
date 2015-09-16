@@ -100,9 +100,6 @@ namespace PilotAssistant.FlightModules
         string targetHeading = "0.00";
         string targetSpeed = "0.00";
 
-        SpeedUnits unit = SpeedUnits.mSec;
-        SpeedMode speedMode = SpeedMode.True;
-
         const string yawLockID = "Pilot Assistant Yaw Lock";
         public static bool yawLockEngaged = false;
         const string pitchLockID = "Pilot Assistant Pitch Lock";
@@ -447,18 +444,31 @@ namespace PilotAssistant.FlightModules
                 bPause = false;
 
                 #warning presets need to account for flying upside down
-                if (VertActive && (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude))
-                    AsstList.Altitude.GetAsst(this).Preset();
-                else
-                    AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
-                if (VertActive && (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude || CurrentVertMode == VertMode.VSpeed))
-                    AsstList.VertSpeed.GetAsst(this).Preset();
-                else
-                    AsstList.VertSpeed.GetAsst(this).Preset(-vesRef.vesselData.AoA);
+                
+                
                 if (VertActive)
+                {
                     AsstList.Elevator.GetAsst(this).Preset();
+                    if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude || CurrentVertMode == VertMode.VSpeed)
+                    {
+                        AsstList.VertSpeed.GetAsst(this).Preset();
+                        if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
+                            AsstList.Altitude.GetAsst(this).Preset();
+                        else
+                            AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
+                    }
+                    else
+                    {
+                        AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
+                        AsstList.VertSpeed.GetAsst(this).Preset(-vesRef.vesselData.AoA);
+                    }
+                }
                 else
+                {
+                    AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
+                    AsstList.VertSpeed.GetAsst(this).Preset(-vesRef.vesselData.AoA);
                     AsstList.Elevator.GetAsst(this).Preset(-pitchSet);
+                }
                 
                 switch (newMode)
                 {
@@ -757,7 +767,7 @@ namespace PilotAssistant.FlightModules
                 if (CurrentVertMode != VertMode.Pitch)
                     vertScrollHeight += AsstList.VertSpeed.GetAsst(this).bShow ? 168 : 29;
                 if (showControlSurfaces)
-                    vertScrollHeight += AsstList.Elevator.GetAsst(this).bShow ? 168 : 27;
+                    vertScrollHeight += AsstList.Elevator.GetAsst(this).bShow ? 168 : 29;
             }
             if (bShowThrottle && dragID != 3)
             {

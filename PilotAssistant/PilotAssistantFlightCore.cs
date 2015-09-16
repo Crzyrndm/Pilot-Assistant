@@ -139,6 +139,10 @@ namespace PilotAssistant
                     BindingManager.bindings[(int)bindingIndex.ArmSSAS].primaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("SSASArmPrimary", GameSettings.SAS_TOGGLE.primary.ToString()));
                     BindingManager.bindings[(int)bindingIndex.ArmSSAS].secondaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("SSASArmSecondary", KeyCode.LeftAlt.ToString()));
                 }
+                else
+                {
+                    Debug.LogError("Pilot Assistant: Failed to create settings node");
+                }
             }
             catch
             {
