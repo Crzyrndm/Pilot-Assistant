@@ -95,7 +95,7 @@ namespace PilotAssistant
         public void OnGUI()
         {
             // create the GUISkin
-            if (GeneralUI.UISkin == null)
+            if (ReferenceEquals(GeneralUI.UISkin, null))
                 GeneralUI.customSkin();
         }
 
@@ -108,7 +108,7 @@ namespace PilotAssistant
             
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(asstPresetNodeName))
             {
-                if (node == null)
+                if (ReferenceEquals(node, null))
                     continue;
 
                 List<double[]> gains = new List<double[]>();
@@ -131,7 +131,7 @@ namespace PilotAssistant
 
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(sasPresetNodeName))
             {
-                if (node == null || node.GetValue("stock") == "false")
+                if (ReferenceEquals(node, null) || node.GetValue("stock") == "false")
                     continue;
 
                 List<double[]> gains = new List<double[]>();
@@ -148,7 +148,7 @@ namespace PilotAssistant
 
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(ssasPresetNodeName))
             {
-                if (node == null)
+                if (ReferenceEquals(node, null))
                     continue;
 
                 List<double[]> gains = new List<double[]>();
@@ -165,7 +165,7 @@ namespace PilotAssistant
 
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(rsasPresetNodeName))
             {
-                if (node == null)
+                if (ReferenceEquals(node, null))
                     continue;
 
                 List<double[]> gains = new List<double[]>();
@@ -182,7 +182,7 @@ namespace PilotAssistant
 
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(craftPresetNodeName))
             {
-                if (node == null || instance.craftPresetDict.ContainsKey(node.GetValue("name")))
+                if (ReferenceEquals(node, null) || instance.craftPresetDict.ContainsKey(node.GetValue("name")))
                     continue;
 
                 string name = node.GetValue("name");
@@ -236,13 +236,13 @@ namespace PilotAssistant
             ConfigNode node = new ConfigNode();
             CraftPreset cP = instance.craftPresetDict[craftDefaultName];
 
-            if (cP.AsstPreset != null)
+            if (!ReferenceEquals(cP.AsstPreset, null))
                 node.AddNode(AsstPresetNode(cP.AsstPreset));
-            if (cP.SSASPreset != null)
+            if (!ReferenceEquals(cP.SSASPreset, null))
                 node.AddNode(SSASPresetNode(cP.SSASPreset));
-            if (cP.SASPreset != null)
+            if (!ReferenceEquals(cP.SASPreset, null))
                 node.AddNode(SASPresetNode(cP.SASPreset));
-            if (cP.RSASPreset != null)
+            if (!ReferenceEquals(cP.RSASPreset, null))
                 node.AddNode(RSASPresetNode(cP.RSASPreset));
 
             node.AddNode(CraftNode(cP));
@@ -263,7 +263,7 @@ namespace PilotAssistant
         {
             double[] gains = new double[9];
 
-            if (node == null)
+            if (ReferenceEquals(node, null))
                 return defaultControllerGains(type);
 
             double.TryParse(node.GetValue(pGain), out gains[0]);
@@ -310,7 +310,7 @@ namespace PilotAssistant
         {
             double[] gains = new double[5];
 
-            if (node == null)
+            if (ReferenceEquals(node, null))
                 return defaultControllerGains(type);
 
             double.TryParse(node.GetValue(pGain), out gains[0]);
@@ -453,7 +453,7 @@ namespace PilotAssistant
         #region AsstPreset
         public static void newAsstPreset(ref string name, AsstController[] controllers, Vessel v)
         {
-            if (name == "")
+            if (string.IsNullOrEmpty(name))
                 return;
 
             string tempName = name;
@@ -687,7 +687,7 @@ namespace PilotAssistant
 
             foreach (KeyValuePair<string, CraftPreset> cp in instance.craftPresetDict)
             {
-                if (cp.Value != null && cp.Value.RSASPreset == p)
+                if (ReferenceEquals(cp.Value, null) && cp.Value.RSASPreset == p)
                     cp.Value.SASPreset = null;
             }
 
@@ -700,7 +700,7 @@ namespace PilotAssistant
         // called on vessel load
         public static void loadCraftAsstPreset(PilotAssistant instance)
         {
-            if (Instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].AsstPreset != null)
+            if (Instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && ReferenceEquals(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].AsstPreset, null))
                 loadAsstPreset(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].AsstPreset, instance);
             else
                 loadAsstPreset(Instance.craftPresetDict[craftDefaultName].AsstPreset, instance);
@@ -708,7 +708,7 @@ namespace PilotAssistant
 
         public static void loadCraftSSASPreset(SurfSAS instance)
         {
-            if (Instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SSASPreset != null)
+            if (Instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && ReferenceEquals(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SSASPreset, null))
                 loadSSASPreset(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SSASPreset, instance);
             else
                 loadSSASPreset(Instance.craftPresetDict[craftDefaultName].SSASPreset, instance);
@@ -719,12 +719,12 @@ namespace PilotAssistant
         {
             if (Instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName))
             {
-                if (Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SASPreset != null)
+                if (ReferenceEquals(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SASPreset, null))
                     loadSASPreset(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SASPreset, instance);
                 else
                     loadSASPreset(Instance.craftPresetDict[craftDefaultName].SASPreset, instance);
 
-                if (Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].RSASPreset != null)
+                if (ReferenceEquals(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].RSASPreset, null))
                     loadRSASPreset(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].RSASPreset, instance);
                 else
                     loadRSASPreset(Instance.craftPresetDict[craftDefaultName].RSASPreset, instance);
@@ -739,7 +739,7 @@ namespace PilotAssistant
         public static void initDefaultPresets(AsstPreset p)
         {
             initDefaultPresets();
-            if (Instance.craftPresetDict[craftDefaultName].AsstPreset == null)
+            if (ReferenceEquals(Instance.craftPresetDict[craftDefaultName].AsstPreset, null))
                 Instance.craftPresetDict[craftDefaultName].AsstPreset = p;
             PresetManager.saveDefaults();
         }
@@ -747,7 +747,7 @@ namespace PilotAssistant
         public static void initDefaultPresets(SASPreset p)
         {
             initDefaultPresets();
-            if (Instance.craftPresetDict[craftDefaultName].SASPreset == null)
+            if (ReferenceEquals(Instance.craftPresetDict[craftDefaultName].SASPreset, null))
                 Instance.craftPresetDict[craftDefaultName].SASPreset = p;
             PresetManager.saveDefaults();
         }
@@ -755,7 +755,7 @@ namespace PilotAssistant
         public static void initDefaultPresets(SSASPreset p)
         {
             initDefaultPresets();
-            if (Instance.craftPresetDict[craftDefaultName].SSASPreset == null)
+            if (ReferenceEquals(Instance.craftPresetDict[craftDefaultName].SSASPreset, null))
                 Instance.craftPresetDict[craftDefaultName].SSASPreset = p;
             PresetManager.saveDefaults();
         }
@@ -763,7 +763,7 @@ namespace PilotAssistant
         public static void initDefaultPresets(RSASPreset p)
         {
             initDefaultPresets();
-            if (Instance.craftPresetDict[craftDefaultName].RSASPreset == null)
+            if (ReferenceEquals(Instance.craftPresetDict[craftDefaultName].RSASPreset, null))
                 Instance.craftPresetDict[craftDefaultName].RSASPreset = p;
             PresetManager.saveDefaults();
         }

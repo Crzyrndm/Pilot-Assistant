@@ -126,7 +126,7 @@ namespace PilotAssistant.FlightModules
             /// Vector3 location = closestPart.partTransform.position - v.CurrentCoM;
             /// 
             vesselFacingAxis = closestPart.transform.localRotation * closestPart.orgRot.Inverse() * Vector3.up;
-            if (closestPart.symmetryCounterparts != null)
+            if (ReferenceEquals(closestPart.symmetryCounterparts, null))
             {
                 for (int i = 0; i < closestPart.symmetryCounterparts.Count; i++)
                 {
@@ -139,7 +139,7 @@ namespace PilotAssistant.FlightModules
         ArrowPointer pointer;
         public void drawArrow(Vector3 dir, Transform t)
         {
-            if (pointer == null)
+            if (ReferenceEquals(pointer, null))
                 pointer = ArrowPointer.Create(t, Vector3.zero, dir, 100, Color.red, true);
             else
                 pointer.Direction = dir;

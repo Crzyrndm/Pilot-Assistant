@@ -27,7 +27,7 @@ namespace PilotAssistant.FlightModules
 
         public void Start()
         {
-            if (vesselRef == null)
+            if (ReferenceEquals(vesselRef, null))
                 return;
             if (vesselRef.isEVA)
             {
@@ -50,7 +50,7 @@ namespace PilotAssistant.FlightModules
 
         public void Update()
         {
-            if (vesselRef == null)
+            if (ReferenceEquals(vesselRef, null))
                 return;
             vesselAsst.Update();
             vesselSSAS.Update();
@@ -64,11 +64,15 @@ namespace PilotAssistant.FlightModules
 
         public void preAutoPilotUpdate(FlightCtrlState state)
         {
+            if (vesselRef.HoldPhysics)
+                return;
             vesselData.updateAttitude();
         }
 
         public void postAutoPilotUpdate(FlightCtrlState state)
         {
+            if (vesselRef.HoldPhysics)
+                return;
             vesselSSAS.SurfaceSAS(state);
             vesselAsst.vesselController(state);
         }
@@ -93,9 +97,9 @@ namespace PilotAssistant.FlightModules
             GameEvents.onVesselChange.Remove(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Remove(warpHandler);
 
-            if (vesselAsst != null)
+            if (!ReferenceEquals(vesselAsst, null))
                 vesselAsst.OnDestroy();
-            if (PilotAssistantFlightCore.Instance != null)
+            if (!ReferenceEquals(PilotAssistantFlightCore.Instance, null))
                 PilotAssistantFlightCore.Instance.removeVessel(this);
         }
     }

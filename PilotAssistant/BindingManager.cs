@@ -29,7 +29,7 @@ namespace PilotAssistant
         {
             get
             {
-                if (instance == null)
+                if (ReferenceEquals(instance, null))
                     instance = new BindingManager();
                 return instance;
             }

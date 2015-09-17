@@ -99,8 +99,8 @@ namespace PilotAssistant.PID
                 previous = input;
             }
 
-            lastOutput = (invertOutput ? -1 : 1) * Utils.Clamp((proportionalError(error) + integralError(error, useIntegral) + derivativeError(input)), outMin, outMax);
-            return lastOutput;
+            lastOutput = Utils.Clamp((proportionalError(error) + integralError(error, useIntegral) + derivativeError(input)), outMin, outMax);
+            return (invertOutput ? -1 : 1) * lastOutput;
         }
 
         public virtual float ResponseF(double input, bool useIntegral)
@@ -139,7 +139,7 @@ namespace PilotAssistant.PID
             rolling_diff = rolling_diff * rollingFactor + difference * (1 - rollingFactor); // rolling average sometimes helps smooth out a jumpy derivative response
             
             previous = input;
-            return difference * k_derivative / scale;
+            return rolling_diff * k_derivative / scale;
         }
 
         protected virtual double derivativeErrorRate(double rate)

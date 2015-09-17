@@ -100,9 +100,6 @@ namespace PilotAssistant.FlightModules
         string targetHeading = "0.00";
         string targetSpeed = "0.00";
 
-        SpeedUnits unit = SpeedUnits.mSec;
-        SpeedMode speedMode = SpeedMode.True;
-
         const string yawLockID = "Pilot Assistant Yaw Lock";
         public static bool yawLockEngaged = false;
         const string pitchLockID = "Pilot Assistant Pitch Lock";
@@ -264,7 +261,7 @@ namespace PilotAssistant.FlightModules
 
         public void InputResponse()
         {
-            if (!vesRef.vesselRef.isActiveVessel || bLockInput || Utils.isFlightControlLocked() || !FlightGlobals.ready)
+            if (!vesRef.vesselRef.isActiveVessel || bLockInput || Utils.isFlightControlLocked() || vesRef.vesselRef.HoldPhysics)
                 return;
 
             if (BindingManager.bindings[(int)bindingIndex.Pause].isPressed && !MapView.MapIsEnabled)
@@ -424,9 +421,9 @@ namespace PilotAssistant.FlightModules
 
         private void vertModeChanged(VertMode newMode, bool active, bool setTarget = true)
         {
-            AsstList.VertSpeed.GetAsst(this).skipDerivative = true;
-            AsstList.Elevator.GetAsst(this).skipDerivative = true;
-            AsstList.Altitude.GetAsst(this).skipDerivative = true;
+            //AsstList.VertSpeed.GetAsst(this).skipDerivative = true;
+            //AsstList.Elevator.GetAsst(this).skipDerivative = true;
+            //AsstList.Altitude.GetAsst(this).skipDerivative = true;
 
             if (!active)
             {
@@ -447,18 +444,31 @@ namespace PilotAssistant.FlightModules
                 bPause = false;
 
                 #warning presets need to account for flying upside down
-                if (VertActive && (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude))
-                    AsstList.Altitude.GetAsst(this).Preset();
-                else
-                    AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
-                if (VertActive && (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude || CurrentVertMode == VertMode.VSpeed))
-                    AsstList.VertSpeed.GetAsst(this).Preset();
-                else
-                    AsstList.VertSpeed.GetAsst(this).Preset(-vesRef.vesselData.AoA);
+                
+                
                 if (VertActive)
+                {
                     AsstList.Elevator.GetAsst(this).Preset();
+                    if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude || CurrentVertMode == VertMode.VSpeed)
+                    {
+                        AsstList.VertSpeed.GetAsst(this).Preset();
+                        if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
+                            AsstList.Altitude.GetAsst(this).Preset();
+                        else
+                            AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
+                    }
+                    else
+                    {
+                        AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
+                        AsstList.VertSpeed.GetAsst(this).Preset(-vesRef.vesselData.AoA);
+                    }
+                }
                 else
+                {
+                    AsstList.Altitude.GetAsst(this).Preset(-vesRef.vesselData.vertSpeed);
+                    AsstList.VertSpeed.GetAsst(this).Preset(-vesRef.vesselData.AoA);
                     AsstList.Elevator.GetAsst(this).Preset(-pitchSet);
+                }
                 
                 switch (newMode)
                 {
@@ -707,7 +717,7 @@ namespace PilotAssistant.FlightModules
             Vector3 direction = Quaternion.AngleAxis(angle, -vesRef.vesselData.surfVelRight) * -vesRef.vesselData.planetUp;
             Vector3 origin = vesRef.vesselRef.rootPart.transform.position;
             RaycastHit hitInfo;
-            if (FlightGlobals.ready && Physics.Raycast(origin, direction, out hitInfo, maxDist, ~1)) // ~1 masks off layer 0 which is apparently the parts on the current vessel. Seems to work
+            if (!vesRef.vesselRef.HoldPhysics && Physics.Raycast(origin, direction, out hitInfo, maxDist, ~1)) // ~1 masks off layer 0 which is apparently the parts on the current vessel. Seems to work
                 return hitInfo.distance;
             return -1;
         }
@@ -757,7 +767,7 @@ namespace PilotAssistant.FlightModules
                 if (CurrentVertMode != VertMode.Pitch)
                     vertScrollHeight += AsstList.VertSpeed.GetAsst(this).bShow ? 168 : 29;
                 if (showControlSurfaces)
-                    vertScrollHeight += AsstList.Elevator.GetAsst(this).bShow ? 168 : 27;
+                    vertScrollHeight += AsstList.Elevator.GetAsst(this).bShow ? 168 : 29;
             }
             if (bShowThrottle && dragID != 3)
             {
@@ -1057,7 +1067,7 @@ namespace PilotAssistant.FlightModules
                         drawPIDvalues(AsstList.VertSpeed, "Vertical Speed", "m/s", vesRef.vesselData.vertSpeed, 2, "AoA", "\u00B0", true);
 
                     if (showControlSurfaces)
-                        drawPIDvalues(AsstList.Elevator, "Angle of Attack", "\u00B0", CurrentVertMode == VertMode.Pitch ? vesRef.vesselData.pitch : vesRef.vesselData.AoA, 3, "Deflection", "\u00B0", true);
+                        drawPIDvalues(AsstList.Elevator, CurrentVertMode != VertMode.Pitch ? "Angle of Attack" : "Pitch", "\u00B0", CurrentVertMode == VertMode.Pitch ? vesRef.vesselData.pitch : vesRef.vesselData.AoA, 3, "Deflection", "\u00B0", true);
 
                     AsstList.Elevator.GetAsst(this).OutMin = Utils.Clamp(AsstList.Elevator.GetAsst(this).OutMin, -1, 1);
                     AsstList.Elevator.GetAsst(this).OutMax = Utils.Clamp(AsstList.Elevator.GetAsst(this).OutMax, -1, 1);
@@ -1257,7 +1267,7 @@ namespace PilotAssistant.FlightModules
             if (GUI.Button(new Rect(presetWindow.width - 16, 2, 14, 14), ""))
                 showPresets = false;
 
-            if (PresetManager.Instance.activeAsstPreset != null) // preset will be null after deleting an active preset
+            if (!ReferenceEquals(PresetManager.Instance.activeAsstPreset, null)) // preset will be null after deleting an active preset
             {
                 GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.Instance.activeAsstPreset.name));
                 if (PresetManager.Instance.activeAsstPreset.name != "default")
@@ -1291,7 +1301,7 @@ namespace PilotAssistant.FlightModules
                     presetToDelete = p;
                 GUILayout.EndHorizontal();
             }
-            if (presetToDelete != null)
+            if (!ReferenceEquals(presetToDelete, null))
             {
                 PresetManager.deleteAsstPreset(presetToDelete);
                 presetWindow.height = 0;

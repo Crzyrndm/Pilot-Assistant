@@ -56,7 +56,7 @@ namespace PilotAssistant
             bHideUI = false;
 
             config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
-            if (config == null)
+            if (ReferenceEquals(config, null))
                 config = new ConfigNode("");
 
             bUseStockToolbar = config.TryGetValue("UseStockToolbar", true);
@@ -107,9 +107,9 @@ namespace PilotAssistant
             try
             {
                 config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
-                if (config == null)
+                if (ReferenceEquals(config, null))
                     config = new ConfigNode("");
-                if (config != null)
+                if (!ReferenceEquals(config, null))
                 {
                     showTooltips = config.TryGetValue("AsstTooltips", true);
 
@@ -139,6 +139,10 @@ namespace PilotAssistant
                     BindingManager.bindings[(int)bindingIndex.ArmSSAS].primaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("SSASArmPrimary", GameSettings.SAS_TOGGLE.primary.ToString()));
                     BindingManager.bindings[(int)bindingIndex.ArmSSAS].secondaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("SSASArmSecondary", KeyCode.LeftAlt.ToString()));
                 }
+                else
+                {
+                    Debug.LogError("Pilot Assistant: Failed to create settings node");
+                }
             }
             catch
             {
@@ -150,9 +154,9 @@ namespace PilotAssistant
         {
             try
             {
-                if (config == null)
+                if (ReferenceEquals(config, null))
                     config = new ConfigNode("");
-                if (config != null)
+                if (!ReferenceEquals(config, null))
                 {
                     config.SetValue("AsstTooltips", showTooltips.ToString(), true);
                     config.SetValue("UseStockToolbar", bUseStockToolbar.ToString(), true);
