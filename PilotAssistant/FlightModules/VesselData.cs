@@ -26,7 +26,7 @@ namespace PilotAssistant.FlightModules
         public double acceleration = 0;
         double oldSpd = 0;
 
-        public Vector3d lastPlanetUp = Vector3d.zero;
+        //public Vector3d lastPlanetUp = Vector3d.zero;
         public Vector3d planetUp = Vector3d.zero;
         public Vector3d planetNorth = Vector3d.zero;
         public Vector3d planetEast = Vector3d.zero;
@@ -37,6 +37,7 @@ namespace PilotAssistant.FlightModules
         public Vector3d surfVesForward = Vector3d.zero;
         public Vector3d surfVesRight = Vector3d.zero;
 
+        public Vector3d lastVelocity = Vector3d.zero;
         public Vector3d velocity = Vector3d.zero;
 
         public Vector3 obtRadial = Vector3.zero;
@@ -59,10 +60,11 @@ namespace PilotAssistant.FlightModules
             radarAlt = vRef.vesselRef.altitude - (vRef.vesselRef.mainBody.ocean ? Math.Max(vRef.vesselRef.pqsAltitude, 0) : vRef.vesselRef.pqsAltitude);
             velocity = vRef.vesselRef.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
             acceleration = acceleration * 0.8 + 0.2 * (vRef.vesselRef.srfSpeed - oldSpd) / TimeWarp.fixedDeltaTime; // vessel.acceleration.magnitude includes acceleration by gravity
-            vertSpeed = Vector3d.Dot((planetUp + lastPlanetUp) / 2, velocity); // this corrects for the slight angle between planetup and the direction of travel at constant altitude
+            vertSpeed = Vector3d.Dot(planetUp, (velocity + lastVelocity) / 2);
+            lastVelocity = velocity;
 
             // surface vectors
-            lastPlanetUp = planetUp;
+            // lastPlanetUp = planetUp;
             planetUp = (vRef.vesselRef.rootPart.transform.position - vRef.vesselRef.mainBody.position).normalized;
             planetEast = vRef.vesselRef.mainBody.getRFrmVel(vRef.vesselRef.findWorldCenterOfMass()).normalized;
             planetNorth = Vector3d.Cross(planetEast, planetUp).normalized;

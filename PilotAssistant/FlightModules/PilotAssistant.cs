@@ -42,8 +42,8 @@ namespace PilotAssistant.FlightModules
     public enum ThrottleMode
     {
         ToggleOn = -1,
-        Speed = 0,
-        Acceleration = 1
+        Acceleration = 0,
+        Speed = 1
     }
 
     public enum SpeedUnits
@@ -79,15 +79,21 @@ namespace PilotAssistant.FlightModules
 
         public bool HrztActive = false;
         public HrztMode CurrentHrztMode = HrztMode.Heading;
-        static GUIContent[] hrztLabels = new GUIContent[3] { new GUIContent("Bank", "Mode: Bank Angle Control"), new GUIContent("Hdg", "Mode: Heading Control - Direction"), new GUIContent("Hdg#", "Mode: Heading control - Value") };
+        static GUIContent[] hrztLabels = new GUIContent[3] { new GUIContent("Bank", "Mode: Bank Angle Control\r\n\r\nMaintains a targeted bank angle. Negative values for banking left, positive values for banking right"),
+                                                                new GUIContent("Dir", "Mode: Direction Control\r\n\r\nDirection control maintains a set facing as the vessel travels around a planet. Fly in a straight line long enough and you will get back to where you started so long as sideslip is minimal.\r\nLimits maximum bank angle"),
+                                                                new GUIContent("Hdg", "Mode: Heading control\r\n\r\nHeading control follows a constant compass heading. Useful for local navigation but is difficult to use over long distances due to the effects of planetary curvature.\r\nLimits maximum bank angle") };
 
         public bool VertActive = false;
         public VertMode CurrentVertMode = VertMode.VSpeed;
-        static GUIContent[] vertLabels = new GUIContent[4] { new GUIContent("Pitch", "Mode: Pitch Control"), new GUIContent("VSpd", "Mode: Vertical Speed Control"), new GUIContent("Alt", "Mode: Altitude Control"), new GUIContent("RAlt", "Mode: Radar Altitude Control") };
+        static GUIContent[] vertLabels = new GUIContent[4] { new GUIContent("Pitch", "Mode: Pitch Control\r\n\r\nMaintains a targeted pitch angle"),
+                                                                new GUIContent("VSpd", "Mode: Vertical Speed Control\r\n\r\nManages vessel angle of attack to control ascent rate.\r\nLimits vessel angle of attack"),
+                                                                new GUIContent("Alt", "Mode: Altitude Control\r\n\r\nManages vessel altitude ascent rate to attain a set altitude relative to sea level.\r\nLimits vessel ascent rate"),
+                                                                new GUIContent("RAlt", "Mode: Radar Altitude Control\r\n\r\nManages vessel altitude ascent rate to attain a set altitude relative to the terrain.\r\nLimits vessel ascent rate") };
 
         public bool ThrtActive = false;
         public ThrottleMode CurrentThrottleMode = ThrottleMode.Speed;
-        static GUIContent[] throttleLabels = new GUIContent[2] { new GUIContent("Vel", "Mode: Velocity Control"), new GUIContent("Acc", "Mode: Acceleration Control") };
+        static GUIContent[] throttleLabels = new GUIContent[2] { new GUIContent("Acc", "Mode: Acceleration Control\r\n\r\nManages vessel throttle to attain a desired acceleration"),
+                                                                    new GUIContent("Spd", "Mode: Speed Control\r\n\r\nManages vessel acceleration to attain a set speed.\r\nLimits acceleration")};
 
         public static Rect window = new Rect(10, 130, 10, 10);
 
@@ -444,8 +450,8 @@ namespace PilotAssistant.FlightModules
                 bPause = false;
 
                 #warning presets need to account for flying upside down
-                
-                
+                ////////////////////////////////////////////////////////////////////////////////////////
+                // Set the integral sums for the vertical control systems to improve transfer smoothness
                 if (VertActive)
                 {
                     AsstList.Elevator.GetAsst(this).Preset();
