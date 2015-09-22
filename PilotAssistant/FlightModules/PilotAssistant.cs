@@ -208,7 +208,6 @@ namespace PilotAssistant.FlightModules
             PresetManager.initDefaultPresets(new AsstPreset(controllers, "default"));
 
             AsstList.HdgBank.GetAsst(this).invertOutput = true;
-            AsstList.BankToYaw.GetAsst(this).invertOutput = true;
             AsstList.Aileron.GetAsst(this).invertInput = true;
             AsstList.Altitude.GetAsst(this).invertOutput = true;
             AsstList.VertSpeed.GetAsst(this).invertOutput = true;
