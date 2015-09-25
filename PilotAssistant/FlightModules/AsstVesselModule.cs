@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace PilotAssistant.FlightModules
 {
@@ -32,14 +33,25 @@ namespace PilotAssistant.FlightModules
             if (vesselRef.isEVA)
             {
                 vesselRef = null;
+                vesselAsst = null;
+                vesselSSAS = null;
+                vesselStockSAS = null;
+                vesselData = null;
                 return;
             }
 
             PilotAssistantFlightCore.Instance.addVessel(this);
-
-            vesselAsst.Start();
-            vesselSSAS.Start();
-            vesselStockSAS.Start();
+            try
+            {
+                vesselAsst.Start();
+                vesselSSAS.Start();
+                vesselStockSAS.Start();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("Pilot Assistant: Startup error");
+                Debug.LogError(ex.InnerException);
+            }
 
             vesselRef.OnPreAutopilotUpdate += new FlightInputCallback(preAutoPilotUpdate);
             vesselRef.OnPostAutopilotUpdate += new FlightInputCallback(postAutoPilotUpdate);
