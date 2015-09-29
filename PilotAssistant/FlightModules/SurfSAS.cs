@@ -86,13 +86,15 @@ namespace PilotAssistant.FlightModules
                 if (GameSettings.SAS_HOLD.GetKey())
                     updateTarget();
             }
-            if (currentMode != vesRef.vesselRef.Autopilot.Mode && currentMode == VesselAutopilot.AutopilotMode.StabilityAssist)
-                updateTarget();
-            if (referenceMode == FlightUIController.SpeedDisplayModes.Surface && FlightUIController.speedDisplayMode != FlightUIController.SpeedDisplayModes.Surface)
-                orbitalTarget = vesRef.vesselRef.transform.rotation;
-            currentMode = vesRef.vesselRef.Autopilot.Mode;
-            referenceMode = FlightUIController.speedDisplayMode;
-
+            if (vesRef.vesselRef.Autopilot != null)
+            {
+                if (currentMode != vesRef.vesselRef.Autopilot.Mode && currentMode == VesselAutopilot.AutopilotMode.StabilityAssist)
+                    updateTarget();
+                if (referenceMode == FlightUIController.SpeedDisplayModes.Surface && FlightUIController.speedDisplayMode != FlightUIController.SpeedDisplayModes.Surface)
+                    orbitalTarget = vesRef.vesselRef.transform.rotation;
+                currentMode = vesRef.vesselRef.Autopilot.Mode;
+                referenceMode = FlightUIController.speedDisplayMode;
+            }
             if (bActive[(int)SASList.Hdg])
                 SASList.Hdg.GetSAS(this).SetPoint = Utils.calculateTargetHeading(currentTarget, vesRef);
         }
