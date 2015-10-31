@@ -104,7 +104,9 @@ namespace PilotAssistant.FlightModules
 
         public void OnGUI()
         {
-            if (PilotAssistantFlightCore.bHideUI || PilotAssistantFlightCore.Instance.controlledVessels[PilotAssistantFlightCore.Instance.selectedVesselIndex] != this)
+            if (PilotAssistantFlightCore.bHideUI || PilotAssistantFlightCore.Instance  == null 
+                || PilotAssistantFlightCore.Instance.selectedVesselIndex >= PilotAssistantFlightCore.Instance.controlledVessels.Count
+                || PilotAssistantFlightCore.Instance.controlledVessels[PilotAssistantFlightCore.Instance.selectedVesselIndex] != this)
                 return;
             vesselAsst.drawGUI();
             vesselSSAS.drawGUI();
