@@ -490,7 +490,7 @@ namespace PilotAssistant
             GeneralUI.postMessage("Loaded preset " + p.name);
             
             if (Instance.activeAsstPreset != Instance.craftPresetDict[craftDefaultName].AsstPreset)
-                updateCraftPreset(Instance.activeAsstPreset, instance.vesRef.vesselRef);
+                updateCraftPreset(Instance.activeAsstPreset, instance.vesModule.vesselRef);
             saveToFile();
         }
 
