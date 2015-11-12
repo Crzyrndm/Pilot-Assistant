@@ -469,7 +469,7 @@ namespace PilotAssistant.FlightModules
                         break;
                 }
             }
-            hdgModeChanged(mode, active, setTarget);
+            hdgModeChanged(mode, active, !setTarget);
         }
 
         private void vertModeChanged(VertMode newMode, bool active, bool setTarget = true)
@@ -599,7 +599,7 @@ namespace PilotAssistant.FlightModules
                         break;
                 }
             }
-            vertModeChanged(mode, active, setTarget);
+            vertModeChanged(mode, active, !setTarget);
         }
 
         private void throttleModeChanged(ThrottleMode newMode, bool active, bool setTarget = true)
@@ -674,7 +674,7 @@ namespace PilotAssistant.FlightModules
                         break;
                 }
             }
-            throttleModeChanged(mode, active, setTarget);
+            throttleModeChanged(mode, active, !setTarget);
         }
         #endregion
 
