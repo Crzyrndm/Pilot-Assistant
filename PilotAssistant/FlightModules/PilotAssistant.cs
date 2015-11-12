@@ -439,6 +439,39 @@ namespace PilotAssistant.FlightModules
             CurrentHrztMode = newMode;
         }
 
+        public double GetCurrentHrzt()
+        {
+            switch (CurrentHrztMode)
+            {
+                case HrztMode.HeadingNum:
+                case HrztMode.Heading:
+                    return AsstList.HdgBank.GetAsst(this).SetPoint;
+                case HrztMode.Bank:
+                default:
+                    return AsstList.Aileron.GetAsst(this).SetPoint;
+            }
+        }
+
+        public void SetHrzt(bool active, bool setTarget, HrztMode mode, double target)
+        {
+            if (active && setTarget)
+            {
+                switch (mode)
+                {
+                    case HrztMode.Bank:
+                        AsstList.Aileron.GetAsst(this).BumplessSetPoint = target;
+                        break;
+                    case HrztMode.Heading:
+                        StartCoroutine(shiftHeadingTarget(target.headingClamp(360)));
+                        break;
+                    case HrztMode.HeadingNum:
+                        AsstList.HdgBank.GetAsst(this).SetPoint = target.headingClamp(360);
+                        break;
+                }
+            }
+            hdgModeChanged(mode, active, setTarget);
+        }
+
         private void vertModeChanged(VertMode newMode, bool active, bool setTarget = true)
         {
             //AsstList.VertSpeed.GetAsst(this).skipDerivative = true;
@@ -529,6 +562,46 @@ namespace PilotAssistant.FlightModules
             CurrentVertMode = newMode;
         }
 
+        public double GetCurrentVert()
+        {
+            switch (CurrentVertMode)
+            {
+                case VertMode.Pitch:
+                    return AsstList.Elevator.GetAsst(this).SetPoint;
+                case VertMode.VSpeed:
+                    return AsstList.VertSpeed.GetAsst(this).SetPoint;
+                case VertMode.Altitude:
+                case VertMode.RadarAltitude:
+                default:
+                    return AsstList.Altitude.GetAsst(this).SetPoint;
+            }
+        }
+
+        public void SetVert(bool active, bool setTarget, VertMode mode, double target)
+        {
+            if (active && setTarget)
+            {
+                switch (mode)
+                {
+                    case VertMode.Altitude:
+                        AsstList.Altitude.GetAsst(this).SetPoint = vesModule.vesselRef.altitude;
+                        AsstList.Altitude.GetAsst(this).BumplessSetPoint = target;
+                        break;
+                    case VertMode.RadarAltitude:
+                        AsstList.Altitude.GetAsst(this).BumplessSetPoint = target;
+                        break;
+                    case VertMode.VSpeed:
+                        AsstList.VertSpeed.GetAsst(this).SetPoint = vesModule.vesselRef.verticalSpeed + vesModule.vesselData.AoA / AsstList.VertSpeed.GetAsst(this).PGain;
+                        AsstList.VertSpeed.GetAsst(this).BumplessSetPoint = target;
+                        break;
+                    case VertMode.Pitch:
+                        AsstList.Elevator.GetAsst(this).SetPoint = target;
+                        break;
+                }
+            }
+            vertModeChanged(mode, active, setTarget);
+        }
+
         private void throttleModeChanged(ThrottleMode newMode, bool active, bool setTarget = true)
         {
             AsstList.Acceleration.GetAsst(this).skipDerivative = true;
@@ -563,6 +636,45 @@ namespace PilotAssistant.FlightModules
             }
             ThrtActive = active;
             CurrentThrottleMode = newMode;
+        }
+
+        public double GetCurrentThrottle()
+        {
+            switch(CurrentThrottleMode)
+            {
+                case ThrottleMode.Direct:
+                    return currentThrottlePct;
+                case ThrottleMode.Acceleration:
+                    return AsstList.Acceleration.GetAsst(this).SetPoint;
+                case ThrottleMode.Speed:
+                default:
+                    return AsstList.Speed.GetAsst(this).SetPoint;
+            }
+        }
+
+        public void SetThrottle(bool active, bool setTarget, ThrottleMode mode, double target)
+        {
+            if (active && setTarget)
+            {
+                switch (mode)
+                {
+                    case ThrottleMode.Direct:
+                        currentThrottlePct = Utils.Clamp(target / 100, 0, 1);
+                        vesModule.vesselRef.ctrlState.mainThrottle = (float)currentThrottlePct;
+                        if (ReferenceEquals(vesModule.vesselRef, FlightGlobals.ActiveVessel))
+                            FlightInputHandler.state.mainThrottle = (float)currentThrottlePct;
+                        break;
+                    case ThrottleMode.Acceleration:
+                        AsstList.Acceleration.GetAsst(this).SetPoint = vesModule.vesselData.acceleration;
+                        AsstList.Acceleration.GetAsst(this).BumplessSetPoint = target;
+                        break;
+                    case ThrottleMode.Speed:
+                        AsstList.Speed.GetAsst(this).SetPoint = vesModule.vesselRef.srfSpeed;
+                        AsstList.Speed.GetAsst(this).BumplessSetPoint = target;
+                        break;
+                }
+            }
+            throttleModeChanged(mode, active, setTarget);
         }
         #endregion
 

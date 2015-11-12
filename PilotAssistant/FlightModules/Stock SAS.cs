@@ -9,11 +9,11 @@ namespace PilotAssistant.FlightModules
 
     public class Stock_SAS
     {
-        public AsstVesselModule vesRef;
+        public AsstVesselModule vesModule;
 
         void StartCoroutine(IEnumerator routine) // quick access to coroutine now it doesn't inherit Monobehaviour
         {
-            vesRef.StartCoroutine(routine);
+            vesModule.StartCoroutine(routine);
         }
 
         static public Rect StockSASwindow = new Rect(10, 505, 200, 30); // gui window rect
@@ -24,7 +24,7 @@ namespace PilotAssistant.FlightModules
 
         public Stock_SAS(AsstVesselModule avm)
         {
-            vesRef = avm;
+            vesModule = avm;
         }
 
         public void Start()
@@ -34,11 +34,11 @@ namespace PilotAssistant.FlightModules
 
         IEnumerator Initialise()
         {
-            while (ReferenceEquals(vesRef.vesselRef.Autopilot.SAS.pidLockedPitch, null) || ReferenceEquals(vesRef.vesselRef.Autopilot.RSAS.pidPitch, null))
+            while (ReferenceEquals(vesModule.vesselRef.Autopilot.SAS.pidLockedPitch, null) || ReferenceEquals(vesModule.vesselRef.Autopilot.RSAS.pidPitch, null))
                 yield return null;
 
-            PresetManager.initDefaultPresets(new SASPreset(vesRef.vesselRef.Autopilot.SAS, "stock"));
-            PresetManager.initDefaultPresets(new RSASPreset(vesRef.vesselRef.Autopilot.RSAS, "RSAS"));
+            PresetManager.initDefaultPresets(new SASPreset(vesModule.vesselRef.Autopilot.SAS, "stock"));
+            PresetManager.initDefaultPresets(new RSASPreset(vesModule.vesselRef.Autopilot.RSAS, "RSAS"));
 
             PresetManager.loadCraftSASPreset(this);
         }
@@ -52,7 +52,7 @@ namespace PilotAssistant.FlightModules
         {
             if (PilotAssistantFlightCore.bDisplaySAS)
             {
-                if (vesRef.vesselRef.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
+                if (vesModule.vesselRef.Autopilot.Mode == VesselAutopilot.AutopilotMode.StabilityAssist)
                 {
                     StockSASwindow = GUILayout.Window(78934857, StockSASwindow, drawSASWindow, "Stock SAS", GUILayout.Height(0));
 
@@ -95,7 +95,7 @@ namespace PilotAssistant.FlightModules
 
             bShowPresets = GUILayout.Toggle(bShowPresets, bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
 
-            VesselAutopilot.VesselSAS sas = vesRef.vesselRef.Autopilot.SAS;
+            VesselAutopilot.VesselSAS sas = vesModule.vesselRef.Autopilot.SAS;
 
             drawPIDValues(sas.pidLockedPitch, "Pitch", SASList.Pitch);
             drawPIDValues(sas.pidLockedRoll, "Roll", SASList.Bank);
@@ -124,7 +124,7 @@ namespace PilotAssistant.FlightModules
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-                PresetManager.newSASPreset(ref newPresetName, this.vesRef.vesselRef);
+                PresetManager.newSASPreset(ref newPresetName, this.vesModule.vesselRef);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
@@ -154,7 +154,7 @@ namespace PilotAssistant.FlightModules
 
             bShowPresets = GUILayout.Toggle(bShowPresets, bShowPresets ? "Hide SAS Presets" : "Show SAS Presets");
 
-            VesselAutopilot.VesselRSAS rsas = vesRef.vesselRef.Autopilot.RSAS;
+            VesselAutopilot.VesselRSAS rsas = vesModule.vesselRef.Autopilot.RSAS;
             drawPIDValues(rsas.pidPitch, "Pitch", SASList.Pitch);
             drawPIDValues(rsas.pidRoll, "Roll", SASList.Bank);
             drawPIDValues(rsas.pidYaw, "Yaw", SASList.Hdg);
@@ -182,7 +182,7 @@ namespace PilotAssistant.FlightModules
             GUILayout.BeginHorizontal();
             newPresetName = GUILayout.TextField(newPresetName);
             if (GUILayout.Button("+", GUILayout.Width(25)))
-                PresetManager.newRSASPreset(ref newPresetName, this.vesRef.vesselRef);
+                PresetManager.newRSASPreset(ref newPresetName, this.vesModule.vesselRef);
             GUILayout.EndHorizontal();
 
             GUILayout.Box("", GUILayout.Height(10), GUILayout.Width(180));
