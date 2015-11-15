@@ -40,11 +40,9 @@ namespace PilotAssistant.Utility
         /// Circular rounding to keep compass measurements within a 360 degree range
         /// maxHeading is the top limit, bottom limit is maxHeading - 360
         /// </summary>
-        public static double headingClamp(this double valToClamp, double maxHeading)
+        public static double headingClamp(this double valToClamp, double maxHeading, double range = 360)
         {
-            double start = maxHeading - 360;
-            double temp = (valToClamp - start) % 360;
-            return start + (temp < 0 ? temp + 360 : temp);
+            return (maxHeading - range) + (valToClamp < 0 ? ((valToClamp - (maxHeading - range)) % 360) + 360 : (valToClamp - (maxHeading - range)) % 360);
         }
 
         /// <summary>
