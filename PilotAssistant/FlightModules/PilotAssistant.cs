@@ -56,7 +56,7 @@ namespace PilotAssistant.FlightModules
         mach
     }
 
-    public enum SpeedMode
+    public enum SpeedRef
     {
         True,
         Indicated,
@@ -165,6 +165,14 @@ namespace PilotAssistant.FlightModules
         public static readonly double[] defaultElevatorGains = { 0.05, 0.01, 0.1, -1, 1, -1, 1, 2, 1 };
         public static readonly double[] defaultSpeedGains = { 0.2, 0.0, 0.0, -10, 10, -10, 10, 1, 10 };
         public static readonly double[] defaultAccelGains = { 0.2, 0.08, 0.0, -1, 0, -1, 1, 1, 1 };
+
+        // speed mode change
+        SpeedRef speedRef = SpeedRef.True;
+        bool speedSelectWindowVisible;
+        Rect speedSelectWindow;
+        GUIContent[] speedReferences = new GUIContent[3] {new GUIContent("TAS"),
+                                                        new GUIContent("IAS"),
+                                                        new GUIContent("EAS")};
 
         #endregion
         public PilotAssistant(AsstVesselModule avm)
@@ -676,6 +684,26 @@ namespace PilotAssistant.FlightModules
             }
             throttleModeChanged(mode, active, !setTarget);
         }
+
+        public void ChangeSpeedRef(SpeedRef newRef)
+        {
+            if (ThrtActive)
+            {
+                switch (CurrentThrottleMode)
+                {
+                    case ThrottleMode.Speed:
+                        double currentSpeed = AsstList.Speed.GetAsst(this).SetPoint / Utils.SpeedTransform(speedRef, vesModule);
+                        AsstList.Speed.GetAsst(this).SetPoint = currentSpeed * Utils.SpeedTransform(newRef, vesModule);
+                        break;
+                    case ThrottleMode.Acceleration:
+                        double currentAccel = AsstList.Acceleration.GetAsst(this).SetPoint / Utils.SpeedTransform(speedRef, vesModule);
+                        AsstList.Acceleration.GetAsst(this).SetPoint = currentAccel * Utils.SpeedTransform(newRef, vesModule);
+                        break;
+                }
+            }
+            speedRef = newRef;
+            throttleModeChanged(CurrentThrottleMode, ThrtActive, false);
+        }
         #endregion
 
         #region Control / Fixed Update
@@ -748,8 +776,8 @@ namespace PilotAssistant.FlightModules
                 else
                 {
                     if (CurrentThrottleMode == ThrottleMode.Speed)
-                        AsstList.Acceleration.GetAsst(this).SetPoint = AsstList.Speed.GetAsst(this).ResponseD(vesModule.vesselRef.srfSpeed, useIntegral);
-                    state.mainThrottle = AsstList.Acceleration.GetAsst(this).ResponseF(vesModule.vesselData.acceleration, useIntegral).Clamp(0, 1);
+                        AsstList.Acceleration.GetAsst(this).SetPoint = AsstList.Speed.GetAsst(this).ResponseD(vesModule.vesselRef.srfSpeed * Utils.SpeedTransform(speedRef, vesModule), useIntegral);
+                    state.mainThrottle = AsstList.Acceleration.GetAsst(this).ResponseF(vesModule.vesselData.acceleration * Utils.SpeedTransform(speedRef, vesModule), useIntegral).Clamp(0, 1);
                 }
                 FlightInputHandler.state.mainThrottle = state.mainThrottle; // set throttle state permanently
             }
@@ -932,6 +960,9 @@ namespace PilotAssistant.FlightModules
 
                 presetWindow = GUILayout.Window(34245, presetWindow, displayPresetWindow, "", GeneralUI.UISkin.box, GUILayout.Width(200));
             }
+
+            if (speedSelectWindowVisible)
+                speedSelectWindow = GUILayout.Window(34257, speedSelectWindow, drawSpeedSelectWindow, "", GeneralUI.UISkin.box);
         }
 
         private bool controllerVisible(AsstController controller)
@@ -1239,7 +1270,6 @@ namespace PilotAssistant.FlightModules
                 }
             }
             #endregion
-
             #region Throttle GUI
 
             GUILayout.BeginHorizontal();
@@ -1279,7 +1309,7 @@ namespace PilotAssistant.FlightModules
                         tempSpeed = "Target Speed";
                         break;
                 }
-                if (GUILayout.Button(tempSpeed, GUILayout.Width(118)))
+                if (GUILayout.Button(tempSpeed, GUILayout.Width(108)))
                 {
                     GeneralUI.postMessage("Target updated");
 
@@ -1307,16 +1337,24 @@ namespace PilotAssistant.FlightModules
                     GUI.FocusControl("Target Hdg: ");
                     GUI.UnfocusWindow();
                 }
-                targetSpeed = GUILayout.TextField(targetSpeed, GUILayout.Width(78));
+                targetSpeed = GUILayout.TextField(targetSpeed, GUILayout.Width(68));
+                bool tempToggle = GUILayout.Toggle(speedSelectWindowVisible, ">", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(18));
+                if (tempToggle != speedSelectWindowVisible)
+                {
+                    speedSelectWindowVisible = tempToggle;
+                    speedSelectWindow.x = Input.mousePosition.x + 50;
+                    speedSelectWindow.y = Screen.height - (Input.mousePosition.y + 20);
+                }
+
                 GUILayout.EndHorizontal();
 
                 if (!bMinimiseThrt)
                 {
                     ThrtScrollbar = GUILayout.BeginScrollView(ThrtScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(thrtScrollHeight, maxThrtScrollbarHeight)));
                     if (CurrentThrottleMode == ThrottleMode.Speed)
-                        drawPIDvalues(AsstList.Speed, "Speed", " m/s", vesModule.vesselRef.srfSpeed, 2, "Accel ", " m/s", true);
+                        drawPIDvalues(AsstList.Speed, "Speed", " m/s", vesModule.vesselRef.srfSpeed * Utils.SpeedTransform(speedRef, vesModule), 2, "Accel ", " m/s", true);
                     if (CurrentThrottleMode != ThrottleMode.Direct)
-                        drawPIDvalues(AsstList.Acceleration, "Acceleration", " m/s", vesModule.vesselData.acceleration, 1, "Throttle ", "%", true);
+                        drawPIDvalues(AsstList.Acceleration, "Acceleration", " m/s", vesModule.vesselData.acceleration * Utils.SpeedTransform(speedRef, vesModule), 1, "Throttle ", "%", true);
                     // can't have people bugging things out now can we...
                     AsstList.Acceleration.GetAsst(this).OutMax = AsstList.Speed.GetAsst(this).OutMax.Clamp(-1, 0);
                     AsstList.Acceleration.GetAsst(this).OutMin = AsstList.Speed.GetAsst(this).OutMin.Clamp(-1, 0);
@@ -1469,6 +1507,14 @@ namespace PilotAssistant.FlightModules
                 presetWindow.height = 0;
             }
         }
+
+        private void drawSpeedSelectWindow(int id)
+        {
+            SpeedRef tempRef = (SpeedRef)GUILayout.SelectionGrid((int)speedRef, speedReferences, 3);
+            if (tempRef != speedRef)
+                ChangeSpeedRef(tempRef);
+        }
+
         #endregion
     }
 }
