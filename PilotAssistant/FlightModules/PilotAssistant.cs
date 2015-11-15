@@ -263,7 +263,7 @@ namespace PilotAssistant.FlightModules
             // Heading setpoint updates
             if (HrztActive)
             {
-                if (vesModule.vesselRef.checkLanded())
+                if (vesModule.vesselRef.LandedOrSplashed)
                     newTarget = currentTarget = Utils.getPlaneRotation(vesModule.vesselRef.transform.right, vesModule);
                 if (CurrentHrztMode == HrztMode.Heading)
                 {
@@ -325,14 +325,14 @@ namespace PilotAssistant.FlightModules
                 scale = 0.1 / scale; // normally *0.1, with alt is *0.01
 
             // ============================================================ Hrzt Controls ============================================================
-            if (HrztActive && !vesModule.vesselRef.checkLanded() && Utils.hasYawInput())
+            if (HrztActive && !vesModule.vesselRef.LandedOrSplashed && Utils.hasYawInput())
             {
                 double hdg = GameSettings.YAW_LEFT.GetKey() ? -hrztScale * scale : 0;
                 hdg += GameSettings.YAW_RIGHT.GetKey() ? hrztScale * scale : 0;
                 hdg += hrztScale * scale * GameSettings.AXIS_YAW.GetAxis();
 
                 switch (CurrentHrztMode)
-                { 
+                {
                     case HrztMode.Bank:
                         AsstList.Aileron.GetAsst(this).SetPoint = Utils.headingClamp(AsstList.Aileron.GetAsst(this).SetPoint + hdg / 4, 180);
                         targetHeading = AsstList.Aileron.GetAsst(this).SetPoint.ToString("0.00");
@@ -711,10 +711,10 @@ namespace PilotAssistant.FlightModules
         public void vesselController(FlightCtrlState state)
         {
             pitchSet = state.pitch; // last pitch ouput, used for presetting the elevator
-            if (bPause || !vesModule.vesselRef.IsControllable)
+            if (bPause)
                 return;
 
-            bool useIntegral = !vesModule.vesselRef.checkLanded();
+            bool useIntegral = !vesModule.vesselRef.LandedOrSplashed;
             // Heading Control
             if (HrztActive && useIntegral)
             {
