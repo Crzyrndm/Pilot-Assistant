@@ -10,21 +10,11 @@ namespace PilotAssistant.Utility
 
     public static class Utils
     {
-        public static float Clamp(this float val, float min, float max)
+        public static T Clamp<T>(this T val, T min, T max) where T : System.IComparable<T>
         {
-            if (val < min)
+            if (val.CompareTo(min) < 0)
                 return min;
-            else if (val > max)
-                return max;
-            else
-                return val;
-        }
-
-        public static double Clamp(this double val, double min, double max)
-        {
-            if (val < min)
-                return min;
-            else if (val > max)
+            else if (val.CompareTo(max) > 0)
                 return max;
             else
                 return val;
@@ -52,11 +42,9 @@ namespace PilotAssistant.Utility
         /// </summary>
         public static double headingClamp(this double valToClamp, double maxHeading)
         {
-            while (valToClamp > maxHeading)
-                valToClamp -= 360;
-            while (valToClamp < (maxHeading - 360))
-                valToClamp += 360;
-            return valToClamp;
+            double start = maxHeading - 360;
+            double temp = (valToClamp - start) % 360;
+            return start + (temp < 0 ? temp + 360 : temp);
         }
 
         /// <summary>
