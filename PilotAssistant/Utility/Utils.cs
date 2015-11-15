@@ -42,7 +42,8 @@ namespace PilotAssistant.Utility
         /// </summary>
         public static double headingClamp(this double valToClamp, double maxHeading, double range = 360)
         {
-            return (maxHeading - range) + (valToClamp < 0 ? ((valToClamp - (maxHeading - range)) % 360) + 360 : (valToClamp - (maxHeading - range)) % 360);
+            double temp = (valToClamp - (maxHeading - range)) % range;
+            return (maxHeading - range) + (temp < 0 ? temp + range : temp);
         }
 
         /// <summary>
