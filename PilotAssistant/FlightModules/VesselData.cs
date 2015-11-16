@@ -55,20 +55,17 @@ namespace PilotAssistant.FlightModules
             //findVesselFwdAxis(vRef.vesselRef);
             //else
             vesselFacingAxis = vesModule.vesselRef.transform.up;
+            planetUp = (vesModule.vesselRef.rootPart.transform.position - vesModule.vesselRef.mainBody.position).normalized;
+            planetEast = vesModule.vesselRef.mainBody.getRFrmVel(vesModule.vesselRef.findWorldCenterOfMass()).normalized;
+            planetNorth = Vector3d.Cross(planetEast, planetUp).normalized;
 
             // 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
             radarAlt = vesModule.vesselRef.altitude - (vesModule.vesselRef.mainBody.ocean ? Math.Max(vesModule.vesselRef.pqsAltitude, 0) : vesModule.vesselRef.pqsAltitude);
             velocity = vesModule.vesselRef.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
-            acceleration = acceleration * 0.8 + 0.2 * (vesModule.vesselRef.srfSpeed - oldSpd) / TimeWarp.fixedDeltaTime; // vessel.acceleration.magnitude includes acceleration by gravity
+            acceleration = Vector3d.Dot(vesModule.vesselRef.acceleration, velocity.normalized);
             vertSpeed = Vector3d.Dot(planetUp, (velocity + lastVelocity) / 2);
             lastVelocity = velocity;
 
-            // surface vectors
-            // lastPlanetUp = planetUp;
-            planetUp = (vesModule.vesselRef.rootPart.transform.position - vesModule.vesselRef.mainBody.position).normalized;
-            planetEast = vesModule.vesselRef.mainBody.getRFrmVel(vesModule.vesselRef.findWorldCenterOfMass()).normalized;
-            planetNorth = Vector3d.Cross(planetEast, planetUp).normalized;
-            
             // Velocity forward and right vectors parallel to the surface
             surfVelRight = Vector3d.Cross(planetUp, vesModule.vesselRef.srf_velocity).normalized;
             surfVelForward = Vector3d.Cross(surfVelRight, planetUp).normalized;

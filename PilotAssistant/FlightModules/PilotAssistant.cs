@@ -173,6 +173,8 @@ namespace PilotAssistant.FlightModules
         GUIContent[] speedReferences = new GUIContent[3] {new GUIContent("TAS"),
                                                         new GUIContent("IAS"),
                                                         new GUIContent("EAS")};
+        /** Speed and acceleration accounting for TAS/IAS/EAS since calculating acceleration for modes other than TAS is not just a simple multiplier **/
+        double adjustedAcceleration, adjustedSpeed;
 
         #endregion
         public PilotAssistant(AsstVesselModule avm)
@@ -702,6 +704,9 @@ namespace PilotAssistant.FlightModules
                 }
             }
             speedRef = newRef;
+            adjustedSpeed = vesModule.vesselRef.srfSpeed * Utils.SpeedTransform(speedRef, vesModule);
+            adjustedAcceleration = 0;
+
             throttleModeChanged(CurrentThrottleMode, ThrtActive, false);
         }
         #endregion
@@ -711,6 +716,8 @@ namespace PilotAssistant.FlightModules
         public void vesselController(FlightCtrlState state)
         {
             pitchSet = state.pitch; // last pitch ouput, used for presetting the elevator
+            UpdateAdjustedAcceleration(); // must run to update the UI readouts
+
             if (bPause)
                 return;
 
@@ -771,16 +778,24 @@ namespace PilotAssistant.FlightModules
 
             if (ThrtActive && CurrentThrottleMode != ThrottleMode.Direct)
             {
+                
                 if (vesModule.vesselRef.ActionGroups[KSPActionGroup.Brakes] || (AsstList.Speed.GetAsst(this).SetPoint == 0 && vesModule.vesselRef.srfSpeed < -AsstList.Acceleration.GetAsst(this).OutMin))
                     state.mainThrottle = 0;
                 else
                 {
                     if (CurrentThrottleMode == ThrottleMode.Speed)
-                        AsstList.Acceleration.GetAsst(this).SetPoint = AsstList.Speed.GetAsst(this).ResponseD(vesModule.vesselRef.srfSpeed * Utils.SpeedTransform(speedRef, vesModule), useIntegral);
-                    state.mainThrottle = AsstList.Acceleration.GetAsst(this).ResponseF(vesModule.vesselData.acceleration * Utils.SpeedTransform(speedRef, vesModule), useIntegral).Clamp(0, 1);
+                        AsstList.Acceleration.GetAsst(this).SetPoint = AsstList.Speed.GetAsst(this).ResponseD(adjustedSpeed, useIntegral);
+                    state.mainThrottle = AsstList.Acceleration.GetAsst(this).ResponseF(adjustedAcceleration, useIntegral).Clamp(0, 1);
                 }
                 FlightInputHandler.state.mainThrottle = state.mainThrottle; // set throttle state permanently
             }
+        }
+
+        public void UpdateAdjustedAcceleration()
+        {
+            double newAdjustedSpeed = vesModule.vesselRef.srfSpeed * Utils.SpeedTransform(speedRef, vesModule);
+            adjustedAcceleration = adjustedAcceleration * 0.8 + 0.2 * (newAdjustedSpeed - adjustedSpeed) / TimeWarp.fixedDeltaTime;
+            adjustedSpeed = newAdjustedSpeed;
         }
 
         float pitchHold = 0;
@@ -1342,7 +1357,7 @@ namespace PilotAssistant.FlightModules
                 if (tempToggle != speedSelectWindowVisible)
                 {
                     speedSelectWindowVisible = tempToggle;
-                    speedSelectWindow.x = Input.mousePosition.x + 50;
+                    speedSelectWindow.x = Input.mousePosition.x + 30;
                     speedSelectWindow.y = Screen.height - (Input.mousePosition.y + 20);
                 }
 
@@ -1352,9 +1367,9 @@ namespace PilotAssistant.FlightModules
                 {
                     ThrtScrollbar = GUILayout.BeginScrollView(ThrtScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(thrtScrollHeight, maxThrtScrollbarHeight)));
                     if (CurrentThrottleMode == ThrottleMode.Speed)
-                        drawPIDvalues(AsstList.Speed, "Speed", " m/s", vesModule.vesselRef.srfSpeed * Utils.SpeedTransform(speedRef, vesModule), 2, "Accel ", " m/s", true);
+                        drawPIDvalues(AsstList.Speed, "Speed", " m/s", adjustedSpeed, 2, "Accel ", " m/s", true);
                     if (CurrentThrottleMode != ThrottleMode.Direct)
-                        drawPIDvalues(AsstList.Acceleration, "Acceleration", " m/s", vesModule.vesselData.acceleration * Utils.SpeedTransform(speedRef, vesModule), 1, "Throttle ", "%", true);
+                        drawPIDvalues(AsstList.Acceleration, "Acceleration", " m/s", adjustedAcceleration, 1, "Throttle ", "%", true);
                     // can't have people bugging things out now can we...
                     AsstList.Acceleration.GetAsst(this).OutMax = AsstList.Speed.GetAsst(this).OutMax.Clamp(-1, 0);
                     AsstList.Acceleration.GetAsst(this).OutMin = AsstList.Speed.GetAsst(this).OutMin.Clamp(-1, 0);
