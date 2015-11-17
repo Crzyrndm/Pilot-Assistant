@@ -1528,6 +1528,10 @@ namespace PilotAssistant.FlightModules
             SpeedRef tempRef = (SpeedRef)GUILayout.SelectionGrid((int)speedRef, speedReferences, 3);
             if (tempRef != speedRef)
                 ChangeSpeedRef(tempRef);
+
+            Debug.Log(GUIUtility.ScreenToGUIPoint(Input.mousePosition));
+            if (Input.GetMouseButtonDown(0) && !speedSelectWindow.Contains(GUIUtility.ScreenToGUIPoint(Input.mousePosition)))
+                speedSelectWindowVisible = false;
         }
 
         #endregion

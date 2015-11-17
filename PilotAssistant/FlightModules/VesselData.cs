@@ -6,7 +6,7 @@ using UnityEngine;
 namespace PilotAssistant.FlightModules
 {
     using Utility;
-    public class VesselData
+    public class VesselData : IVesselData
     {
         public VesselData(AsstVesselModule avm)
         {
@@ -15,35 +15,28 @@ namespace PilotAssistant.FlightModules
 
         public AsstVesselModule vesModule;
 
-        public double radarAlt = 0;
-        public double pitch = 0;
-        public double bank = 0;
-        public double yaw = 0;
-        public double AoA = 0;
-        public double heading = 0;
-        public double progradeHeading = 0;
-        public double vertSpeed = 0;
-        public double acceleration = 0;
-        double oldSpd = 0;
-
-        //public Vector3d lastPlanetUp = Vector3d.zero;
-        public Vector3d planetUp = Vector3d.zero;
-        public Vector3d planetNorth = Vector3d.zero;
-        public Vector3d planetEast = Vector3d.zero;
-
-        public Vector3d surfVelForward = Vector3d.zero;
-        public Vector3d surfVelRight = Vector3d.zero;
-
-        public Vector3d surfVesForward = Vector3d.zero;
-        public Vector3d surfVesRight = Vector3d.zero;
-
-        public Vector3d lastVelocity = Vector3d.zero;
-        public Vector3d velocity = Vector3d.zero;
-
-        public Vector3 obtRadial = Vector3.zero;
-        public Vector3 obtNormal = Vector3.zero;
-        public Vector3 srfRadial = Vector3.zero;
-        public Vector3 srfNormal = Vector3.zero;
+        public double radarAlt { get; private set; }
+        public double pitch { get; private set; }
+        public double bank { get; private set; }
+        public double yaw { get; private set; }
+        public double AoA { get; private set; }
+        public double heading { get; private set; }
+        public double progradeHeading { get; private set; }
+        public double vertSpeed { get; private set; }
+        public double acceleration { get; private set; }
+        public Vector3d planetUp { get; private set; }
+        public Vector3d planetNorth { get; private set; }
+        public Vector3d planetEast { get; private set; }
+        public Vector3d surfVelForward { get; private set; }
+        public Vector3d surfVelRight { get; private set; }
+        public Vector3d surfVesForward { get; private set; }
+        public Vector3d surfVesRight { get; private set; }
+        public Vector3d lastVelocity { get; private set; }
+        public Vector3d velocity { get; private set; }
+        public Vector3 obtRadial { get; private set; }
+        public Vector3 obtNormal { get; private set; }
+        public Vector3 srfRadial { get; private set; }
+        public Vector3 srfNormal  { get; private set; }
 
         /// <summary>
         /// Called in OnPreAutoPilotUpdate. Do not call multiple times per physics frame or the "lastPlanetUp" vector will not be correct and VSpeed will not be calculated correctly
@@ -62,7 +55,8 @@ namespace PilotAssistant.FlightModules
             // 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
             radarAlt = vesModule.vesselRef.altitude - (vesModule.vesselRef.mainBody.ocean ? Math.Max(vesModule.vesselRef.pqsAltitude, 0) : vesModule.vesselRef.pqsAltitude);
             velocity = vesModule.vesselRef.rootPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity();
-            acceleration = Vector3d.Dot(vesModule.vesselRef.acceleration, velocity.normalized);
+            acceleration = (velocity - lastVelocity).magnitude / TimeWarp.fixedDeltaTime;
+            acceleration *= Math.Sign(Vector3.Dot(velocity - lastVelocity, velocity));
             vertSpeed = Vector3d.Dot(planetUp, (velocity + lastVelocity) / 2);
             lastVelocity = velocity;
 
@@ -94,8 +88,6 @@ namespace PilotAssistant.FlightModules
             }
             else
                 AoA = yaw = 0;
-
-            oldSpd = vesModule.vesselRef.srfSpeed;
         }
 
         Vector3 vesselFacingAxis = new Vector3();

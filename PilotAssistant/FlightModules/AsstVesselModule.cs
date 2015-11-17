@@ -117,7 +117,7 @@ namespace PilotAssistant.FlightModules
             }
             if (!ReferenceEquals(vesselAsst, null))
                 vesselAsst.OnDestroy();
-            if (!ReferenceEquals(PilotAssistantFlightCore.Instance, null))
+            if (!ReferenceEquals(vesselData, null) && !ReferenceEquals(PilotAssistantFlightCore.Instance, null))
                 PilotAssistantFlightCore.Instance.removeVessel(this);
 
             vesselRef = null;
