@@ -97,7 +97,7 @@ namespace PilotAssistant
             }
             else
             {
-                controlledVessels.Remove(avm);
+                controlledVessels.RemoveAt(selectedVesselIndex);
                 selectedVesselIndex = 0;
             }
         }
@@ -216,7 +216,7 @@ namespace PilotAssistant
         public void Draw()
         {
             if (bDisplayOptions)
-                window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
+                window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(60), GUILayout.Height(0));
         }
 
         private void optionsWindow(int id)
@@ -233,17 +233,16 @@ namespace PilotAssistant
                 PresetManager.updateDefaults();
             if (controlledVessels.Count > 1)
             {
-                GUILayout.BeginHorizontal();
+                GUILayout.Box("", GUILayout.Height(10));
                 for (int i = 0; i < controlledVessels.Count; i++)
                 {
                     if (controlledVessels[i].vesselRef.isActiveVessel)
                         GUI.backgroundColor = Color.green;
-                    bool tmp = GUILayout.Toggle(i == selectedVesselIndex, i.ToString(), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+                    bool tmp = GUILayout.Toggle(i == selectedVesselIndex, controlledVessels[i].vesselRef.vesselName, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(120));
                     if (tmp)
                         selectedVesselIndex = i;
                     GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
                 }
-                GUILayout.EndHorizontal();
             }
             GUI.DragWindow();
         }
