@@ -233,6 +233,7 @@ namespace PilotAssistant.FlightModules
             AsstList.Altitude.GetAsst(this).InMin = 0;
             AsstList.Speed.GetAsst(this).InMin = 0;
             AsstList.HdgBank.GetAsst(this).isHeadingControl = true; // fix for derivative freaking out when heading target flickers across 0/360
+            AsstList.Aileron.GetAsst(this).isHeadingControl = true;
         }
 
         public void warpHandler()
@@ -506,31 +507,31 @@ namespace PilotAssistant.FlightModules
                 }
                 bPause = false;
 
-                #warning presets need to account for flying upside down
                 ////////////////////////////////////////////////////////////////////////////////////////
                 // Set the integral sums for the vertical control systems to improve transfer smoothness
+                bool invert = Math.Abs(vesModule.vesselData.bank) > 90;
                 if (VertActive)
                 {
-                    AsstList.Elevator.GetAsst(this).Preset();
+                    AsstList.Elevator.GetAsst(this).Preset(invert);
                     if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude || CurrentVertMode == VertMode.VSpeed)
                     {
-                        AsstList.VertSpeed.GetAsst(this).Preset();
+                        AsstList.VertSpeed.GetAsst(this).Preset(invert);
                         if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
-                            AsstList.Altitude.GetAsst(this).Preset();
+                            AsstList.Altitude.GetAsst(this).Preset(invert);
                         else
-                            AsstList.Altitude.GetAsst(this).Preset(-vesModule.vesselData.vertSpeed);
+                            AsstList.Altitude.GetAsst(this).Preset(vesModule.vesselData.vertSpeed, invert);
                     }
                     else
                     {
-                        AsstList.Altitude.GetAsst(this).Preset(-vesModule.vesselData.vertSpeed);
-                        AsstList.VertSpeed.GetAsst(this).Preset(-vesModule.vesselData.AoA);
+                        AsstList.Altitude.GetAsst(this).Preset(vesModule.vesselData.vertSpeed, invert);
+                        AsstList.VertSpeed.GetAsst(this).Preset(vesModule.vesselData.AoA, invert);
                     }
                 }
                 else
                 {
-                    AsstList.Altitude.GetAsst(this).Preset(-vesModule.vesselData.vertSpeed);
-                    AsstList.VertSpeed.GetAsst(this).Preset(-vesModule.vesselData.AoA);
-                    AsstList.Elevator.GetAsst(this).Preset(-pitchSet);
+                    AsstList.Altitude.GetAsst(this).Preset(vesModule.vesselData.vertSpeed, invert);
+                    AsstList.VertSpeed.GetAsst(this).Preset(vesModule.vesselData.AoA, invert);
+                    AsstList.Elevator.GetAsst(this).Preset(pitchSet, invert);
                 }
                 
                 switch (newMode)
@@ -725,31 +726,20 @@ namespace PilotAssistant.FlightModules
             // Heading Control
             if (HrztActive && useIntegral)
             {
-                if (CurrentHrztMode == HrztMode.Heading || CurrentHrztMode == HrztMode.HeadingNum)
+                switch (CurrentHrztMode)
                 {
-                    // calculate the bank angle response based on the current heading
-                    double hdgBankResponse;
-                    if (CurrentHrztMode == HrztMode.Heading)
-                        hdgBankResponse = AsstList.HdgBank.GetAsst(this).ResponseD(Utils.CurrentAngleTargetRel(vesModule.vesselData.progradeHeading, AsstList.HdgBank.GetAsst(this).SetPoint, 180), useIntegral);
-                    else
-                        hdgBankResponse = AsstList.HdgBank.GetAsst(this).ResponseD(vesModule.vesselData.progradeHeading, useIntegral);
-                    // aileron setpoint updated, bank angle also used for yaw calculations (don't go direct to rudder because we want yaw stabilisation *or* turn assistance)
-                    AsstList.BankToYaw.GetAsst(this).SetPoint = AsstList.Aileron.GetAsst(this).SetPoint = hdgBankResponse;
-                    AsstList.Rudder.GetAsst(this).SetPoint = AsstList.BankToYaw.GetAsst(this).ResponseD(vesModule.vesselData.yaw, useIntegral);
-                }
-                else
-                {
-                    AsstList.Rudder.GetAsst(this).SetPoint = 0;
+                    case HrztMode.Heading:
+                    case HrztMode.HeadingNum:
+                        AsstList.BankToYaw.GetAsst(this).SetPoint = AsstList.Aileron.GetAsst(this).SetPoint = AsstList.HdgBank.GetAsst(this).ResponseD(vesModule.vesselData.progradeHeading, useIntegral);
+                        AsstList.Rudder.GetAsst(this).SetPoint = AsstList.BankToYaw.GetAsst(this).ResponseD(vesModule.vesselData.yaw, useIntegral);
+                        break;
+                    case HrztMode.Bank:
+                    default:
+                        AsstList.Rudder.GetAsst(this).SetPoint = 0;
+                        break;
                 }
 
-                // don't want SAS inputs contributing here, so calculate manually
-                float rollInput = GameSettings.ROLL_LEFT.GetKey() ? -1 : 0;
-                rollInput += GameSettings.ROLL_RIGHT.GetKey() ? 1 : 0;
-                rollInput += !Utils.IsNeutral(GameSettings.AXIS_ROLL) ? GameSettings.AXIS_ROLL.GetAxis() : 0;
-                rollInput *= FlightInputHandler.fetch.precisionMode ? 0.33f : 1;
-
-                #warning Reacts badly to -180 degrees
-                state.roll = (AsstList.Aileron.GetAsst(this).ResponseF(Utils.CurrentAngleTargetRel(vesModule.vesselData.bank, AsstList.Aileron.GetAsst(this).SetPoint, 180), useIntegral) + rollInput).Clamp(-1, 1);
+                state.roll = AsstList.Aileron.GetAsst(this).ResponseF(vesModule.vesselData.bank, useIntegral).Clamp(-1, 1);
                 state.yaw = AsstList.Rudder.GetAsst(this).ResponseF(vesModule.vesselData.yaw, useIntegral).Clamp(-1, 1);
             }
 
@@ -757,10 +747,15 @@ namespace PilotAssistant.FlightModules
             {
                 if (CurrentVertMode != VertMode.Pitch)
                 {
-                    if (CurrentVertMode == VertMode.Altitude)
-                        AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(AsstList.Altitude.GetAsst(this).ResponseD(vesModule.vesselRef.altitude, useIntegral), vesModule.vesselRef.srfSpeed * -0.9, vesModule.vesselRef.srfSpeed * 0.9);
-                    else if (CurrentVertMode == VertMode.RadarAltitude)
-                        AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(getClimbRateForConstAltitude() + AsstList.Altitude.GetAsst(this).ResponseD(vesModule.vesselData.radarAlt * Vector3.Dot(vesModule.vesselData.surfVelForward, vesModule.vesselRef.srf_velocity.normalized), useIntegral), -vesModule.vesselRef.srfSpeed * 0.9, vesModule.vesselRef.srfSpeed * 0.9);
+                    switch(CurrentVertMode)
+                    {
+                        case VertMode.RadarAltitude:
+                            AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(getClimbRateForConstAltitude() + AsstList.Altitude.GetAsst(this).ResponseD(vesModule.vesselData.radarAlt * Vector3.Dot(vesModule.vesselData.surfVelForward, vesModule.vesselRef.srf_velocity.normalized), useIntegral), -vesModule.vesselRef.srfSpeed * 0.9, vesModule.vesselRef.srfSpeed * 0.9);
+                            break;
+                        case VertMode.Altitude:
+                            AsstList.VertSpeed.GetAsst(this).SetPoint = Utils.Clamp(AsstList.Altitude.GetAsst(this).ResponseD(vesModule.vesselRef.altitude, useIntegral), vesModule.vesselRef.srfSpeed * -0.9, vesModule.vesselRef.srfSpeed * 0.9);
+                            break;
+                    }
                     AsstList.Elevator.GetAsst(this).SetPoint = AsstList.VertSpeed.GetAsst(this).ResponseD(vesModule.vesselData.vertSpeed, useIntegral);
                     if (Math.Abs(vesModule.vesselData.bank) > 90)
                         AsstList.Elevator.GetAsst(this).SetPoint *= -1; // flying upside down

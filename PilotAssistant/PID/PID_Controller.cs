@@ -91,7 +91,11 @@ namespace PilotAssistant.PID
             }
             input = (invertInput ? -1 : 1) * Utils.Clamp(input, inMin, inMax);
             dt = TimeWarp.fixedDeltaTime;
-            error = input - active_setpoint;
+            
+            if (!isHeadingControl)
+                error = input - active_setpoint;
+            else
+                error = Utils.CurrentAngleTargetRel(input, active_setpoint, 180) - active_setpoint;
 
             if (skipDerivative)
             {
@@ -152,14 +156,17 @@ namespace PilotAssistant.PID
             sum = 0;
         }
 
-        public virtual void Preset()
+        public virtual void Preset(bool invert = false)
         {
-            sum = lastOutput;
+            sum = lastOutput * (invert ? -1 : 1);
         }
 
-        public virtual void Preset(double target)
+        public virtual void Preset(double target, bool invert = false)
         {
-            sum = target;
+            if (!invert)
+                sum = target * (invertOutput ? -1 : 1);
+            else
+                sum = target * (invertOutput ? 1 : -1);
         }
 
         #region properties

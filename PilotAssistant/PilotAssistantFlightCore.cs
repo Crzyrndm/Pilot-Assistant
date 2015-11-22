@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Linq;
 using UnityEngine;
+using System.IO;
 
 namespace PilotAssistant
 {
@@ -193,6 +194,7 @@ namespace PilotAssistant
                     config.SetValue("blizSSASIcon", blizSSASTexPath, true);
                     config.SetValue("blizSASIcon", blizSASTexPath, true);
 
+                    Directory.CreateDirectory(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), ""));
                     config.Save(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
                 }
             }
