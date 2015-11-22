@@ -595,14 +595,17 @@ namespace PilotAssistant.FlightModules
                 switch (mode)
                 {
                     case VertMode.Altitude:
-                        AsstList.Altitude.GetAsst(this).SetPoint = vesModule.vesselRef.altitude;
+                        if (!VertActive)
+                            AsstList.Altitude.GetAsst(this).SetPoint = vesModule.vesselRef.altitude;
                         AsstList.Altitude.GetAsst(this).BumplessSetPoint = target;
                         break;
                     case VertMode.RadarAltitude:
+                        if (!VertActive)
+                            AsstList.Altitude.GetAsst(this).SetPoint = vesModule.vesselData.radarAlt;
                         AsstList.Altitude.GetAsst(this).BumplessSetPoint = target;
                         break;
                     case VertMode.VSpeed:
-                        AsstList.VertSpeed.GetAsst(this).SetPoint = vesModule.vesselRef.verticalSpeed + vesModule.vesselData.AoA / AsstList.VertSpeed.GetAsst(this).PGain;
+                        AsstList.VertSpeed.GetAsst(this).SetPoint = vesModule.vesselData.vertSpeed + vesModule.vesselData.AoA / AsstList.VertSpeed.GetAsst(this).PGain;
                         AsstList.VertSpeed.GetAsst(this).BumplessSetPoint = target;
                         break;
                     case VertMode.Pitch:
@@ -1198,15 +1201,23 @@ namespace PilotAssistant.FlightModules
                         vertModeChanged(tempMode, VertActive);
                 }
                 GUILayout.BeginHorizontal();
-                string buttonString = "Target ";
-                if (CurrentVertMode == VertMode.VSpeed)
-                    buttonString += "Speed";
-                else if (CurrentVertMode == VertMode.Altitude)
-                    buttonString += "Altitude";
-                else if (CurrentVertMode == VertMode.RadarAltitude)
-                    buttonString += "Radar Alt";
-                else if (CurrentVertMode == VertMode.Pitch)
-                    buttonString += "Pitch";
+                string buttonString;
+                switch (CurrentVertMode)
+                {
+                    case VertMode.RadarAltitude:
+                        buttonString = "Target RadarAlt";
+                        break;
+                    case VertMode.Altitude:
+                        buttonString = "Target Altitude";
+                        break;
+                    case VertMode.VSpeed:
+                        buttonString = "Target Speed";
+                        break;
+                    case VertMode.Pitch:
+                    default:
+                        buttonString = "Target Pitch";
+                        break;
+                }
 
                 if (GUILayout.Button(buttonString, GUILayout.Width(118)))
                 {
@@ -1214,22 +1225,7 @@ namespace PilotAssistant.FlightModules
 
                     double newVal;
                     double.TryParse(targetVert, out newVal);
-                    if (CurrentVertMode == VertMode.Altitude || CurrentVertMode == VertMode.RadarAltitude)
-                    {
-                        if (CurrentVertMode == VertMode.Altitude)
-                            AsstList.Altitude.GetAsst(this).SetPoint = vesModule.vesselRef.altitude;
-                        AsstList.Altitude.GetAsst(this).BumplessSetPoint = newVal;
-                    }
-                    else if (CurrentVertMode == VertMode.VSpeed)
-                    {
-                        AsstList.VertSpeed.GetAsst(this).SetPoint = vesModule.vesselRef.verticalSpeed + vesModule.vesselData.AoA / AsstList.VertSpeed.GetAsst(this).PGain;
-                        AsstList.VertSpeed.GetAsst(this).BumplessSetPoint = newVal;
-                    }
-                    else
-                    {
-                        AsstList.Elevator.GetAsst(this).SetPoint = newVal;
-                    }
-                    vertModeChanged(CurrentVertMode, true, false);
+                    SetVert(true, true, CurrentVertMode, newVal);
 
                     GUI.FocusControl("Target Hdg: ");
                     GUI.UnfocusWindow();
