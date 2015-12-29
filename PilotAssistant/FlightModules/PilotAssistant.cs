@@ -364,10 +364,11 @@ namespace PilotAssistant.FlightModules
             // ============================================================ Throttle Controls ============================================================
             if (ThrtActive && Utils.hasThrottleInput())
             {
-                double speed = GameSettings.THROTTLE_UP.GetKey() ? throttleScale * scale : 0;
-                speed -= GameSettings.THROTTLE_DOWN.GetKey() ? throttleScale * scale : 0;
-                speed += GameSettings.THROTTLE_FULL.GetKeyDown() ? 100 * scale : 0;
-                speed -= (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) ? 100 * scale : 0;
+                double speedScale = scale / (units != SpeedUnits.mach ? Utils.speedUnitTransform(units, vesModule.vesselRef.speedOfSound) : 1);
+                double speed = GameSettings.THROTTLE_UP.GetKey() ? throttleScale * speedScale : 0;
+                speed -= GameSettings.THROTTLE_DOWN.GetKey() ? throttleScale * speedScale : 0;
+                speed += GameSettings.THROTTLE_FULL.GetKeyDown() ? 100 * speedScale : 0;
+                speed -= (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) ? 100 * speedScale : 0;
 
                 switch (CurrentThrottleMode)
                 {
