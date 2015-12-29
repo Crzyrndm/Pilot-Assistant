@@ -454,7 +454,7 @@ namespace PilotAssistant.FlightModules
 
         public void SetHrzt(bool active, bool setTarget, HrztMode mode, double target)
         {
-            if (active && setTarget)
+            if (setTarget)
             {
                 switch (mode)
                 {
@@ -575,7 +575,7 @@ namespace PilotAssistant.FlightModules
 
         public void SetVert(bool active, bool setTarget, VertMode mode, double target)
         {
-            if (active && setTarget)
+            if (setTarget)
             {
                 switch (mode)
                 {
@@ -653,7 +653,7 @@ namespace PilotAssistant.FlightModules
 
         public void SetThrottle(bool active, bool setTarget, ThrottleMode mode, double target)
         {
-            if (active && setTarget)
+            if (setTarget)
             {
                 switch (mode)
                 {
@@ -664,10 +664,12 @@ namespace PilotAssistant.FlightModules
                             FlightInputHandler.state.mainThrottle = (float)currentThrottlePct;
                         break;
                     case ThrottleMode.Acceleration:
+                        target /= Utils.speedUnitTransform(units, vesModule.vesselRef.speedOfSound);
                         AsstList.Acceleration.GetAsst(this).SetPoint = vesModule.vesselData.acceleration;
                         AsstList.Acceleration.GetAsst(this).BumplessSetPoint = target;
                         break;
                     case ThrottleMode.Speed:
+                        target /= Utils.speedUnitTransform(units, vesModule.vesselRef.speedOfSound);
                         AsstList.Speed.GetAsst(this).SetPoint = vesModule.vesselRef.srfSpeed;
                         AsstList.Speed.GetAsst(this).BumplessSetPoint = target;
                         break;
@@ -1073,11 +1075,7 @@ namespace PilotAssistant.FlightModules
                         double newHdg;
                         if (double.TryParse(targetHeading, out newHdg))
                         {
-                            if (CurrentHrztMode == HrztMode.Heading)
-                                StartCoroutine(shiftHeadingTarget(newHdg.headingClamp(360)));
-                            else
-                                AsstList.HdgBank.GetAsst(this).SetPoint = newHdg.headingClamp(360);
-                            hdgModeChanged(CurrentHrztMode, true, false);
+                            SetHrzt(true, true, CurrentHrztMode, newHdg);
 
                             GUI.FocusControl("Target Hdg: ");
                             GUI.UnfocusWindow();
@@ -1127,8 +1125,7 @@ namespace PilotAssistant.FlightModules
                         double newBank;
                         if (double.TryParse(targetHeading, out newBank))
                         {
-                            AsstList.Aileron.GetAsst(this).BumplessSetPoint = newBank;
-                            hdgModeChanged(CurrentHrztMode, true, false);
+                            SetHrzt(true, true, CurrentHrztMode, newBank);
                             GUI.FocusControl("Target Bank: ");
                             GUI.UnfocusWindow();
                         }
@@ -1240,8 +1237,8 @@ namespace PilotAssistant.FlightModules
                     ScreenMessages.PostScreenMessage(buttonString + " updated");
 
                     double newVal;
-                    double.TryParse(targetVert, out newVal);
-                    SetVert(true, true, CurrentVertMode, newVal);
+                    if (double.TryParse(targetVert, out newVal))
+                        SetVert(true, true, CurrentVertMode, newVal);
 
                     GUI.FocusControl("Target Hdg: ");
                     GUI.UnfocusWindow();
@@ -1336,27 +1333,8 @@ namespace PilotAssistant.FlightModules
                     GeneralUI.postMessage("Target updated");
 
                     double newVal;
-                    double.TryParse(targetSpeed, out newVal);
-                    switch (CurrentThrottleMode)
-                    {
-                        case ThrottleMode.Direct:
-                            currentThrottlePct = Utils.Clamp(newVal / 100, 0, 1);
-                            vesModule.vesselRef.ctrlState.mainThrottle = (float)currentThrottlePct;
-                            if (ReferenceEquals(vesModule.vesselRef, FlightGlobals.ActiveVessel))
-                                FlightInputHandler.state.mainThrottle = (float)currentThrottlePct;
-                            break;
-                        case ThrottleMode.Acceleration:
-                            newVal /= Utils.speedUnitTransform(units, vesModule.vesselRef.speedOfSound);
-                            AsstList.Acceleration.GetAsst(this).SetPoint = vesModule.vesselData.acceleration;
-                            AsstList.Acceleration.GetAsst(this).BumplessSetPoint = newVal;
-                            break;
-                        case ThrottleMode.Speed:
-                            newVal /= Utils.speedUnitTransform(units, vesModule.vesselRef.speedOfSound);
-                            AsstList.Speed.GetAsst(this).SetPoint = vesModule.vesselRef.srfSpeed;
-                            AsstList.Speed.GetAsst(this).BumplessSetPoint = newVal;
-                            break;
-                    }
-                    throttleModeChanged(CurrentThrottleMode, true, false);
+                    if (double.TryParse(targetSpeed, out newVal))
+                        SetThrottle(true, true, CurrentThrottleMode, newVal);
 
                     GUI.FocusControl("Target Hdg: ");
                     GUI.UnfocusWindow();
