@@ -500,10 +500,6 @@ namespace PilotAssistant.FlightModules
 
         private void vertModeChanged(VertMode newMode, bool active, bool setTarget = true)
         {
-            //AsstList.VertSpeed.GetAsst(this).skipDerivative = true;
-            //AsstList.Elevator.GetAsst(this).skipDerivative = true;
-            //AsstList.Altitude.GetAsst(this).skipDerivative = true;
-
             if (!active)
             {
                 InputLockManager.RemoveControlLock(pitchLockID);
@@ -784,20 +780,23 @@ namespace PilotAssistant.FlightModules
                     state.pitch *= (float)Utils.Clamp(Math.Cos(vesModule.vesselData.bank * Math.PI / 180) * 2.0, -1, 1); // only reduce control when bank angle exceeds ~60 degrees
                 }
             }
-            else
-                state.pitch = Mathf.Clamp(state.pitch + pitchHold, -1, 1);
+            else if (pitchHold != 0)
+                state.pitch = Mathf.Clamp(state.pitch - pitchHold, -1, 1);
 
-            if (ThrtActive && CurrentThrottleMode != ThrottleMode.Direct)
+            if (ThrtActive)
             {
                 if (vesModule.vesselRef.ActionGroups[KSPActionGroup.Brakes] || (AsstList.Speed.GetAsst(this).SetPoint == 0 && vesModule.vesselRef.srfSpeed < -AsstList.Acceleration.GetAsst(this).OutMin))
                     state.mainThrottle = 0;
-                else
+                else if (CurrentThrottleMode != ThrottleMode.Direct)
                 {
                     if (CurrentThrottleMode == ThrottleMode.Speed)
                         AsstList.Acceleration.GetAsst(this).SetPoint = AsstList.Speed.GetAsst(this).ResponseD(adjustedSpeed, useIntegral);
                     state.mainThrottle = AsstList.Acceleration.GetAsst(this).ResponseF(adjustedAcceleration, useIntegral).Clamp(0, 1);
                 }
-                FlightInputHandler.state.mainThrottle = state.mainThrottle; // set throttle state permanently
+                else
+                    state.mainThrottle = (float)currentThrottlePct;
+                if (vesModule.vesselRef == FlightGlobals.ActiveVessel)
+                    FlightInputHandler.state.mainThrottle = state.mainThrottle; // set throttle state permanently, but only if active vessel...
             }
         }
 
@@ -1333,7 +1332,6 @@ namespace PilotAssistant.FlightModules
 
                     double newVal;
                     double.TryParse(targetSpeed, out newVal);
-                    newVal /= Utils.speedUnitTransform(units, vesModule.vesselRef.speedOfSound);
                     switch (CurrentThrottleMode)
                     {
                         case ThrottleMode.Direct:
@@ -1343,10 +1341,12 @@ namespace PilotAssistant.FlightModules
                                 FlightInputHandler.state.mainThrottle = (float)currentThrottlePct;
                             break;
                         case ThrottleMode.Acceleration:
+                            newVal /= Utils.speedUnitTransform(units, vesModule.vesselRef.speedOfSound);
                             AsstList.Acceleration.GetAsst(this).SetPoint = vesModule.vesselData.acceleration;
                             AsstList.Acceleration.GetAsst(this).BumplessSetPoint = newVal;
                             break;
                         case ThrottleMode.Speed:
+                            newVal /= Utils.speedUnitTransform(units, vesModule.vesselRef.speedOfSound);
                             AsstList.Speed.GetAsst(this).SetPoint = vesModule.vesselRef.srfSpeed;
                             AsstList.Speed.GetAsst(this).BumplessSetPoint = newVal;
                             break;
