@@ -452,6 +452,13 @@ namespace PilotAssistant.FlightModules
             }
         }
 
+        /// <summary>
+        /// API handle for RPM
+        /// </summary>
+        /// <param name="active">Sets the state of the heading control system. True = enabled</param>
+        /// <param name="setTarget">Whether to update the target value</param>
+        /// <param name="mode">Mode to use. Heading, bank, etc.</param>
+        /// <param name="target">The new target value</param>
         public void SetHrzt(bool active, bool setTarget, HrztMode mode, double target)
         {
             if (setTarget)
@@ -698,6 +705,12 @@ namespace PilotAssistant.FlightModules
             adjustedSpeed = vesModule.vesselRef.srfSpeed * Utils.SpeedTransform(speedRef, vesModule);
             adjustedAcceleration = 0;
 
+            throttleModeChanged(CurrentThrottleMode, ThrtActive, false);
+        }
+
+        public void ChangeSpeedUnit(SpeedUnits unit)
+        {
+            units = unit;
             throttleModeChanged(CurrentThrottleMode, ThrtActive, false);
         }
 
@@ -1528,10 +1541,7 @@ namespace PilotAssistant.FlightModules
                 ChangeSpeedRef(tempRef);
             SpeedUnits tempUnits = (SpeedUnits)GUILayout.SelectionGrid((int)units, speedUnitLabels, 5);
             if (tempUnits != units)
-            {
-                units = tempUnits;
-                throttleModeChanged(CurrentThrottleMode, ThrtActive, false);
-            }
+                ChangeSpeedUnit(tempUnits);
         }
 
         #endregion
