@@ -299,34 +299,7 @@ namespace PilotAssistant.FlightModules
                 return;
 
             if (BindingManager.bindings[(int)bindingIndex.Pause].isPressed && !MapView.MapIsEnabled)
-            {
-                bPause = !bPause;
-                GeneralUI.postMessage(bPause ? "Pilot Assistant: Control Paused" : "Pilot Assistant: Control Unpaused");
-
-                if (bPause)
-                {
-                    InputLockManager.RemoveControlLock(yawLockID);
-                    InputLockManager.RemoveControlLock(pitchLockID);
-                    pitchLockEngaged = false;
-                    yawLockEngaged = false;
-                }
-                else
-                {
-                    hdgModeChanged(CurrentHrztMode, HrztActive);
-                    vertModeChanged(CurrentVertMode, VertActive);
-                    throttleModeChanged(CurrentThrottleMode, ThrtActive);
-                    if (HrztActive)
-                    {
-                        InputLockManager.SetControlLock(ControlTypes.YAW, yawLockID);
-                        yawLockEngaged = true;
-                    }
-                    if (VertActive)
-                    {
-                        InputLockManager.SetControlLock(ControlTypes.PITCH, pitchLockID);
-                        pitchLockEngaged = true;
-                    }
-                }
-            }
+                TogglePauseCtrlState();
 
             if (BindingManager.bindings[(int)bindingIndex.HdgTgl].isPressed)
                 hdgModeChanged(CurrentHrztMode, !HrztActive);
@@ -723,6 +696,37 @@ namespace PilotAssistant.FlightModules
             adjustedAcceleration = 0;
 
             throttleModeChanged(CurrentThrottleMode, ThrtActive, false);
+        }
+
+        public void TogglePauseCtrlState()
+        {
+            bPause = !bPause;
+
+            if (bPause)
+            {
+                GeneralUI.postMessage("Pilot Assistant: Control Paused");
+                InputLockManager.RemoveControlLock(yawLockID);
+                InputLockManager.RemoveControlLock(pitchLockID);
+                pitchLockEngaged = false;
+                yawLockEngaged = false;
+            }
+            else
+            {
+                GeneralUI.postMessage("Pilot Assistant: Control Unpaused");
+                hdgModeChanged(CurrentHrztMode, HrztActive);
+                vertModeChanged(CurrentVertMode, VertActive);
+                throttleModeChanged(CurrentThrottleMode, ThrtActive);
+                if (HrztActive)
+                {
+                    InputLockManager.SetControlLock(ControlTypes.YAW, yawLockID);
+                    yawLockEngaged = true;
+                }
+                if (VertActive)
+                {
+                    InputLockManager.SetControlLock(ControlTypes.PITCH, pitchLockID);
+                    pitchLockEngaged = true;
+                }
+            }
         }
         #endregion
 
