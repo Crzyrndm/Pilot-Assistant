@@ -1,20 +1,12 @@
 ﻿using System.Collections.Generic;
-using System.Collections;
-using System.Linq;
+using System.IO;
 using UnityEngine;
 
 namespace PilotAssistant
 {
-    /* Flight core calls Unity functions of all flight scene classes. This improves control over execution order
-     * which has previously been a slight annoyance.
-     * 
-     * It also simplifies management of event subscriptions and the like and serves as a location for settings
-     * and other common variables
-     */
-
-    using Utility;
-    using Toolbar;
     using FlightModules;
+    using Toolbar;
+    using Utility;
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     class PilotAssistantFlightCore : MonoBehaviour
@@ -97,7 +89,7 @@ namespace PilotAssistant
             }
             else
             {
-                controlledVessels.Remove(avm);
+                controlledVessels.RemoveAt(selectedVesselIndex);
                 selectedVesselIndex = 0;
             }
         }
@@ -193,6 +185,7 @@ namespace PilotAssistant
                     config.SetValue("blizSSASIcon", blizSSASTexPath, true);
                     config.SetValue("blizSASIcon", blizSASTexPath, true);
 
+                    Directory.CreateDirectory(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), ""));
                     config.Save(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
                 }
             }
@@ -216,7 +209,7 @@ namespace PilotAssistant
         public void Draw()
         {
             if (bDisplayOptions)
-                window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(0), GUILayout.Height(0));
+                window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(60), GUILayout.Height(0));
         }
 
         private void optionsWindow(int id)
@@ -233,17 +226,16 @@ namespace PilotAssistant
                 PresetManager.updateDefaults();
             if (controlledVessels.Count > 1)
             {
-                GUILayout.BeginHorizontal();
+                GUILayout.Box("", GUILayout.Height(10));
                 for (int i = 0; i < controlledVessels.Count; i++)
                 {
                     if (controlledVessels[i].vesselRef.isActiveVessel)
                         GUI.backgroundColor = Color.green;
-                    bool tmp = GUILayout.Toggle(i == selectedVesselIndex, i.ToString(), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
+                    bool tmp = GUILayout.Toggle(i == selectedVesselIndex, controlledVessels[i].vesselRef.vesselName, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(120));
                     if (tmp)
                         selectedVesselIndex = i;
                     GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
                 }
-                GUILayout.EndHorizontal();
             }
             GUI.DragWindow();
         }

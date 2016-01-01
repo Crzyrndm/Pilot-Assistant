@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace PilotAssistant.FlightModules
 {
@@ -11,39 +12,42 @@ namespace PilotAssistant.FlightModules
         public Stock_SAS vesselStockSAS;
         public VesselData vesselData;
 
-        public void Awake()
-        {
-            vesselRef = GetComponent<Vessel>();
-            if (vesselRef.isEVA)
-                vesselRef = null;
-            else
-            {
-                vesselAsst = new PilotAssistant(this);
-                vesselSSAS = new SurfSAS(this);
-                vesselStockSAS = new Stock_SAS(this);
-                vesselData = new VesselData(this);
-            }
-        }
-
         public void Start()
         {
-            if (ReferenceEquals(vesselRef, null))
-                return;
-            if (vesselRef.isEVA)
+            try
             {
-                vesselRef = null;
-                return;
+                vesselRef = GetComponent<Vessel>();
+                if (vesselRef == null || vesselRef.isEVA || !vesselRef.isCommandable)
+                {
+                    vesselRef = null;
+                    Destroy(this);
+                    return;
+                }
+                else
+                {
+                    vesselAsst = new PilotAssistant(this);
+                    vesselSSAS = new SurfSAS(this);
+                    vesselStockSAS = new Stock_SAS(this);
+                    vesselData = new VesselData(this);
+                }
+
+
+                PilotAssistantFlightCore.Instance.addVessel(this);
+
+                vesselAsst.Start();
+                vesselSSAS.Start();
+                vesselStockSAS.Start();
             }
-
-            PilotAssistantFlightCore.Instance.addVessel(this);
-
-            vesselAsst.Start();
-            vesselSSAS.Start();
-            vesselStockSAS.Start();
+            catch (Exception ex)
+            {
+                Debug.LogError("Pilot Assistant: Startup error");
+                Debug.LogError(ex.InnerException);
+            }
 
             vesselRef.OnPreAutopilotUpdate += new FlightInputCallback(preAutoPilotUpdate);
             vesselRef.OnPostAutopilotUpdate += new FlightInputCallback(postAutoPilotUpdate);
 
+            GameEvents.onPartCouple.Add(docking);
             GameEvents.onVesselChange.Add(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Add(warpHandler);
         }
@@ -62,6 +66,18 @@ namespace PilotAssistant.FlightModules
             vesselSSAS.warpHandler();
         }
 
+        public void vesselSwitch(Vessel v)
+        {
+            if (v == vesselRef)
+                vesselAsst.vesselSwitch(v);
+        }
+
+        public void docking(GameEvents.FromToAction<Part, Part> evt)
+        {
+            if (evt.to.vessel == vesselRef)
+                Destroy(this);
+        }
+
         public void preAutoPilotUpdate(FlightCtrlState state)
         {
             if (vesselRef.HoldPhysics)
@@ -77,15 +93,11 @@ namespace PilotAssistant.FlightModules
             vesselAsst.vesselController(state);
         }
 
-        public void vesselSwitch(Vessel v)
-        {
-            if (v == vesselRef)
-                vesselAsst.vesselSwitch(v);
-        }
-
         public void OnGUI()
         {
-            if (PilotAssistantFlightCore.bHideUI || PilotAssistantFlightCore.Instance.controlledVessels[PilotAssistantFlightCore.Instance.selectedVesselIndex] != this)
+            if (PilotAssistantFlightCore.bHideUI || PilotAssistantFlightCore.Instance  == null 
+                || PilotAssistantFlightCore.Instance.selectedVesselIndex >= PilotAssistantFlightCore.Instance.controlledVessels.Count
+                || PilotAssistantFlightCore.Instance.controlledVessels[PilotAssistantFlightCore.Instance.selectedVesselIndex] != this)
                 return;
             vesselAsst.drawGUI();
             vesselSSAS.drawGUI();
@@ -96,11 +108,23 @@ namespace PilotAssistant.FlightModules
         {
             GameEvents.onVesselChange.Remove(vesselSwitch);
             GameEvents.onTimeWarpRateChanged.Remove(warpHandler);
+            GameEvents.onPartCouple.Remove(docking);
 
+            if (vesselRef != null)
+            {
+                vesselRef.OnPreAutopilotUpdate -= preAutoPilotUpdate;
+                vesselRef.OnPostAutopilotUpdate -= postAutoPilotUpdate;
+            }
             if (!ReferenceEquals(vesselAsst, null))
                 vesselAsst.OnDestroy();
-            if (!ReferenceEquals(PilotAssistantFlightCore.Instance, null))
+            if (!ReferenceEquals(vesselData, null) && !ReferenceEquals(PilotAssistantFlightCore.Instance, null))
                 PilotAssistantFlightCore.Instance.removeVessel(this);
+
+            vesselRef = null;
+            vesselSSAS = null;
+            vesselStockSAS = null;
+            vesselAsst = null;
+            vesselData = null;
         }
     }
 }

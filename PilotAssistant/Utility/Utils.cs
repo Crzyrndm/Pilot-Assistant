@@ -10,21 +10,11 @@ namespace PilotAssistant.Utility
 
     public static class Utils
     {
-        public static float Clamp(this float val, float min, float max)
+        public static T Clamp<T>(this T val, T min, T max) where T : System.IComparable<T>
         {
-            if (val < min)
+            if (val.CompareTo(min) < 0)
                 return min;
-            else if (val > max)
-                return max;
-            else
-                return val;
-        }
-
-        public static double Clamp(this double val, double min, double max)
-        {
-            if (val < min)
-                return min;
-            else if (val > max)
+            else if (val.CompareTo(max) > 0)
                 return max;
             else
                 return val;
@@ -50,13 +40,10 @@ namespace PilotAssistant.Utility
         /// Circular rounding to keep compass measurements within a 360 degree range
         /// maxHeading is the top limit, bottom limit is maxHeading - 360
         /// </summary>
-        public static double headingClamp(this double valToClamp, double maxHeading)
+        public static double headingClamp(this double valToClamp, double maxHeading, double range = 360)
         {
-            while (valToClamp > maxHeading)
-                valToClamp -= 360;
-            while (valToClamp < (maxHeading - 360))
-                valToClamp += 360;
-            return valToClamp;
+            double temp = (valToClamp - (maxHeading - range)) % range;
+            return (maxHeading - range) + (temp < 0 ? temp + range : temp);
         }
 
         /// <summary>
@@ -213,45 +200,18 @@ namespace PilotAssistant.Utility
             return 1;
         }
 
-        public static double mSecToSpeedUnit(this double mSec, SpeedMode mode, SpeedUnits units, AsstVesselModule avm)
+        public static double SpeedTransform(SpeedRef refMode, AsstVesselModule avm)
         {
-            if (mode == SpeedMode.Mach)
-                return mSec / avm.vesselRef.speedOfSound;
-            else
+            switch (refMode)
             {
-                double speed = mSec * speedUnitTransform(units, avm.vesselRef.speedOfSound);
-                switch (mode)
-                {
-                    case SpeedMode.True:
-                        return speed;
-                    case SpeedMode.Indicated:
-                        double stagnationPres = Math.Pow(((avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1) * avm.vesselRef.mach * avm.vesselRef.mach * 0.5) + 1, avm.vesselRef.mainBody.atmosphereAdiabaticIndex / (avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1));
-                        return speed * Math.Sqrt(avm.vesselRef.atmDensity / 1.225) * stagnationPres;
-                    case SpeedMode.Equivalent:
-                        return speed * Math.Sqrt(avm.vesselRef.atmDensity / 1.225);
-                }
-                return 0;
-            }
-        }
-
-        public static double SpeedUnitToMSec(this double speedUnit, SpeedMode mode, SpeedUnits units, AsstVesselModule avm)
-        {
-            if (mode == SpeedMode.Mach)
-                return speedUnit * avm.vesselRef.speedOfSound;
-            else
-            {
-                double speed = speedUnit / speedUnitTransform(units, avm.vesselRef.speedOfSound);
-                switch (mode)
-                {
-                    case SpeedMode.True:
-                        return speed;
-                    case SpeedMode.Indicated:
-                        double stagnationPres = Math.Pow(((avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1) * avm.vesselRef.mach * avm.vesselRef.mach * 0.5) + 1, avm.vesselRef.mainBody.atmosphereAdiabaticIndex / (avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1));
-                        return speed / (Math.Sqrt(avm.vesselRef.atmDensity / 1.225) * stagnationPres);
-                    case SpeedMode.Equivalent:
-                        return speed / Math.Sqrt(avm.vesselRef.atmDensity / 1.225);
-                }
-                return 0;
+                case SpeedRef.Indicated:
+                    double stagnationPres = Math.Pow(((avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1) * avm.vesselRef.mach * avm.vesselRef.mach * 0.5) + 1, avm.vesselRef.mainBody.atmosphereAdiabaticIndex / (avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1));
+                    return (Math.Sqrt(avm.vesselRef.atmDensity / 1.225) * stagnationPres);
+                case SpeedRef.Equivalent:
+                    return Math.Sqrt(avm.vesselRef.atmDensity / 1.225);
+                case SpeedRef.True:
+                default:
+                    return 1;
             }
         }
 
@@ -260,15 +220,15 @@ namespace PilotAssistant.Utility
             switch(unit)
             {
                 case SpeedUnits.mSec:
-                    return "m/s";
+                    return " m/s";
                 case SpeedUnits.mach:
-                    return "mach";
+                    return " mach";
                 case SpeedUnits.knots:
-                    return "knots";
+                    return " knots";
                 case SpeedUnits.kmph:
-                    return "km/h";
+                    return " km/h";
                 case SpeedUnits.mph:
-                    return "mph";
+                    return " mph";
             }
             return "";
         }
