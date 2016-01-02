@@ -206,7 +206,7 @@ namespace PilotAssistant.Utility
             {
                 case SpeedRef.Indicated:
                     double stagnationPres = Math.Pow(((avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1) * avm.vesselRef.mach * avm.vesselRef.mach * 0.5) + 1, avm.vesselRef.mainBody.atmosphereAdiabaticIndex / (avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1));
-                    return (Math.Sqrt(avm.vesselRef.atmDensity / 1.225) * stagnationPres);
+                    return Math.Sqrt(avm.vesselRef.atmDensity / 1.225) * stagnationPres;
                 case SpeedRef.Equivalent:
                     return Math.Sqrt(avm.vesselRef.atmDensity / 1.225);
                 case SpeedRef.True:
@@ -224,7 +224,7 @@ namespace PilotAssistant.Utility
                 case SpeedUnits.mach:
                     return " mach";
                 case SpeedUnits.knots:
-                    return " knots";
+                    return " kn";
                 case SpeedUnits.kmph:
                     return " km/h";
                 case SpeedUnits.mph:
