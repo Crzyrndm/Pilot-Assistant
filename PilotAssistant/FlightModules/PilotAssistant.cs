@@ -748,13 +748,13 @@ namespace PilotAssistant.FlightModules
         public void SetLimit(double newLimit, AsstList controller)
         {
             AsstController c = controller.GetAsst(this);
-            c.OutMax = c.invertOutput ? -newLimit : newLimit;
-            c.OutMin = c.invertOutput ? newLimit : -newLimit;
+            c.OutMax = Math.Abs(newLimit);
+            c.OutMin = -Math.Abs(newLimit);
         }
 
         public double GetLimit(AsstList controller)
         {
-            return controller.GetAsst(this).invertOutput ? controller.GetAsst(this).OutMin : controller.GetAsst(this).OutMax;
+            return controller.GetAsst(this).OutMax;
         }
         #endregion
 
