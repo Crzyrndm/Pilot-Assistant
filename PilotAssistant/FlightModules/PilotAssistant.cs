@@ -178,7 +178,7 @@ namespace PilotAssistant.FlightModules
         GUIContent[] speedUnitLabels = new GUIContent[5] {new GUIContent("m/s"),
                                                         new GUIContent("km/h"),
                                                         new GUIContent("mph"),
-                                                        new GUIContent("kts"),
+                                                        new GUIContent("kn"),
                                                         new GUIContent("mach")};
         /** Speed and acceleration accounting for TAS/IAS/EAS since calculating acceleration for modes other than TAS is not just a simple multiplier **/
         double adjustedAcceleration, adjustedSpeed;
@@ -743,6 +743,18 @@ namespace PilotAssistant.FlightModules
                     pitchLockEngaged = true;
                 }
             }
+        }
+
+        public void SetLimit(double newLimit, AsstList controller)
+        {
+            AsstController c = controller.GetAsst(this);
+            c.OutMax = c.invertOutput ? -newLimit : newLimit;
+            c.OutMin = c.invertOutput ? newLimit : -newLimit;
+        }
+
+        public double GetLimit(AsstList controller)
+        {
+            return controller.GetAsst(this).OutMax;
         }
         #endregion
 
