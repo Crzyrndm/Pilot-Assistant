@@ -5,7 +5,6 @@ using System.Text;
 
 namespace PilotAssistant.Presets
 {
-    using PID;
     /// <summary>
     /// Holds all the PID tuning values for the 7 (or more if required) controllers involved.
     /// </summary>
@@ -14,13 +13,13 @@ namespace PilotAssistant.Presets
         public string name;
         public List<double[]> PIDGains = new List<double[]>();
 
-        public AsstPreset(List<AsstController> controllers, string Name) // used for adding a new preset, can clone the current values
+        public AsstPreset(List<Asst_PID_Controller> controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
             Update(controllers);
         }
 
-        public AsstPreset(AsstController[] controllers, string Name) // used for adding a new preset, can clone the current values
+        public AsstPreset(Asst_PID_Controller[] controllers, string Name) // used for adding a new preset, can clone the current values
         {
             name = Name;
             Update(controllers);
@@ -32,19 +31,19 @@ namespace PilotAssistant.Presets
             PIDGains = gains;        
         }
 
-        public void Update(List<AsstController> controllers)
+        public void Update(List<Asst_PID_Controller> controllers)
         {
             PIDGains.Clear();
-            foreach (AsstController controller in controllers)
+            foreach (Asst_PID_Controller controller in controllers)
             {
                 double[] gains = new double[9];
-                gains[0] = controller.PGain;
-                gains[1] = controller.IGain;
-                gains[2] = controller.DGain;
-                gains[3] = controller.OutMin;
-                gains[4] = controller.OutMax;
-                gains[5] = controller.ClampLower;
-                gains[6] = controller.ClampUpper;
+                gains[0] = controller.k_proportional;
+                gains[1] = controller.k_integral;
+                gains[2] = controller.k_derivative;
+                gains[3] = controller.outMin;
+                gains[4] = controller.outMax;
+                gains[5] = controller.integralClampLower;
+                gains[6] = controller.integralClampUpper;
                 gains[7] = controller.Scalar;
                 gains[8] = controller.Easing;
 
@@ -52,19 +51,19 @@ namespace PilotAssistant.Presets
             }
         }
 
-        public void Update(AsstController[] controllers)
+        public void Update(Asst_PID_Controller[] controllers)
         {
             PIDGains.Clear();
-            foreach (AsstController controller in controllers)
+            foreach (Asst_PID_Controller controller in controllers)
             {
                 double[] gains = new double[9];
-                gains[0] = controller.PGain;
-                gains[1] = controller.IGain;
-                gains[2] = controller.DGain;
-                gains[3] = controller.OutMin;
-                gains[4] = controller.OutMax;
-                gains[5] = controller.ClampLower;
-                gains[6] = controller.ClampUpper;
+                gains[0] = controller.k_proportional;
+                gains[1] = controller.k_integral;
+                gains[2] = controller.k_derivative;
+                gains[3] = controller.outMin;
+                gains[4] = controller.outMax;
+                gains[5] = controller.integralClampLower;
+                gains[6] = controller.integralClampUpper;
                 gains[7] = controller.Scalar;
                 gains[8] = controller.Easing;
 

@@ -8,8 +8,6 @@ namespace PilotAssistant.FlightModules
     {
         public Vessel vesselRef;
         public PilotAssistant vesselAsst;
-        public SurfSAS vesselSSAS;
-        public Stock_SAS vesselStockSAS;
         public VesselData vesselData;
 
         public void Start()
@@ -26,24 +24,17 @@ namespace PilotAssistant.FlightModules
                 else
                 {
                     vesselAsst = new PilotAssistant(this);
-                    vesselSSAS = new SurfSAS(this);
-                    vesselStockSAS = new Stock_SAS(this);
                     vesselData = new VesselData(this);
                 }
-
-
                 PilotAssistantFlightCore.Instance.addVessel(this);
 
                 vesselAsst.Start();
-                vesselSSAS.Start();
-                vesselStockSAS.Start();
             }
             catch (Exception ex)
             {
                 Debug.LogError("Pilot Assistant: Startup error");
                 Debug.LogError(ex.InnerException);
             }
-
             vesselRef.OnPreAutopilotUpdate += new FlightInputCallback(preAutoPilotUpdate);
             vesselRef.OnPostAutopilotUpdate += new FlightInputCallback(postAutoPilotUpdate);
 
@@ -57,13 +48,11 @@ namespace PilotAssistant.FlightModules
             if (ReferenceEquals(vesselRef, null))
                 return;
             vesselAsst.Update();
-            vesselSSAS.Update();
         }
 
         public void warpHandler()
         {
             vesselAsst.warpHandler();
-            vesselSSAS.warpHandler();
         }
 
         public void vesselSwitch(Vessel v)
@@ -89,7 +78,6 @@ namespace PilotAssistant.FlightModules
         {
             if (vesselRef.HoldPhysics)
                 return;
-            vesselSSAS.SurfaceSAS(state);
             vesselAsst.vesselController(state);
         }
 
@@ -100,8 +88,6 @@ namespace PilotAssistant.FlightModules
                 || PilotAssistantFlightCore.Instance.controlledVessels[PilotAssistantFlightCore.Instance.selectedVesselIndex] != this)
                 return;
             vesselAsst.drawGUI();
-            vesselSSAS.drawGUI();
-            vesselStockSAS.drawGUI();
         }
 
         public void OnDestroy()
@@ -117,12 +103,10 @@ namespace PilotAssistant.FlightModules
             }
             if (!ReferenceEquals(vesselAsst, null))
                 vesselAsst.OnDestroy();
-            if (!ReferenceEquals(vesselData, null) && !ReferenceEquals(PilotAssistantFlightCore.Instance, null))
+            if (!ReferenceEquals(PilotAssistantFlightCore.Instance, null))
                 PilotAssistantFlightCore.Instance.removeVessel(this);
 
             vesselRef = null;
-            vesselSSAS = null;
-            vesselStockSAS = null;
             vesselAsst = null;
             vesselData = null;
         }

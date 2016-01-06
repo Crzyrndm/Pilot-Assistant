@@ -114,8 +114,6 @@ namespace PilotAssistant
 
                     // windows
                     PilotAssistant.window = config.TryGetValue("AsstWindow", new Rect(300, 300, 0, 0));
-                    SurfSAS.SSASwindow = config.TryGetValue("SSASWindow", new Rect(500, 300, 0, 0));
-                    Stock_SAS.StockSASwindow = config.TryGetValue("SASWindow", new Rect(500, 300, 0, 0));
                     BindingManager.Instance.windowRect = config.TryGetValue("BindingWindow", new Rect(300, 50, 0, 0));
                     window = config.TryGetValue("AppWindow", new Rect(100, 300, 0, 0));
 
@@ -162,8 +160,6 @@ namespace PilotAssistant
 
                     // window rects
                     config.SetValue("AsstWindow", PilotAssistant.window.ToString(), true);
-                    config.SetValue("SSASWindow", SurfSAS.SSASwindow.ToString(), true);
-                    config.SetValue("SASWindow", Stock_SAS.StockSASwindow.ToString(), true);
                     config.SetValue("AppWindow", window.ToString(), true);
                     config.SetValue("BindingWindow", BindingManager.Instance.windowRect.ToString(), true);
 
@@ -216,11 +212,6 @@ namespace PilotAssistant
         {
             if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
                 bDisplayOptions = false;
-
-            bDisplayAssistant = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            bDisplaySAS = GUILayout.Toggle(bDisplaySAS, "Stock SAS", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            bDisplaySSAS = GUILayout.Toggle(bDisplaySSAS, "SSAS", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            bDisplayBindings = GUILayout.Toggle(bDisplayBindings, "Keybindings", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
 
             if (GUILayout.Button("Update Defaults"))
                 PresetManager.updateDefaults();
