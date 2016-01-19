@@ -31,20 +31,11 @@ namespace PilotAssistant
 
         const string craftDefaultName = "default";
         const string asstDefaultName = "default";
-        const string ssasDefaultName = "SSAS";
-        const string SASDefaultName = "stock";
-        const string RSASDefaultName = "RSAS";
 
         const string craftPresetNodeName = "CraftPreset";
         const string asstPresetNodeName = "PIDPreset";
-        const string sasPresetNodeName = "SASPreset";
-        const string rsasPresetNodeName = "RSASPreset";
-        const string ssasPresetNodeName = "SSASPreset";
 
         const string craftAsstKey = "pilot";
-        const string craftSSASKey = "ssas";
-        const string craftSASKey = "stock";
-        const string craftRSASKey = "rsas";
 
         const string hdgCtrlr = "HdgBankController";
         const string yawCtrlr = "HdgYawController";
@@ -65,11 +56,6 @@ namespace PilotAssistant
         const string iUpper = "ClampUpper";
         const string scalar = "Scalar";
         const string ease = "Ease";
-        const string delay = "Delay";
-
-        double[] defaultPresetPitchGains = { 0.15, 0.0, 0.06, 3, 20 }; // Kp/i/d, scalar, delay
-        double[] defaultPresetRollGains = { 0.1, 0.0, 0.06, 3, 20 };
-        double[] defaultPresetHdgGains = { 0.15, 0.0, 0.06, 3, 20 };
 
         public void Start()
         {
@@ -84,13 +70,6 @@ namespace PilotAssistant
             saveToFile();
         }
 
-        public void OnGUI()
-        {
-            // create the GUISkin
-            if (ReferenceEquals(GeneralUI.UISkin, null))
-                GeneralUI.customSkin();
-        }
-
         public static void loadPresetsFromFile()
         {
             AsstPreset asstDefault = null;
@@ -101,15 +80,15 @@ namespace PilotAssistant
                     continue;
 
                 List<double[]> gains = new List<double[]>();
-                gains.Add(controllerGains(node.GetNode(hdgCtrlr), AsstList.HdgBank));
-                gains.Add(controllerGains(node.GetNode(yawCtrlr), AsstList.BankToYaw));
-                gains.Add(controllerGains(node.GetNode(aileronCtrlr), AsstList.Aileron));
-                gains.Add(controllerGains(node.GetNode(rudderCtrlr), AsstList.Rudder));
-                gains.Add(controllerGains(node.GetNode(altCtrlr), AsstList.Altitude));
-                gains.Add(controllerGains(node.GetNode(vertCtrlr), AsstList.VertSpeed));
-                gains.Add(controllerGains(node.GetNode(elevCtrlr), AsstList.Elevator));
-                gains.Add(controllerGains(node.GetNode(speedCtrlr), AsstList.Speed));
-                gains.Add(controllerGains(node.GetNode(accelCtrlr), AsstList.Acceleration));
+                gains.Add(gainsArrayFromNode(node.GetNode(hdgCtrlr), AsstList.HdgBank));
+                gains.Add(gainsArrayFromNode(node.GetNode(yawCtrlr), AsstList.BankToYaw));
+                gains.Add(gainsArrayFromNode(node.GetNode(aileronCtrlr), AsstList.Aileron));
+                gains.Add(gainsArrayFromNode(node.GetNode(rudderCtrlr), AsstList.Rudder));
+                gains.Add(gainsArrayFromNode(node.GetNode(altCtrlr), AsstList.Altitude));
+                gains.Add(gainsArrayFromNode(node.GetNode(vertCtrlr), AsstList.VertSpeed));
+                gains.Add(gainsArrayFromNode(node.GetNode(elevCtrlr), AsstList.Elevator));
+                gains.Add(gainsArrayFromNode(node.GetNode(speedCtrlr), AsstList.Speed));
+                gains.Add(gainsArrayFromNode(node.GetNode(accelCtrlr), AsstList.Acceleration));
 
                 string name = node.GetValue("name");
                 if (name == asstDefaultName)
@@ -172,13 +151,12 @@ namespace PilotAssistant
             saveDefaults();
         }
 
-        public static double[] controllerGains(ConfigNode node, AsstList type)
+        public static double[] gainsArrayFromNode(ConfigNode node, AsstList type)
         {
-            double[] gains = new double[9];
-
             if (ReferenceEquals(node, null))
                 return defaultControllerGains(type);
-
+            
+            double[] gains = new double[9];
             double.TryParse(node.GetValue(pGain), out gains[0]);
             double.TryParse(node.GetValue(iGain), out gains[1]);
             double.TryParse(node.GetValue(dGain), out gains[2]);
@@ -190,6 +168,38 @@ namespace PilotAssistant
             double.TryParse(node.GetValue(ease), out gains[8]);
 
             return gains;
+        }
+
+        public static ConfigNode gainsArrayToNode(string name, int index, AsstPreset preset)
+        {
+            ConfigNode node = new ConfigNode(name);
+            node.AddValue(pGain, preset.PIDGains[index][0]);
+            node.AddValue(iGain, preset.PIDGains[index][1]);
+            node.AddValue(dGain, preset.PIDGains[index][2]);
+            node.AddValue(min, preset.PIDGains[index][3]);
+            node.AddValue(max, preset.PIDGains[index][4]);
+            node.AddValue(iLower, preset.PIDGains[index][5]);
+            node.AddValue(iUpper, preset.PIDGains[index][6]);
+            node.AddValue(scalar, preset.PIDGains[index][7]);
+            node.AddValue(ease, preset.PIDGains[index][8]);
+            return node;
+        }
+
+        public static ConfigNode AsstPresetNode(AsstPreset preset)
+        {
+            ConfigNode node = new ConfigNode(asstPresetNodeName);
+            node.AddValue("name", preset.name);
+            node.AddNode(gainsArrayToNode(hdgCtrlr, (int)AsstList.HdgBank, preset));
+            node.AddNode(gainsArrayToNode(yawCtrlr, (int)AsstList.BankToYaw, preset));
+            node.AddNode(gainsArrayToNode(aileronCtrlr, (int)AsstList.Aileron, preset));
+            node.AddNode(gainsArrayToNode(rudderCtrlr, (int)AsstList.Rudder, preset));
+            node.AddNode(gainsArrayToNode(altCtrlr, (int)AsstList.Altitude, preset));
+            node.AddNode(gainsArrayToNode(vertCtrlr, (int)AsstList.VertSpeed, preset));
+            node.AddNode(gainsArrayToNode(elevCtrlr, (int)AsstList.Elevator, preset));
+            node.AddNode(gainsArrayToNode(speedCtrlr, (int)AsstList.Speed, preset));
+            node.AddNode(gainsArrayToNode(accelCtrlr, (int)AsstList.Acceleration, preset));
+
+            return node;
         }
 
         public static double[] defaultControllerGains(AsstList type)
@@ -217,38 +227,6 @@ namespace PilotAssistant
                 default:
                     return PilotAssistant.defaultAileronGains;
             }
-        }
-
-        public static ConfigNode AsstPresetNode(AsstPreset preset)
-        {
-            ConfigNode node = new ConfigNode(asstPresetNodeName);
-            node.AddValue("name", preset.name);
-            node.AddNode(PIDnode(hdgCtrlr, (int)AsstList.HdgBank, preset));
-            node.AddNode(PIDnode(yawCtrlr, (int)AsstList.BankToYaw, preset));
-            node.AddNode(PIDnode(aileronCtrlr, (int)AsstList.Aileron, preset));
-            node.AddNode(PIDnode(rudderCtrlr, (int)AsstList.Rudder, preset));
-            node.AddNode(PIDnode(altCtrlr, (int)AsstList.Altitude, preset));
-            node.AddNode(PIDnode(vertCtrlr, (int)AsstList.VertSpeed, preset));
-            node.AddNode(PIDnode(elevCtrlr, (int)AsstList.Elevator, preset));
-            node.AddNode(PIDnode(speedCtrlr, (int)AsstList.Speed, preset));
-            node.AddNode(PIDnode(accelCtrlr, (int)AsstList.Acceleration, preset));
-
-            return node;
-        }
-
-        public static ConfigNode PIDnode(string name, int index, AsstPreset preset)
-        {
-            ConfigNode node = new ConfigNode(name);
-            node.AddValue(pGain, preset.PIDGains[index][0]);
-            node.AddValue(iGain, preset.PIDGains[index][1]);
-            node.AddValue(dGain, preset.PIDGains[index][2]);
-            node.AddValue(min, preset.PIDGains[index][3]);
-            node.AddValue(max, preset.PIDGains[index][4]);
-            node.AddValue(iLower, preset.PIDGains[index][5]);
-            node.AddValue(iUpper, preset.PIDGains[index][6]);
-            node.AddValue(scalar, preset.PIDGains[index][7]);
-            node.AddValue(ease, preset.PIDGains[index][8]);
-            return node;
         }
 
         public static ConfigNode CraftNode(CraftPreset preset)
@@ -331,8 +309,9 @@ namespace PilotAssistant
         // called on vessel load
         public static void loadCraftAsstPreset(PilotAssistant instance)
         {
-            if (Instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && !ReferenceEquals(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].AsstPreset, null))
-                loadAsstPreset(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].AsstPreset, instance);
+            CraftPreset cp;
+            if (Instance.craftPresetDict.TryGetValue(FlightGlobals.ActiveVessel.vesselName, out cp) && !ReferenceEquals(cp.AsstPreset, null))
+                loadAsstPreset(cp.AsstPreset, instance);
             else
                 loadAsstPreset(Instance.craftPresetDict[craftDefaultName].AsstPreset, instance);
         }
@@ -345,12 +324,10 @@ namespace PilotAssistant
             PresetManager.saveDefaults();
         }
 
-
-
         public static void initDefaultPresets()
         {
-            if (!Instance.craftPresetDict.ContainsKey("default"))
-                Instance.craftPresetDict.Add("default", new CraftPreset("default", null));
+            if (!Instance.craftPresetDict.ContainsKey(craftDefaultName))
+                Instance.craftPresetDict.Add(craftDefaultName, new CraftPreset(craftDefaultName, null));
         }
 
         public static void updateCraftPreset(AsstPreset p, Vessel v)

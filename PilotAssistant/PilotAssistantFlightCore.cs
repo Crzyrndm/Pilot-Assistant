@@ -193,6 +193,8 @@ namespace PilotAssistant
 
         public void OnGUI()
         {
+            if (ReferenceEquals(GeneralUI.UISkin, null))
+                GeneralUI.customSkin();
             if (bHideUI)
                 return;
 

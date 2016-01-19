@@ -117,7 +117,7 @@ namespace PilotAssistant.FlightModules
             /// Vector3 location = closestPart.partTransform.position - v.CurrentCoM;
             /// 
             vesselFacingAxis = closestPart.transform.localRotation * closestPart.orgRot.Inverse() * Vector3.up;
-            if (ReferenceEquals(closestPart.symmetryCounterparts, null))
+            if (!ReferenceEquals(closestPart.symmetryCounterparts, null))
             {
                 for (int i = 0; i < closestPart.symmetryCounterparts.Count; i++)
                 {
