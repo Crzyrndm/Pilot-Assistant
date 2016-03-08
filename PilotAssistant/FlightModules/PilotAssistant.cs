@@ -238,7 +238,7 @@ namespace PilotAssistant.FlightModules
             controllers[(int)AsstList.Acceleration] = new Asst_PID_Controller(AsstList.Acceleration, defaultAccelGains);
 
             // Set up a default preset that can be easily returned to
-            PresetManager.initDefaultPresets(new AsstPreset(controllers, "default"));
+            PresetManager.Instance.initDefaultPresets(new AsstPreset(controllers, "default"));
 
             AsstList.BankToYaw.GetAsst(this).invertOutput = true;
             AsstList.Aileron.GetAsst(this).invertInput = true;
@@ -1475,10 +1475,10 @@ namespace PilotAssistant.FlightModules
             if (GUI.Button(new Rect(presetWindow.width - 16, 2, 14, 14), string.Empty))
                 showPresets = false;
 
-            if (!ReferenceEquals(PresetManager.Instance.activeAsstPreset, null)) // preset will be null after deleting an active preset
+            if (!ReferenceEquals(activePreset, null)) // preset will be null after deleting an active preset
             {
-                GUILayout.Label(string.Format("Active Preset: {0}", PresetManager.Instance.activeAsstPreset.name));
-                if (PresetManager.Instance.activeAsstPreset.name != "default")
+                GUILayout.Label(string.Format("Active Preset: {0}", activePreset.name));
+                if (activePreset.name != "default")
                 {
                     if (GUILayout.Button("Update Preset"))
                         updateAsstPreset();
@@ -1498,7 +1498,7 @@ namespace PilotAssistant.FlightModules
             GUILayout.Box(string.Empty, GUILayout.Height(10));
 
             if (GUILayout.Button("Reset to Defaults"))
-                PresetManager.loadAsstPreset(PresetManager.Instance.craftPresetDict["default"].AsstPreset, this);
+                PresetManager.loadAsstPreset(PresetManager.Instance.craftPresetDict[PresetManager.craftDefaultName], this);
 
             GUILayout.Box(string.Empty, GUILayout.Height(10));
 
@@ -1535,10 +1535,10 @@ namespace PilotAssistant.FlightModules
         /// Update an active preset with the current values
         /// </summary>
         /// <param name="asstInstance"></param>
-        public static void updateAsstPreset(PilotAssistant asstInstance)
+        public void updateAsstPreset()
         {
-            asstInstance.activePreset.Update(asstInstance.controllers);
-            saveToFile();
+            activePreset.Update(controllers);
+            PresetManager.saveToFile();
         }
     }
 }

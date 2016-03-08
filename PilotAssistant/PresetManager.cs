@@ -33,46 +33,46 @@ namespace PilotAssistant
 
         //
         // save/load paths
-        const string presetsPath = "GameData/Pilot Assistant/Presets.cfg";
-        const string defaultsPath = "GameData/Pilot Assistant/Defaults.cfg";
+        public const string presetsPath = "GameData/Pilot Assistant/Presets.cfg";
+        public const string defaultsPath = "GameData/Pilot Assistant/Defaults.cfg";
 
         //
         // names of default presets
-        const string craftDefaultName = "default";
-        const string asstDefaultName = "default";
+        public const string craftDefaultName = "default";
+        public const string asstDefaultName = "default";
 
         //
         // node ID's for craft and PA presets
-        const string craftPresetNodeName = "CraftPreset";
-        const string asstPresetNodeName = "PIDPreset";
+        public const string craftPresetNodeName = "CraftPreset";
+        public const string asstPresetNodeName = "PIDPreset";
 
         //
         // PA preset name ID in the craft preset
-        const string craftAsstKey = "pilot";
+        public const string craftAsstKey = "pilot";
 
         //
         // controller node ID's for the PA preset
-        const string hdgCtrlr = "HdgBankController";
-        const string yawCtrlr = "HdgYawController";
-        const string aileronCtrlr = "AileronController";
-        const string rudderCtrlr = "RudderController";
-        const string altCtrlr = "AltitudeController";
-        const string vertCtrlr = "AoAController";
-        const string elevCtrlr = "ElevatorController";
-        const string speedCtrlr = "SpeedController";
-        const string accelCtrlr = "AccelController";
+        public const string hdgCtrlr = "HdgBankController";
+        public const string yawCtrlr = "HdgYawController";
+        public const string aileronCtrlr = "AileronController";
+        public const string rudderCtrlr = "RudderController";
+        public const string altCtrlr = "AltitudeController";
+        public const string vertCtrlr = "AoAController";
+        public const string elevCtrlr = "ElevatorController";
+        public const string speedCtrlr = "SpeedController";
+        public const string accelCtrlr = "AccelController";
 
         //
         // controller property keys for PA
-        const string pGain = "PGain";
-        const string iGain = "IGain";
-        const string dGain = "DGain";
-        const string min = "MinOut";
-        const string max = "MaxOut";
-        const string iLower = "ClampLower";
-        const string iUpper = "ClampUpper";
-        const string scalar = "Scalar";
-        const string ease = "Ease";
+        public const string pGain = "PGain";
+        public const string iGain = "IGain";
+        public const string dGain = "DGain";
+        public const string min = "MinOut";
+        public const string max = "MaxOut";
+        public const string iLower = "ClampLower";
+        public const string iUpper = "ClampUpper";
+        public const string scalar = "Scalar";
+        public const string ease = "Ease";
 
         public void Start()
         {
@@ -288,7 +288,7 @@ namespace PilotAssistant
                 return false;
             }
             AsstPreset newPreset = new AsstPreset(controllers, name);
-            updateCraftPreset(newPreset, v);
+            Instance.updateCraftPreset(newPreset, v);
             Instance.AsstPresetList.Add(newPreset);
             saveToFile();
 
@@ -322,7 +322,7 @@ namespace PilotAssistant
             GeneralUI.postMessage("Loaded preset " + p.name);
             
             if (asstInstance.activePreset.name != Instance.craftPresetDict[craftDefaultName])
-                updateCraftPreset(asstInstance.activePreset, asstInstance.vesModule.vesselRef);
+                Instance.updateCraftPreset(asstInstance.activePreset, asstInstance.vesModule.vesselRef);
             saveToFile();
         }
 
