@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace PilotAssistant.Presets
+﻿namespace PilotAssistant.Presets
 {
+    /// <summary>
+    /// This can be made obselete. All that is needed now with a single module is a dictionary associating craft names with PA presets
+    /// </summary>
+    [System.Obsolete("Store association as a craft-PA preset Dict", true)]
     public class CraftPreset
     {
         string name;

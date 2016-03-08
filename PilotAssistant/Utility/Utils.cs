@@ -182,7 +182,7 @@ namespace PilotAssistant.Utility
                 case SpeedUnits.mph:
                     return " mph";
             }
-            return "";
+            return string.Empty;
         }
 
 

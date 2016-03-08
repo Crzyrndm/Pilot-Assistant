@@ -49,7 +49,7 @@ namespace PilotAssistant
 
             config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
             if (ReferenceEquals(config, null))
-                config = new ConfigNode("");
+                config = new ConfigNode(string.Empty);
 
             bUseStockToolbar = config.TryGetValue("UseStockToolbar", true);
 
@@ -100,7 +100,7 @@ namespace PilotAssistant
             {
                 config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
                 if (ReferenceEquals(config, null))
-                    config = new ConfigNode("");
+                    config = new ConfigNode(string.Empty);
                 if (!ReferenceEquals(config, null))
                 {
                     showTooltips = config.TryGetValue("AsstTooltips", true);
@@ -145,7 +145,7 @@ namespace PilotAssistant
             try
             {
                 if (ReferenceEquals(config, null))
-                    config = new ConfigNode("");
+                    config = new ConfigNode(string.Empty);
                 if (!ReferenceEquals(config, null))
                 {
                     config.SetValue("AsstTooltips", showTooltips.ToString(), true);
@@ -181,7 +181,7 @@ namespace PilotAssistant
                     config.SetValue("blizSSASIcon", blizSSASTexPath, true);
                     config.SetValue("blizSASIcon", blizSASTexPath, true);
 
-                    Directory.CreateDirectory(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), ""));
+                    Directory.CreateDirectory(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), string.Empty));
                     config.Save(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
                 }
             }
@@ -207,19 +207,19 @@ namespace PilotAssistant
         public void Draw()
         {
             if (bDisplayOptions)
-                window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(60), GUILayout.Height(0));
+                window = GUILayout.Window(0984653, window, optionsWindow, string.Empty, GUILayout.Width(60), GUILayout.Height(0));
         }
 
         private void optionsWindow(int id)
         {
-            if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
+            if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), string.Empty))
                 bDisplayOptions = false;
 
             if (GUILayout.Button("Update Defaults"))
-                PresetManager.updateDefaults();
+                PresetManager.Instance.updateDefaultAsstPreset(controlledVessels[selectedVesselIndex].vesselAsst.activePreset);
             if (controlledVessels.Count > 1)
             {
-                GUILayout.Box("", GUILayout.Height(10));
+                GUILayout.Box(string.Empty, GUILayout.Height(10));
                 for (int i = 0; i < controlledVessels.Count; i++)
                 {
                     if (controlledVessels[i].vesselRef.isActiveVessel)
