@@ -137,6 +137,9 @@ namespace PilotAssistant
                 for (int i = 0; i < values.Length; ++i )
                 {
                     string[] tmp = values[i].Split(delimiter, 2, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToArray();
+                    if (tmp.Length != 2)
+                        continue;
+
                     if (tmp[0] == craftDefaultName)
                         craftPresetDict[craftDefaultName] = tmp[1];
                     else if (!craftPresetDict.ContainsKey(tmp[0]))

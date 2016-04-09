@@ -5,6 +5,7 @@ using UnityEngine;
 namespace PilotAssistant.Toolbar
 {
     using Utility;
+    using KSP.UI.Screens;
 
     public class AppLauncherFlight
     {
