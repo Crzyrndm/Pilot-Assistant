@@ -35,6 +35,10 @@
       <HintPath>..\..\..\Desktop\Kerbal Space Program Dev\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="KSPUtil">
+      <HintPath>..\..\..\Desktop\Kerbal Space Program Dev\KSP_Data\Managed\KSPUtil.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -45,25 +49,22 @@
       <HintPath>..\..\..\Desktop\Kerbal Space Program Dev\KSP_Data\Managed\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>..\..\..\Desktop\Kerbal Space Program Dev\KSP_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FlightModules\VesselData.cs" />
     <Compile Include="FlightModules\AsstVesselModule.cs" />
-    <Compile Include="IVesselData.cs" />
-    <Compile Include="PID\PIDErrorController.cs" />
     <Compile Include="Toolbar\AppLauncherFlight.cs" />
     <Compile Include="BindingManager.cs" />
     <Compile Include="PilotAssistantFlightCore.cs" />
     <Compile Include="Presets\CraftPreset.cs" />
-    <Compile Include="Presets\RSASPreset.cs" />
-    <Compile Include="Presets\SSASPreset.cs" />
-    <Compile Include="FlightModules\Stock SAS.cs" />
-    <Compile Include="FlightModules\SurfSAS.cs" />
-    <Compile Include="PID\PID_Controller.cs" />
+    <Compile Include="PID_Controller.cs" />
     <Compile Include="FlightModules\PilotAssistant.cs" />
     <Compile Include="Presets\AsstPreset.cs" />
     <Compile Include="PresetManager.cs" />
-    <Compile Include="Presets\SASPreset.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Toolbar\ToolbarMod.cs" />
     <Compile Include="Toolbar\ToolbarWrapper.cs" />

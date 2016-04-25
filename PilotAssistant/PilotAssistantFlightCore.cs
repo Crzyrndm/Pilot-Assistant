@@ -49,7 +49,7 @@ namespace PilotAssistant
 
             config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
             if (ReferenceEquals(config, null))
-                config = new ConfigNode("");
+                config = new ConfigNode(string.Empty);
 
             bUseStockToolbar = config.TryGetValue("UseStockToolbar", true);
 
@@ -100,7 +100,7 @@ namespace PilotAssistant
             {
                 config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
                 if (ReferenceEquals(config, null))
-                    config = new ConfigNode("");
+                    config = new ConfigNode(string.Empty);
                 if (!ReferenceEquals(config, null))
                 {
                     showTooltips = config.TryGetValue("AsstTooltips", true);
@@ -114,8 +114,6 @@ namespace PilotAssistant
 
                     // windows
                     PilotAssistant.window = config.TryGetValue("AsstWindow", new Rect(300, 300, 0, 0));
-                    SurfSAS.SSASwindow = config.TryGetValue("SSASWindow", new Rect(500, 300, 0, 0));
-                    Stock_SAS.StockSASwindow = config.TryGetValue("SASWindow", new Rect(500, 300, 0, 0));
                     BindingManager.Instance.windowRect = config.TryGetValue("BindingWindow", new Rect(300, 50, 0, 0));
                     window = config.TryGetValue("AppWindow", new Rect(100, 300, 0, 0));
 
@@ -147,7 +145,7 @@ namespace PilotAssistant
             try
             {
                 if (ReferenceEquals(config, null))
-                    config = new ConfigNode("");
+                    config = new ConfigNode(string.Empty);
                 if (!ReferenceEquals(config, null))
                 {
                     config.SetValue("AsstTooltips", showTooltips.ToString(), true);
@@ -162,8 +160,6 @@ namespace PilotAssistant
 
                     // window rects
                     config.SetValue("AsstWindow", PilotAssistant.window.ToString(), true);
-                    config.SetValue("SSASWindow", SurfSAS.SSASwindow.ToString(), true);
-                    config.SetValue("SASWindow", Stock_SAS.StockSASwindow.ToString(), true);
                     config.SetValue("AppWindow", window.ToString(), true);
                     config.SetValue("BindingWindow", BindingManager.Instance.windowRect.ToString(), true);
 
@@ -185,7 +181,7 @@ namespace PilotAssistant
                     config.SetValue("blizSSASIcon", blizSSASTexPath, true);
                     config.SetValue("blizSASIcon", blizSASTexPath, true);
 
-                    Directory.CreateDirectory(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), ""));
+                    Directory.CreateDirectory(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), string.Empty));
                     config.Save(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
                 }
             }
@@ -197,6 +193,8 @@ namespace PilotAssistant
 
         public void OnGUI()
         {
+            if (ReferenceEquals(GeneralUI.UISkin, null))
+                GeneralUI.customSkin();
             if (bHideUI)
                 return;
 
@@ -209,24 +207,19 @@ namespace PilotAssistant
         public void Draw()
         {
             if (bDisplayOptions)
-                window = GUILayout.Window(0984653, window, optionsWindow, "", GUILayout.Width(60), GUILayout.Height(0));
+                window = GUILayout.Window(0984653, window, optionsWindow, string.Empty, GUILayout.Width(60), GUILayout.Height(0));
         }
 
         private void optionsWindow(int id)
         {
-            if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), ""))
+            if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), string.Empty))
                 bDisplayOptions = false;
 
-            bDisplayAssistant = GUILayout.Toggle(bDisplayAssistant, "Pilot Assistant", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            bDisplaySAS = GUILayout.Toggle(bDisplaySAS, "Stock SAS", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            bDisplaySSAS = GUILayout.Toggle(bDisplaySSAS, "SSAS", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-            bDisplayBindings = GUILayout.Toggle(bDisplayBindings, "Keybindings", GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle]);
-
             if (GUILayout.Button("Update Defaults"))
-                PresetManager.updateDefaults();
+                PresetManager.Instance.updateDefaultAsstPreset(controlledVessels[selectedVesselIndex].vesselAsst.activePreset);
             if (controlledVessels.Count > 1)
             {
-                GUILayout.Box("", GUILayout.Height(10));
+                GUILayout.Box(string.Empty, GUILayout.Height(10));
                 for (int i = 0; i < controlledVessels.Count; i++)
                 {
                     if (controlledVessels[i].vesselRef.isActiveVessel)

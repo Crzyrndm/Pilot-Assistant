@@ -5,7 +5,6 @@ using UnityEngine;
 
 namespace PilotAssistant.Utility
 {
-    using PID;
     using FlightModules;
 
     public static class Utils
@@ -20,14 +19,9 @@ namespace PilotAssistant.Utility
                 return val;
         }
 
-        public static AsstController GetAsst(this AsstList id, PilotAssistant instance)
+        public static Asst_PID_Controller GetAsst(this AsstList id, PilotAssistant instance)
         {
             return instance.controllers[(int)id];
-        }
-
-        public static PIDErrorController GetSAS(this SASList id, SurfSAS instance)
-        {
-            return instance.SASControllers[(int)id];
         }
 
         public static bool isFlightControlLocked()
@@ -115,20 +109,6 @@ namespace PilotAssistant.Utility
             return axis.IsNeutral() && Math.Abs(axis.GetAxis()) < 0.00001;
         }
 
-        public static bool hasInput(SASList ID)
-        {
-            switch (ID)
-            {
-                case SASList.Bank:
-                    return hasRollInput();
-                case SASList.Hdg:
-                    return hasYawInput();
-                case SASList.Pitch:
-                default:
-                    return hasPitchInput();
-            }
-        }
-
         public static bool hasYawInput()
         {
             return GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_YAW);
@@ -147,34 +127,6 @@ namespace PilotAssistant.Utility
         public static bool hasThrottleInput()
         {
             return GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey() || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown();
-        }
-
-        public static double getCurrentVal(SASList ID, VesselData vd)
-        {
-            switch (ID)
-            {
-                case SASList.Bank:
-                    return vd.bank;
-                case SASList.Hdg:
-                    return vd.heading;
-                case SASList.Pitch:
-                default:
-                    return vd.pitch;
-            }
-        }
-
-        public static double getCurrentRate(SASList ID, Vessel v)
-        {
-            switch (ID)
-            {
-                case SASList.Bank:
-                    return v.angularVelocity.y;
-                case SASList.Hdg:
-                    return v.angularVelocity.z;
-                case SASList.Pitch:
-                default:
-                    return v.angularVelocity.x;
-            }
         }
 
         public static Vector3d projectOnPlane(this Vector3d vector, Vector3d planeNormal)
@@ -206,7 +158,7 @@ namespace PilotAssistant.Utility
             {
                 case SpeedRef.Indicated:
                     double stagnationPres = Math.Pow(((avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1) * avm.vesselRef.mach * avm.vesselRef.mach * 0.5) + 1, avm.vesselRef.mainBody.atmosphereAdiabaticIndex / (avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1));
-                    return (Math.Sqrt(avm.vesselRef.atmDensity / 1.225) * stagnationPres);
+                    return Math.Sqrt(avm.vesselRef.atmDensity / 1.225) * stagnationPres;
                 case SpeedRef.Equivalent:
                     return Math.Sqrt(avm.vesselRef.atmDensity / 1.225);
                 case SpeedRef.True:
@@ -224,13 +176,13 @@ namespace PilotAssistant.Utility
                 case SpeedUnits.mach:
                     return " mach";
                 case SpeedUnits.knots:
-                    return " knots";
+                    return " kn";
                 case SpeedUnits.kmph:
                     return " km/h";
                 case SpeedUnits.mph:
                     return " mph";
             }
-            return "";
+            return string.Empty;
         }
 
 

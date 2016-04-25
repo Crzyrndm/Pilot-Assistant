@@ -1,25 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace PilotAssistant.Presets
+﻿namespace PilotAssistant.Presets
 {
+    /// <summary>
+    /// This can be made obselete. All that is needed now with a single module is a dictionary associating craft names with PA presets
+    /// </summary>
+    [System.Obsolete("Store association as a craft-PA preset Dict", true)]
     public class CraftPreset
     {
         string name;
         AsstPreset pa;
-        SSASPreset ssas;
-        SASPreset sas;
-        RSASPreset rsas;
 
-        public CraftPreset(string Name, AsstPreset PA, SSASPreset SSAS, SASPreset SAS, RSASPreset RSAS)
+        public CraftPreset(string Name, AsstPreset PA)
         {
             name = Name;
             pa = PA;
-            ssas = SSAS;
-            rsas = RSAS;
-            sas = SAS;
         }
 
         public string Name
@@ -34,27 +27,9 @@ namespace PilotAssistant.Presets
             set { pa = value; }
         }
 
-        public SSASPreset SSASPreset
-        {
-            get { return ssas; }
-            set { ssas = value; }
-        }
-
-        public SASPreset SASPreset
-        {
-            get { return sas; }
-            set { sas = value; }
-        }
-
-        public RSASPreset RSASPreset
-        {
-            get { return rsas; }
-            set { rsas = value; }
-        }
-
         public bool Dead
         {
-            get { return AsstPreset == null && SSASPreset == null && SASPreset == null && RSASPreset == null; }
+            get { return AsstPreset == null; }
         }
     }
 }

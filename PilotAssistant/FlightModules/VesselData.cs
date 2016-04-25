@@ -6,7 +6,7 @@ using UnityEngine;
 namespace PilotAssistant.FlightModules
 {
     using Utility;
-    public class VesselData : IVesselData
+    public class VesselData
     {
         public VesselData(AsstVesselModule avm)
         {
@@ -15,28 +15,28 @@ namespace PilotAssistant.FlightModules
 
         public AsstVesselModule vesModule;
 
-        public double radarAlt { get; private set; }
-        public double pitch { get; private set; }
-        public double bank { get; private set; }
-        public double yaw { get; private set; }
-        public double AoA { get; private set; }
-        public double heading { get; private set; }
-        public double progradeHeading { get; private set; }
-        public double vertSpeed { get; private set; }
-        public double acceleration { get; private set; }
-        public Vector3d planetUp { get; private set; }
-        public Vector3d planetNorth { get; private set; }
-        public Vector3d planetEast { get; private set; }
-        public Vector3d surfVelForward { get; private set; }
-        public Vector3d surfVelRight { get; private set; }
-        public Vector3d surfVesForward { get; private set; }
-        public Vector3d surfVesRight { get; private set; }
-        public Vector3d lastVelocity { get; private set; }
-        public Vector3d velocity { get; private set; }
-        public Vector3 obtRadial { get; private set; }
-        public Vector3 obtNormal { get; private set; }
-        public Vector3 srfRadial { get; private set; }
-        public Vector3 srfNormal  { get; private set; }
+        public double radarAlt;
+        public double pitch;
+        public double bank;
+        public double yaw;
+        public double AoA;
+        public double heading;
+        public double progradeHeading;
+        public double vertSpeed;
+        public double acceleration;
+        public Vector3d planetUp;
+        public Vector3d planetNorth;
+        public Vector3d planetEast;
+        public Vector3d surfVelForward;
+        public Vector3d surfVelRight;
+        public Vector3d surfVesForward;
+        public Vector3d surfVesRight;
+        public Vector3d lastVelocity;
+        public Vector3d velocity;
+        public Vector3 obtRadial;
+        public Vector3 obtNormal;
+        public Vector3 srfRadial;
+        public Vector3 srfNormal;
 
         /// <summary>
         /// Called in OnPreAutoPilotUpdate. Do not call multiple times per physics frame or the "lastPlanetUp" vector will not be correct and VSpeed will not be calculated correctly
@@ -116,12 +116,12 @@ namespace PilotAssistant.FlightModules
             /// accounting for rotation is the most important, the nearby position will work for now.
             /// Vector3 location = closestPart.partTransform.position - v.CurrentCoM;
             /// 
-            vesselFacingAxis = closestPart.transform.localRotation * closestPart.orgRot.Inverse() * Vector3.up;
-            if (ReferenceEquals(closestPart.symmetryCounterparts, null))
+            vesselFacingAxis = closestPart.transform.localRotation * Quaternion.Inverse(closestPart.orgRot) * Vector3.up;
+            if (!ReferenceEquals(closestPart.symmetryCounterparts, null))
             {
                 for (int i = 0; i < closestPart.symmetryCounterparts.Count; i++)
                 {
-                    vesselFacingAxis += closestPart.symmetryCounterparts[i].transform.localRotation * closestPart.symmetryCounterparts[i].orgRot.Inverse() * Vector3.up;
+                    vesselFacingAxis += closestPart.symmetryCounterparts[i].transform.localRotation * Quaternion.Inverse(closestPart.symmetryCounterparts[i].orgRot) * Vector3.up;
                 }
                 vesselFacingAxis /= (closestPart.symmetryCounterparts.Count + 1);
             }

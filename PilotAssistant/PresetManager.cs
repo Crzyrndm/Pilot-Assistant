@@ -5,7 +5,6 @@ using UnityEngine;
 
 namespace PilotAssistant
 {
-    using PID;
     using Utility;
     using Presets;
     using FlightModules;
@@ -22,250 +21,170 @@ namespace PilotAssistant
             }
         }
 
+        //
+        // A list of all the loaded PA presets and the one currently loaded
         public List<AsstPreset> AsstPresetList = new List<AsstPreset>();
-        public List<SASPreset> SASPresetList = new List<SASPreset>();
-        public List<RSASPreset> RSASPresetList = new List<RSASPreset>();
-        public List<SSASPreset> SSASPresetList = new List<SSASPreset>();
-
+        [Obsolete("Need to move this inside the PA class as can be done per instance", true)]
         public AsstPreset activeAsstPreset = null;
-        public SSASPreset activeSSASPreset = null;
-        public SASPreset activeSASPreset = null;
-        public RSASPreset activeRSASPreset = null;
 
-        public Dictionary<string, CraftPreset> craftPresetDict = new Dictionary<string, CraftPreset>();
+        //
+        // stores all craft presets by name
+        public Dictionary<string, string> craftPresetDict = new Dictionary<string, string>();
 
-        const string presetsPath = "GameData/Pilot Assistant/Presets.cfg";
-        const string defaultsPath = "GameData/Pilot Assistant/Defaults.cfg";
+        //
+        // save/load paths
+        public const string presetsPath = "GameData/Pilot Assistant/Presets.cfg";
+        public const string defaultsPath = "GameData/Pilot Assistant/Defaults.cfg";
 
-        const string craftDefaultName = "default";
-        const string asstDefaultName = "default";
-        const string ssasDefaultName = "SSAS";
-        const string SASDefaultName = "stock";
-        const string RSASDefaultName = "RSAS";
+        //
+        // names of default presets
+        public const string craftDefaultName = "default";
+        public const string asstDefaultName = "default";
 
-        const string craftPresetNodeName = "CraftPreset";
-        const string asstPresetNodeName = "PIDPreset";
-        const string sasPresetNodeName = "SASPreset";
-        const string rsasPresetNodeName = "RSASPreset";
-        const string ssasPresetNodeName = "SSASPreset";
+        //
+        // node ID's for craft and PA presets
+        public const string craftPresetNodeName = "CraftPreset";
+        public const string asstPresetNodeName = "PIDPreset";
 
-        const string craftAsstKey = "pilot";
-        const string craftSSASKey = "ssas";
-        const string craftSASKey = "stock";
-        const string craftRSASKey = "rsas";
+        //
+        // PA preset name ID in the craft preset
+        public const string craftAsstKey = "pilot";
 
-        const string hdgCtrlr = "HdgBankController";
-        const string yawCtrlr = "HdgYawController";
-        const string aileronCtrlr = "AileronController";
-        const string rudderCtrlr = "RudderController";
-        const string altCtrlr = "AltitudeController";
-        const string vertCtrlr = "AoAController";
-        const string elevCtrlr = "ElevatorController";
-        const string speedCtrlr = "SpeedController";
-        const string accelCtrlr = "AccelController";
+        //
+        // controller node ID's for the PA preset
+        public const string hdgCtrlr = "HdgBankController";
+        public const string yawCtrlr = "HdgYawController";
+        public const string aileronCtrlr = "AileronController";
+        public const string rudderCtrlr = "RudderController";
+        public const string altCtrlr = "AltitudeController";
+        public const string vertCtrlr = "AoAController";
+        public const string elevCtrlr = "ElevatorController";
+        public const string speedCtrlr = "SpeedController";
+        public const string accelCtrlr = "AccelController";
 
-        const string pGain = "PGain";
-        const string iGain = "IGain";
-        const string dGain = "DGain";
-        const string min = "MinOut";
-        const string max = "MaxOut";
-        const string iLower = "ClampLower";
-        const string iUpper = "ClampUpper";
-        const string scalar = "Scalar";
-        const string ease = "Ease";
-        const string delay = "Delay";
-
-        double[] defaultPresetPitchGains = { 0.15, 0.0, 0.06, 3, 20 }; // Kp/i/d, scalar, delay
-        double[] defaultPresetRollGains = { 0.1, 0.0, 0.06, 3, 20 };
-        double[] defaultPresetHdgGains = { 0.15, 0.0, 0.06, 3, 20 };
+        //
+        // controller property keys for PA
+        public const string pGain = "PGain";
+        public const string iGain = "IGain";
+        public const string dGain = "DGain";
+        public const string min = "MinOut";
+        public const string max = "MaxOut";
+        public const string iLower = "ClampLower";
+        public const string iUpper = "ClampUpper";
+        public const string scalar = "Scalar";
+        public const string ease = "Ease";
 
         public void Start()
         {
+            // only ever a single instance of this class created upon reaching the main menu for the first time
             instance = this;
-
-            loadPresetsFromFile();
+            // make sure that instance is never recovered while loading
             DontDestroyOnLoad(this);
+            // make sure the default is always there
+            craftPresetDict.Add(craftDefaultName, asstDefaultName);
+            // load preset data saved from a previous time
+            loadPresetsFromFile();
         }
 
         public void OnDestroy()
         {
+            // probably not ever called but if it is, changes are saved
             saveToFile();
         }
 
-        public void OnGUI()
+        /// <summary>
+        /// process previously saved data loading PA and craft presets into a usable format
+        /// </summary>
+        public void loadPresetsFromFile()
         {
-            // create the GUISkin
-            if (ReferenceEquals(GeneralUI.UISkin, null))
-                GeneralUI.customSkin();
-        }
-
-        public static void loadPresetsFromFile()
-        {
+            // fallback default preset is only ever recorded in the default craft preset. Not user created, so don't list it
             AsstPreset asstDefault = null;
-            SASPreset SASDefault = null;
-            SSASPreset SSASDefault = null;
-            RSASPreset RSASDefault = null;
             
-            foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(asstPresetNodeName))
+            // PA nodes
+            foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(asstPresetNodeName)) // want to move this outside GameDatabase at some point
             {
-                if (ReferenceEquals(node, null))
+                string name = node.GetValue("name");
+                if (ReferenceEquals(node, null) || instance.AsstPresetList.Any(p => p.name == name))
                     continue;
 
+                // process controller nodes to a more easily accesible array format.
+                // Could possibly do this a bit neater by iterating through the nodes and doing a switch on the node name. Downside would be trying to keep the order intact
                 List<double[]> gains = new List<double[]>();
-                gains.Add(controllerGains(node.GetNode(hdgCtrlr), AsstList.HdgBank));
-                gains.Add(controllerGains(node.GetNode(yawCtrlr), AsstList.BankToYaw));
-                gains.Add(controllerGains(node.GetNode(aileronCtrlr), AsstList.Aileron));
-                gains.Add(controllerGains(node.GetNode(rudderCtrlr), AsstList.Rudder));
-                gains.Add(controllerGains(node.GetNode(altCtrlr), AsstList.Altitude));
-                gains.Add(controllerGains(node.GetNode(vertCtrlr), AsstList.VertSpeed));
-                gains.Add(controllerGains(node.GetNode(elevCtrlr), AsstList.Elevator));
-                gains.Add(controllerGains(node.GetNode(speedCtrlr), AsstList.Speed));
-                gains.Add(controllerGains(node.GetNode(accelCtrlr), AsstList.Acceleration));
+                gains.Add(gainsArrayFromNode(node.GetNode(hdgCtrlr), AsstList.HdgBank));
+                gains.Add(gainsArrayFromNode(node.GetNode(yawCtrlr), AsstList.BankToYaw));
+                gains.Add(gainsArrayFromNode(node.GetNode(aileronCtrlr), AsstList.Aileron));
+                gains.Add(gainsArrayFromNode(node.GetNode(rudderCtrlr), AsstList.Rudder));
+                gains.Add(gainsArrayFromNode(node.GetNode(altCtrlr), AsstList.Altitude));
+                gains.Add(gainsArrayFromNode(node.GetNode(vertCtrlr), AsstList.VertSpeed));
+                gains.Add(gainsArrayFromNode(node.GetNode(elevCtrlr), AsstList.Elevator));
+                gains.Add(gainsArrayFromNode(node.GetNode(speedCtrlr), AsstList.Speed));
+                gains.Add(gainsArrayFromNode(node.GetNode(accelCtrlr), AsstList.Acceleration));
 
-                string name = node.GetValue("name");
+                // storing the new preset
                 if (name == asstDefaultName)
                     asstDefault = new AsstPreset(gains, name);
-                else if (!instance.AsstPresetList.Any(p => p.name == name))
+                else
                     instance.AsstPresetList.Add(new AsstPreset(gains, name));
             }
 
-            foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(sasPresetNodeName))
-            {
-                if (ReferenceEquals(node, null) || node.GetValue("stock") == "false")
-                    continue;
-
-                List<double[]> gains = new List<double[]>();
-                gains.Add(controllerSASGains(node.GetNode(elevCtrlr), SASList.Pitch));
-                gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), SASList.Bank));
-                gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), SASList.Hdg));
-
-                string name = node.GetValue("name");
-                if (name == SASDefaultName)
-                    SASDefault = new SASPreset(gains, name);
-                else if (!instance.SASPresetList.Any(p => p.name == name))
-                    instance.SASPresetList.Add(new SASPreset(gains, name));
-            }
-
-            foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(ssasPresetNodeName))
+            // craft nodes are just a list of craft/preset pairs with a comma delimiter
+            char[] delimiter = new char[] { ',' };
+            foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(craftPresetNodeName)) // want to move this outside GameDatabase at some point
             {
                 if (ReferenceEquals(node, null))
                     continue;
-
-                List<double[]> gains = new List<double[]>();
-                gains.Add(controllerSASGains(node.GetNode(elevCtrlr), SASList.Pitch));
-                gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), SASList.Bank));
-                gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), SASList.Hdg));
-
-                string name = node.GetValue("name");
-                if (name == ssasDefaultName)
-                    SSASDefault = new SSASPreset(gains, name);
-                else if (!instance.SSASPresetList.Any(p => p.name == name))
-                    instance.SSASPresetList.Add(new SSASPreset(gains, name));
-            }
-
-            foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(rsasPresetNodeName))
-            {
-                if (ReferenceEquals(node, null))
-                    continue;
-
-                List<double[]> gains = new List<double[]>();
-                gains.Add(controllerSASGains(node.GetNode(elevCtrlr), SASList.Pitch));
-                gains.Add(controllerSASGains(node.GetNode(aileronCtrlr), SASList.Bank));
-                gains.Add(controllerSASGains(node.GetNode(rudderCtrlr), SASList.Hdg));
-
-                string name = node.GetValue("name");
-                if (name == RSASDefaultName)
-                    RSASDefault = new RSASPreset(gains, name);
-                else if (!instance.RSASPresetList.Any(p => p.name == name))
-                    instance.RSASPresetList.Add(new RSASPreset(gains, name));
-            }
-
-            foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(craftPresetNodeName))
-            {
-                if (ReferenceEquals(node, null) || instance.craftPresetDict.ContainsKey(node.GetValue("name")))
-                    continue;
-
-                string name = node.GetValue("name");
-                if (name == craftDefaultName)
-                    instance.craftPresetDict.Add(craftDefaultName, new CraftPreset(craftDefaultName, asstDefault, SSASDefault, SASDefault, RSASDefault));
-                else
+                string[] values = node.GetValues();
+                for (int i = 0; i < values.Length; ++i )
                 {
-                    CraftPreset cP = new CraftPreset(name,
-                                            instance.AsstPresetList.FirstOrDefault(p => p.name == node.GetValue(craftAsstKey)),
-                                            instance.SSASPresetList.FirstOrDefault(p => p.name == node.GetValue(craftSSASKey)),
-                                            instance.SASPresetList.FirstOrDefault(p => p.name == node.GetValue(craftSASKey)),
-                                            instance.RSASPresetList.FirstOrDefault(p => p.name == node.GetValue(craftRSASKey)));
+                    string[] tmp = values[i].Split(delimiter, 2, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToArray();
+                    if (tmp.Length != 2)
+                        continue;
 
-                    instance.craftPresetDict.Add(cP.Name, cP);
+                    if (tmp[0] == craftDefaultName)
+                        craftPresetDict[craftDefaultName] = tmp[1];
+                    else if (!craftPresetDict.ContainsKey(tmp[0]))
+                        craftPresetDict.Add(tmp[0], tmp[1]);
                 }
             }
         }
 
+        /// <summary>
+        /// saves user created and default presets for next run
+        /// </summary>
         public static void saveToFile()
         {
             ConfigNode node = new ConfigNode();
+            // dummy value is required incase nothing else will be added to the file. KSP doesn't like blank .cfg's
             node.AddValue("dummy", "do not delete me");
             foreach (AsstPreset p in instance.AsstPresetList)
-            {
-                node.AddNode(AsstPresetNode(p));
-            }
-            foreach (SASPreset p in instance.SASPresetList)
-            {
-                node.AddNode(SASPresetNode(p));
-            }
-            foreach (SSASPreset p in instance.SSASPresetList)
-            {
-                node.AddNode(SSASPresetNode(p));
-            }
-            foreach (RSASPreset p in instance.RSASPresetList)
-            {
-                node.AddNode(RSASPresetNode(p));
-            }
-            foreach (KeyValuePair<string, CraftPreset> cP in instance.craftPresetDict)
-            {
-                if (ReferenceEquals(cP.Value, null) || cP.Key == craftDefaultName || cP.Value.Dead)
-                    continue;
-                node.AddNode(CraftNode(cP.Value));
-            }
+                node.AddNode(AsstPresetToNode(p));
+            foreach (KeyValuePair<string, string> cP in instance.craftPresetDict)
+                node.AddValue("pair", string.Concat(cP.Key, ",", cP.Value)); // pair = craft,preset
             
             node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + presetsPath);
         }
 
-        public static void saveDefaults()
+        /// <summary>
+        /// Sets the current active PA preset to be the default
+        /// </summary>
+        public void updateDefaultAsstPreset(AsstPreset preset)
         {
-            ConfigNode node = new ConfigNode();
-            CraftPreset cP = instance.craftPresetDict[craftDefaultName];
-
-            if (!ReferenceEquals(cP.AsstPreset, null))
-                node.AddNode(AsstPresetNode(cP.AsstPreset));
-            if (!ReferenceEquals(cP.SSASPreset, null))
-                node.AddNode(SSASPresetNode(cP.SSASPreset));
-            if (!ReferenceEquals(cP.SASPreset, null))
-                node.AddNode(SASPresetNode(cP.SASPreset));
-            if (!ReferenceEquals(cP.RSASPreset, null))
-                node.AddNode(RSASPresetNode(cP.RSASPreset));
-
-            node.AddNode(CraftNode(cP));
-            node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + defaultsPath);
+            craftPresetDict[craftDefaultName] = preset.name;
+            saveToFile();
         }
 
-        public static void updateDefaults()
+        /// <summary>
+        /// Processes a config node for a controller into a more accessible array of doubles
+        /// </summary>
+        /// <param name="node">A controller node</param>
+        /// <param name="type">An ID to use for referencing the default values in cases of null input</param>
+        /// <returns>an array of doubles containing the gains for a controller</returns>
+        public static double[] gainsArrayFromNode(ConfigNode node, AsstList type)
         {
-            instance.craftPresetDict[craftDefaultName].AsstPreset.PIDGains = instance.activeAsstPreset.PIDGains;
-            instance.craftPresetDict[craftDefaultName].SSASPreset.PIDGains = instance.activeSSASPreset.PIDGains;
-            instance.craftPresetDict[craftDefaultName].SASPreset.PIDGains = instance.activeSASPreset.PIDGains;
-            instance.craftPresetDict[craftDefaultName].RSASPreset.PIDGains = instance.activeRSASPreset.PIDGains;
-
-            saveDefaults();
-        }
-
-        public static double[] controllerGains(ConfigNode node, AsstList type)
-        {
-            double[] gains = new double[9];
-
             if (ReferenceEquals(node, null))
                 return defaultControllerGains(type);
-
+            
+            double[] gains = new double[9];
             double.TryParse(node.GetValue(pGain), out gains[0]);
             double.TryParse(node.GetValue(iGain), out gains[1]);
             double.TryParse(node.GetValue(dGain), out gains[2]);
@@ -279,6 +198,55 @@ namespace PilotAssistant
             return gains;
         }
 
+        /// <summary>
+        /// Processes an array of gains into a Config node ready to be saved
+        /// </summary>
+        /// <param name="name">Node name</param>
+        /// <param name="index">index of the array in the preset storage</param>
+        /// <param name="preset">object to source the array from</param>
+        /// <returns>A config node holding the gains for a controller</returns>
+        public static ConfigNode gainsArrayToNode(string name, int index, AsstPreset preset)
+        {
+            ConfigNode node = new ConfigNode(name);
+            node.AddValue(pGain, preset.PIDGains[index][0]);
+            node.AddValue(iGain, preset.PIDGains[index][1]);
+            node.AddValue(dGain, preset.PIDGains[index][2]);
+            node.AddValue(min, preset.PIDGains[index][3]);
+            node.AddValue(max, preset.PIDGains[index][4]);
+            node.AddValue(iLower, preset.PIDGains[index][5]);
+            node.AddValue(iUpper, preset.PIDGains[index][6]);
+            node.AddValue(scalar, preset.PIDGains[index][7]);
+            node.AddValue(ease, preset.PIDGains[index][8]);
+            return node;
+        }
+
+        /// <summary>
+        /// Turns a PA preset into a config node holding nodes of all its controllers
+        /// </summary>
+        /// <param name="preset">preset to process</param>
+        /// <returns>config node holding all PA controller values</returns>
+        public static ConfigNode AsstPresetToNode(AsstPreset preset)
+        {
+            ConfigNode node = new ConfigNode(asstPresetNodeName);
+            node.AddValue("name", preset.name);
+            node.AddNode(gainsArrayToNode(hdgCtrlr, (int)AsstList.HdgBank, preset));
+            node.AddNode(gainsArrayToNode(yawCtrlr, (int)AsstList.BankToYaw, preset));
+            node.AddNode(gainsArrayToNode(aileronCtrlr, (int)AsstList.Aileron, preset));
+            node.AddNode(gainsArrayToNode(rudderCtrlr, (int)AsstList.Rudder, preset));
+            node.AddNode(gainsArrayToNode(altCtrlr, (int)AsstList.Altitude, preset));
+            node.AddNode(gainsArrayToNode(vertCtrlr, (int)AsstList.VertSpeed, preset));
+            node.AddNode(gainsArrayToNode(elevCtrlr, (int)AsstList.Elevator, preset));
+            node.AddNode(gainsArrayToNode(speedCtrlr, (int)AsstList.Speed, preset));
+            node.AddNode(gainsArrayToNode(accelCtrlr, (int)AsstList.Acceleration, preset));
+
+            return node;
+        }
+
+        /// <summary>
+        /// returns the default gains for the controller
+        /// </summary>
+        /// <param name="type">controller ID</param>
+        /// <returns>default gains array</returns>
         public static double[] defaultControllerGains(AsstList type)
         {
             switch(type)
@@ -306,510 +274,156 @@ namespace PilotAssistant
             }
         }
 
-        public static double[] controllerSASGains(ConfigNode node, SASList type)
-        {
-            double[] gains = new double[5];
-
-            if (ReferenceEquals(node, null))
-                return defaultControllerGains(type);
-
-            double.TryParse(node.GetValue(pGain), out gains[0]);
-            double.TryParse(node.GetValue(iGain), out gains[1]);
-            double.TryParse(node.GetValue(dGain), out gains[2]);
-            double.TryParse(node.GetValue(scalar), out gains[3]);
-            double.TryParse(node.GetValue(delay), out gains[4]);
-
-            return gains;
-        }
-
-        public static double[] defaultControllerGains(SASList type)
-        {
-            switch (type)
-            {
-                case SASList.Pitch:
-                    return Instance.defaultPresetPitchGains;
-                case SASList.Bank:
-                    return Instance.defaultPresetRollGains;
-                case SASList.Hdg:
-                    return Instance.defaultPresetHdgGains;
-                default:
-                    return Instance.defaultPresetPitchGains;
-            }
-        }
-
-        public static ConfigNode AsstPresetNode(AsstPreset preset)
-        {
-            ConfigNode node = new ConfigNode(asstPresetNodeName);
-            node.AddValue("name", preset.name);
-            node.AddNode(PIDnode(hdgCtrlr, (int)AsstList.HdgBank, preset));
-            node.AddNode(PIDnode(yawCtrlr, (int)AsstList.BankToYaw, preset));
-            node.AddNode(PIDnode(aileronCtrlr, (int)AsstList.Aileron, preset));
-            node.AddNode(PIDnode(rudderCtrlr, (int)AsstList.Rudder, preset));
-            node.AddNode(PIDnode(altCtrlr, (int)AsstList.Altitude, preset));
-            node.AddNode(PIDnode(vertCtrlr, (int)AsstList.VertSpeed, preset));
-            node.AddNode(PIDnode(elevCtrlr, (int)AsstList.Elevator, preset));
-            node.AddNode(PIDnode(speedCtrlr, (int)AsstList.Speed, preset));
-            node.AddNode(PIDnode(accelCtrlr, (int)AsstList.Acceleration, preset));
-
-            return node;
-        }
-
-        public static ConfigNode SASPresetNode(SASPreset preset)
-        {
-            ConfigNode node = new ConfigNode(sasPresetNodeName);
-            node.AddValue("name", preset.name);
-            node.AddNode(PIDnode(aileronCtrlr, (int)SASList.Bank, preset));
-            node.AddNode(PIDnode(rudderCtrlr, (int)SASList.Hdg, preset));
-            node.AddNode(PIDnode(elevCtrlr, (int)SASList.Pitch, preset));
-
-            return node;
-        }
-
-        public static ConfigNode SSASPresetNode(SSASPreset preset)
-        {
-            ConfigNode node = new ConfigNode(ssasPresetNodeName);
-            node.AddValue("name", preset.name);
-            node.AddNode(PIDnode(aileronCtrlr, (int)SASList.Bank, preset));
-            node.AddNode(PIDnode(rudderCtrlr, (int)SASList.Hdg, preset));
-            node.AddNode(PIDnode(elevCtrlr, (int)SASList.Pitch, preset));
-
-            return node;
-        }
-
-        public static ConfigNode RSASPresetNode(RSASPreset preset)
-        {
-            ConfigNode node = new ConfigNode(rsasPresetNodeName);
-            node.AddValue("name", preset.name);
-            node.AddNode(PIDnode(aileronCtrlr, (int)SASList.Bank, preset));
-            node.AddNode(PIDnode(rudderCtrlr, (int)SASList.Hdg, preset));
-            node.AddNode(PIDnode(elevCtrlr, (int)SASList.Pitch, preset));
-
-            return node;
-        }
-
-        public static ConfigNode PIDnode(string name, int index, AsstPreset preset)
-        {
-            ConfigNode node = new ConfigNode(name);
-            node.AddValue(pGain, preset.PIDGains[index][0]);
-            node.AddValue(iGain, preset.PIDGains[index][1]);
-            node.AddValue(dGain, preset.PIDGains[index][2]);
-            node.AddValue(min, preset.PIDGains[index][3]);
-            node.AddValue(max, preset.PIDGains[index][4]);
-            node.AddValue(iLower, preset.PIDGains[index][5]);
-            node.AddValue(iUpper, preset.PIDGains[index][6]);
-            node.AddValue(scalar, preset.PIDGains[index][7]);
-            node.AddValue(ease, preset.PIDGains[index][8]);
-            return node;
-        }
-
-        public static ConfigNode PIDnode(string name, int index, SASPreset preset)
-        {
-            ConfigNode node = new ConfigNode(name);
-            node.AddValue(pGain, preset.PIDGains[index, 0]);
-            node.AddValue(iGain, preset.PIDGains[index, 1]);
-            node.AddValue(dGain, preset.PIDGains[index, 2]);
-            node.AddValue(scalar, preset.PIDGains[index, 3]);
-            return node;
-        }
-
-        public static ConfigNode PIDnode(string name, int index, SSASPreset preset)
-        {
-            ConfigNode node = new ConfigNode(name);
-            node.AddValue(pGain, preset.PIDGains[index, 0]);
-            node.AddValue(iGain, preset.PIDGains[index, 1]);
-            node.AddValue(dGain, preset.PIDGains[index, 2]);
-            node.AddValue(scalar, preset.PIDGains[index, 3]);
-            return node;
-        }
-
-        public static ConfigNode PIDnode(string name, int index, RSASPreset preset)
-        {
-            ConfigNode node = new ConfigNode(name);
-            node.AddValue(pGain, preset.PIDGains[index, 0]);
-            node.AddValue(iGain, preset.PIDGains[index, 1]);
-            node.AddValue(dGain, preset.PIDGains[index, 2]);
-            return node;
-        }
-
-        public static ConfigNode CraftNode(CraftPreset preset)
-        {
-            ConfigNode node = new ConfigNode(craftPresetNodeName);
-            if (!string.IsNullOrEmpty(preset.Name))
-            {
-                node.AddValue("name", preset.Name);
-                if (!ReferenceEquals(preset.AsstPreset, null) && !string.IsNullOrEmpty(preset.AsstPreset.name))
-                    node.AddValue(craftAsstKey, preset.AsstPreset.name);
-                if (!ReferenceEquals(preset.SSASPreset, null) && !string.IsNullOrEmpty(preset.SSASPreset.name))
-                    node.AddValue(craftSSASKey, preset.SSASPreset.name);
-                if (!ReferenceEquals(preset.SASPreset, null) && !string.IsNullOrEmpty(preset.SASPreset.name))
-                    node.AddValue(craftSASKey, preset.SASPreset.name);
-                if (!ReferenceEquals(preset.RSASPreset, null) && !string.IsNullOrEmpty(preset.RSASPreset.name))
-                    node.AddValue(craftRSASKey, preset.RSASPreset.name);
-            }
-
-            return node;
-        }
-
-        #region AsstPreset
-        public static void newAsstPreset(ref string name, AsstController[] controllers, Vessel v)
+        /// <summary>
+        /// Creates a preset from an array of controllers. Can't access Asst controllers directly because more than one instance can be active
+        /// </summary>
+        /// <param name="name">preset name</param>
+        /// <param name="controllers">controllers to build from</param>
+        /// <param name="v">vessel to associate with</param>
+        public static bool newAsstPreset(string name, Asst_PID_Controller[] controllers, Vessel v)
         {
             if (string.IsNullOrEmpty(name))
-                return;
+                return false;
 
-            string tempName = name;
-            if (Instance.AsstPresetList.Any(p => p.name == tempName))
+            if (Instance.AsstPresetList.Any(p => p.name == name))
             {
                 GeneralUI.postMessage("Failed to add preset with duplicate name");
-                return;
+                return false;
             }
             AsstPreset newPreset = new AsstPreset(controllers, name);
-            updateCraftPreset(newPreset, v);
+            Instance.updateCraftPreset(newPreset, v);
             Instance.AsstPresetList.Add(newPreset);
-            Instance.activeAsstPreset = PresetManager.Instance.AsstPresetList.Last();
             saveToFile();
-            name = "";
+
+            return true; // new preset created successfully, can clear the string
         }
 
-        public static void loadAsstPreset(AsstPreset p, PilotAssistant instance)
+        /// <summary>
+        /// loads a preset into the controllers of a PA instance
+        /// </summary>
+        /// <param name="p">the preset to load</param>
+        /// <param name="asstInstance">the PA instance to load to</param>
+        public static void loadAsstPreset(AsstPreset p, PilotAssistant asstInstance)
         {
-            AsstController[] c = instance.controllers;
+            if (ReferenceEquals(p, null))
+                return;
+            Asst_PID_Controller[] c = asstInstance.controllers;
             for (int i = 0; i < 8; i++)
             {
-                c[i].PGain = p.PIDGains[i][0];
-                c[i].IGain = p.PIDGains[i][1];
-                c[i].DGain = p.PIDGains[i][2];
-                c[i].OutMin = p.PIDGains[i][3];
-                c[i].OutMax = p.PIDGains[i][4];
-                c[i].ClampLower = p.PIDGains[i][5];
-                c[i].ClampUpper = p.PIDGains[i][6];
+                c[i].k_proportional = p.PIDGains[i][0];
+                c[i].k_integral = p.PIDGains[i][1];
+                c[i].k_derivative = p.PIDGains[i][2];
+                c[i].outMin = p.PIDGains[i][3];
+                c[i].outMax = p.PIDGains[i][4];
+                c[i].integralClampLower = p.PIDGains[i][5];
+                c[i].integralClampUpper = p.PIDGains[i][6];
                 c[i].Scalar = p.PIDGains[i][7];
                 c[i].Easing = p.PIDGains[i][8];
             }
             
-            Instance.activeAsstPreset = p;
+            asstInstance.activePreset = p;
             GeneralUI.postMessage("Loaded preset " + p.name);
             
-            if (Instance.activeAsstPreset != Instance.craftPresetDict[craftDefaultName].AsstPreset)
-                updateCraftPreset(Instance.activeAsstPreset, instance.vesModule.vesselRef);
+            if (asstInstance.activePreset.name != Instance.craftPresetDict[craftDefaultName])
+                Instance.updateCraftPreset(asstInstance.activePreset, asstInstance.vesModule.vesselRef);
             saveToFile();
         }
 
-        public static void updateAsstPreset(PilotAssistant instance)
+        /// <summary>
+        /// loads a preset into the controllers of a PA instance
+        /// </summary>
+        /// <param name="p">the preset to load</param>
+        /// <param name="asstInstance">the PA instance to load to</param>
+        public static void loadAsstPreset(string presetName, PilotAssistant asstInstance)
         {
-            Instance.activeAsstPreset.Update(instance.controllers);
-            saveToFile();
-        }
-
-        public static void deleteAsstPreset(AsstPreset p)
-        {
-            GeneralUI.postMessage("Deleted preset " + p.name);
-            if (Instance.activeAsstPreset == p)
-                Instance.activeAsstPreset = null;
-            Instance.AsstPresetList.Remove(p);
-
-            p = null;
-
-            saveToFile();
-        }
-        #endregion
-
-        #region SAS Preset
-        public static void newSASPreset(ref string name, Vessel v)
-        {
-            if (string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(presetName))
                 return;
-
-            string nameTest = name;
-            if (Instance.SASPresetList.Any(p => p.name == nameTest))
+            AsstPreset p = Instance.AsstPresetList.FirstOrDefault(pr => pr.name == presetName);
+            if (ReferenceEquals(p , null))
                 return;
-
-            SASPreset newPreset = new SASPreset(v.Autopilot.SAS, name);
-            Instance.SASPresetList.Add(newPreset);
-            updateCraftPreset(newPreset, v);
-            Instance.activeSASPreset = Instance.SASPresetList.Last();
-
-            saveToFile();
-            name = "";
-        }
-
-        public static void loadSASPreset(SASPreset p, Stock_SAS instance)
-        {
-            instance.vesModule.vesselRef.Autopilot.SAS.pidLockedPitch.kp = p.PIDGains[(int)SASList.Pitch, 0];
-            instance.vesModule.vesselRef.Autopilot.SAS.pidLockedPitch.ki = p.PIDGains[(int)SASList.Pitch, 1];
-            instance.vesModule.vesselRef.Autopilot.SAS.pidLockedPitch.kd = p.PIDGains[(int)SASList.Pitch, 2];
-            instance.vesModule.vesselRef.Autopilot.SAS.pidLockedPitch.clamp = p.PIDGains[(int)SASList.Pitch, 3];
-
-            instance.vesModule.vesselRef.Autopilot.SAS.pidLockedRoll.kp = p.PIDGains[(int)SASList.Bank, 0];
-            instance.vesModule.vesselRef.Autopilot.SAS.pidLockedRoll.ki = p.PIDGains[(int)SASList.Bank, 1];
-            instance.vesModule.vesselRef.Autopilot.SAS.pidLockedRoll.kd = p.PIDGains[(int)SASList.Bank, 2];
-            instance.vesModule.vesselRef.Autopilot.SAS.pidLockedRoll.clamp = p.PIDGains[(int)SASList.Bank, 3];
-
-            instance.vesModule.vesselRef.Autopilot.SAS.pidLockedYaw.kp = p.PIDGains[(int)SASList.Hdg, 0];
-            instance.vesModule.vesselRef.Autopilot.SAS.pidLockedYaw.ki = p.PIDGains[(int)SASList.Hdg, 1];
-            instance.vesModule.vesselRef.Autopilot.SAS.pidLockedYaw.kd = p.PIDGains[(int)SASList.Hdg, 2];
-            instance.vesModule.vesselRef.Autopilot.SAS.pidLockedYaw.clamp = p.PIDGains[(int)SASList.Hdg, 3];
-
-            Instance.activeSASPreset = p;
-
-            if (Instance.activeSASPreset != Instance.craftPresetDict[craftDefaultName].SASPreset)
-                updateCraftPreset(p, instance.vesModule.vesselRef);
-            saveToFile();
-        }
-
-        public static void UpdateSASPreset(Stock_SAS instance)
-        {
-            Instance.activeSASPreset.Update(instance.vesModule.vesselRef.Autopilot.SAS);
-            saveToFile();
-        }
-
-        public static void deleteSASPreset(SASPreset p)
-        {
-            GeneralUI.postMessage("Deleted preset " + p.name);
-            if (Instance.activeSASPreset == p)
-                Instance.activeSASPreset = null;
-            Instance.SASPresetList.Remove(p);
-
-            foreach (KeyValuePair<string, CraftPreset> cp in instance.craftPresetDict)
+            Asst_PID_Controller[] c = asstInstance.controllers;
+            for (int i = 0; i < 8; i++)
             {
-                if (!ReferenceEquals(cp.Value, null) && cp.Value.SASPreset == p)
-                    cp.Value.SASPreset = null;
+                c[i].k_proportional = p.PIDGains[i][0];
+                c[i].k_integral = p.PIDGains[i][1];
+                c[i].k_derivative = p.PIDGains[i][2];
+                c[i].outMin = p.PIDGains[i][3];
+                c[i].outMax = p.PIDGains[i][4];
+                c[i].integralClampLower = p.PIDGains[i][5];
+                c[i].integralClampUpper = p.PIDGains[i][6];
+                c[i].Scalar = p.PIDGains[i][7];
+                c[i].Easing = p.PIDGains[i][8];
             }
-            p = null;
-            saveToFile();
-        }
-        #endregion
-
-        #region SSAS Preset
-        public static void newSSASPreset(ref string name, PIDErrorController[] controllers, Vessel v)
-        {
-            if (string.IsNullOrEmpty(name))
-                return;
-
-            string nameTest = name;
-            if (Instance.SSASPresetList.Any(p => p.name == nameTest))
-                return;
-
-            SSASPreset newPreset = new SSASPreset(controllers, name);
-            Instance.SSASPresetList.Add(newPreset);
-            updateCraftPreset(newPreset, v);
-            Instance.activeSSASPreset = Instance.SSASPresetList.Last();
-            saveToFile();
-            name = "";
-        }
-
-        public static void loadSSASPreset(SSASPreset p, SurfSAS instance)
-        {
-            PIDErrorController[] c = instance.SASControllers;
-
-            foreach (SASList s in Enum.GetValues(typeof(SASList)))
-            {
-                c[(int)s].PGain = p.PIDGains[(int)s, 0];
-                c[(int)s].IGain = p.PIDGains[(int)s, 1];
-                c[(int)s].DGain = p.PIDGains[(int)s, 2];
-                c[(int)s].Scalar = p.PIDGains[(int)s, 3];
-            }
-
-            Instance.activeSSASPreset = p;
-
-            if (Instance.activeSSASPreset != Instance.craftPresetDict[craftDefaultName].SSASPreset)
-                updateCraftPreset(p, instance.vesModule.vesselRef);
-            saveToFile();
-        }
-
-        public static void UpdateSSASPreset(SurfSAS instance)
-        {
-            Instance.activeSSASPreset.Update(instance.SASControllers);
-            saveToFile();
-        }
-
-        public static void deleteSSASPreset(SSASPreset p)
-        {
-            GeneralUI.postMessage("Deleted preset " + p.name);
-            if (Instance.activeSSASPreset == p)
-                Instance.activeSSASPreset = null;
-            Instance.SSASPresetList.Remove(p);
-
-            foreach (KeyValuePair<string, CraftPreset> cp in instance.craftPresetDict)
-            {
-                if (!ReferenceEquals(cp.Value, null) && cp.Value.SSASPreset == p)
-                    cp.Value.SASPreset = null;
-            }
-
-            p = null;
-            saveToFile();
-        }
-        #endregion
-
-        #region RSAS Preset
-        public static void newRSASPreset(ref string name, Vessel v)
-        {
-            if (string.IsNullOrEmpty(name))
-                return;
-
-            string nameTest = name;
-            if (Instance.RSASPresetList.Any(p => p.name == nameTest))
-                return;
-
-            RSASPreset newPreset = new RSASPreset(v.Autopilot.RSAS, name);
-            Instance.RSASPresetList.Add(newPreset);
-            updateCraftPreset(newPreset, v);
-            Instance.activeRSASPreset = Instance.RSASPresetList.Last();
             
-            saveToFile();
-            name = "";
-        }
-
-        public static void loadRSASPreset(RSASPreset p, Stock_SAS instance)
-        {
-            instance.vesModule.vesselRef.Autopilot.RSAS.pidPitch.ReinitializePIDsOnly((float)p.PIDGains[(int)SASList.Pitch, 0], (float)p.PIDGains[(int)SASList.Pitch, 1], (float)p.PIDGains[(int)SASList.Pitch, 2]);
-            instance.vesModule.vesselRef.Autopilot.RSAS.pidRoll.ReinitializePIDsOnly((float)p.PIDGains[(int)SASList.Bank, 0], (float)p.PIDGains[(int)SASList.Bank, 1], (float)p.PIDGains[(int)SASList.Bank, 2]);
-            instance.vesModule.vesselRef.Autopilot.RSAS.pidYaw.ReinitializePIDsOnly((float)p.PIDGains[(int)SASList.Hdg, 0], (float)p.PIDGains[(int)SASList.Hdg, 1], (float)p.PIDGains[(int)SASList.Hdg, 2]);
-
-            Instance.activeRSASPreset = p;
-
-            if (Instance.activeRSASPreset != Instance.craftPresetDict[craftDefaultName].RSASPreset)
-                updateCraftPreset(p, instance.vesModule.vesselRef);
+            asstInstance.activePreset = p;
+            GeneralUI.postMessage("Loaded preset " + p.name);
+            
+            if (asstInstance.activePreset.name != Instance.craftPresetDict[craftDefaultName])
+                Instance.updateCraftPreset(asstInstance.activePreset, asstInstance.vesModule.vesselRef);
             saveToFile();
         }
 
-        public static void UpdateRSASPreset(Stock_SAS instance)
-        {
-            Instance.activeRSASPreset.Update(instance.vesModule.vesselRef.Autopilot.RSAS);
-            saveToFile();
-        }
-
-        public static void deleteRSASPreset(RSASPreset p)
+        /// <summary>
+        /// remove a preset from the stored list and remove any references to it on active vessels
+        /// </summary>
+        /// <param name="p"></param>
+        public void deleteAsstPreset(AsstPreset p)
         {
             GeneralUI.postMessage("Deleted preset " + p.name);
-            if (Instance.activeRSASPreset == p)
-                Instance.activeRSASPreset = null;
-            Instance.RSASPresetList.Remove(p);
-
-            foreach (KeyValuePair<string, CraftPreset> cp in instance.craftPresetDict)
+            foreach (AsstVesselModule avm in PilotAssistantFlightCore.Instance.controlledVessels)
             {
-                if (!ReferenceEquals(cp.Value, null) && cp.Value.RSASPreset == p)
-                    cp.Value.SASPreset = null;
+                if (avm.vesselAsst.activePreset == p)
+                    avm.vesselAsst.activePreset = null;
             }
+            List<string> toRemove = new List<string>();
+            foreach (KeyValuePair<string, string> kvp in craftPresetDict)
+            {
+                if (kvp.Value == p.name)
+                    toRemove.Add(kvp.Key);
+            }
+            foreach (string s in toRemove)
+                craftPresetDict.Remove(s);
+            AsstPresetList.Remove(p);
 
             p = null;
+
             saveToFile();
         }
-        #endregion
 
-        #region Craft Presets
-        // called on vessel load
-        public static void loadCraftAsstPreset(PilotAssistant instance)
+        /// <summary>
+        /// called on vessel load to load the correct preset for the vessel being flown
+        /// </summary>
+        /// <param name="instance">The instance to load for</param>
+        public void loadCraftAsstPreset(PilotAssistant instance)
         {
-            if (Instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && !ReferenceEquals(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].AsstPreset, null))
-                loadAsstPreset(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].AsstPreset, instance);
+            string presetName;
+            if (craftPresetDict.TryGetValue(instance.Vessel.name, out presetName))
+                loadAsstPreset(presetName, instance);
             else
-                loadAsstPreset(Instance.craftPresetDict[craftDefaultName].AsstPreset, instance);
+                loadAsstPreset(Instance.craftPresetDict[craftDefaultName], instance);
         }
 
-        public static void loadCraftSSASPreset(SurfSAS instance)
-        {
-            if (Instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName) && !ReferenceEquals(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SSASPreset, null))
-                loadSSASPreset(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SSASPreset, instance);
-            else
-                loadSSASPreset(Instance.craftPresetDict[craftDefaultName].SSASPreset, instance);
-        }
-
-        // called on vessel load
-        public static void loadCraftSASPreset(Stock_SAS instance)
-        {
-            if (Instance.craftPresetDict.ContainsKey(FlightGlobals.ActiveVessel.vesselName))
-            {
-                if (!ReferenceEquals(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SASPreset, null))
-                    loadSASPreset(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].SASPreset, instance);
-                else
-                    loadSASPreset(Instance.craftPresetDict[craftDefaultName].SASPreset, instance);
-
-                if (!ReferenceEquals(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].RSASPreset, null))
-                    loadRSASPreset(Instance.craftPresetDict[FlightGlobals.ActiveVessel.vesselName].RSASPreset, instance);
-                else
-                    loadRSASPreset(Instance.craftPresetDict[craftDefaultName].RSASPreset, instance);
-            }
-            else
-            {
-                loadSASPreset(Instance.craftPresetDict[craftDefaultName].SASPreset, instance);
-                loadRSASPreset(Instance.craftPresetDict[craftDefaultName].RSASPreset, instance);
-            }
-        }
-
-        public static void initDefaultPresets(AsstPreset p)
-        {
-            initDefaultPresets();
-            if (ReferenceEquals(Instance.craftPresetDict[craftDefaultName].AsstPreset, null))
-                Instance.craftPresetDict[craftDefaultName].AsstPreset = p;
-            PresetManager.saveDefaults();
-        }
-
-        public static void initDefaultPresets(SASPreset p)
-        {
-            initDefaultPresets();
-            if (ReferenceEquals(Instance.craftPresetDict[craftDefaultName].SASPreset, null))
-                Instance.craftPresetDict[craftDefaultName].SASPreset = p;
-            PresetManager.saveDefaults();
-        }
-
-        public static void initDefaultPresets(SSASPreset p)
-        {
-            initDefaultPresets();
-            if (ReferenceEquals(Instance.craftPresetDict[craftDefaultName].SSASPreset, null))
-                Instance.craftPresetDict[craftDefaultName].SSASPreset = p;
-            PresetManager.saveDefaults();
-        }
-
-        public static void initDefaultPresets(RSASPreset p)
-        {
-            initDefaultPresets();
-            if (ReferenceEquals(Instance.craftPresetDict[craftDefaultName].RSASPreset, null))
-                Instance.craftPresetDict[craftDefaultName].RSASPreset = p;
-            PresetManager.saveDefaults();
-        }
-
-        public static void initDefaultPresets()
-        {
-            if (!Instance.craftPresetDict.ContainsKey("default"))
-                Instance.craftPresetDict.Add("default", new CraftPreset("default", null, null, null, null));
-        }
-
-        public static void updateCraftPreset(AsstPreset p, Vessel v)
-        {
-            initCraftPreset(v);
-            Instance.craftPresetDict[v.vesselName].AsstPreset = p;
-        }
-
-        public static void updateCraftPreset(SASPreset p, Vessel v)
-        {
-            initCraftPreset(v);
-            Instance.craftPresetDict[v.vesselName].SASPreset = p;
-        }
-
-        public static void updateCraftPreset(SSASPreset p, Vessel v)
-        {
-            initCraftPreset(v);
-            Instance.craftPresetDict[v.vesselName].SSASPreset = p;
-        }
-
-        public static void updateCraftPreset(RSASPreset p, Vessel v)
-        {
-            initCraftPreset(v);
-            Instance.craftPresetDict[v.vesselName].RSASPreset = p;
-        }
-
-        public static void initCraftPreset(Vessel v)
+        /// <summary>
+        /// updates the craft/preset references
+        /// </summary>
+        /// <param name="p">preset</param>
+        /// <param name="v">craft</param>
+        public void updateCraftPreset(AsstPreset p, Vessel v)
         {
             if (!Instance.craftPresetDict.ContainsKey(v.vesselName))
-            {
-                Instance.craftPresetDict.Add(v.vesselName,
-                                                new CraftPreset(v.vesselName,
-                                                    Instance.activeAsstPreset == Instance.craftPresetDict[craftDefaultName].AsstPreset ? null : Instance.activeAsstPreset,
-                                                    Instance.activeSSASPreset == Instance.craftPresetDict[craftDefaultName].SSASPreset ? null : Instance.activeSSASPreset,
-                                                    Instance.activeSASPreset == Instance.craftPresetDict[craftDefaultName].SASPreset ? null : Instance.activeSASPreset,
-                                                    Instance.activeRSASPreset == Instance.craftPresetDict[craftDefaultName].RSASPreset ? null : Instance.activeRSASPreset));
-            }
+                craftPresetDict.Add(v.vesselName, string.Empty);
+            Instance.craftPresetDict[v.vesselName] = p.name;
         }
-        #endregion
+
+        public void initDefaultPresets(AsstPreset p)
+        {
+            if (Instance.craftPresetDict[craftDefaultName] == string.Empty)
+            {
+                AsstPresetList.Add(p);
+                Instance.craftPresetDict[craftDefaultName] = p.name;
+            }
+            saveToFile();
+            // loadAsstPreset(Instance.craftPresetDict[craftDefaultName], instance);
+        }
     }
 }
