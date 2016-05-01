@@ -15,7 +15,9 @@ namespace PilotAssistant.FlightModules
             try
             {
                 vesselRef = GetComponent<Vessel>();
-                if (vesselRef == null || vesselRef.isEVA || !vesselRef.isCommandable)
+                Debug.Log(vesselRef);
+                Debug.Log(vesselRef.parts[0].name);
+                if (vesselRef == null || vesselRef.isEVA || !vesselRef.isCommandable || vesselRef.parts[0].name == "flag(Clone)")
                 {
                     vesselRef = null;
                     Destroy(this);
