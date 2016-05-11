@@ -336,7 +336,7 @@ namespace PilotAssistant.FlightModules
                 switch (CurrentHrztMode)
                 {
                     case HrztMode.Bank:
-                        AsstList.Aileron.GetAsst(this).UpdateSetpoint(Utils.headingClamp(AsstList.Aileron.GetAsst(this).target_setpoint + hdg / 4, 180));
+                        AsstList.Aileron.GetAsst(this).UpdateSetpoint(Utils.headingClamp(AsstList.Aileron.GetAsst(this).target_setpoint - hdg / 4, 180));
                         targetHeading = AsstList.Aileron.GetAsst(this).target_setpoint.ToString("0.00");
                         break;
                     case HrztMode.Heading:

@@ -16,7 +16,7 @@ namespace PilotAssistant.FlightModules
             {
                 vesselRef = GetComponent<Vessel>();
                 
-                if (vesselRef == null || vesselRef.isEVA || !vesselRef.isCommandable || vesselRef.parts[0].name == "flag(Clone)")
+                if (vesselRef == null || vesselRef.isEVA || !vesselRef.isCommandable || vesselRef.parts[0].Modules.Contains<FlagSite>())
                 {
                     vesselRef = null;
                     Destroy(this);
