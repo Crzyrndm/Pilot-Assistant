@@ -30,6 +30,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <RunPostBuildEvent>Always</RunPostBuildEvent>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\Desktop\Kerbal Space Program Dev\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
@@ -74,9 +77,9 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>set SOURCE="D:\Users\Joshua\GitHub\Pilot-Assistant\GameData"
-set DESTINATION="D:\Users\Joshua\Desktop\Kerbal Space Program Dev\GameData"
-xcopy %25SOURCE%25 %25DESTINATION%25 /E /C /R /I /K /Y</PostBuildEvent>
+    <PostBuildEvent>set SOURCE="D:\Libraries\GitHub\Pilot-Assistant\GameData"
+set DESTINATION="D:\Libraries\Desktop\Kerbal Space Program Dev\GameData"
+xcopy %25SOURCE%25 %25DESTINATION%25 /e /c /r /y</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

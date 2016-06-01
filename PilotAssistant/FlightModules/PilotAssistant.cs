@@ -238,7 +238,7 @@ namespace PilotAssistant.FlightModules
             controllers[(int)AsstList.Acceleration] = new Asst_PID_Controller(AsstList.Acceleration, defaultAccelGains);
 
             // Set up a default preset that can be easily returned to
-            PresetManager.Instance.initDefaultPresets(new AsstPreset(controllers, "default"));
+            PresetManager.Instance.initDefaultPreset(new AsstPreset(controllers, "default"));
 
             AsstList.BankToYaw.GetAsst(this).invertOutput = true;
             AsstList.Aileron.GetAsst(this).invertInput = true;
@@ -1505,6 +1505,8 @@ namespace PilotAssistant.FlightModules
             AsstPreset presetToDelete = null;
             foreach (AsstPreset p in PresetManager.Instance.AsstPresetList)
             {
+                if (p.name == PresetManager.asstDefaultName)
+                    continue;
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(p.name))
                     PresetManager.loadAsstPreset(p, this);
