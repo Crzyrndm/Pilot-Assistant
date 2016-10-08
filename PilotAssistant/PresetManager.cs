@@ -318,7 +318,7 @@ namespace PilotAssistant
             GeneralUI.postMessage("Loaded preset " + p.name);
             
             if (asstInstance.activePreset.name != Instance.craftPresetDict[craftDefaultName])
-                Instance.updateCraftPreset(asstInstance.activePreset, asstInstance.vesModule.vesselRef);
+                Instance.updateCraftPreset(asstInstance.activePreset, asstInstance.vesModule.Vessel);
             saveToFile();
         }
 
@@ -352,7 +352,7 @@ namespace PilotAssistant
             GeneralUI.postMessage("Loaded preset " + p.name);
             
             if (asstInstance.activePreset.name != Instance.craftPresetDict[craftDefaultName])
-                Instance.updateCraftPreset(asstInstance.activePreset, asstInstance.vesModule.vesselRef);
+                Instance.updateCraftPreset(asstInstance.activePreset, asstInstance.vesModule.Vessel);
             saveToFile();
         }
 
@@ -389,9 +389,9 @@ namespace PilotAssistant
         /// <param name="instance">The instance to load for</param>
         public void loadCraftAsstPreset(PilotAssistant instance)
         {
-            Debug.Log("loading preset for craft " + instance.Vessel.name);
+            Utils.Log("loading preset for craft " + instance.Vessel.name);
             string presetName;
-            Debug.Log(craftPresetDict.TryGetValue(instance.Vessel.vesselName, out presetName) + " " + presetName);
+            Utils.Log(craftPresetDict.TryGetValue(instance.Vessel.vesselName, out presetName) + " " + presetName);
             if (craftPresetDict.TryGetValue(instance.Vessel.vesselName, out presetName))
                 loadAsstPreset(presetName, instance);
             else

@@ -90,7 +90,7 @@ namespace PilotAssistant.Utility
         /// </summary>
         public static Quaternion getPlaneRotation(Vector3 planeNormal, AsstVesselModule avm)
         {
-            return Quaternion.FromToRotation(avm.vesselRef.mainBody.transform.right, planeNormal);
+            return Quaternion.FromToRotation(avm.Vessel.mainBody.transform.right, planeNormal);
         }
 
         public static Quaternion getPlaneRotation(double heading, AsstVesselModule avm)
@@ -101,7 +101,7 @@ namespace PilotAssistant.Utility
 
         public static Vector3 getPlaneNormal(Quaternion rotation, AsstVesselModule avm)
         {
-            return rotation * avm.vesselRef.mainBody.transform.right;
+            return rotation * avm.Vessel.mainBody.transform.right;
         }
 
         public static bool IsNeutral(AxisBinding axis)
@@ -157,10 +157,10 @@ namespace PilotAssistant.Utility
             switch (refMode)
             {
                 case SpeedRef.Indicated:
-                    double stagnationPres = Math.Pow(((avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1) * avm.vesselRef.mach * avm.vesselRef.mach * 0.5) + 1, avm.vesselRef.mainBody.atmosphereAdiabaticIndex / (avm.vesselRef.mainBody.atmosphereAdiabaticIndex - 1));
-                    return Math.Sqrt(avm.vesselRef.atmDensity / 1.225) * stagnationPres;
+                    double stagnationPres = Math.Pow(((avm.Vessel.mainBody.atmosphereAdiabaticIndex - 1) * avm.Vessel.mach * avm.Vessel.mach * 0.5) + 1, avm.Vessel.mainBody.atmosphereAdiabaticIndex / (avm.Vessel.mainBody.atmosphereAdiabaticIndex - 1));
+                    return Math.Sqrt(avm.Vessel.atmDensity / 1.225) * stagnationPres;
                 case SpeedRef.Equivalent:
-                    return Math.Sqrt(avm.vesselRef.atmDensity / 1.225);
+                    return Math.Sqrt(avm.Vessel.atmDensity / 1.225);
                 case SpeedRef.True:
                 default:
                     return 1;
@@ -249,12 +249,42 @@ namespace PilotAssistant.Utility
                 float x = 0, y = 0, w = 0, h = 0;
                 if (!float.TryParse(stringVals[0].Substring(2), out x) || !float.TryParse(stringVals[1].Substring(2), out y) || !float.TryParse(stringVals[2].Substring(6), out w) || !float.TryParse(stringVals[3].Substring(7), out h))
                 {
-                    Debug.LogError(x + "," + y + "," + w + "," + h);
+                    LogError($"{x}, {y}, {w}, {h}");
                     return defaultValue;
                 }
                 return new Rect(x, y, w, h);
             }
             return defaultValue;
+        }
+
+        public static void Log(object obj)
+        {
+            Debug.Log($"[Pilot Assistant] {obj.ToString()}");
+        }
+
+        public static void Log(string format, params object[] args)
+        {
+            Debug.LogFormat($"[Pilot Assistant] {format}", args);
+        }
+
+        public static void LogWarn(object obj)
+        {
+            Debug.LogWarning($"[Pilot Assistant] {obj.ToString()}");
+        }
+
+        public static void LogWarn(string format, params object[] args)
+        {
+            Debug.LogWarningFormat($"[Pilot Assistant] {format}", args);
+        }
+
+        public static void LogError(object obj)
+        {
+            Debug.LogError($"[Pilot Assistant] {obj.ToString()}");
+        }
+
+        public static void LogError(string format, params object[] args)
+        {
+            Debug.LogErrorFormat($"[Pilot Assistant] {format}", args);
         }
     }
 }

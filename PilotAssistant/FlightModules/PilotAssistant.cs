@@ -76,7 +76,7 @@ namespace PilotAssistant.FlightModules
         {
             get
             {
-                return vesModule.vesselRef;
+                return vesModule.Vessel;
             }
         }
 
