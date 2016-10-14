@@ -25,7 +25,6 @@ namespace PilotAssistant.FlightModules
             base.OnStart();
             try
             {
-                Utils.Log("vessel start");
                 vesselAsst = new PilotAssistant(this);
                 vesselData = new VesselData(this);
                 PilotAssistantFlightCore.Instance.addVessel(this);
@@ -98,10 +97,11 @@ namespace PilotAssistant.FlightModules
                 Vessel.OnPreAutopilotUpdate -= preAutoPilotUpdate;
                 Vessel.OnPostAutopilotUpdate -= postAutoPilotUpdate;
                 if (!ReferenceEquals(vesselAsst, null))
+                {
                     vesselAsst.OnDestroy();
-                if (!ReferenceEquals(PilotAssistantFlightCore.Instance, null))
-                    PilotAssistantFlightCore.Instance.removeVessel(this);
-
+                    if (!ReferenceEquals(PilotAssistantFlightCore.Instance, null))
+                        PilotAssistantFlightCore.Instance.removeVessel(this);
+                }
                 vesselAsst = null;
                 vesselData = null;
             }

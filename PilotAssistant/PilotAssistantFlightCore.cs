@@ -81,6 +81,8 @@ namespace PilotAssistant
 
         public void removeVessel(AsstVesselModule avm)
         {
+            if (selectedVesselIndex >= controlledVessels.Count)
+                return;
             if (avm.Vessel != controlledVessels[selectedVesselIndex].Vessel)
             {
                 Vessel ves = controlledVessels[selectedVesselIndex].Vessel;

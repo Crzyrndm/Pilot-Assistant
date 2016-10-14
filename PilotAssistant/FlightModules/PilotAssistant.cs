@@ -94,10 +94,10 @@ namespace PilotAssistant.FlightModules
 
         public bool VertActive = false;
         public VertMode CurrentVertMode = VertMode.VSpeed;
-        static GUIContent[] vertLabels = new GUIContent[4] {    new GUIContent("Pitch", "Mode: Pitch Control\r\n\r\nMaintains a targeted pitch angle"),
+        static GUIContent[] vertLabels = new GUIContent[3] {    new GUIContent("Pitch", "Mode: Pitch Control\r\n\r\nMaintains a targeted pitch angle"),
                                                                 new GUIContent("VSpd", "Mode: Vertical Speed Control\r\n\r\nManages vessel angle of attack to control ascent rate.\r\nLimits vessel angle of attack"),
-                                                                new GUIContent("Alt", "Mode: Altitude Control\r\n\r\nManages vessel altitude ascent rate to attain a set altitude relative to sea level.\r\nLimits vessel ascent rate"),
-                                                                new GUIContent("RAlt", "Mode: Radar Altitude Control\r\n\r\nManages vessel altitude ascent rate to attain a set altitude relative to the terrain.\r\nLimits vessel ascent rate") };
+                                                                new GUIContent("Alt", "Mode: Altitude Control\r\n\r\nManages vessel altitude ascent rate to attain a set altitude relative to sea level.\r\nLimits vessel ascent rate") };
+                                                                //new GUIContent("RAlt", "Mode: Radar Altitude Control\r\n\r\nManages vessel altitude ascent rate to attain a set altitude relative to the terrain.\r\nLimits vessel ascent rate") };
 
         public bool ThrtActive = false;
         public ThrottleMode CurrentThrottleMode = ThrottleMode.Speed;
