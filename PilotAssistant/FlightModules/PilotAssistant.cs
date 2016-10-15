@@ -240,8 +240,10 @@ namespace PilotAssistant.FlightModules
             // Set up a default preset that can be easily returned to
             PresetManager.Instance.initDefaultPreset(new AsstPreset(controllers, "default"));
 
-            AsstList.BankToYaw.GetAsst(this).invertOutput = true;
-            AsstList.Aileron.GetAsst(this).invertInput = true;
+            AsstList.HdgBank.GetAsst(this).invertOutput = true;
+            //AsstList.BankToYaw.GetAsst(this).invertInput = true;
+            //AsstList.BankToYaw.GetAsst(this).invertOutput = true;
+            AsstList.Aileron.GetAsst(this).invertOutput = true;
             AsstList.Altitude.GetAsst(this).invertOutput = true;
             AsstList.VertSpeed.GetAsst(this).invertOutput = true;
             AsstList.Elevator.GetAsst(this).invertOutput = true;
@@ -336,7 +338,7 @@ namespace PilotAssistant.FlightModules
                 switch (CurrentHrztMode)
                 {
                     case HrztMode.Bank:
-                        AsstList.Aileron.GetAsst(this).UpdateSetpoint(Utils.headingClamp(AsstList.Aileron.GetAsst(this).target_setpoint - hdg / 4, 180));
+                        AsstList.Aileron.GetAsst(this).UpdateSetpoint(Utils.headingClamp(AsstList.Aileron.GetAsst(this).target_setpoint + hdg / 4, 180));
                         targetHeading = AsstList.Aileron.GetAsst(this).target_setpoint.ToString("0.00");
                         break;
                     case HrztMode.Heading:
@@ -1222,7 +1224,7 @@ namespace PilotAssistant.FlightModules
             {
                 if (!bMinimiseVert)
                 {
-                    VertMode tempMode = (VertMode)GUILayout.SelectionGrid((int)CurrentVertMode, vertLabels, 4, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
+                    VertMode tempMode = (VertMode)GUILayout.SelectionGrid((int)CurrentVertMode, vertLabels, vertLabels.Length, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
                     if (tempMode != CurrentVertMode)
                         vertModeChanged(tempMode, VertActive);
                 }
@@ -1369,7 +1371,7 @@ namespace PilotAssistant.FlightModules
                     if (CurrentThrottleMode == ThrottleMode.Speed)
                         drawPIDvalues(AsstList.Speed, "Speed", Utils.unitString(units), adjustedSpeed * Utils.speedUnitTransform(units, Vessel.speedOfSound), 2, "Accel ", Utils.unitString(units) + "/s");
                     if (CurrentThrottleMode != ThrottleMode.Direct)
-                        drawPIDvalues(AsstList.Acceleration, "Acceleration", Utils.unitString(units) + "/s", adjustedAcceleration * Utils.speedUnitTransform(units, Vessel.speedOfSound), 1, "Throttle ", "%");
+                        drawPIDvalues(AsstList.Acceleration, "Acceleration", Utils.unitString(units) + "/s", adjustedAcceleration * Utils.speedUnitTransform(units, Vessel.speedOfSound), 2, "Throttle ", "%");
                     // can't have people bugging things out now can we...
                     AsstList.Acceleration.GetAsst(this).outMax = AsstList.Speed.GetAsst(this).outMax.Clamp(0, 1);
                     AsstList.Acceleration.GetAsst(this).outMin = AsstList.Speed.GetAsst(this).outMin.Clamp(0, 1);
