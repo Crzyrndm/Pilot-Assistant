@@ -76,7 +76,7 @@ namespace PilotAssistant.FlightModules
         {
             get
             {
-                return vesModule.vesselRef;
+                return vesModule.Vessel;
             }
         }
 
@@ -94,10 +94,10 @@ namespace PilotAssistant.FlightModules
 
         public bool VertActive = false;
         public VertMode CurrentVertMode = VertMode.VSpeed;
-        static GUIContent[] vertLabels = new GUIContent[4] {    new GUIContent("Pitch", "Mode: Pitch Control\r\n\r\nMaintains a targeted pitch angle"),
+        static GUIContent[] vertLabels = new GUIContent[3] {    new GUIContent("Pitch", "Mode: Pitch Control\r\n\r\nMaintains a targeted pitch angle"),
                                                                 new GUIContent("VSpd", "Mode: Vertical Speed Control\r\n\r\nManages vessel angle of attack to control ascent rate.\r\nLimits vessel angle of attack"),
-                                                                new GUIContent("Alt", "Mode: Altitude Control\r\n\r\nManages vessel altitude ascent rate to attain a set altitude relative to sea level.\r\nLimits vessel ascent rate"),
-                                                                new GUIContent("RAlt", "Mode: Radar Altitude Control\r\n\r\nManages vessel altitude ascent rate to attain a set altitude relative to the terrain.\r\nLimits vessel ascent rate") };
+                                                                new GUIContent("Alt", "Mode: Altitude Control\r\n\r\nManages vessel altitude ascent rate to attain a set altitude relative to sea level.\r\nLimits vessel ascent rate") };
+                                                                //new GUIContent("RAlt", "Mode: Radar Altitude Control\r\n\r\nManages vessel altitude ascent rate to attain a set altitude relative to the terrain.\r\nLimits vessel ascent rate") };
 
         public bool ThrtActive = false;
         public ThrottleMode CurrentThrottleMode = ThrottleMode.Speed;
@@ -238,10 +238,12 @@ namespace PilotAssistant.FlightModules
             controllers[(int)AsstList.Acceleration] = new Asst_PID_Controller(AsstList.Acceleration, defaultAccelGains);
 
             // Set up a default preset that can be easily returned to
-            PresetManager.Instance.initDefaultPresets(new AsstPreset(controllers, "default"));
+            PresetManager.Instance.initDefaultPreset(new AsstPreset(controllers, "default"));
 
-            AsstList.BankToYaw.GetAsst(this).invertOutput = true;
-            AsstList.Aileron.GetAsst(this).invertInput = true;
+            AsstList.HdgBank.GetAsst(this).invertOutput = true;
+            //AsstList.BankToYaw.GetAsst(this).invertInput = true;
+            //AsstList.BankToYaw.GetAsst(this).invertOutput = true;
+            AsstList.Aileron.GetAsst(this).invertOutput = true;
             AsstList.Altitude.GetAsst(this).invertOutput = true;
             AsstList.VertSpeed.GetAsst(this).invertOutput = true;
             AsstList.Elevator.GetAsst(this).invertOutput = true;
@@ -1222,7 +1224,7 @@ namespace PilotAssistant.FlightModules
             {
                 if (!bMinimiseVert)
                 {
-                    VertMode tempMode = (VertMode)GUILayout.SelectionGrid((int)CurrentVertMode, vertLabels, 4, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
+                    VertMode tempMode = (VertMode)GUILayout.SelectionGrid((int)CurrentVertMode, vertLabels, vertLabels.Length, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
                     if (tempMode != CurrentVertMode)
                         vertModeChanged(tempMode, VertActive);
                 }
@@ -1369,7 +1371,7 @@ namespace PilotAssistant.FlightModules
                     if (CurrentThrottleMode == ThrottleMode.Speed)
                         drawPIDvalues(AsstList.Speed, "Speed", Utils.unitString(units), adjustedSpeed * Utils.speedUnitTransform(units, Vessel.speedOfSound), 2, "Accel ", Utils.unitString(units) + "/s");
                     if (CurrentThrottleMode != ThrottleMode.Direct)
-                        drawPIDvalues(AsstList.Acceleration, "Acceleration", Utils.unitString(units) + "/s", adjustedAcceleration * Utils.speedUnitTransform(units, Vessel.speedOfSound), 1, "Throttle ", "%");
+                        drawPIDvalues(AsstList.Acceleration, "Acceleration", Utils.unitString(units) + "/s", adjustedAcceleration * Utils.speedUnitTransform(units, Vessel.speedOfSound), 2, "Throttle ", "%");
                     // can't have people bugging things out now can we...
                     AsstList.Acceleration.GetAsst(this).outMax = AsstList.Speed.GetAsst(this).outMax.Clamp(0, 1);
                     AsstList.Acceleration.GetAsst(this).outMin = AsstList.Speed.GetAsst(this).outMin.Clamp(0, 1);
@@ -1505,6 +1507,8 @@ namespace PilotAssistant.FlightModules
             AsstPreset presetToDelete = null;
             foreach (AsstPreset p in PresetManager.Instance.AsstPresetList)
             {
+                if (p.name == PresetManager.asstDefaultName)
+                    continue;
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button(p.name))
                     PresetManager.loadAsstPreset(p, this);

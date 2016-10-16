@@ -81,11 +81,13 @@ namespace PilotAssistant
 
         public void removeVessel(AsstVesselModule avm)
         {
-            if (avm.vesselRef != controlledVessels[selectedVesselIndex].vesselRef)
+            if (selectedVesselIndex >= controlledVessels.Count)
+                return;
+            if (avm.Vessel != controlledVessels[selectedVesselIndex].Vessel)
             {
-                Vessel ves = controlledVessels[selectedVesselIndex].vesselRef;
+                Vessel ves = controlledVessels[selectedVesselIndex].Vessel;
                 controlledVessels.Remove(avm);
-                selectedVesselIndex = controlledVessels.FindIndex(vm => vm.vesselRef == ves);
+                selectedVesselIndex = controlledVessels.FindIndex(vm => vm.Vessel == ves);
             }
             else
             {
@@ -131,12 +133,12 @@ namespace PilotAssistant
                 }
                 else
                 {
-                    Debug.LogError("Pilot Assistant: Failed to create settings node");
+                    Utils.LogError("Failed to create settings node");
                 }
             }
             catch
             {
-                Debug.LogError("Pilot Assistant: Config load failed");
+                Utils.LogError("Config load failed");
             }
         }
 
@@ -187,7 +189,7 @@ namespace PilotAssistant
             }
             catch
             {
-                Debug.LogError("Pilot Assistant save failed");
+                Utils.LogError("Pilot Assistant save failed");
             }
         }
 
@@ -222,9 +224,9 @@ namespace PilotAssistant
                 GUILayout.Box(string.Empty, GUILayout.Height(10));
                 for (int i = 0; i < controlledVessels.Count; i++)
                 {
-                    if (controlledVessels[i].vesselRef.isActiveVessel)
+                    if (controlledVessels[i].Vessel.isActiveVessel)
                         GUI.backgroundColor = Color.green;
-                    bool tmp = GUILayout.Toggle(i == selectedVesselIndex, controlledVessels[i].vesselRef.vesselName, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(120));
+                    bool tmp = GUILayout.Toggle(i == selectedVesselIndex, controlledVessels[i].Vessel.vesselName, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(120));
                     if (tmp)
                         selectedVesselIndex = i;
                     GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
