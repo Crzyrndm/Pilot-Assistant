@@ -9,9 +9,9 @@ namespace PilotAssistant
     using Utility;
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
-    class PilotAssistantFlightCore : MonoBehaviour
+    internal class PilotAssistantFlightCore : MonoBehaviour
     {
-        static PilotAssistantFlightCore instance;
+        private static PilotAssistantFlightCore instance;
         public static PilotAssistantFlightCore Instance
         {
             get
@@ -61,7 +61,7 @@ namespace PilotAssistant
             if (!bUseStockToolbar && ToolbarManager.ToolbarAvailable)
                 ToolbarMod.Instance.Awake();
             else
-                AppLauncherFlight.Awake();
+                AppLauncherFlight.Instance.Awake();
         }
 
         public void Start()
@@ -235,12 +235,12 @@ namespace PilotAssistant
             GUI.DragWindow();
         }
 
-        void hideUI()
+        private void hideUI()
         {
             bHideUI = true;
         }
 
-        void showUI()
+        private void showUI()
         {
             bHideUI = false;
         }
