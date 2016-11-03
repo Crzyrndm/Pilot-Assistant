@@ -25,11 +25,14 @@
 
         public void AddButton()
         {
-            btnLauncher = ApplicationLauncher.Instance.AddModApplication(
-                OnToggleTrue, OnToggleFalse,
-                null, null, null, null,
-                ApplicationLauncher.AppScenes.FLIGHT,
-                GameDatabase.Instance.GetTexture("Pilot Assistant/Icon/AppLauncherIcon", false));
+            if (btnLauncher == null)
+            {
+                btnLauncher = ApplicationLauncher.Instance.AddModApplication(
+                    OnToggleTrue, OnToggleFalse,
+                    null, null, null, null,
+                    ApplicationLauncher.AppScenes.FLIGHT,
+                    GameDatabase.Instance.GetTexture("Pilot Assistant/Icon/AppLauncherIcon", false));
+            }
         }
 
         public void RemoveButton(GameScenes scene)
