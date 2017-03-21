@@ -6,6 +6,7 @@ using UnityEngine;
 namespace PilotAssistant.FlightModules
 {
     using Utility;
+
     public class VesselData
     {
         public VesselData(AsstVesselModule avm)
@@ -25,8 +26,6 @@ namespace PilotAssistant.FlightModules
         public double vertSpeed;
         public double acceleration;
         public Vector3d planetUp;
-        public Vector3d planetNorth;
-        public Vector3d planetEast;
         public Vector3d surfVelForward;
         public Vector3d surfVelRight;
         public Vector3d surfVesForward;
@@ -49,8 +48,6 @@ namespace PilotAssistant.FlightModules
             //else
             vesselFacingAxis = vesModule.Vessel.transform.up;
             planetUp = (vesModule.Vessel.rootPart.transform.position - vesModule.Vessel.mainBody.position).normalized;
-            planetEast = vesModule.Vessel.mainBody.getRFrmVel(vesModule.Vessel.CoMD).normalized;
-            planetNorth = Vector3d.Cross(planetEast, planetUp).normalized;
 
             // 4 frames of reference to use. Orientation, Velocity, and both of the previous parallel to the surface
             radarAlt = vesModule.Vessel.altitude - (vesModule.Vessel.mainBody.ocean ? Math.Max(vesModule.Vessel.pqsAltitude, 0) : vesModule.Vessel.pqsAltitude);
@@ -63,7 +60,7 @@ namespace PilotAssistant.FlightModules
             // Velocity forward and right vectors parallel to the surface
             surfVelRight = Vector3d.Cross(planetUp, vesModule.Vessel.srf_velocity).normalized;
             surfVelForward = Vector3d.Cross(surfVelRight, planetUp).normalized;
-                        
+
             // Vessel forward and right vectors parallel to the surface
             surfVesRight = Vector3d.Cross(planetUp, vesselFacingAxis).normalized;
             surfVesForward = Vector3d.Cross(surfVesRight, planetUp).normalized;
@@ -74,8 +71,8 @@ namespace PilotAssistant.FlightModules
             srfRadial = Vector3.Cross(vesModule.Vessel.srf_velocity, srfNormal).normalized;
 
             pitch = 90 - Vector3d.Angle(planetUp, vesselFacingAxis);
-            heading = (Vector3d.Angle(surfVesForward, planetNorth) * Math.Sign(Vector3d.Dot(surfVesForward, planetEast))).headingClamp(360);
-            progradeHeading = (Vector3d.Angle(surfVelForward, planetNorth) * Math.Sign(Vector3d.Dot(surfVelForward, planetEast))).headingClamp(360);
+            heading = (Vector3d.Angle(surfVesForward, vesModule.Vessel.north) * Math.Sign(Vector3d.Dot(surfVesForward, vesModule.Vessel.east))).headingClamp(360);
+            progradeHeading = (Vector3d.Angle(surfVelForward, vesModule.Vessel.north) * Math.Sign(Vector3d.Dot(surfVelForward, vesModule.Vessel.east))).headingClamp(360);
             bank = Vector3d.Angle(surfVesRight, vesModule.Vessel.ReferenceTransform.right) * Math.Sign(Vector3d.Dot(surfVesRight, -vesModule.Vessel.ReferenceTransform.forward));
 
             if (vesModule.Vessel.srfSpeed > 1)
@@ -90,18 +87,18 @@ namespace PilotAssistant.FlightModules
                 AoA = yaw = 0;
         }
 
-        Vector3 vesselFacingAxis = new Vector3();
+        private Vector3 vesselFacingAxis = new Vector3();
         /// <summary>
         /// Find the vessel orientation at the CoM by interpolating from surrounding part transforms
         /// This orientation should be significantly more resistant to vessel flex/wobble than the vessel transform (root part) as a free body rotates about it's CoM
-        /// 
+        ///
         /// Has an issue with the origin shifter causing random bounces
         /// </summary>
         public void findVesselFwdAxis(Vessel v)
         {
             Part closestPart = v.rootPart;
             float offset = (closestPart.transform.position - v.CurrentCoM).sqrMagnitude; // only comparing magnitude, sign and actual value don't matter
-            
+
             foreach (Part p in v.Parts)
             {
                 float partOffset = (p.partTransform.position - v.CurrentCoM).sqrMagnitude;
@@ -115,7 +112,7 @@ namespace PilotAssistant.FlightModules
             /// now require two things, accounting for any rotation in part placement, and interpolating with surrounding parts (parent/children/symmetry counterparts) to "shift" the location to the CoM
             /// accounting for rotation is the most important, the nearby position will work for now.
             /// Vector3 location = closestPart.partTransform.position - v.CurrentCoM;
-            /// 
+            ///
             vesselFacingAxis = closestPart.transform.localRotation * Quaternion.Inverse(closestPart.orgRot) * Vector3.up;
             if (!ReferenceEquals(closestPart.symmetryCounterparts, null))
             {
@@ -127,7 +124,7 @@ namespace PilotAssistant.FlightModules
             }
         }
 
-        ArrowPointer pointer;
+        private ArrowPointer pointer;
         public void drawArrow(Vector3 dir, Transform t)
         {
             if (ReferenceEquals(pointer, null))

@@ -1,10 +1,9 @@
-﻿using System;
+﻿using PilotAssistant.Utility;
+using System;
 using UnityEngine;
-using PilotAssistant.Utility;
 
 namespace PilotAssistant.FlightModules
 {
-
     public class AsstVesselModule : VesselModule
     {
         public PilotAssistant vesselAsst;
@@ -80,7 +79,7 @@ namespace PilotAssistant.FlightModules
 
         public void OnGUI()
         {
-            if (PilotAssistantFlightCore.bHideUI || PilotAssistantFlightCore.Instance  == null 
+            if (PilotAssistantFlightCore.bHideUI || PilotAssistantFlightCore.Instance == null
                 || PilotAssistantFlightCore.Instance.selectedVesselIndex >= PilotAssistantFlightCore.Instance.controlledVessels.Count
                 || PilotAssistantFlightCore.Instance.controlledVessels[PilotAssistantFlightCore.Instance.selectedVesselIndex] != this)
                 return;

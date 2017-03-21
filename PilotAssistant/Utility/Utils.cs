@@ -55,7 +55,7 @@ namespace PilotAssistant.Utility
         public static double calculateTargetHeading(Vector3 direction, AsstVesselModule avm)
         {
             Vector3 fwd = Vector3.Cross(direction, avm.vesselData.planetUp);
-            double heading = Vector3.Angle(fwd, avm.vesselData.planetNorth) * Math.Sign(Vector3.Dot(fwd, avm.vesselData.planetEast));
+            double heading = Vector3.Angle(fwd, avm.Vessel.north) * Math.Sign(Vector3.Dot(fwd, avm.Vessel.east));
             return heading.headingClamp(360);
         }
 
@@ -65,7 +65,7 @@ namespace PilotAssistant.Utility
         public static double calculateTargetHeading(Quaternion rotation, AsstVesselModule avm)
         {
             Vector3 fwd = Vector3.Cross(getPlaneNormal(rotation, avm), avm.vesselData.planetUp);
-            double heading = Vector3.Angle(fwd, avm.vesselData.planetNorth) * Math.Sign(Vector3.Dot(fwd, avm.vesselData.planetEast));
+            double heading = Vector3.Angle(fwd, avm.Vessel.north) * Math.Sign(Vector3.Dot(fwd, avm.Vessel.east));
             return heading.headingClamp(360);
         }
 
