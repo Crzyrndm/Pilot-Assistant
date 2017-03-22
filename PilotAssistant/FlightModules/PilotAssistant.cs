@@ -262,24 +262,24 @@ namespace PilotAssistant.FlightModules
             AsstList.Aileron.GetAsst(this).isHeadingControl = true;
         }
 
-        public void warpHandler()
+        public void WarpHandler()
         {
             // reset any setpoints on leaving warp
             if (TimeWarp.CurrentRateIndex == 0 && TimeWarp.CurrentRate != 1 && TimeWarp.WarpMode == TimeWarp.Modes.HIGH)
             {
-                hdgModeChanged(CurrentHrztMode, false);
-                vertModeChanged(CurrentVertMode, false);
-                throttleModeChanged(CurrentThrottleMode, false);
+                HdgModeChanged(CurrentHrztMode, false);
+                VertModeChanged(CurrentVertMode, false);
+                ThrottleModeChanged(CurrentThrottleMode, false);
             }
         }
 
-        public void vesselSwitch(Vessel ves)
+        public void VesselSwitch(Vessel ves)
         {
             if (Vessel == ves)
             {
-                hdgModeChanged(CurrentHrztMode, HrztActive, false);
-                vertModeChanged(CurrentVertMode, VertActive, false);
-                throttleModeChanged(CurrentThrottleMode, ThrtActive, false);
+                HdgModeChanged(CurrentHrztMode, HrztActive, false);
+                VertModeChanged(CurrentVertMode, VertActive, false);
+                ThrottleModeChanged(CurrentThrottleMode, ThrtActive, false);
             }
         }
 
@@ -315,11 +315,11 @@ namespace PilotAssistant.FlightModules
             if (BindingManager.bindings[(int)bindingIndex.Pause].isPressed && !MapView.MapIsEnabled)
                 TogglePauseCtrlState();
             if (BindingManager.bindings[(int)bindingIndex.HdgTgl].isPressed)
-                hdgModeChanged(CurrentHrztMode, !HrztActive);
+                HdgModeChanged(CurrentHrztMode, !HrztActive);
             if (BindingManager.bindings[(int)bindingIndex.VertTgl].isPressed)
-                vertModeChanged(CurrentVertMode, !VertActive);
+                VertModeChanged(CurrentVertMode, !VertActive);
             if (BindingManager.bindings[(int)bindingIndex.ThrtTgl].isPressed)
-                throttleModeChanged(CurrentThrottleMode, !ThrtActive);
+                ThrottleModeChanged(CurrentThrottleMode, !ThrtActive);
 
             if (bPause)
                 return;
@@ -342,7 +342,7 @@ namespace PilotAssistant.FlightModules
                         targetHeading = AsstList.Aileron.GetAsst(this).target_setpoint.ToString("0.00");
                         break;
                     case HrztMode.Heading:
-                        StartCoroutine(shiftHeadingTarget(Utils.calculateTargetHeading(newTarget, vesModule) + hdg));
+                        StartCoroutine(ShiftHeadingTarget(Utils.calculateTargetHeading(newTarget, vesModule) + hdg));
                         break;
                     case HrztMode.HeadingNum:
                         AsstList.HdgBank.GetAsst(this).UpdateSetpoint(Utils.headingClamp(AsstList.HdgBank.GetAsst(this).target_setpoint + hdg, 360));
@@ -404,7 +404,7 @@ namespace PilotAssistant.FlightModules
             }
         }
 
-        private void hdgModeChanged(HrztMode newMode, bool active, bool setTarget = true)
+        private void HdgModeChanged(HrztMode newMode, bool active, bool setTarget = true)
         {
             AsstList.HdgBank.GetAsst(this).skipDerivative = true;
             AsstList.BankToYaw.GetAsst(this).skipDerivative = true;
@@ -439,7 +439,7 @@ namespace PilotAssistant.FlightModules
                         break;
                     case HrztMode.Heading:
                         if (setTarget)
-                            StartCoroutine(shiftHeadingTarget(vesModule.vesselData.heading));
+                            StartCoroutine(ShiftHeadingTarget(vesModule.vesselData.heading));
                         break;
                     case HrztMode.Bank:
                         if (setTarget)
@@ -482,17 +482,17 @@ namespace PilotAssistant.FlightModules
                         AsstList.Aileron.GetAsst(this).UpdateSetpoint(target.headingClamp(180), true, vesModule.vesselData.bank);
                         break;
                     case HrztMode.Heading:
-                        StartCoroutine(shiftHeadingTarget(target.headingClamp(360)));
+                        StartCoroutine(ShiftHeadingTarget(target.headingClamp(360)));
                         break;
                     case HrztMode.HeadingNum:
                         AsstList.HdgBank.GetAsst(this).UpdateSetpoint(target.headingClamp(360), true, vesModule.vesselData.heading);
                         break;
                 }
             }
-            hdgModeChanged(mode, active, !setTarget);
+            HdgModeChanged(mode, active, !setTarget);
         }
 
-        private void vertModeChanged(VertMode newMode, bool active, bool setTarget = true)
+        private void VertModeChanged(VertMode newMode, bool active, bool setTarget = true)
         {
             if (!active)
             {
@@ -501,7 +501,7 @@ namespace PilotAssistant.FlightModules
                 AsstList.Altitude.GetAsst(this).Clear();
                 AsstList.VertSpeed.GetAsst(this).Clear();
                 AsstList.Elevator.GetAsst(this).Clear();
-                StartCoroutine(fadeOutPitch());
+                StartCoroutine(FadeOutPitch());
             }
             else
             {
@@ -604,10 +604,10 @@ namespace PilotAssistant.FlightModules
                         break;
                 }
             }
-            vertModeChanged(mode, active, !setTarget);
+            VertModeChanged(mode, active, !setTarget);
         }
 
-        private void throttleModeChanged(ThrottleMode newMode, bool active, bool setTarget = true)
+        private void ThrottleModeChanged(ThrottleMode newMode, bool active, bool setTarget = true)
         {
             AsstList.Acceleration.GetAsst(this).skipDerivative = true;
             AsstList.Speed.GetAsst(this).skipDerivative = true;
@@ -679,7 +679,7 @@ namespace PilotAssistant.FlightModules
                         break;
                 }
             }
-            throttleModeChanged(mode, active, !setTarget);
+            ThrottleModeChanged(mode, active, !setTarget);
         }
 
         public void ChangeSpeedRef(SpeedRef newRef)
@@ -702,13 +702,13 @@ namespace PilotAssistant.FlightModules
             adjustedSpeed = Vessel.srfSpeed * Utils.SpeedTransform(speedRef, vesModule);
             adjustedAcceleration = 0;
 
-            throttleModeChanged(CurrentThrottleMode, ThrtActive, false);
+            ThrottleModeChanged(CurrentThrottleMode, ThrtActive, false);
         }
 
         public void ChangeSpeedUnit(SpeedUnits unit)
         {
             units = unit;
-            throttleModeChanged(CurrentThrottleMode, ThrtActive, false);
+            ThrottleModeChanged(CurrentThrottleMode, ThrtActive, false);
         }
 
         public void TogglePauseCtrlState()
@@ -726,9 +726,9 @@ namespace PilotAssistant.FlightModules
             else
             {
                 GeneralUI.postMessage("Pilot Assistant: Control Unpaused");
-                hdgModeChanged(CurrentHrztMode, HrztActive);
-                vertModeChanged(CurrentVertMode, VertActive);
-                throttleModeChanged(CurrentThrottleMode, ThrtActive);
+                HdgModeChanged(CurrentHrztMode, HrztActive);
+                VertModeChanged(CurrentVertMode, VertActive);
+                ThrottleModeChanged(CurrentThrottleMode, ThrtActive);
             }
         }
 
@@ -746,7 +746,7 @@ namespace PilotAssistant.FlightModules
         #endregion
 
         #region Control / Fixed Update
-        public void vesselController(FlightCtrlState state)
+        public void VesselController(FlightCtrlState state)
         {
             pitchSet = state.pitch; // last pitch ouput, used for presetting the elevator
             UpdateAdjustedAcceleration(); // must run to update the UI readouts
@@ -784,7 +784,7 @@ namespace PilotAssistant.FlightModules
                     switch (CurrentVertMode)
                     {
                         case VertMode.RadarAltitude:
-                            AsstList.VertSpeed.GetAsst(this).UpdateSetpoint(Utils.Clamp(getClimbRateForConstAltitude() + AsstList.Altitude.GetAsst(this).ResponseD(vesModule.vesselData.radarAlt * Vector3.Dot(vesModule.vesselData.surfVelForward, Vessel.srf_velocity.normalized), useIntegral), -Vessel.srfSpeed * 0.9, Vessel.srfSpeed * 0.9));
+                            AsstList.VertSpeed.GetAsst(this).UpdateSetpoint(Utils.Clamp(GetClimbRateForConstAltitude() + AsstList.Altitude.GetAsst(this).ResponseD(vesModule.vesselData.radarAlt * Vector3.Dot(vesModule.vesselData.surfVelForward, Vessel.srf_velocity.normalized), useIntegral), -Vessel.srfSpeed * 0.9, Vessel.srfSpeed * 0.9));
                             break;
                         case VertMode.Altitude:
                             AsstList.VertSpeed.GetAsst(this).UpdateSetpoint(Utils.Clamp(AsstList.Altitude.GetAsst(this).ResponseD(Vessel.altitude, useIntegral), Vessel.srfSpeed * -0.9, Vessel.srfSpeed * 0.9));
@@ -827,7 +827,7 @@ namespace PilotAssistant.FlightModules
         }
 
         float pitchHold = 0;
-        IEnumerator fadeOutPitch()
+        IEnumerator FadeOutPitch()
         {
             double val = AsstList.Elevator.GetAsst(this).lastOutput;
             double step = val * TimeWarp.fixedDeltaTime / 10;
@@ -842,7 +842,7 @@ namespace PilotAssistant.FlightModules
             pitchHold = 0;
         }
 
-        IEnumerator shiftHeadingTarget(double newHdg)
+        IEnumerator ShiftHeadingTarget(double newHdg)
         {
             headingEdit = false;
             stopHdgShift = false;
@@ -879,7 +879,7 @@ namespace PilotAssistant.FlightModules
             hdgShiftIsRunning = false;
         }
 
-        double getClimbRateForConstAltitude()
+        double GetClimbRateForConstAltitude()
         {
             // work out angle for ~1s to approach the point
             double angle = Math.Min(Math.Atan(4 * Vessel.horizontalSrfSpeed / vesModule.vesselData.radarAlt), 1.55); // 1.55 is ~89 degrees
@@ -887,8 +887,7 @@ namespace PilotAssistant.FlightModules
                 return 0; // fly without predictive if high/slow
             else
             {
-                double slope = 0;
-                terrainSlope(angle, out slope);
+                TerrainSlope(angle, out double slope);
                 return slope * Vessel.horizontalSrfSpeed;
             }
         }
@@ -899,11 +898,11 @@ namespace PilotAssistant.FlightModules
         /// <param name="angle">angle in radians to ping. 0 is straight down</param>
         /// <param name="slope">the calculated terrain slope</param>
         /// <returns>true if an object was encountered</returns>
-        bool terrainSlope(double angle, out double slope)
+        bool TerrainSlope(double angle, out double slope)
         {
             slope = 0;
             angle += vesModule.vesselData.pitch * Math.PI / 180;
-            double RayDist = findTerrainDistAtAngle((float)(angle * 180 / Math.PI), 10000);
+            double RayDist = FindTerrainDistAtAngle((float)(angle * 180 / Math.PI), 10000);
             double AltAhead = 0;
             if (RayDist == -1)
                 return false;
@@ -920,12 +919,11 @@ namespace PilotAssistant.FlightModules
         /// <summary>
         /// raycast from vessel CoM along the given angle, returns the distance at which terrain is detected (-1 if never detected). Angle is degrees to rotate forwards from vertical
         /// </summary>
-        float findTerrainDistAtAngle(float angle, float maxDist)
+        float FindTerrainDistAtAngle(float angle, float maxDist)
         {
             Vector3 direction = Quaternion.AngleAxis(angle, -vesModule.vesselData.surfVelRight) * -vesModule.vesselData.planetUp;
             Vector3 origin = Vessel.rootPart.transform.position;
-            RaycastHit hitInfo;
-            if (!Vessel.HoldPhysics && Physics.Raycast(origin, direction, out hitInfo, maxDist, ~1)) // ~1 masks off layer 0 which is apparently the parts on the current vessel. Seems to work
+            if (!Vessel.HoldPhysics && Physics.Raycast(origin, direction, out RaycastHit hitInfo, maxDist, ~1)) // ~1 masks off layer 0 which is apparently the parts on the current vessel. Seems to work
                 return hitInfo.distance;
             return -1;
         }
@@ -933,7 +931,7 @@ namespace PilotAssistant.FlightModules
         #endregion
 
         #region GUI
-        public void drawGUI()
+        public void DrawGUI()
         {
             if (!PilotAssistantFlightCore.bDisplayAssistant)
                 return;
@@ -949,7 +947,7 @@ namespace PilotAssistant.FlightModules
             #region Main Window resizing (scroll views dont work nicely with GUILayout)
             // Have to put the width changes before the draw so the close button is correctly placed
             float width;
-            if (showPIDLimits && controllers.Any(c => controllerVisible(c))) // use two column view if show limits option and a controller is open
+            if (showPIDLimits && controllers.Any(c => ControllerVisible(c))) // use two column view if show limits option and a controller is open
                 width = 340;
             else
                 width = 210;
@@ -989,11 +987,11 @@ namespace PilotAssistant.FlightModules
             }
             #endregion
 
-            window = GUILayout.Window(34244, window, displayWindow, string.Empty, GeneralUI.UISkin.box, GUILayout.Height(0), GUILayout.Width(width));
+            window = GUILayout.Window(34244, window, DisplayWindow, string.Empty, GeneralUI.UISkin.box, GUILayout.Height(0), GUILayout.Width(width));
 
             // tooltip window. Label skin is transparent so it's only drawing what's inside it
             if (tooltip != string.Empty && PilotAssistantFlightCore.showTooltips)
-                GUILayout.Window(34246, new Rect(window.x + window.width, Screen.height - Input.mousePosition.y, 300, 0), tooltipWindow, string.Empty, GeneralUI.UISkin.label);
+                GUILayout.Window(34246, new Rect(window.x + window.width, Screen.height - Input.mousePosition.y, 300, 0), TooltipWindow, string.Empty, GeneralUI.UISkin.label);
 
             if (showPresets)
             {
@@ -1001,14 +999,14 @@ namespace PilotAssistant.FlightModules
                 presetWindow.x = window.x + window.width;
                 presetWindow.y = window.y;
 
-                presetWindow = GUILayout.Window(34245, presetWindow, displayPresetWindow, string.Empty, GeneralUI.UISkin.box, GUILayout.Width(200));
+                presetWindow = GUILayout.Window(34245, presetWindow, DisplayPresetWindow, string.Empty, GeneralUI.UISkin.box, GUILayout.Width(200));
             }
 
             if (speedSelectWindowVisible)
-                speedSelectWindow = GUILayout.Window(34257, speedSelectWindow, drawSpeedSelectWindow, string.Empty, GeneralUI.UISkin.box);
+                speedSelectWindow = GUILayout.Window(34257, speedSelectWindow, DrawSpeedSelectWindow, string.Empty, GeneralUI.UISkin.box);
         }
 
-        private bool controllerVisible(Asst_PID_Controller controller)
+        private bool ControllerVisible(Asst_PID_Controller controller)
         {
             if (!controller.bShow)
                 return false;
@@ -1035,7 +1033,7 @@ namespace PilotAssistant.FlightModules
             }
         }
 
-        private void displayWindow(int id)
+        private void DisplayWindow(int id)
         {
             GUILayout.BeginHorizontal();
 
@@ -1068,7 +1066,7 @@ namespace PilotAssistant.FlightModules
             else
                 GUI.backgroundColor = GeneralUI.InActiveBackground;
             if (GUILayout.Button("Roll and Yaw Control", GUILayout.Width(186)))
-                hdgModeChanged(CurrentHrztMode, !HrztActive);
+                HdgModeChanged(CurrentHrztMode, !HrztActive);
 
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
@@ -1080,15 +1078,14 @@ namespace PilotAssistant.FlightModules
                 {
                     HrztMode tempMode = (HrztMode)GUILayout.SelectionGrid((int)CurrentHrztMode, hrztLabels, 3, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
                     if (CurrentHrztMode != tempMode)
-                        hdgModeChanged(tempMode, HrztActive);
+                        HdgModeChanged(tempMode, HrztActive);
                 }
                 if (CurrentHrztMode == HrztMode.Heading || CurrentHrztMode == HrztMode.HeadingNum)
                 {
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button("Target Hdg: ", GUILayout.Width(90)))
                     {
-                        double newHdg;
-                        if (double.TryParse(targetHeading, out newHdg))
+                        if (double.TryParse(targetHeading, out double newHdg))
                         {
                             SetHrzt(true, true, CurrentHrztMode, newHdg);
 
@@ -1137,8 +1134,7 @@ namespace PilotAssistant.FlightModules
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button("Target Bank: ", GUILayout.Width(90)))
                     {
-                        double newBank;
-                        if (double.TryParse(targetHeading, out newBank))
+                        if (double.TryParse(targetHeading, out double newBank))
                         {
                             SetHrzt(true, true, CurrentHrztMode, newBank);
                             GUI.FocusControl("Target Bank: ");
@@ -1163,13 +1159,13 @@ namespace PilotAssistant.FlightModules
                     HdgScrollbar = GUILayout.BeginScrollView(HdgScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(hdgScrollHeight, maxHdgScrollbarHeight)));
                     if (CurrentHrztMode != HrztMode.Bank)
                     {
-                        drawPIDvalues(AsstList.HdgBank, "Heading", "\u00B0", vesModule.vesselData.heading, 2, "Bank", "\u00B0");
-                        drawPIDvalues(AsstList.BankToYaw, "Yaw", "\u00B0", vesModule.vesselData.yaw, 2, "Yaw", "\u00B0", false);
+                        DrawPIDvalues(AsstList.HdgBank, "Heading", "\u00B0", vesModule.vesselData.heading, 2, "Bank", "\u00B0");
+                        DrawPIDvalues(AsstList.BankToYaw, "Yaw", "\u00B0", vesModule.vesselData.yaw, 2, "Yaw", "\u00B0", false);
                     }
                     if (showControlSurfaces)
                     {
-                        drawPIDvalues(AsstList.Aileron, "Bank", "\u00B0", vesModule.vesselData.bank, 3, "Deflection", "\u00B0");
-                        drawPIDvalues(AsstList.Rudder, "Yaw", "\u00B0", vesModule.vesselData.yaw, 3, "Deflection", "\u00B0");
+                        DrawPIDvalues(AsstList.Aileron, "Bank", "\u00B0", vesModule.vesselData.bank, 3, "Deflection", "\u00B0");
+                        DrawPIDvalues(AsstList.Rudder, "Yaw", "\u00B0", vesModule.vesselData.yaw, 3, "Deflection", "\u00B0");
                     }
                     GUILayout.EndScrollView();
                 }
@@ -1215,7 +1211,7 @@ namespace PilotAssistant.FlightModules
             else
                 GUI.backgroundColor = GeneralUI.InActiveBackground;
             if (GUILayout.Button("Vertical Control", GUILayout.Width(186)))
-                vertModeChanged(CurrentVertMode, !VertActive);
+                VertModeChanged(CurrentVertMode, !VertActive);
            
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
@@ -1226,7 +1222,7 @@ namespace PilotAssistant.FlightModules
                 {
                     VertMode tempMode = (VertMode)GUILayout.SelectionGrid((int)CurrentVertMode, vertLabels, vertLabels.Length, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
                     if (tempMode != CurrentVertMode)
-                        vertModeChanged(tempMode, VertActive);
+                        VertModeChanged(tempMode, VertActive);
                 }
                 GUILayout.BeginHorizontal();
                 string buttonString;
@@ -1251,8 +1247,7 @@ namespace PilotAssistant.FlightModules
                 {
                     ScreenMessages.PostScreenMessage(buttonString + " updated");
 
-                    double newVal;
-                    if (double.TryParse(targetVert, out newVal))
+                    if (double.TryParse(targetVert, out double newVal))
                         SetVert(true, true, CurrentVertMode, newVal);
 
                     GUI.FocusControl("Target Hdg: ");
@@ -1265,14 +1260,14 @@ namespace PilotAssistant.FlightModules
                 {
                     VertScrollbar = GUILayout.BeginScrollView(VertScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(vertScrollHeight, maxVertScrollbarHeight)));
                     if (CurrentVertMode == VertMode.RadarAltitude)
-                        drawPIDvalues(AsstList.Altitude, "RAltitude", "m", vesModule.vesselData.radarAlt, 2, "Speed ", "m/s");
+                        DrawPIDvalues(AsstList.Altitude, "RAltitude", "m", vesModule.vesselData.radarAlt, 2, "Speed ", "m/s");
                     if (CurrentVertMode == VertMode.Altitude)
-                        drawPIDvalues(AsstList.Altitude, "Altitude", "m", Vessel.altitude, 2, "Speed ", "m/s");
+                        DrawPIDvalues(AsstList.Altitude, "Altitude", "m", Vessel.altitude, 2, "Speed ", "m/s");
                     if (CurrentVertMode != VertMode.Pitch)
-                        drawPIDvalues(AsstList.VertSpeed, "Vertical Speed", "m/s", vesModule.vesselData.vertSpeed, 2, "AoA", "\u00B0");
+                        DrawPIDvalues(AsstList.VertSpeed, "Vertical Speed", "m/s", vesModule.vesselData.vertSpeed, 2, "AoA", "\u00B0");
 
                     if (showControlSurfaces)
-                        drawPIDvalues(AsstList.Elevator, CurrentVertMode != VertMode.Pitch ? "Angle of Attack" : "Pitch", "\u00B0", CurrentVertMode == VertMode.Pitch ? vesModule.vesselData.pitch : vesModule.vesselData.AoA, 3, "Deflection", "\u00B0", true);
+                        DrawPIDvalues(AsstList.Elevator, CurrentVertMode != VertMode.Pitch ? "Angle of Attack" : "Pitch", "\u00B0", CurrentVertMode == VertMode.Pitch ? vesModule.vesselData.pitch : vesModule.vesselData.AoA, 3, "Deflection", "\u00B0", true);
 
                     AsstList.Elevator.GetAsst(this).outMin = Utils.Clamp(AsstList.Elevator.GetAsst(this).outMin, -1, 1);
                     AsstList.Elevator.GetAsst(this).outMax = Utils.Clamp(AsstList.Elevator.GetAsst(this).outMax, -1, 1);
@@ -1315,7 +1310,7 @@ namespace PilotAssistant.FlightModules
             else
                 GUI.backgroundColor = GeneralUI.InActiveBackground;
             if (GUILayout.Button("Throttle Control", GUILayout.Width(186)))
-                throttleModeChanged(CurrentThrottleMode, !ThrtActive);
+                ThrottleModeChanged(CurrentThrottleMode, !ThrtActive);
             // reset colour
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
             GUILayout.EndHorizontal();
@@ -1326,7 +1321,7 @@ namespace PilotAssistant.FlightModules
                 {
                     ThrottleMode tempMode = (ThrottleMode)GUILayout.SelectionGrid((int)CurrentThrottleMode, throttleLabels, 3, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
                     if (tempMode != CurrentThrottleMode)
-                        throttleModeChanged(tempMode, ThrtActive);
+                        ThrottleModeChanged(tempMode, ThrtActive);
                 }
                 GUILayout.BeginHorizontal();
 
@@ -1347,8 +1342,7 @@ namespace PilotAssistant.FlightModules
                 {
                     GeneralUI.postMessage("Target updated");
 
-                    double newVal;
-                    if (double.TryParse(targetSpeed, out newVal))
+                    if (double.TryParse(targetSpeed, out double newVal))
                         SetThrottle(true, true, CurrentThrottleMode, newVal);
 
                     GUI.FocusControl("Target Hdg: ");
@@ -1369,9 +1363,9 @@ namespace PilotAssistant.FlightModules
                 {
                     ThrtScrollbar = GUILayout.BeginScrollView(ThrtScrollbar, GUIStyle.none, GeneralUI.UISkin.verticalScrollbar, GUILayout.Height(Math.Min(thrtScrollHeight, maxThrtScrollbarHeight)));
                     if (CurrentThrottleMode == ThrottleMode.Speed)
-                        drawPIDvalues(AsstList.Speed, "Speed", Utils.unitString(units), adjustedSpeed * Utils.speedUnitTransform(units, Vessel.speedOfSound), 2, "Accel ", Utils.unitString(units) + "/s");
+                        DrawPIDvalues(AsstList.Speed, "Speed", Utils.unitString(units), adjustedSpeed * Utils.speedUnitTransform(units, Vessel.speedOfSound), 2, "Accel ", Utils.unitString(units) + "/s");
                     if (CurrentThrottleMode != ThrottleMode.Direct)
-                        drawPIDvalues(AsstList.Acceleration, "Acceleration", Utils.unitString(units) + "/s", adjustedAcceleration * Utils.speedUnitTransform(units, Vessel.speedOfSound), 2, "Throttle ", "%");
+                        DrawPIDvalues(AsstList.Acceleration, "Acceleration", Utils.unitString(units) + "/s", adjustedAcceleration * Utils.speedUnitTransform(units, Vessel.speedOfSound), 2, "Throttle ", "%");
                     // can't have people bugging things out now can we...
                     AsstList.Acceleration.GetAsst(this).outMax = AsstList.Speed.GetAsst(this).outMax.Clamp(0, 1);
                     AsstList.Acceleration.GetAsst(this).outMin = AsstList.Speed.GetAsst(this).outMin.Clamp(0, 1);
@@ -1414,12 +1408,12 @@ namespace PilotAssistant.FlightModules
         const string OutMinTooltip = "The absolute minimum value the controller can output";
 
         string tooltip = string.Empty;
-        private void tooltipWindow(int id)
+        private void TooltipWindow(int id)
         {
             GUILayout.Label(tooltip, GeneralUI.UISkin.textArea);
         }
 
-        private void drawPIDvalues(AsstList controllerid, string inputName, string inputUnits, double inputValue, int displayPrecision, string outputName, string outputUnits, bool showTarget = true)
+        private void DrawPIDvalues(AsstList controllerid, string inputName, string inputUnits, double inputValue, int displayPrecision, string outputName, string outputUnits, bool showTarget = true)
         {
             Asst_PID_Controller controller = controllerid.GetAsst(this);
             controller.bShow = GUILayout.Toggle(controller.bShow, string.Format("{0}: {1}{2}", inputName, inputValue.ToString("N" + displayPrecision.ToString()), inputUnits), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(200));
@@ -1472,7 +1466,7 @@ namespace PilotAssistant.FlightModules
             }
         }
 
-        private void displayPresetWindow(int id)
+        private void DisplayPresetWindow(int id)
         {
             if (GUI.Button(new Rect(presetWindow.width - 16, 2, 14, 14), string.Empty))
                 showPresets = false;
@@ -1483,7 +1477,7 @@ namespace PilotAssistant.FlightModules
                 if (activePreset.name != "default")
                 {
                     if (GUILayout.Button("Update Preset"))
-                        updateAsstPreset();
+                        UpdateAsstPreset();
                 }
                 GUILayout.Box(string.Empty, GUILayout.Height(10), GUILayout.Width(180));
             }
@@ -1523,7 +1517,7 @@ namespace PilotAssistant.FlightModules
             }
         }
 
-        private void drawSpeedSelectWindow(int id)
+        private void DrawSpeedSelectWindow(int id)
         {
             SpeedRef tempRef = (SpeedRef)GUILayout.SelectionGrid((int)speedRef, speedRefLabels, 3);
             if (tempRef != speedRef)
@@ -1539,7 +1533,7 @@ namespace PilotAssistant.FlightModules
         /// Update an active preset with the current values
         /// </summary>
         /// <param name="asstInstance"></param>
-        public void updateAsstPreset()
+        public void UpdateAsstPreset()
         {
             activePreset.Update(controllers);
             PresetManager.saveToFile();

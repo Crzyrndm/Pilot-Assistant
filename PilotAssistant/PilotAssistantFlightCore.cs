@@ -70,16 +70,16 @@ namespace PilotAssistant
             LoadConfig();
 
             // don't put these in awake or they trigger on loading the vessel and everything gets wierd
-            GameEvents.onHideUI.Add(hideUI);
-            GameEvents.onShowUI.Add(showUI);
+            GameEvents.onHideUI.Add(HideUI);
+            GameEvents.onShowUI.Add(ShowUI);
         }
 
-        public void addVessel(AsstVesselModule avm)
+        public void AddVessel(AsstVesselModule avm)
         {
             controlledVessels.Add(avm);
         }
 
-        public void removeVessel(AsstVesselModule avm)
+        public void RemoveVessel(AsstVesselModule avm)
         {
             if (selectedVesselIndex >= controlledVessels.Count)
                 return;
@@ -209,10 +209,10 @@ namespace PilotAssistant
         public void Draw()
         {
             if (bDisplayOptions)
-                window = GUILayout.Window(0984653, window, optionsWindow, string.Empty, GUILayout.Width(60), GUILayout.Height(0));
+                window = GUILayout.Window(0984653, window, OptionsWindow, string.Empty, GUILayout.Width(60), GUILayout.Height(0));
         }
 
-        private void optionsWindow(int id)
+        private void OptionsWindow(int id)
         {
             if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), string.Empty))
                 bDisplayOptions = false;
@@ -235,12 +235,12 @@ namespace PilotAssistant
             GUI.DragWindow();
         }
 
-        private void hideUI()
+        private void HideUI()
         {
             bHideUI = true;
         }
 
-        private void showUI()
+        private void ShowUI()
         {
             bHideUI = false;
         }
@@ -252,8 +252,8 @@ namespace PilotAssistant
                 ToolbarMod.Instance.OnDestroy();
             BindingManager.Instance.OnDestroy();
 
-            GameEvents.onHideUI.Remove(hideUI);
-            GameEvents.onShowUI.Remove(showUI);
+            GameEvents.onHideUI.Remove(HideUI);
+            GameEvents.onShowUI.Remove(ShowUI);
 
             PresetManager.saveToFile();
             instance = null;
