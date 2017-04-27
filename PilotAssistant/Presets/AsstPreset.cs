@@ -37,13 +37,13 @@ namespace PilotAssistant.Presets
             foreach (Asst_PID_Controller controller in controllers)
             {
                 double[] gains = new double[9];
-                gains[0] = controller.k_proportional;
-                gains[1] = controller.k_integral;
-                gains[2] = controller.k_derivative;
-                gains[3] = controller.outMin;
-                gains[4] = controller.outMax;
-                gains[5] = controller.integralClampLower;
-                gains[6] = controller.integralClampUpper;
+                gains[0] = controller.K_proportional;
+                gains[1] = controller.K_integral;
+                gains[2] = controller.K_derivative;
+                gains[3] = controller.OutMin;
+                gains[4] = controller.OutMax;
+                gains[5] = controller.IntegralClampLower;
+                gains[6] = controller.IntegralClampUpper;
                 gains[7] = controller.Scalar;
                 gains[8] = controller.Easing;
 
@@ -57,13 +57,13 @@ namespace PilotAssistant.Presets
             foreach (Asst_PID_Controller controller in controllers)
             {
                 double[] gains = new double[9];
-                gains[0] = controller.k_proportional;
-                gains[1] = controller.k_integral;
-                gains[2] = controller.k_derivative;
-                gains[3] = controller.outMin;
-                gains[4] = controller.outMax;
-                gains[5] = controller.integralClampLower;
-                gains[6] = controller.integralClampUpper;
+                gains[0] = controller.K_proportional;
+                gains[1] = controller.K_integral;
+                gains[2] = controller.K_derivative;
+                gains[3] = controller.OutMin;
+                gains[4] = controller.OutMax;
+                gains[5] = controller.IntegralClampLower;
+                gains[6] = controller.IntegralClampUpper;
                 gains[7] = controller.Scalar;
                 gains[8] = controller.Easing;
 

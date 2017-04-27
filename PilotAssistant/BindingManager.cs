@@ -7,13 +7,13 @@ namespace PilotAssistant
 {
     using Utility;
 
-    enum display
+    enum Display
     {
         Asst,
         SSAS
     }
 
-    enum bindingIndex
+    enum BindingIndex
     {
         Pause,
         HdgTgl,
@@ -30,63 +30,71 @@ namespace PilotAssistant
             get
             {
                 if (ReferenceEquals(instance, null))
+                {
                     instance = new BindingManager();
+                }
+
                 return instance;
             }
         }
 
         public Rect windowRect = new Rect();
-        display selector = display.Asst;
+        Display selector = Display.Asst;
         GUIContent[] selectorLabels = new GUIContent[2] { new GUIContent("Pilot Assistant"), new GUIContent("SSAS") };
 
         public static Binding[] bindings;
 
         public void Start()
         {
-            bindings = new Binding[Enum.GetNames(typeof(bindingIndex)).GetLength(0)];
-            bindings[(int)bindingIndex.Pause] = new Binding("Pause Control", KeyCode.Tab, KeyCode.None, display.Asst);
-            bindings[(int)bindingIndex.HdgTgl] = new Binding("Toggle Heading Control", KeyCode.Keypad9, KeyCode.LeftAlt, display.Asst);
-            bindings[(int)bindingIndex.VertTgl] = new Binding("Toggle Vert Control", KeyCode.Keypad6, KeyCode.LeftAlt, display.Asst);
-            bindings[(int)bindingIndex.ThrtTgl] = new Binding("Toggle Throttle Control", KeyCode.Keypad3, KeyCode.LeftAlt, display.Asst);
-            bindings[(int)bindingIndex.ArmSSAS] = new Binding("Arm SSAS", GameSettings.SAS_TOGGLE.primary, KeyCode.LeftAlt, display.SSAS);
+            bindings = new Binding[Enum.GetNames(typeof(BindingIndex)).GetLength(0)];
+            bindings[(int)BindingIndex.Pause] = new Binding("Pause Control", KeyCode.Tab, KeyCode.None, Display.Asst);
+            bindings[(int)BindingIndex.HdgTgl] = new Binding("Toggle Heading Control", KeyCode.Keypad9, KeyCode.LeftAlt, Display.Asst);
+            bindings[(int)BindingIndex.VertTgl] = new Binding("Toggle Vert Control", KeyCode.Keypad6, KeyCode.LeftAlt, Display.Asst);
+            bindings[(int)BindingIndex.ThrtTgl] = new Binding("Toggle Throttle Control", KeyCode.Keypad3, KeyCode.LeftAlt, Display.Asst);
+            bindings[(int)BindingIndex.ArmSSAS] = new Binding("Arm SSAS", GameSettings.SAS_TOGGLE.primary.code, KeyCode.LeftAlt, Display.SSAS);
         }
 
         public void Draw()
         {
             if (PilotAssistantFlightCore.bDisplayBindings)
-                windowRect = GUILayout.Window(6849762, windowRect, drawWindow, string.Empty);
+            {
+                windowRect = GUILayout.Window(6849762, windowRect, DrawWindow, string.Empty);
+            }
         }
 
-        void drawWindow(int id)
+        void DrawWindow(int id)
         {
-            selector = (display)GUILayout.SelectionGrid((int)selector, selectorLabels, 2);
-            if (selector == display.Asst)
+            selector = (Display)GUILayout.SelectionGrid((int)selector, selectorLabels, 2);
+            if (selector == Display.Asst)
             {
-                drawLabelsInRow("Reduce Target Heading", GameSettings.YAW_LEFT.primary);
-                drawLabelsInRow("Increase Target Heading", GameSettings.YAW_RIGHT.primary);
-                drawLabelsInRow("Reduce Vert Target", GameSettings.PITCH_DOWN.primary);
-                drawLabelsInRow("Increase Vert Target", GameSettings.PITCH_UP.primary);
-                drawLabelsInRow("Reduce Target Speed", GameSettings.THROTTLE_DOWN.primary);
-                drawLabelsInRow("Increase Target Speed", GameSettings.THROTTLE_UP.primary);
-                drawLabelsInRow("Toggle Fine Mode", GameSettings.PRECISION_CTRL.primary);
-                drawLabelsInRow("Rate x10", GameSettings.MODIFIER_KEY.primary);
+                DrawLabelsInRow("Reduce Target Heading", GameSettings.YAW_LEFT.primary.code);
+                DrawLabelsInRow("Increase Target Heading", GameSettings.YAW_RIGHT.primary.code);
+                DrawLabelsInRow("Reduce Vert Target", GameSettings.PITCH_DOWN.primary.code);
+                DrawLabelsInRow("Increase Vert Target", GameSettings.PITCH_UP.primary.code);
+                DrawLabelsInRow("Reduce Target Speed", GameSettings.THROTTLE_DOWN.primary.code);
+                DrawLabelsInRow("Increase Target Speed", GameSettings.THROTTLE_UP.primary.code);
+                DrawLabelsInRow("Toggle Fine Mode", GameSettings.PRECISION_CTRL.primary.code);
+                DrawLabelsInRow("Rate x10", GameSettings.MODIFIER_KEY.primary.code);
                 GUILayout.Space(20);
                 foreach (Binding b in bindings)
                 {
-                    if (b.toDisplay != display.Asst)
+                    if (b.ToDisplay != Display.Asst)
+                    {
                         continue;
-                    drawSetKey(b);
+                    }
+
+                    DrawSetKey(b);
                 }
             }
-            else if (selector == display.SSAS)
+            else if (selector == Display.SSAS)
             {
-                drawSetKey(bindings[(int)bindingIndex.ArmSSAS]);
-                drawLabelsInRow("Toggle SSAS", GameSettings.SAS_TOGGLE.primary);
+                DrawSetKey(bindings[(int)BindingIndex.ArmSSAS]);
+                DrawLabelsInRow("Toggle SSAS", GameSettings.SAS_TOGGLE.primary.code);
             }
             GUI.DragWindow();
         }
 
-        void drawLabelsInRow(string Action, KeyCode Keycode)
+        void DrawLabelsInRow(string Action, KeyCode Keycode)
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label(Action, GUILayout.Width(150));
@@ -94,33 +102,35 @@ namespace PilotAssistant
             GUILayout.EndHorizontal();
         }
 
-        void drawSetKey(Binding keybind)
+        void DrawSetKey(Binding keybind)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label(keybind.bindingDescription, GUILayout.Width(150));
-            keybind.waitingToSetPrimary = GUILayout.Toggle(keybind.waitingToSetPrimary, keybind.primaryBindingCode.ToString(), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(100));
-            if (keybind.waitingToSetPrimary)
+            GUILayout.Label(keybind.BindingDescription, GUILayout.Width(150));
+            keybind.WaitingToSetPrimary = GUILayout.Toggle(keybind.WaitingToSetPrimary, keybind.PrimaryBindingCode.ToString(), GeneralUI.UISkin.customStyles[(int)MyStyles.btnToggle], GUILayout.Width(100));
+            if (keybind.WaitingToSetPrimary)
             {
                 if (Input.GetMouseButton(0) || Event.current.keyCode == KeyCode.Escape)
-                    keybind.waitingToSetPrimary = false;
+                {
+                    keybind.WaitingToSetPrimary = false;
+                }
                 else if (Event.current.type == EventType.KeyDown)
                 {
-                    keybind.primaryBindingCode = Event.current.keyCode;
-                    keybind.waitingToSetPrimary = false;
+                    keybind.PrimaryBindingCode.code = Event.current.keyCode;
+                    keybind.WaitingToSetPrimary = false;
                 }
             }
-            keybind.waitingToSetSecondary = GUILayout.Toggle(keybind.waitingToSetSecondary, keybind.secondaryBindingCode.ToString(), GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(100));
-            if (keybind.waitingToSetSecondary)
+            keybind.WaitingToSetSecondary = GUILayout.Toggle(keybind.WaitingToSetSecondary, keybind.SecondaryBindingCode.ToString(), GeneralUI.UISkin.customStyles[(int)MyStyles.btnToggle], GUILayout.Width(100));
+            if (keybind.WaitingToSetSecondary)
             {
                 if (Input.GetMouseButton(0) || Event.current.keyCode == KeyCode.Escape)
                 {
-                    keybind.secondaryBindingCode = KeyCode.None;
-                    keybind.waitingToSetSecondary = false;
+                    keybind.SecondaryBindingCode.code = KeyCode.None;
+                    keybind.WaitingToSetSecondary = false;
                 }
                 else if (Event.current.type == EventType.KeyDown)
                 {
-                    keybind.secondaryBindingCode = Event.current.keyCode;
-                    keybind.waitingToSetSecondary = false;
+                    keybind.SecondaryBindingCode.code = Event.current.keyCode;
+                    keybind.WaitingToSetSecondary = false;
                 }
             }
             GUILayout.EndHorizontal();
@@ -134,25 +144,25 @@ namespace PilotAssistant
 
         public class Binding
         {
-            public display toDisplay { get; set; }
-            public string bindingDescription { get; set; }
-            public KeyCode primaryBindingCode { get; set; }
-            public bool waitingToSetPrimary { get; set; }
-            public KeyCode secondaryBindingCode { get; set; }
-            public bool waitingToSetSecondary { get; set; }
-            public Binding(string description, KeyCode primary, KeyCode secondary, display display)
+            public Display ToDisplay { get; set; }
+            public string BindingDescription { get; set; }
+            public KeyCodeExtended PrimaryBindingCode { get; set; }
+            public bool WaitingToSetPrimary { get; set; }
+            public KeyCodeExtended SecondaryBindingCode { get; set; }
+            public bool WaitingToSetSecondary { get; set; }
+            public Binding(string description, KeyCode primary, KeyCode secondary, Display display)
             {
-                bindingDescription = description;
-                primaryBindingCode = primary;
-                secondaryBindingCode = secondary;
-                toDisplay = display;
+                BindingDescription = description;
+                PrimaryBindingCode = new KeyCodeExtended(primary);
+                SecondaryBindingCode = new KeyCodeExtended(secondary);
+                ToDisplay = display;
             }
 
-            public bool isPressed
+            public bool IsPressed
             {
                 get
                 {
-                    return Input.GetKeyDown(primaryBindingCode) && (secondaryBindingCode == KeyCode.None ? true : Input.GetKey(secondaryBindingCode));
+                    return Input.GetKeyDown(PrimaryBindingCode.code) && (SecondaryBindingCode.isNone ? true : Input.GetKey(SecondaryBindingCode.code));
                 }
             }
         }

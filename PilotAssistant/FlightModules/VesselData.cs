@@ -41,7 +41,7 @@ namespace PilotAssistant.FlightModules
         /// Called in OnPreAutoPilotUpdate. Do not call multiple times per physics frame or the "lastPlanetUp" vector will not be correct and VSpeed will not be calculated correctly
         /// Can't just leave it to a Coroutine becuase it has to be called before anything else
         /// </summary>
-        public void updateAttitude()
+        public void UpdateAttitude()
         {
             //if (PilotAssistantFlightCore.calculateDirection)
             //findVesselFwdAxis(vRef.Vessel);
@@ -71,20 +71,22 @@ namespace PilotAssistant.FlightModules
             srfRadial = Vector3.Cross(vesModule.Vessel.srf_velocity, srfNormal).normalized;
 
             pitch = 90 - Vector3d.Angle(planetUp, vesselFacingAxis);
-            heading = (Vector3d.Angle(surfVesForward, vesModule.Vessel.north) * Math.Sign(Vector3d.Dot(surfVesForward, vesModule.Vessel.east))).headingClamp(360);
-            progradeHeading = (Vector3d.Angle(surfVelForward, vesModule.Vessel.north) * Math.Sign(Vector3d.Dot(surfVelForward, vesModule.Vessel.east))).headingClamp(360);
+            heading = (Vector3d.Angle(surfVesForward, vesModule.Vessel.north) * Math.Sign(Vector3d.Dot(surfVesForward, vesModule.Vessel.east))).HeadingClamp(360);
+            progradeHeading = (Vector3d.Angle(surfVelForward, vesModule.Vessel.north) * Math.Sign(Vector3d.Dot(surfVelForward, vesModule.Vessel.east))).HeadingClamp(360);
             bank = Vector3d.Angle(surfVesRight, vesModule.Vessel.ReferenceTransform.right) * Math.Sign(Vector3d.Dot(surfVesRight, -vesModule.Vessel.ReferenceTransform.forward));
 
             if (vesModule.Vessel.srfSpeed > 1)
             {
-                Vector3d AoAVec = vesModule.Vessel.srf_velocity.projectOnPlane(vesModule.Vessel.ReferenceTransform.right);
+                Vector3d AoAVec = vesModule.Vessel.srf_velocity.ProjectOnPlane(vesModule.Vessel.ReferenceTransform.right);
                 AoA = Vector3d.Angle(AoAVec, vesselFacingAxis) * Math.Sign(Vector3d.Dot(AoAVec, vesModule.Vessel.ReferenceTransform.forward));
 
-                Vector3d yawVec = vesModule.Vessel.srf_velocity.projectOnPlane(vesModule.Vessel.ReferenceTransform.forward);
+                Vector3d yawVec = vesModule.Vessel.srf_velocity.ProjectOnPlane(vesModule.Vessel.ReferenceTransform.forward);
                 yaw = Vector3d.Angle(yawVec, vesselFacingAxis) * Math.Sign(Vector3d.Dot(yawVec, vesModule.Vessel.ReferenceTransform.right));
             }
             else
+            {
                 AoA = yaw = 0;
+            }
         }
 
         private Vector3 vesselFacingAxis = new Vector3();
@@ -94,7 +96,7 @@ namespace PilotAssistant.FlightModules
         ///
         /// Has an issue with the origin shifter causing random bounces
         /// </summary>
-        public void findVesselFwdAxis(Vessel v)
+        public void FindVesselFwdAxis(Vessel v)
         {
             Part closestPart = v.rootPart;
             float offset = (closestPart.transform.position - v.CurrentCoM).sqrMagnitude; // only comparing magnitude, sign and actual value don't matter
@@ -125,15 +127,19 @@ namespace PilotAssistant.FlightModules
         }
 
         private ArrowPointer pointer;
-        public void drawArrow(Vector3 dir, Transform t)
+        public void DrawArrow(Vector3 dir, Transform t)
         {
             if (ReferenceEquals(pointer, null))
+            {
                 pointer = ArrowPointer.Create(t, Vector3.zero, dir, 100, Color.red, true);
+            }
             else
+            {
                 pointer.Direction = dir;
+            }
         }
 
-        public void destroyArrow()
+        public void DestroyArrow()
         {
             UnityEngine.Object.Destroy(pointer);
             pointer = null;

@@ -79,10 +79,10 @@ namespace PilotAssistant.Toolbar
             {
                 if ((toolbarAvailable != false) && (instance_ == null))
                 {
-                    Type type = ToolbarTypes.getType("Toolbar.ToolbarManager");
+                    Type type = ToolbarTypes.GetType("Toolbar.ToolbarManager");
                     if (type != null)
                     {
-                        object realToolbarManager = ToolbarTypes.getStaticProperty(type, "Instance").GetValue(null, null);
+                        object realToolbarManager = ToolbarTypes.GetStaticProperty(type, "Instance").GetValue(null, null);
                         instance_ = new ToolbarManager(realToolbarManager);
                     }
                 }
@@ -108,7 +108,7 @@ namespace PilotAssistant.Toolbar
         /// <param name="ns">The new button's namespace. This is usually the plugin's name. Must not include special characters like '.'</param>
         /// <param name="id">The new button's ID. This ID must be unique across all buttons in the namespace. Must not include special characters like '.'</param>
         /// <returns>The button created.</returns>
-        IButton add(string ns, string id);
+        IButton Add(string ns, string id);
     }
 
     /// <summary>
@@ -449,9 +449,9 @@ namespace PilotAssistant.Toolbar
 
         public GameScenesVisibility(params GameScenes[] gameScenes)
         {
-            Type gameScenesVisibilityType = ToolbarTypes.getType("Toolbar.GameScenesVisibility");
+            Type gameScenesVisibilityType = ToolbarTypes.GetType("Toolbar.GameScenesVisibility");
             realGameScenesVisibility = Activator.CreateInstance(gameScenesVisibilityType, new object[] { gameScenes });
-            visibleProperty = ToolbarTypes.getProperty(gameScenesVisibilityType, "Visible");
+            visibleProperty = ToolbarTypes.GetProperty(gameScenesVisibilityType, "Visible");
         }
     }
 
@@ -489,14 +489,14 @@ namespace PilotAssistant.Toolbar
 
         public PopupMenuDrawable()
         {
-            Type popupMenuDrawableType = ToolbarTypes.getType("Toolbar.PopupMenuDrawable");
+            Type popupMenuDrawableType = ToolbarTypes.GetType("Toolbar.PopupMenuDrawable");
             realPopupMenuDrawable = Activator.CreateInstance(popupMenuDrawableType, null);
-            updateMethod = ToolbarTypes.getMethod(popupMenuDrawableType, "Update");
-            drawMethod = ToolbarTypes.getMethod(popupMenuDrawableType, "Draw");
-            addOptionMethod = ToolbarTypes.getMethod(popupMenuDrawableType, "AddOption");
-            addSeparatorMethod = ToolbarTypes.getMethod(popupMenuDrawableType, "AddSeparator");
-            destroyMethod = ToolbarTypes.getMethod(popupMenuDrawableType, "Destroy");
-            onAnyOptionClickedEvent = ToolbarTypes.getEvent(popupMenuDrawableType, "OnAnyOptionClicked");
+            updateMethod = ToolbarTypes.GetMethod(popupMenuDrawableType, "Update");
+            drawMethod = ToolbarTypes.GetMethod(popupMenuDrawableType, "Draw");
+            addOptionMethod = ToolbarTypes.GetMethod(popupMenuDrawableType, "AddOption");
+            addSeparatorMethod = ToolbarTypes.GetMethod(popupMenuDrawableType, "AddSeparator");
+            destroyMethod = ToolbarTypes.GetMethod(popupMenuDrawableType, "Destroy");
+            onAnyOptionClickedEvent = ToolbarTypes.GetEvent(popupMenuDrawableType, "OnAnyOptionClicked");
         }
 
         public void Update()
@@ -555,10 +555,10 @@ namespace PilotAssistant.Toolbar
         {
             this.realToolbarManager = realToolbarManager;
 
-            addMethod = ToolbarTypes.getMethod(types.iToolbarManagerType, "add");
+            addMethod = ToolbarTypes.GetMethod(types.iToolbarManagerType, "add");
         }
 
-        public IButton add(string ns, string id)
+        public IButton Add(string ns, string id)
         {
             object realButton = addMethod.Invoke(realToolbarManager, new object[] { ns, id });
             IButton button = new Button(realButton, types);
@@ -580,15 +580,15 @@ namespace PilotAssistant.Toolbar
             this.realButton = realButton;
             this.types = types;
 
-            realClickHandler = attachEventHandler(types.button.onClickEvent, "clicked", realButton);
-            realMouseEnterHandler = attachEventHandler(types.button.onMouseEnterEvent, "mouseEntered", realButton);
-            realMouseLeaveHandler = attachEventHandler(types.button.onMouseLeaveEvent, "mouseLeft", realButton);
+            realClickHandler = AttachEventHandler(types.button.onClickEvent, "clicked", realButton);
+            realMouseEnterHandler = AttachEventHandler(types.button.onMouseEnterEvent, "mouseEntered", realButton);
+            realMouseLeaveHandler = AttachEventHandler(types.button.onMouseLeaveEvent, "mouseLeft", realButton);
         }
 
-        private Delegate attachEventHandler(EventInfo @event, string methodName, object realButton)
+        private Delegate AttachEventHandler(EventInfo @event, string methodName, object realButton)
         {
             MethodInfo method = GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
-            Delegate d = Delegate.CreateDelegate(@event.EventHandlerType, this, method);
+            var d = Delegate.CreateDelegate(@event.EventHandlerType, this, method);
             @event.AddEventHandler(realButton, d);
             return d;
         }
@@ -728,44 +728,35 @@ namespace PilotAssistant.Toolbar
 
         public event ClickHandler OnClick;
 
-        private void clicked(object realEvent)
+        private void Clicked(object realEvent)
         {
-            if (OnClick != null)
-            {
-                OnClick(new ClickEvent(realEvent, this));
-            }
+            OnClick?.Invoke(new ClickEvent(realEvent, this));
         }
 
         public event MouseEnterHandler OnMouseEnter;
 
-        private void mouseEntered(object realEvent)
+        private void MouseEntered(object realEvent)
         {
-            if (OnMouseEnter != null)
-            {
-                OnMouseEnter(new MouseEnterEvent(this));
-            }
+            OnMouseEnter?.Invoke(new MouseEnterEvent(this));
         }
 
         public event MouseLeaveHandler OnMouseLeave;
 
-        private void mouseLeft(object realEvent)
+        private void MouseLeft(object realEvent)
         {
-            if (OnMouseLeave != null)
-            {
-                OnMouseLeave(new MouseLeaveEvent(this));
-            }
+            OnMouseLeave?.Invoke(new MouseLeaveEvent(this));
         }
 
         public void Destroy()
         {
-            detachEventHandler(types.button.onClickEvent, realClickHandler, realButton);
-            detachEventHandler(types.button.onMouseEnterEvent, realMouseEnterHandler, realButton);
-            detachEventHandler(types.button.onMouseLeaveEvent, realMouseLeaveHandler, realButton);
+            DetachEventHandler(types.button.onClickEvent, realClickHandler, realButton);
+            DetachEventHandler(types.button.onMouseEnterEvent, realMouseEnterHandler, realButton);
+            DetachEventHandler(types.button.onMouseLeaveEvent, realMouseLeaveHandler, realButton);
 
             types.button.destroyMethod.Invoke(realButton, null);
         }
 
-        private void detachEventHandler(EventInfo @event, Delegate d, object realButton)
+        private void DetachEventHandler(EventInfo @event, Delegate d, object realButton)
         {
             @event.RemoveEventHandler(realButton, d);
         }
@@ -814,15 +805,15 @@ namespace PilotAssistant.Toolbar
 
         internal ToolbarTypes()
         {
-            iToolbarManagerType = getType("Toolbar.IToolbarManager");
-            functionVisibilityType = getType("Toolbar.FunctionVisibility");
-            functionDrawableType = getType("Toolbar.FunctionDrawable");
+            iToolbarManagerType = GetType("Toolbar.IToolbarManager");
+            functionVisibilityType = GetType("Toolbar.FunctionVisibility");
+            functionDrawableType = GetType("Toolbar.FunctionDrawable");
 
-            Type iButtonType = getType("Toolbar.IButton");
+            Type iButtonType = GetType("Toolbar.IButton");
             button = new ButtonTypes(iButtonType);
         }
 
-        internal static Type getType(string name)
+        internal static Type GetType(string name)
         {
             Type type = null;
 			AssemblyLoader.loadedAssemblies.TypeOperation(t =>
@@ -835,22 +826,22 @@ namespace PilotAssistant.Toolbar
 			return type;
         }
 
-        internal static PropertyInfo getProperty(Type type, string name)
+        internal static PropertyInfo GetProperty(Type type, string name)
         {
             return type.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
         }
 
-        internal static PropertyInfo getStaticProperty(Type type, string name)
+        internal static PropertyInfo GetStaticProperty(Type type, string name)
         {
             return type.GetProperty(name, BindingFlags.Public | BindingFlags.Static);
         }
 
-        internal static EventInfo getEvent(Type type, string name)
+        internal static EventInfo GetEvent(Type type, string name)
         {
             return type.GetEvent(name, BindingFlags.Public | BindingFlags.Instance);
         }
 
-        internal static MethodInfo getMethod(Type type, string name)
+        internal static MethodInfo GetMethod(Type type, string name)
         {
             return type.GetMethod(name, BindingFlags.Public | BindingFlags.Instance);
         }
@@ -878,20 +869,20 @@ namespace PilotAssistant.Toolbar
         {
             this.iButtonType = iButtonType;
 
-            textProperty = ToolbarTypes.getProperty(iButtonType, "Text");
-            textColorProperty = ToolbarTypes.getProperty(iButtonType, "TextColor");
-            texturePathProperty = ToolbarTypes.getProperty(iButtonType, "TexturePath");
-            toolTipProperty = ToolbarTypes.getProperty(iButtonType, "ToolTip");
-            visibleProperty = ToolbarTypes.getProperty(iButtonType, "Visible");
-            visibilityProperty = ToolbarTypes.getProperty(iButtonType, "Visibility");
-            effectivelyVisibleProperty = ToolbarTypes.getProperty(iButtonType, "EffectivelyVisible");
-            enabledProperty = ToolbarTypes.getProperty(iButtonType, "Enabled");
-            importantProperty = ToolbarTypes.getProperty(iButtonType, "Important");
-            drawableProperty = ToolbarTypes.getProperty(iButtonType, "Drawable");
-            onClickEvent = ToolbarTypes.getEvent(iButtonType, "OnClick");
-            onMouseEnterEvent = ToolbarTypes.getEvent(iButtonType, "OnMouseEnter");
-            onMouseLeaveEvent = ToolbarTypes.getEvent(iButtonType, "OnMouseLeave");
-            destroyMethod = ToolbarTypes.getMethod(iButtonType, "Destroy");
+            textProperty = ToolbarTypes.GetProperty(iButtonType, "Text");
+            textColorProperty = ToolbarTypes.GetProperty(iButtonType, "TextColor");
+            texturePathProperty = ToolbarTypes.GetProperty(iButtonType, "TexturePath");
+            toolTipProperty = ToolbarTypes.GetProperty(iButtonType, "ToolTip");
+            visibleProperty = ToolbarTypes.GetProperty(iButtonType, "Visible");
+            visibilityProperty = ToolbarTypes.GetProperty(iButtonType, "Visibility");
+            effectivelyVisibleProperty = ToolbarTypes.GetProperty(iButtonType, "EffectivelyVisible");
+            enabledProperty = ToolbarTypes.GetProperty(iButtonType, "Enabled");
+            importantProperty = ToolbarTypes.GetProperty(iButtonType, "Important");
+            drawableProperty = ToolbarTypes.GetProperty(iButtonType, "Drawable");
+            onClickEvent = ToolbarTypes.GetEvent(iButtonType, "OnClick");
+            onMouseEnterEvent = ToolbarTypes.GetEvent(iButtonType, "OnMouseEnter");
+            onMouseLeaveEvent = ToolbarTypes.GetEvent(iButtonType, "OnMouseLeave");
+            destroyMethod = ToolbarTypes.GetMethod(iButtonType, "Destroy");
         }
     }
 

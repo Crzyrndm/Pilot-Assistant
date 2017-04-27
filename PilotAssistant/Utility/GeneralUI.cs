@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace PilotAssistant.Utility
 {
-    enum myStyles
+    enum MyStyles
     {
         labelAlert,
         numBoxLabel,
@@ -36,59 +36,63 @@ namespace PilotAssistant.Utility
         public static GUIContent EasingLabel = new GUIContent("Easing", "The rate of change of the setpoint when a new target is set. Higher gives a faster change, lower gives a smoother change");
         public static GUIContent DelayLabel = new GUIContent("Delay", "The time in ms between there being no input on the axis and the axis attitude being locked");
 
-        public static void customSkin()
+        public static void CustomSkin()
         {
             UISkin = (GUISkin)MonoBehaviour.Instantiate(UnityEngine.GUI.skin);
-            UISkin.customStyles = new GUIStyle[Enum.GetValues(typeof(myStyles)).GetLength(0)];
+            UISkin.customStyles = new GUIStyle[Enum.GetValues(typeof(MyStyles)).GetLength(0)];
             stockBackgroundGUIColor = GUI.backgroundColor;
 
             // style for the paused message (big, bold, and red)
-            UISkin.customStyles[(int)myStyles.labelAlert] = new GUIStyle(GUI.skin.box);
-            UISkin.customStyles[(int)myStyles.labelAlert].normal.textColor = XKCDColors.Red;
-            UISkin.customStyles[(int)myStyles.labelAlert].fontSize = 21;
-            UISkin.customStyles[(int)myStyles.labelAlert].fontStyle = FontStyle.Bold;
-            UISkin.customStyles[(int)myStyles.labelAlert].alignment = TextAnchor.MiddleCenter;
+            UISkin.customStyles[(int)MyStyles.labelAlert] = new GUIStyle(GUI.skin.box);
+            UISkin.customStyles[(int)MyStyles.labelAlert].normal.textColor = XKCDColors.Red;
+            UISkin.customStyles[(int)MyStyles.labelAlert].fontSize = 21;
+            UISkin.customStyles[(int)MyStyles.labelAlert].fontStyle = FontStyle.Bold;
+            UISkin.customStyles[(int)MyStyles.labelAlert].alignment = TextAnchor.MiddleCenter;
 
             // style for label to align with increment buttons
-            UISkin.customStyles[(int)myStyles.numBoxLabel] = new GUIStyle(UISkin.label);
-            UISkin.customStyles[(int)myStyles.numBoxLabel].alignment = TextAnchor.MiddleLeft;
-            UISkin.customStyles[(int)myStyles.numBoxLabel].margin = new RectOffset(4, 4, 5, 3);
+            UISkin.customStyles[(int)MyStyles.numBoxLabel] = new GUIStyle(UISkin.label) {
+                alignment = TextAnchor.MiddleLeft,
+                margin = new RectOffset(4, 4, 5, 3)
+            };
 
             // style for text box to align with increment buttons better
-            UISkin.customStyles[(int)myStyles.numBoxText] = new GUIStyle(UISkin.textField);
-            UISkin.customStyles[(int)myStyles.numBoxText].alignment = TextAnchor.MiddleLeft;
-            UISkin.customStyles[(int)myStyles.numBoxText].margin = new RectOffset(4, 0, 5, 3);
+            UISkin.customStyles[(int)MyStyles.numBoxText] = new GUIStyle(UISkin.textField) {
+                alignment = TextAnchor.MiddleLeft,
+                margin = new RectOffset(4, 0, 5, 3)
+            };
 
             // style for increment button
-            UISkin.customStyles[(int)myStyles.btnPlus] = new GUIStyle(UISkin.button);
-            UISkin.customStyles[(int)myStyles.btnPlus].margin = new RectOffset(0, 4, 2, 0);
-            UISkin.customStyles[(int)myStyles.btnPlus].hover.textColor = Color.yellow;
-            UISkin.customStyles[(int)myStyles.btnPlus].onActive.textColor = Color.green;
+            UISkin.customStyles[(int)MyStyles.btnPlus] = new GUIStyle(UISkin.button) {
+                margin = new RectOffset(0, 4, 2, 0)
+            };
+            UISkin.customStyles[(int)MyStyles.btnPlus].hover.textColor = Color.yellow;
+            UISkin.customStyles[(int)MyStyles.btnPlus].onActive.textColor = Color.green;
 
             // style for derement button
-            UISkin.customStyles[(int)myStyles.btnMinus] = new GUIStyle(UISkin.button);
-            UISkin.customStyles[(int)myStyles.btnMinus].margin = new RectOffset(0, 4, 0, 2);
-            UISkin.customStyles[(int)myStyles.btnMinus].hover.textColor = Color.yellow;
-            UISkin.customStyles[(int)myStyles.btnMinus].onActive.textColor = Color.green;
+            UISkin.customStyles[(int)MyStyles.btnMinus] = new GUIStyle(UISkin.button) {
+                margin = new RectOffset(0, 4, 0, 2)
+            };
+            UISkin.customStyles[(int)MyStyles.btnMinus].hover.textColor = Color.yellow;
+            UISkin.customStyles[(int)MyStyles.btnMinus].onActive.textColor = Color.green;
 
             // A toggle that looks like a button
-            UISkin.customStyles[(int)myStyles.btnToggle] = new GUIStyle(UISkin.button);
-            UISkin.customStyles[(int)myStyles.btnToggle].normal.textColor = UISkin.customStyles[(int)myStyles.btnToggle].focused.textColor = Color.white;
-            UISkin.customStyles[(int)myStyles.btnToggle].onNormal.textColor = UISkin.customStyles[(int)myStyles.btnToggle].onFocused.textColor = UISkin.customStyles[(int)myStyles.btnToggle].onHover.textColor
-                = UISkin.customStyles[(int)myStyles.btnToggle].active.textColor = UISkin.customStyles[(int)myStyles.btnToggle].hover.textColor = UISkin.customStyles[(int)myStyles.btnToggle].onActive.textColor = Color.green;
-            UISkin.customStyles[(int)myStyles.btnToggle].onNormal.background = UISkin.customStyles[(int)myStyles.btnToggle].onHover.background = UISkin.customStyles[(int)myStyles.btnToggle].onActive.background
-                = UISkin.customStyles[(int)myStyles.btnToggle].active.background = HighLogic.Skin.button.onNormal.background;
-            UISkin.customStyles[(int)myStyles.btnToggle].hover.background = UISkin.customStyles[(int)myStyles.btnToggle].normal.background;
+            UISkin.customStyles[(int)MyStyles.btnToggle] = new GUIStyle(UISkin.button);
+            UISkin.customStyles[(int)MyStyles.btnToggle].normal.textColor = UISkin.customStyles[(int)MyStyles.btnToggle].focused.textColor = Color.white;
+            UISkin.customStyles[(int)MyStyles.btnToggle].onNormal.textColor = UISkin.customStyles[(int)MyStyles.btnToggle].onFocused.textColor = UISkin.customStyles[(int)MyStyles.btnToggle].onHover.textColor
+                = UISkin.customStyles[(int)MyStyles.btnToggle].active.textColor = UISkin.customStyles[(int)MyStyles.btnToggle].hover.textColor = UISkin.customStyles[(int)MyStyles.btnToggle].onActive.textColor = Color.green;
+            UISkin.customStyles[(int)MyStyles.btnToggle].onNormal.background = UISkin.customStyles[(int)MyStyles.btnToggle].onHover.background = UISkin.customStyles[(int)MyStyles.btnToggle].onActive.background
+                = UISkin.customStyles[(int)MyStyles.btnToggle].active.background = HighLogic.Skin.button.onNormal.background;
+            UISkin.customStyles[(int)MyStyles.btnToggle].hover.background = UISkin.customStyles[(int)MyStyles.btnToggle].normal.background;
 
-            UISkin.customStyles[(int)myStyles.lblToggle] = new GUIStyle(UISkin.customStyles[(int)myStyles.btnToggle]);
+            UISkin.customStyles[(int)MyStyles.lblToggle] = new GUIStyle(UISkin.customStyles[(int)MyStyles.btnToggle]);
 
-            UISkin.customStyles[(int)myStyles.greenTextBox] = new GUIStyle(UISkin.textArea);
-            UISkin.customStyles[(int)myStyles.greenTextBox].active.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].hover.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].focused.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].normal.textColor
-                = UISkin.customStyles[(int)myStyles.greenTextBox].onActive.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].onHover.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].onFocused.textColor = UISkin.customStyles[(int)myStyles.greenTextBox].onNormal.textColor = XKCDColors.Green;
+            UISkin.customStyles[(int)MyStyles.greenTextBox] = new GUIStyle(UISkin.textArea);
+            UISkin.customStyles[(int)MyStyles.greenTextBox].active.textColor = UISkin.customStyles[(int)MyStyles.greenTextBox].hover.textColor = UISkin.customStyles[(int)MyStyles.greenTextBox].focused.textColor = UISkin.customStyles[(int)MyStyles.greenTextBox].normal.textColor
+                = UISkin.customStyles[(int)MyStyles.greenTextBox].onActive.textColor = UISkin.customStyles[(int)MyStyles.greenTextBox].onHover.textColor = UISkin.customStyles[(int)MyStyles.greenTextBox].onFocused.textColor = UISkin.customStyles[(int)MyStyles.greenTextBox].onNormal.textColor = XKCDColors.Green;
 
-            UISkin.customStyles[(int)myStyles.redButtonText] = new GUIStyle(UISkin.button);
-            UISkin.customStyles[(int)myStyles.redButtonText].active.textColor = UISkin.customStyles[(int)myStyles.redButtonText].hover.textColor = UISkin.customStyles[(int)myStyles.redButtonText].focused.textColor = UISkin.customStyles[(int)myStyles.redButtonText].normal.textColor
-                = UISkin.customStyles[(int)myStyles.redButtonText].onActive.textColor = UISkin.customStyles[(int)myStyles.redButtonText].onHover.textColor = UISkin.customStyles[(int)myStyles.redButtonText].onFocused.textColor = UISkin.customStyles[(int)myStyles.redButtonText].onNormal.textColor = XKCDColors.Red;
+            UISkin.customStyles[(int)MyStyles.redButtonText] = new GUIStyle(UISkin.button);
+            UISkin.customStyles[(int)MyStyles.redButtonText].active.textColor = UISkin.customStyles[(int)MyStyles.redButtonText].hover.textColor = UISkin.customStyles[(int)MyStyles.redButtonText].focused.textColor = UISkin.customStyles[(int)MyStyles.redButtonText].normal.textColor
+                = UISkin.customStyles[(int)MyStyles.redButtonText].onActive.textColor = UISkin.customStyles[(int)MyStyles.redButtonText].onHover.textColor = UISkin.customStyles[(int)MyStyles.redButtonText].onFocused.textColor = UISkin.customStyles[(int)MyStyles.redButtonText].onNormal.textColor = XKCDColors.Red;
 
             UISkin.box.onActive.background = UISkin.box.onFocused.background = UISkin.box.onHover.background = UISkin.box.onNormal.background =
                 UISkin.box.active.background = UISkin.box.focused.background = UISkin.box.hover.background = UISkin.box.normal.background = UISkin.window.normal.background;
@@ -102,15 +106,15 @@ namespace PilotAssistant.Utility
         /// <param name="labelWidth"></param>
         /// <param name="boxWidth"></param>
         /// <returns>edited value of the text box</returns>
-        public static double labPlusNumBox(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
+        public static double LabPlusNumBox(string labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
         {
             double val;
             GUILayout.BeginHorizontal();
 
-            GUILayout.Label(labelText, UISkin.customStyles[(int)myStyles.numBoxLabel], GUILayout.Width(labelWidth));
+            GUILayout.Label(labelText, UISkin.customStyles[(int)MyStyles.numBoxLabel], GUILayout.Width(labelWidth));
             val = double.Parse(boxText);
             boxText = val.ToString(",0.0#####");
-            string text = GUILayout.TextField(boxText, UISkin.customStyles[(int)myStyles.numBoxText], GUILayout.Width(boxWidth));
+            string text = GUILayout.TextField(boxText, UISkin.customStyles[(int)MyStyles.numBoxText], GUILayout.Width(boxWidth));
             //
             try
             {
@@ -122,14 +126,18 @@ namespace PilotAssistant.Utility
             }
             //
             GUILayout.BeginVertical();
-            if (GUILayout.Button("+", UISkin.customStyles[(int)myStyles.btnPlus], GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("+", UISkin.customStyles[(int)MyStyles.btnPlus], GUILayout.Width(20), GUILayout.Height(13)))
             {
                 if (val != 0)
+                {
                     val *= 1.1;
+                }
                 else
+                {
                     val = 0.01;
+                }
             }
-            if (GUILayout.Button("-", UISkin.customStyles[(int)myStyles.btnMinus], GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("-", UISkin.customStyles[(int)MyStyles.btnMinus], GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val /= 1.1;
             }
@@ -139,15 +147,15 @@ namespace PilotAssistant.Utility
             return val;
         }
 
-        public static double labPlusNumBox(GUIContent labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
+        public static double LabPlusNumBox(GUIContent labelText, string boxText, float labelWidth = 100, float boxWidth = 60)
         {
             double val;
             GUILayout.BeginHorizontal();
 
-            GUILayout.Label(labelText, UISkin.customStyles[(int)myStyles.numBoxLabel], GUILayout.Width(labelWidth));
+            GUILayout.Label(labelText, UISkin.customStyles[(int)MyStyles.numBoxLabel], GUILayout.Width(labelWidth));
             val = double.Parse(boxText);
             boxText = val.ToString(",0.0#####");
-            string text = GUILayout.TextField(boxText, UISkin.customStyles[(int)myStyles.numBoxText], GUILayout.Width(boxWidth));
+            string text = GUILayout.TextField(boxText, UISkin.customStyles[(int)MyStyles.numBoxText], GUILayout.Width(boxWidth));
             //
             try
             {
@@ -159,14 +167,18 @@ namespace PilotAssistant.Utility
             }
             //
             GUILayout.BeginVertical();
-            if (GUILayout.Button("+", UISkin.customStyles[(int)myStyles.btnPlus], GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("+", UISkin.customStyles[(int)MyStyles.btnPlus], GUILayout.Width(20), GUILayout.Height(13)))
             {
                 if (val != 0)
+                {
                     val *= 1.1;
+                }
                 else
+                {
                     val = 0.01;
+                }
             }
-            if (GUILayout.Button("-", UISkin.customStyles[(int)myStyles.btnMinus], GUILayout.Width(20), GUILayout.Height(13)))
+            if (GUILayout.Button("-", UISkin.customStyles[(int)MyStyles.btnMinus], GUILayout.Width(20), GUILayout.Height(13)))
             {
                 val /= 1.1;
             }
@@ -176,7 +188,7 @@ namespace PilotAssistant.Utility
             return val;
         }
 
-        public static void postMessage(string message)
+        public static void PostMessage(string message)
         {
             ScreenMessages.PostScreenMessage(message);
         }

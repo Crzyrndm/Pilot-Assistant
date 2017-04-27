@@ -8,19 +8,19 @@ namespace PilotAssistant
 
     public class Asst_PID_Controller
     {
-        public AsstList ctrlID { get; set; }
-        public double target_setpoint { get; set; } // target setpoint
-        public double active_setpoint { get; set; } // setpoint being shifted to the target
-        public double k_proportional { get; set; }
-        public double k_integral { get; set; }
-        public double k_derivative { get; set; }
+        public AsstList CtrlID { get; set; }
+        public double Target_setpoint { get; set; } // target setpoint
+        public double Active_setpoint { get; set; } // setpoint being shifted to the target
+        public double K_proportional { get; set; }
+        public double K_integral { get; set; }
+        public double K_derivative { get; set; }
         protected double scale;
-        public double inMin { private get; set; }
-        public double inMax { private get; set; }
-        public double outMin { get; set; }
-        public double outMax { get; set; }
-        public double integralClampUpper { get; set; }
-        public double integralClampLower { get; set; }
+        public double InMin { private get; set; }
+        public double InMax { private get; set; }
+        public double OutMin { get; set; }
+        public double OutMax { get; set; }
+        public double IntegralClampUpper { get; set; }
+        public double IntegralClampLower { get; set; }
         protected double increment = 0; // increment stored because it grows with each frame
         protected double easing = 1; // speed of increment growth
 
@@ -29,68 +29,72 @@ namespace PilotAssistant
         protected double rolling_diff = 0; // used for rolling average difference
         protected double rollingFactor = 0.5; // rolling average proportion. 0 = all new, 1 = never changes
 
-        public double lastOutput { get; protected set; }
-        public bool invertInput { get; set; }
-        public bool invertOutput { get; set; }
-        public bool bShow { get; set; }
-        public bool skipDerivative { get; set; }
-        public bool isHeadingControl { get; set; }
+        public double LastOutput { get; protected set; }
+        public bool InvertInput { get; set; }
+        public bool InvertOutput { get; set; }
+        public bool BShow { get; set; }
+        public bool SkipDerivative { get; set; }
+        public bool IsHeadingControl { get; set; }
 
         public Asst_PID_Controller(AsstList ID, double Kp, double Ki, double Kd, double OutputMin, double OutputMax, double intClampLower, double intClampUpper, double scalar = 1, double shiftRate = 1)
         {
-            ctrlID = ID;
-            k_proportional = Kp;
-            k_integral = Ki;
-            k_derivative = Kd;
-            outMin = OutputMin;
-            outMax = OutputMax;
-            integralClampLower = intClampLower;
-            integralClampUpper = intClampUpper;
+            CtrlID = ID;
+            K_proportional = Kp;
+            K_integral = Ki;
+            K_derivative = Kd;
+            OutMin = OutputMin;
+            OutMax = OutputMax;
+            IntegralClampLower = intClampLower;
+            IntegralClampUpper = intClampUpper;
             scale = scalar;
             easing = shiftRate;
-            inMin = -double.MaxValue;
-            inMax = double.MaxValue;
+            InMin = -double.MaxValue;
+            InMax = double.MaxValue;
         }
 
         public Asst_PID_Controller(AsstList ID, double[] gains)
         {
-            ctrlID = ID;
-            k_proportional = gains[0];
-            k_integral = gains[1];
-            k_derivative = gains[2];
-            outMin = gains[3];
-            outMax = gains[4];
-            integralClampLower = gains[5];
-            integralClampUpper = gains[6];
+            CtrlID = ID;
+            K_proportional = gains[0];
+            K_integral = gains[1];
+            K_derivative = gains[2];
+            OutMin = gains[3];
+            OutMax = gains[4];
+            IntegralClampLower = gains[5];
+            IntegralClampUpper = gains[6];
             scale = gains[7];
             easing = gains[8];
-            inMin = -double.MaxValue;
-            inMax = double.MaxValue;
+            InMin = -double.MaxValue;
+            InMax = double.MaxValue;
         }
         
         public virtual double ResponseD(double input, bool useIntegral)
         {
-            input = Utils.Clamp((invertInput ? -1 : 1) * input, inMin, inMax);
-            if (active_setpoint != target_setpoint)
+            input = Utils.Clamp((InvertInput ? -1 : 1) * input, InMin, InMax);
+            if (Active_setpoint != Target_setpoint)
             {
                 increment += easing * TimeWarp.fixedDeltaTime * 0.01;
-                active_setpoint += Utils.Clamp(target_setpoint - active_setpoint, -increment, increment);
+                Active_setpoint += Utils.Clamp(Target_setpoint - Active_setpoint, -increment, increment);
             }
             double error;
-            if (!isHeadingControl)
-                error = input - active_setpoint;
-            else
-                error = Utils.CurrentAngleTargetRel(input, active_setpoint, 180) - active_setpoint;
-
-            if (skipDerivative)
+            if (!IsHeadingControl)
             {
-                skipDerivative = false;
+                error = input - Active_setpoint;
+            }
+            else
+            {
+                error = Utils.CurrentAngleTargetRel(input, Active_setpoint, 180) - Active_setpoint;
+            }
+
+            if (SkipDerivative)
+            {
+                SkipDerivative = false;
                 previous = input;
             }
-            lastOutput = proportionalError(error) + integralError(error, useIntegral) + derivativeError(input);
-            lastOutput *= (invertOutput ? -1 : 1);
-            lastOutput = Utils.Clamp(lastOutput, outMin, outMax);
-            return lastOutput;
+            LastOutput = ProportionalError(error) + IntegralError(error, useIntegral) + DerivativeError(input);
+            LastOutput *= (InvertOutput ? -1 : 1);
+            LastOutput = Utils.Clamp(LastOutput, OutMin, OutMax);
+            return LastOutput;
         }
 
         public virtual float ResponseF(double input, bool useIntegral)
@@ -98,39 +102,44 @@ namespace PilotAssistant
             return (float)ResponseD(input, useIntegral);
         }
 
-        protected virtual double proportionalError(double error)
+        protected virtual double ProportionalError(double error)
         {
-            return error * k_proportional / scale;
+            return error * K_proportional / scale;
         }
 
-        protected virtual double integralError(double error, bool useIntegral)
+        protected virtual double IntegralError(double error, bool useIntegral)
         {
-            if (k_integral == 0 || !useIntegral)
+            if (K_integral == 0 || !useIntegral)
             {
                 sum = 0;
                 return sum;
             }
-            sum += error * TimeWarp.fixedDeltaTime * k_integral / scale;
-            sum = Utils.Clamp(sum, integralClampLower, integralClampUpper); // AIW
+            sum += error * TimeWarp.fixedDeltaTime * K_integral / scale;
+            sum = Utils.Clamp(sum, IntegralClampLower, IntegralClampUpper); // AIW
             return sum;
         }
 
-        protected virtual double derivativeError(double input)
+        protected virtual double DerivativeError(double input)
         {
             double difference = 0;
-            if (isHeadingControl)
+            if (IsHeadingControl)
+            {
                 difference = (Utils.CurrentAngleTargetRel(input, previous, 180) - previous) / TimeWarp.fixedDeltaTime;
+            }
             else
+            {
                 difference = (input - previous) / TimeWarp.fixedDeltaTime;
+            }
+
             previous = input;
 
             rolling_diff = rolling_diff * rollingFactor + difference * (1 - rollingFactor); // rolling average sometimes helps smooth out a jumpy derivative response
-            return rolling_diff * k_derivative / scale;
+            return rolling_diff * K_derivative / scale;
         }
 
-        protected virtual double derivativeErrorRate(double rate)
+        protected virtual double DerivativeErrorRate(double rate)
         {
-            return rate * k_derivative / scale;
+            return rate * K_derivative / scale;
         }
 
         public virtual void Clear()
@@ -144,7 +153,7 @@ namespace PilotAssistant
         /// <param name="invert">set true if control is reversed for some reason</param>
         public virtual void Preset(bool invert = false)
         {
-            sum = lastOutput * (invert ? 1 : -1);
+            sum = LastOutput * (invert ? 1 : -1);
         }
 
         /// <summary>
@@ -159,14 +168,14 @@ namespace PilotAssistant
 
         public virtual void UpdateSetpoint(double newSetpoint, bool smooth = false, double smoothStart = 0)
         {
-            target_setpoint = Utils.Clamp(newSetpoint, inMin, inMax);
-            active_setpoint = smooth ? smoothStart : newSetpoint;
+            Target_setpoint = Utils.Clamp(newSetpoint, InMin, InMax);
+            Active_setpoint = smooth ? smoothStart : newSetpoint;
             increment = 0;
         }
 
         public virtual void IncreaseSetpoint(double increaseBy)
         {
-            target_setpoint += increaseBy;
+            Target_setpoint += increaseBy;
         }
 
         #region properties

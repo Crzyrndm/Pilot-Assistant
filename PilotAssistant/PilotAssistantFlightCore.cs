@@ -47,9 +47,7 @@ namespace PilotAssistant
             instance = this;
             bHideUI = false;
 
-            config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
-            if (ReferenceEquals(config, null))
-                config = new ConfigNode(string.Empty);
+            config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(GetType(), "Settings.cfg")) ?? new ConfigNode(string.Empty);
 
             bUseStockToolbar = config.TryGetValue("UseStockToolbar", true);
 
@@ -59,9 +57,13 @@ namespace PilotAssistant
             blizSASTexPath = config.TryGetValue("blizSASIcon", "Pilot Assistant/Icon/BlizzyIcon");
 
             if (!bUseStockToolbar && ToolbarManager.ToolbarAvailable)
+            {
                 ToolbarMod.Instance.Awake();
+            }
             else
+            {
                 AppLauncherFlight.Instance.Awake();
+            }
         }
 
         public void Start()
@@ -82,7 +84,10 @@ namespace PilotAssistant
         public void RemoveVessel(AsstVesselModule avm)
         {
             if (selectedVesselIndex >= controlledVessels.Count)
+            {
                 return;
+            }
+
             if (avm.Vessel != controlledVessels[selectedVesselIndex].Vessel)
             {
                 Vessel ves = controlledVessels[selectedVesselIndex].Vessel;
@@ -100,9 +105,12 @@ namespace PilotAssistant
         {
             try
             {
-                config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
+                config = ConfigNode.Load(KSP.IO.IOUtils.GetFilePathFor(GetType(), "Settings.cfg"));
                 if (ReferenceEquals(config, null))
+                {
                     config = new ConfigNode(string.Empty);
+                }
+
                 if (!ReferenceEquals(config, null))
                 {
                     showTooltips = config.TryGetValue("AsstTooltips", true);
@@ -120,16 +128,16 @@ namespace PilotAssistant
                     window = config.TryGetValue("AppWindow", new Rect(100, 300, 0, 0));
 
                     // key bindings
-                    BindingManager.bindings[(int)bindingIndex.Pause].primaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("pausePrimary", KeyCode.Tab.ToString()));
-                    BindingManager.bindings[(int)bindingIndex.Pause].secondaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("pauseSecondary", KeyCode.None.ToString()));
-                    BindingManager.bindings[(int)bindingIndex.HdgTgl].primaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("hdgTglPrimary", KeyCode.Keypad9.ToString()));
-                    BindingManager.bindings[(int)bindingIndex.HdgTgl].secondaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("hdgTglSecondary", KeyCode.LeftAlt.ToString()));
-                    BindingManager.bindings[(int)bindingIndex.VertTgl].primaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("vertTglPrimary", KeyCode.Keypad6.ToString()));
-                    BindingManager.bindings[(int)bindingIndex.VertTgl].secondaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("vertTglSecondary", KeyCode.LeftAlt.ToString()));
-                    BindingManager.bindings[(int)bindingIndex.ThrtTgl].primaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("thrtTglPrimary", KeyCode.Keypad3.ToString()));
-                    BindingManager.bindings[(int)bindingIndex.ThrtTgl].secondaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("thrtTglSecondary", KeyCode.LeftAlt.ToString()));
-                    BindingManager.bindings[(int)bindingIndex.ArmSSAS].primaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("SSASArmPrimary", GameSettings.SAS_TOGGLE.primary.ToString()));
-                    BindingManager.bindings[(int)bindingIndex.ArmSSAS].secondaryBindingCode = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("SSASArmSecondary", KeyCode.LeftAlt.ToString()));
+                    BindingManager.bindings[(int)BindingIndex.Pause].PrimaryBindingCode.code = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("pausePrimary", KeyCode.Tab.ToString()));
+                    BindingManager.bindings[(int)BindingIndex.Pause].SecondaryBindingCode.code = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("pauseSecondary", KeyCode.None.ToString()));
+                    BindingManager.bindings[(int)BindingIndex.HdgTgl].PrimaryBindingCode.code = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("hdgTglPrimary", KeyCode.Keypad9.ToString()));
+                    BindingManager.bindings[(int)BindingIndex.HdgTgl].SecondaryBindingCode.code = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("hdgTglSecondary", KeyCode.LeftAlt.ToString()));
+                    BindingManager.bindings[(int)BindingIndex.VertTgl].PrimaryBindingCode.code = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("vertTglPrimary", KeyCode.Keypad6.ToString()));
+                    BindingManager.bindings[(int)BindingIndex.VertTgl].SecondaryBindingCode.code = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("vertTglSecondary", KeyCode.LeftAlt.ToString()));
+                    BindingManager.bindings[(int)BindingIndex.ThrtTgl].PrimaryBindingCode.code = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("thrtTglPrimary", KeyCode.Keypad3.ToString()));
+                    BindingManager.bindings[(int)BindingIndex.ThrtTgl].SecondaryBindingCode.code = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("thrtTglSecondary", KeyCode.LeftAlt.ToString()));
+                    BindingManager.bindings[(int)BindingIndex.ArmSSAS].PrimaryBindingCode.code = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("SSASArmPrimary", GameSettings.SAS_TOGGLE.primary.ToString()));
+                    BindingManager.bindings[(int)BindingIndex.ArmSSAS].SecondaryBindingCode.code = (KeyCode)System.Enum.Parse(typeof(KeyCode), config.TryGetValue("SSASArmSecondary", KeyCode.LeftAlt.ToString()));
                 }
                 else
                 {
@@ -147,7 +155,10 @@ namespace PilotAssistant
             try
             {
                 if (ReferenceEquals(config, null))
+                {
                     config = new ConfigNode(string.Empty);
+                }
+
                 if (!ReferenceEquals(config, null))
                 {
                     config.SetValue("AsstTooltips", showTooltips.ToString(), true);
@@ -166,16 +177,16 @@ namespace PilotAssistant
                     config.SetValue("BindingWindow", BindingManager.Instance.windowRect.ToString(), true);
 
                     // key bindings
-                    config.SetValue("pausePrimary", BindingManager.bindings[(int)bindingIndex.Pause].primaryBindingCode.ToString(), true);
-                    config.SetValue("pauseSecondary", BindingManager.bindings[(int)bindingIndex.Pause].secondaryBindingCode.ToString(), true);
-                    config.SetValue("hdgTglPrimary", BindingManager.bindings[(int)bindingIndex.HdgTgl].primaryBindingCode.ToString(), true);
-                    config.SetValue("hdgTglSecondary", BindingManager.bindings[(int)bindingIndex.HdgTgl].secondaryBindingCode.ToString(), true);
-                    config.SetValue("vertTglPrimary", BindingManager.bindings[(int)bindingIndex.VertTgl].primaryBindingCode.ToString(), true);
-                    config.SetValue("vertTglSecondary", BindingManager.bindings[(int)bindingIndex.VertTgl].secondaryBindingCode.ToString(), true);
-                    config.SetValue("thrtTglPrimary", BindingManager.bindings[(int)bindingIndex.ThrtTgl].primaryBindingCode.ToString(), true);
-                    config.SetValue("thrtTglSecondary", BindingManager.bindings[(int)bindingIndex.ThrtTgl].secondaryBindingCode.ToString(), true);
-                    config.SetValue("SSASArmPrimary", BindingManager.bindings[(int)bindingIndex.ArmSSAS].primaryBindingCode.ToString(), true);
-                    config.SetValue("SSASArmSecondary", BindingManager.bindings[(int)bindingIndex.ArmSSAS].secondaryBindingCode.ToString(), true);
+                    config.SetValue("pausePrimary", BindingManager.bindings[(int)BindingIndex.Pause].PrimaryBindingCode.code.ToString(), true);
+                    config.SetValue("pauseSecondary", BindingManager.bindings[(int)BindingIndex.Pause].SecondaryBindingCode.code.ToString(), true);
+                    config.SetValue("hdgTglPrimary", BindingManager.bindings[(int)BindingIndex.HdgTgl].PrimaryBindingCode.code.ToString(), true);
+                    config.SetValue("hdgTglSecondary", BindingManager.bindings[(int)BindingIndex.HdgTgl].SecondaryBindingCode.code.ToString(), true);
+                    config.SetValue("vertTglPrimary", BindingManager.bindings[(int)BindingIndex.VertTgl].PrimaryBindingCode.code.ToString(), true);
+                    config.SetValue("vertTglSecondary", BindingManager.bindings[(int)BindingIndex.VertTgl].SecondaryBindingCode.code.ToString(), true);
+                    config.SetValue("thrtTglPrimary", BindingManager.bindings[(int)BindingIndex.ThrtTgl].PrimaryBindingCode.code.ToString(), true);
+                    config.SetValue("thrtTglSecondary", BindingManager.bindings[(int)BindingIndex.ThrtTgl].SecondaryBindingCode.code.ToString(), true);
+                    config.SetValue("SSASArmPrimary", BindingManager.bindings[(int)BindingIndex.ArmSSAS].PrimaryBindingCode.code.ToString(), true);
+                    config.SetValue("SSASArmSecondary", BindingManager.bindings[(int)BindingIndex.ArmSSAS].SecondaryBindingCode.code.ToString(), true);
 
                     // bliz toolbar icons
                     config.SetValue("blizMenuIcon", blizMenuTexPath, true);
@@ -183,8 +194,8 @@ namespace PilotAssistant
                     config.SetValue("blizSSASIcon", blizSSASTexPath, true);
                     config.SetValue("blizSASIcon", blizSASTexPath, true);
 
-                    Directory.CreateDirectory(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), string.Empty));
-                    config.Save(KSP.IO.IOUtils.GetFilePathFor(this.GetType(), "Settings.cfg"));
+                    Directory.CreateDirectory(KSP.IO.IOUtils.GetFilePathFor(GetType(), string.Empty));
+                    config.Save(KSP.IO.IOUtils.GetFilePathFor(GetType(), "Settings.cfg"));
                 }
             }
             catch
@@ -196,9 +207,14 @@ namespace PilotAssistant
         public void OnGUI()
         {
             if (ReferenceEquals(GeneralUI.UISkin, null))
-                GeneralUI.customSkin();
+            {
+                GeneralUI.CustomSkin();
+            }
+
             if (bHideUI)
+            {
                 return;
+            }
 
             GUI.skin = GeneralUI.UISkin;
             GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
@@ -209,26 +225,39 @@ namespace PilotAssistant
         public void Draw()
         {
             if (bDisplayOptions)
+            {
                 window = GUILayout.Window(0984653, window, OptionsWindow, string.Empty, GUILayout.Width(60), GUILayout.Height(0));
+            }
         }
 
         private void OptionsWindow(int id)
         {
             if (GUI.Button(new Rect(window.width - 16, 2, 14, 14), string.Empty))
+            {
                 bDisplayOptions = false;
+            }
 
             if (GUILayout.Button("Update Defaults"))
-                PresetManager.Instance.updateDefaultAsstPreset(controlledVessels[selectedVesselIndex].vesselAsst.activePreset);
+            {
+                PresetManager.Instance.UpdateDefaultAsstPreset(controlledVessels[selectedVesselIndex].vesselAsst.activePreset);
+            }
+
             if (controlledVessels.Count > 1)
             {
                 GUILayout.Box(string.Empty, GUILayout.Height(10));
                 for (int i = 0; i < controlledVessels.Count; i++)
                 {
                     if (controlledVessels[i].Vessel.isActiveVessel)
+                    {
                         GUI.backgroundColor = Color.green;
-                    bool tmp = GUILayout.Toggle(i == selectedVesselIndex, controlledVessels[i].Vessel.vesselName, GeneralUI.UISkin.customStyles[(int)myStyles.btnToggle], GUILayout.Width(120));
+                    }
+
+                    bool tmp = GUILayout.Toggle(i == selectedVesselIndex, controlledVessels[i].Vessel.vesselName, GeneralUI.UISkin.customStyles[(int)MyStyles.btnToggle], GUILayout.Width(120));
                     if (tmp)
+                    {
                         selectedVesselIndex = i;
+                    }
+
                     GUI.backgroundColor = GeneralUI.stockBackgroundGUIColor;
                 }
             }
@@ -249,13 +278,16 @@ namespace PilotAssistant
         {
             SaveConfig();
             if (Toolbar.ToolbarManager.ToolbarAvailable && !bUseStockToolbar)
+            {
                 ToolbarMod.Instance.OnDestroy();
+            }
+
             BindingManager.Instance.OnDestroy();
 
             GameEvents.onHideUI.Remove(HideUI);
             GameEvents.onShowUI.Remove(ShowUI);
 
-            PresetManager.saveToFile();
+            PresetManager.SaveToFile();
             instance = null;
         }
     }

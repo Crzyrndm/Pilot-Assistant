@@ -13,7 +13,10 @@ namespace PilotAssistant.Toolbar
             get
             {
                 if (instance == null)
+                {
                     instance = new ToolbarMod();
+                }
+
                 return instance;
             }
         }
@@ -24,22 +27,22 @@ namespace PilotAssistant.Toolbar
         private IButton menuButton;
         public void Awake()
         {
-            menuButton = ToolbarManager.Instance.add("PilotAssistant", "PilotAssistantMenuBtn");
+            menuButton = ToolbarManager.Instance.Add("PilotAssistant", "PilotAssistantMenuBtn");
             menuButton.TexturePath = PilotAssistantFlightCore.Instance.blizMenuTexPath;
             menuButton.ToolTip = "Open Pilot Assistant Menu";
             menuButton.OnClick += (e) => PilotAssistantFlightCore.bDisplayOptions = !PilotAssistantFlightCore.bDisplayOptions;
 
-            asstButton = ToolbarManager.Instance.add("PilotAssistant", "PilotAssistantAsstBtn");
+            asstButton = ToolbarManager.Instance.Add("PilotAssistant", "PilotAssistantAsstBtn");
             asstButton.TexturePath = PilotAssistantFlightCore.Instance.blizAsstTexPath;
             asstButton.ToolTip = "Open Pilot Assistant Window";
             asstButton.OnClick += (e) => PilotAssistantFlightCore.bDisplayAssistant = !PilotAssistantFlightCore.bDisplayAssistant;
 
-            SSASButton = ToolbarManager.Instance.add("PilotAssistant", "PilotAssistantSSASBtn");
+            SSASButton = ToolbarManager.Instance.Add("PilotAssistant", "PilotAssistantSSASBtn");
             SSASButton.TexturePath = PilotAssistantFlightCore.Instance.blizSSASTexPath;
             SSASButton.ToolTip = "Open SSAS Window";
             SSASButton.OnClick += (e) => PilotAssistantFlightCore.bDisplaySSAS = !PilotAssistantFlightCore.bDisplaySSAS;
 
-            stockButton = ToolbarManager.Instance.add("PilotAssistant", "PilotAssistantStockBtn");
+            stockButton = ToolbarManager.Instance.Add("PilotAssistant", "PilotAssistantStockBtn");
             stockButton.TexturePath = PilotAssistantFlightCore.Instance.blizSASTexPath;
             stockButton.ToolTip = "Open Stock SAS tuning Window";
             stockButton.OnClick += (e) => PilotAssistantFlightCore.bDisplaySAS = !PilotAssistantFlightCore.bDisplaySAS;

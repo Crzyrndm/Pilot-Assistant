@@ -81,39 +81,42 @@ namespace PilotAssistant
             // make sure that instance is never recovered while loading
             DontDestroyOnLoad(this);
             // load preset data saved from a previous time
-            loadPresetsFromFile();
+            LoadPresetsFromFile();
         }
 
         public void OnDestroy()
         {
             // probably not ever called but if it is, changes are saved
-            saveToFile();
+            SaveToFile();
         }
 
         /// <summary>
         /// process previously saved data loading PA and craft presets into a usable format
         /// </summary>
-        public void loadPresetsFromFile()
+        public void LoadPresetsFromFile()
         {            
             // PA nodes
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(asstPresetNodeName)) // want to move this outside GameDatabase at some point
             {
                 string name = node.GetValue("name");
                 if (ReferenceEquals(node, null) || instance.AsstPresetList.Any(p => p.name == name))
+                {
                     continue;
+                }
 
                 // process controller nodes to a more easily accesible array format.
                 // Could possibly do this a bit neater by iterating through the nodes and doing a switch on the node name. Downside would be trying to keep the order intact
-                List<double[]> gains = new List<double[]>();
-                gains.Add(gainsArrayFromNode(node.GetNode(hdgCtrlr), AsstList.HdgBank));
-                gains.Add(gainsArrayFromNode(node.GetNode(yawCtrlr), AsstList.BankToYaw));
-                gains.Add(gainsArrayFromNode(node.GetNode(aileronCtrlr), AsstList.Aileron));
-                gains.Add(gainsArrayFromNode(node.GetNode(rudderCtrlr), AsstList.Rudder));
-                gains.Add(gainsArrayFromNode(node.GetNode(altCtrlr), AsstList.Altitude));
-                gains.Add(gainsArrayFromNode(node.GetNode(vertCtrlr), AsstList.VertSpeed));
-                gains.Add(gainsArrayFromNode(node.GetNode(elevCtrlr), AsstList.Elevator));
-                gains.Add(gainsArrayFromNode(node.GetNode(speedCtrlr), AsstList.Speed));
-                gains.Add(gainsArrayFromNode(node.GetNode(accelCtrlr), AsstList.Acceleration));
+                var gains = new List<double[]> {
+                    GainsArrayFromNode(node.GetNode(hdgCtrlr), AsstList.HdgBank),
+                    GainsArrayFromNode(node.GetNode(yawCtrlr), AsstList.BankToYaw),
+                    GainsArrayFromNode(node.GetNode(aileronCtrlr), AsstList.Aileron),
+                    GainsArrayFromNode(node.GetNode(rudderCtrlr), AsstList.Rudder),
+                    GainsArrayFromNode(node.GetNode(altCtrlr), AsstList.Altitude),
+                    GainsArrayFromNode(node.GetNode(vertCtrlr), AsstList.VertSpeed),
+                    GainsArrayFromNode(node.GetNode(elevCtrlr), AsstList.Elevator),
+                    GainsArrayFromNode(node.GetNode(speedCtrlr), AsstList.Speed),
+                    GainsArrayFromNode(node.GetNode(accelCtrlr), AsstList.Acceleration)
+                };
 
                 AsstPresetList.Add(new AsstPreset(gains, name));
             }
@@ -123,18 +126,27 @@ namespace PilotAssistant
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(craftPresetNodeName)) // want to move this outside GameDatabase at some point
             {
                 if (ReferenceEquals(node, null))
+                {
                     continue;
+                }
+
                 string[] values = node.GetValues();
                 for (int i = 0; i < values.Length; ++i )
                 {
                     string[] tmp = values[i].Split(delimiter, 2, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToArray();
                     if (tmp.Length != 2)
+                    {
                         continue;
+                    }
 
                     if (!craftPresetDict.ContainsKey(tmp[0]))
+                    {
                         craftPresetDict.Add(tmp[0], tmp[1]);
+                    }
                     else if (tmp[0] == craftDefaultName)
+                    {
                         craftPresetDict[craftDefaultName] = tmp[1];
+                    }
                 }
             }
         }
@@ -142,16 +154,22 @@ namespace PilotAssistant
         /// <summary>
         /// saves user created and default presets for next run
         /// </summary>
-        public static void saveToFile()
+        public static void SaveToFile()
         {
-            ConfigNode node = new ConfigNode();
+            var node = new ConfigNode();
             // dummy value is required incase nothing else will be added to the file. KSP doesn't like blank .cfg's
             node.AddValue("dummy", "do not delete me");
             foreach (AsstPreset p in instance.AsstPresetList)
+            {
                 node.AddNode(AsstPresetToNode(p));
-            ConfigNode vesselNode = new ConfigNode(craftPresetNodeName);
+            }
+
+            var vesselNode = new ConfigNode(craftPresetNodeName);
             foreach (KeyValuePair<string, string> cP in instance.craftPresetDict)
+            {
                 vesselNode.AddValue("pair", string.Concat(cP.Key, ",", cP.Value)); // pair = craft,preset
+            }
+
             node.AddNode(vesselNode);
             
             node.Save(KSPUtil.ApplicationRootPath.Replace("\\", "/") + presetsPath);
@@ -160,10 +178,10 @@ namespace PilotAssistant
         /// <summary>
         /// Sets the current active PA preset to be the default
         /// </summary>
-        public void updateDefaultAsstPreset(AsstPreset preset)
+        public void UpdateDefaultAsstPreset(AsstPreset preset)
         {
             craftPresetDict[craftDefaultName] = preset.name;
-            saveToFile();
+            SaveToFile();
         }
 
         /// <summary>
@@ -172,11 +190,13 @@ namespace PilotAssistant
         /// <param name="node">A controller node</param>
         /// <param name="type">An ID to use for referencing the default values in cases of null input</param>
         /// <returns>an array of doubles containing the gains for a controller</returns>
-        public static double[] gainsArrayFromNode(ConfigNode node, AsstList type)
+        public static double[] GainsArrayFromNode(ConfigNode node, AsstList type)
         {
             if (ReferenceEquals(node, null))
-                return defaultControllerGains(type);
-            
+            {
+                return DefaultControllerGains(type);
+            }
+
             double[] gains = new double[9];
             double.TryParse(node.GetValue(pGain), out gains[0]);
             double.TryParse(node.GetValue(iGain), out gains[1]);
@@ -198,9 +218,9 @@ namespace PilotAssistant
         /// <param name="index">index of the array in the preset storage</param>
         /// <param name="preset">object to source the array from</param>
         /// <returns>A config node holding the gains for a controller</returns>
-        public static ConfigNode gainsArrayToNode(string name, int index, AsstPreset preset)
+        public static ConfigNode GainsArrayToNode(string name, int index, AsstPreset preset)
         {
-            ConfigNode node = new ConfigNode(name);
+            var node = new ConfigNode(name);
             node.AddValue(pGain, preset.PIDGains[index][0]);
             node.AddValue(iGain, preset.PIDGains[index][1]);
             node.AddValue(dGain, preset.PIDGains[index][2]);
@@ -220,17 +240,17 @@ namespace PilotAssistant
         /// <returns>config node holding all PA controller values</returns>
         public static ConfigNode AsstPresetToNode(AsstPreset preset)
         {
-            ConfigNode node = new ConfigNode(asstPresetNodeName);
+            var node = new ConfigNode(asstPresetNodeName);
             node.AddValue("name", preset.name);
-            node.AddNode(gainsArrayToNode(hdgCtrlr, (int)AsstList.HdgBank, preset));
-            node.AddNode(gainsArrayToNode(yawCtrlr, (int)AsstList.BankToYaw, preset));
-            node.AddNode(gainsArrayToNode(aileronCtrlr, (int)AsstList.Aileron, preset));
-            node.AddNode(gainsArrayToNode(rudderCtrlr, (int)AsstList.Rudder, preset));
-            node.AddNode(gainsArrayToNode(altCtrlr, (int)AsstList.Altitude, preset));
-            node.AddNode(gainsArrayToNode(vertCtrlr, (int)AsstList.VertSpeed, preset));
-            node.AddNode(gainsArrayToNode(elevCtrlr, (int)AsstList.Elevator, preset));
-            node.AddNode(gainsArrayToNode(speedCtrlr, (int)AsstList.Speed, preset));
-            node.AddNode(gainsArrayToNode(accelCtrlr, (int)AsstList.Acceleration, preset));
+            node.AddNode(GainsArrayToNode(hdgCtrlr, (int)AsstList.HdgBank, preset));
+            node.AddNode(GainsArrayToNode(yawCtrlr, (int)AsstList.BankToYaw, preset));
+            node.AddNode(GainsArrayToNode(aileronCtrlr, (int)AsstList.Aileron, preset));
+            node.AddNode(GainsArrayToNode(rudderCtrlr, (int)AsstList.Rudder, preset));
+            node.AddNode(GainsArrayToNode(altCtrlr, (int)AsstList.Altitude, preset));
+            node.AddNode(GainsArrayToNode(vertCtrlr, (int)AsstList.VertSpeed, preset));
+            node.AddNode(GainsArrayToNode(elevCtrlr, (int)AsstList.Elevator, preset));
+            node.AddNode(GainsArrayToNode(speedCtrlr, (int)AsstList.Speed, preset));
+            node.AddNode(GainsArrayToNode(accelCtrlr, (int)AsstList.Acceleration, preset));
 
             return node;
         }
@@ -240,7 +260,7 @@ namespace PilotAssistant
         /// </summary>
         /// <param name="type">controller ID</param>
         /// <returns>default gains array</returns>
-        public static double[] defaultControllerGains(AsstList type)
+        public static double[] DefaultControllerGains(AsstList type)
         {
             switch(type)
             {
@@ -273,20 +293,22 @@ namespace PilotAssistant
         /// <param name="name">preset name</param>
         /// <param name="controllers">controllers to build from</param>
         /// <param name="v">vessel to associate with</param>
-        public static bool newAsstPreset(string name, Asst_PID_Controller[] controllers, Vessel v)
+        public static bool NewAsstPreset(string name, Asst_PID_Controller[] controllers, Vessel v)
         {
             if (string.IsNullOrEmpty(name))
+            {
                 return false;
+            }
 
             if (Instance.AsstPresetList.Any(p => p.name == name))
             {
-                GeneralUI.postMessage("Failed to add preset with duplicate name");
+                GeneralUI.PostMessage("Failed to add preset with duplicate name");
                 return false;
             }
-            AsstPreset newPreset = new AsstPreset(controllers, name);
-            Instance.updateCraftPreset(newPreset, v);
+            var newPreset = new AsstPreset(controllers, name);
+            Instance.UpdateCraftPreset(newPreset, v);
             Instance.AsstPresetList.Add(newPreset);
-            saveToFile();
+            SaveToFile();
 
             return true; // new preset created successfully, can clear the string
         }
@@ -296,30 +318,36 @@ namespace PilotAssistant
         /// </summary>
         /// <param name="p">the preset to load</param>
         /// <param name="asstInstance">the PA instance to load to</param>
-        public static void loadAsstPreset(AsstPreset p, PilotAssistant asstInstance)
+        public static void LoadAsstPreset(AsstPreset p, PilotAssistant asstInstance)
         {
             if (ReferenceEquals(p, null))
+            {
                 return;
+            }
+
             Asst_PID_Controller[] c = asstInstance.controllers;
             for (int i = 0; i < 8; i++)
             {
-                c[i].k_proportional = p.PIDGains[i][0];
-                c[i].k_integral = p.PIDGains[i][1];
-                c[i].k_derivative = p.PIDGains[i][2];
-                c[i].outMin = p.PIDGains[i][3];
-                c[i].outMax = p.PIDGains[i][4];
-                c[i].integralClampLower = p.PIDGains[i][5];
-                c[i].integralClampUpper = p.PIDGains[i][6];
+                c[i].K_proportional = p.PIDGains[i][0];
+                c[i].K_integral = p.PIDGains[i][1];
+                c[i].K_derivative = p.PIDGains[i][2];
+                c[i].OutMin = p.PIDGains[i][3];
+                c[i].OutMax = p.PIDGains[i][4];
+                c[i].IntegralClampLower = p.PIDGains[i][5];
+                c[i].IntegralClampUpper = p.PIDGains[i][6];
                 c[i].Scalar = p.PIDGains[i][7];
                 c[i].Easing = p.PIDGains[i][8];
             }
             
             asstInstance.activePreset = p;
-            GeneralUI.postMessage("Loaded preset " + p.name);
+            GeneralUI.PostMessage("Loaded preset " + p.name);
             
             if (asstInstance.activePreset.name != Instance.craftPresetDict[craftDefaultName])
-                Instance.updateCraftPreset(asstInstance.activePreset, asstInstance.vesModule.Vessel);
-            saveToFile();
+            {
+                Instance.UpdateCraftPreset(asstInstance.activePreset, asstInstance.vesModule.Vessel);
+            }
+
+            SaveToFile();
         }
 
         /// <summary>
@@ -327,75 +355,94 @@ namespace PilotAssistant
         /// </summary>
         /// <param name="p">the preset to load</param>
         /// <param name="asstInstance">the PA instance to load to</param>
-        public static void loadAsstPreset(string presetName, PilotAssistant asstInstance)
+        public static void LoadAsstPreset(string presetName, PilotAssistant asstInstance)
         {
             if (string.IsNullOrEmpty(presetName))
+            {
                 return;
+            }
+
             AsstPreset p = Instance.AsstPresetList.FirstOrDefault(pr => pr.name == presetName);
             if (ReferenceEquals(p , null))
+            {
                 return;
+            }
+
             Asst_PID_Controller[] c = asstInstance.controllers;
             for (int i = 0; i < 8; i++)
             {
-                c[i].k_proportional = p.PIDGains[i][0];
-                c[i].k_integral = p.PIDGains[i][1];
-                c[i].k_derivative = p.PIDGains[i][2];
-                c[i].outMin = p.PIDGains[i][3];
-                c[i].outMax = p.PIDGains[i][4];
-                c[i].integralClampLower = p.PIDGains[i][5];
-                c[i].integralClampUpper = p.PIDGains[i][6];
+                c[i].K_proportional = p.PIDGains[i][0];
+                c[i].K_integral = p.PIDGains[i][1];
+                c[i].K_derivative = p.PIDGains[i][2];
+                c[i].OutMin = p.PIDGains[i][3];
+                c[i].OutMax = p.PIDGains[i][4];
+                c[i].IntegralClampLower = p.PIDGains[i][5];
+                c[i].IntegralClampUpper = p.PIDGains[i][6];
                 c[i].Scalar = p.PIDGains[i][7];
                 c[i].Easing = p.PIDGains[i][8];
             }
             
             asstInstance.activePreset = p;
-            GeneralUI.postMessage("Loaded preset " + p.name);
+            GeneralUI.PostMessage("Loaded preset " + p.name);
             
             if (asstInstance.activePreset.name != Instance.craftPresetDict[craftDefaultName])
-                Instance.updateCraftPreset(asstInstance.activePreset, asstInstance.vesModule.Vessel);
-            saveToFile();
+            {
+                Instance.UpdateCraftPreset(asstInstance.activePreset, asstInstance.vesModule.Vessel);
+            }
+
+            SaveToFile();
         }
 
         /// <summary>
         /// remove a preset from the stored list and remove any references to it on active vessels
         /// </summary>
         /// <param name="p"></param>
-        public void deleteAsstPreset(AsstPreset p)
+        public void DeleteAsstPreset(AsstPreset p)
         {
-            GeneralUI.postMessage("Deleted preset " + p.name);
+            GeneralUI.PostMessage("Deleted preset " + p.name);
             foreach (AsstVesselModule avm in PilotAssistantFlightCore.Instance.controlledVessels)
             {
                 if (avm.vesselAsst.activePreset == p)
+                {
                     avm.vesselAsst.activePreset = null;
+                }
             }
-            List<string> toRemove = new List<string>();
+            var toRemove = new List<string>();
             foreach (KeyValuePair<string, string> kvp in craftPresetDict)
             {
                 if (kvp.Value == p.name)
+                {
                     toRemove.Add(kvp.Key);
+                }
             }
             foreach (string s in toRemove)
+            {
                 craftPresetDict.Remove(s);
+            }
+
             AsstPresetList.Remove(p);
 
             p = null;
 
-            saveToFile();
+            SaveToFile();
         }
 
         /// <summary>
         /// called on vessel load to load the correct preset for the vessel being flown
         /// </summary>
         /// <param name="instance">The instance to load for</param>
-        public void loadCraftAsstPreset(PilotAssistant instance)
+        public void LoadCraftAsstPreset(PilotAssistant instance)
         {
             Utils.Log("loading preset for craft " + instance.Vessel.name);
-            string presetName;
-            Utils.Log(craftPresetDict.TryGetValue(instance.Vessel.vesselName, out presetName) + " " + presetName);
+            Utils.Log(craftPresetDict.TryGetValue(instance.Vessel.vesselName, out string presetName) + " " + presetName);
             if (craftPresetDict.TryGetValue(instance.Vessel.vesselName, out presetName))
-                loadAsstPreset(presetName, instance);
+            {
+                LoadAsstPreset(presetName, instance);
+            }
             else
-                loadAsstPreset(Instance.craftPresetDict[craftDefaultName], instance);
+            {
+                LoadAsstPreset(Instance.craftPresetDict[craftDefaultName], instance);
+            }
         }
 
         /// <summary>
@@ -403,22 +450,24 @@ namespace PilotAssistant
         /// </summary>
         /// <param name="p">preset</param>
         /// <param name="v">craft</param>
-        public void updateCraftPreset(AsstPreset p, Vessel v)
+        public void UpdateCraftPreset(AsstPreset p, Vessel v)
         {
             if (!Instance.craftPresetDict.ContainsKey(v.vesselName))
+            {
                 craftPresetDict.Add(v.vesselName, string.Empty);
+            }
+
             Instance.craftPresetDict[v.vesselName] = p.name;
         }
 
-        public void initDefaultPreset(AsstPreset p)
+        public void InitDefaultPreset(AsstPreset p)
         {
-            string defaultName;
-            if (!craftPresetDict.TryGetValue(craftDefaultName, out defaultName) || defaultName == string.Empty)
+            if (!craftPresetDict.TryGetValue(craftDefaultName, out string defaultName) || defaultName == string.Empty)
             {
                 AsstPresetList.Add(p);
                 Instance.craftPresetDict[craftDefaultName] = p.name;
             }
-            saveToFile();
+            SaveToFile();
             // loadAsstPreset(Instance.craftPresetDict[craftDefaultName], instance);
         }
     }

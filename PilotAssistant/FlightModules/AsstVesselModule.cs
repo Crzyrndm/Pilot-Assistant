@@ -35,6 +35,11 @@ namespace PilotAssistant.FlightModules
 
                 GameEvents.onVesselChange.Add(VesselSwitch);
                 GameEvents.onTimeWarpRateChanged.Add(WarpHandler);
+
+                if (FlightGlobals.ActiveVessel == Vessel)
+                {
+                    VesselSwitch(Vessel);
+                }
             }
             catch (Exception ex)
             {
@@ -48,7 +53,10 @@ namespace PilotAssistant.FlightModules
         public void Update()
         {
             if (ReferenceEquals(Vessel, null))
+            {
                 return;
+            }
+
             vesselAsst.Update();
         }
 
@@ -60,20 +68,28 @@ namespace PilotAssistant.FlightModules
         public void VesselSwitch(Vessel v)
         {
             if (v == Vessel)
+            {
                 vesselAsst.VesselSwitch(v);
+            }
         }
 
         public void PreAutoPilotUpdate(FlightCtrlState state)
         {
             if (Vessel.HoldPhysics)
+            {
                 return;
-            vesselData.updateAttitude();
+            }
+
+            vesselData.UpdateAttitude();
         }
 
         public void PostAutoPilotUpdate(FlightCtrlState state)
         {
             if (Vessel.HoldPhysics)
+            {
                 return;
+            }
+
             vesselAsst.VesselController(state);
         }
 
@@ -82,7 +98,10 @@ namespace PilotAssistant.FlightModules
             if (PilotAssistantFlightCore.bHideUI || PilotAssistantFlightCore.Instance == null
                 || PilotAssistantFlightCore.Instance.selectedVesselIndex >= PilotAssistantFlightCore.Instance.controlledVessels.Count
                 || PilotAssistantFlightCore.Instance.controlledVessels[PilotAssistantFlightCore.Instance.selectedVesselIndex] != this)
+            {
                 return;
+            }
+
             vesselAsst.DrawGUI();
         }
 
@@ -99,7 +118,9 @@ namespace PilotAssistant.FlightModules
                 {
                     vesselAsst.OnDestroy();
                     if (!ReferenceEquals(PilotAssistantFlightCore.Instance, null))
+                    {
                         PilotAssistantFlightCore.Instance.RemoveVessel(this);
+                    }
                 }
                 vesselAsst = null;
                 vesselData = null;

@@ -12,11 +12,17 @@ namespace PilotAssistant.Utility
         public static T Clamp<T>(this T val, T min, T max) where T : System.IComparable<T>
         {
             if (val.CompareTo(min) < 0)
+            {
                 return min;
+            }
             else if (val.CompareTo(max) > 0)
+            {
                 return max;
+            }
             else
+            {
                 return val;
+            }
         }
 
         public static Asst_PID_Controller GetAsst(this AsstList id, PilotAssistant instance)
@@ -24,7 +30,7 @@ namespace PilotAssistant.Utility
             return instance.controllers[(int)id];
         }
 
-        public static bool isFlightControlLocked()
+        public static bool IsFlightControlLocked()
         {
             return (InputLockManager.IsLocked(ControlTypes.PITCH) && !PilotAssistant.pitchLockEngaged) || InputLockManager.IsLocked(ControlTypes.ROLL)
                     || (InputLockManager.IsLocked(ControlTypes.YAW) && !PilotAssistant.yawLockEngaged) || InputLockManager.IsLocked(ControlTypes.THROTTLE);
@@ -34,7 +40,7 @@ namespace PilotAssistant.Utility
         /// Circular rounding to keep compass measurements within a 360 degree range
         /// maxHeading is the top limit, bottom limit is maxHeading - 360
         /// </summary>
-        public static double headingClamp(this double valToClamp, double maxHeading, double range = 360)
+        public static double HeadingClamp(this double valToClamp, double maxHeading, double range = 360)
         {
             double temp = (valToClamp - (maxHeading - range)) % range;
             return (maxHeading - range) + (temp < 0 ? temp + range : temp);
@@ -43,7 +49,7 @@ namespace PilotAssistant.Utility
         /// <summary>
         /// Plane normal vector from a given heading (surface right vector)
         /// </summary>
-        public static Vector3 vecHeading(double target, AsstVesselModule avm)
+        public static Vector3 VecHeading(double target, AsstVesselModule avm)
         {
             double angleDiff = target - avm.vesselData.heading;
             return Quaternion.AngleAxis((float)(angleDiff + 90), (Vector3)avm.vesselData.planetUp) * avm.vesselData.surfVesForward;
@@ -52,21 +58,21 @@ namespace PilotAssistant.Utility
         /// <summary>
         /// calculate current heading from plane normal vector
         /// </summary>
-        public static double calculateTargetHeading(Vector3 direction, AsstVesselModule avm)
+        public static double CalculateTargetHeading(Vector3 direction, AsstVesselModule avm)
         {
-            Vector3 fwd = Vector3.Cross(direction, avm.vesselData.planetUp);
+            var fwd = Vector3.Cross(direction, avm.vesselData.planetUp);
             double heading = Vector3.Angle(fwd, avm.Vessel.north) * Math.Sign(Vector3.Dot(fwd, avm.Vessel.east));
-            return heading.headingClamp(360);
+            return heading.HeadingClamp(360);
         }
 
         /// <summary>
         /// calculate current heading from plane rotation
         /// </summary>
-        public static double calculateTargetHeading(Quaternion rotation, AsstVesselModule avm)
+        public static double CalculateTargetHeading(Quaternion rotation, AsstVesselModule avm)
         {
-            Vector3 fwd = Vector3.Cross(getPlaneNormal(rotation, avm), avm.vesselData.planetUp);
+            var fwd = Vector3.Cross(GetPlaneNormal(rotation, avm), avm.vesselData.planetUp);
             double heading = Vector3.Angle(fwd, avm.Vessel.north) * Math.Sign(Vector3.Dot(fwd, avm.Vessel.east));
-            return heading.headingClamp(360);
+            return heading.HeadingClamp(360);
         }
 
         /// <summary>
@@ -78,28 +84,34 @@ namespace PilotAssistant.Utility
         {
             double diff = target - current;
             if (diff < maxAngle - 360)
+            {
                 return current - 360;
+            }
             else if (diff > maxAngle)
+            {
                 return current + 360;
+            }
             else
+            {
                 return current;
+            }
         }
 
         /// <summary>
         /// calculate the planet relative rotation from the plane normal vector
         /// </summary>
-        public static Quaternion getPlaneRotation(Vector3 planeNormal, AsstVesselModule avm)
+        public static Quaternion GetPlaneRotation(Vector3 planeNormal, AsstVesselModule avm)
         {
             return Quaternion.FromToRotation(avm.Vessel.mainBody.transform.right, planeNormal);
         }
 
-        public static Quaternion getPlaneRotation(double heading, AsstVesselModule avm)
+        public static Quaternion GetPlaneRotation(double heading, AsstVesselModule avm)
         {
-            Vector3 planeNormal = vecHeading(heading, avm);
-            return getPlaneRotation(planeNormal, avm);
+            Vector3 planeNormal = VecHeading(heading, avm);
+            return GetPlaneRotation(planeNormal, avm);
         }
 
-        public static Vector3 getPlaneNormal(Quaternion rotation, AsstVesselModule avm)
+        public static Vector3 GetPlaneNormal(Quaternion rotation, AsstVesselModule avm)
         {
             return rotation * avm.Vessel.mainBody.transform.right;
         }
@@ -109,32 +121,32 @@ namespace PilotAssistant.Utility
             return axis.IsNeutral() && Math.Abs(axis.GetAxis()) < 0.00001;
         }
 
-        public static bool hasYawInput()
+        public static bool HasYawInput()
         {
             return GameSettings.YAW_LEFT.GetKey() || GameSettings.YAW_RIGHT.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_YAW);
         }
 
-        public static bool hasPitchInput()
+        public static bool HasPitchInput()
         {
             return GameSettings.PITCH_DOWN.GetKey() || GameSettings.PITCH_UP.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_PITCH);
         }
 
-        public static bool hasRollInput()
+        public static bool HasRollInput()
         {
             return GameSettings.ROLL_LEFT.GetKey() || GameSettings.ROLL_RIGHT.GetKey() || !Utils.IsNeutral(GameSettings.AXIS_ROLL);
         }
 
-        public static bool hasThrottleInput()
+        public static bool HasThrottleInput()
         {
             return GameSettings.THROTTLE_UP.GetKey() || GameSettings.THROTTLE_DOWN.GetKey() || (GameSettings.THROTTLE_CUTOFF.GetKeyDown() && !GameSettings.MODIFIER_KEY.GetKey()) || GameSettings.THROTTLE_FULL.GetKeyDown();
         }
 
-        public static Vector3d projectOnPlane(this Vector3d vector, Vector3d planeNormal)
+        public static Vector3d ProjectOnPlane(this Vector3d vector, Vector3d planeNormal)
         {
             return vector - Vector3d.Project(vector, planeNormal);
         }
 
-        public static double speedUnitTransform(SpeedUnits units, double soundSpeed)
+        public static double SpeedUnitTransform(SpeedUnits units, double soundSpeed)
         {
             switch (units)
             {
@@ -167,7 +179,7 @@ namespace PilotAssistant.Utility
             }
         }
 
-        public static string unitString(SpeedUnits unit)
+        public static string UnitString(SpeedUnits unit)
         {
             switch(unit)
             {
@@ -189,39 +201,50 @@ namespace PilotAssistant.Utility
         public static string TryGetValue(this ConfigNode node, string key, string defaultValue)
         {
             if (node.HasValue(key))
+            {
                 return node.GetValue(key);
+            }
+
             return defaultValue;
         }
 
         public static bool TryGetValue(this ConfigNode node, string key, bool defaultValue)
         {
-            bool val;
-            if (node.HasValue(key) && bool.TryParse(node.GetValue(key), out val))
+            if (node.HasValue(key) && bool.TryParse(node.GetValue(key), out bool val))
+            {
                 return val;
+            }
+
             return defaultValue;
         }
 
         public static int TryGetValue(this ConfigNode node, string key, int defaultValue)
         {
-            int val;
-            if (node.HasValue(key) && int.TryParse(node.GetValue(key), out val))
+            if (node.HasValue(key) && int.TryParse(node.GetValue(key), out int val))
+            {
                 return val;
+            }
+
             return defaultValue;
         }
 
         public static float TryGetValue(this ConfigNode node, string key, float defaultValue)
         {
-            float val;
-            if (node.HasValue(key) && float.TryParse(node.GetValue(key), out val))
+            if (node.HasValue(key) && float.TryParse(node.GetValue(key), out float val))
+            {
                 return val;
+            }
+
             return defaultValue;
         }
 
         public static double TryGetValue(this ConfigNode node, string key, double defaultValue)
         {
-            double val;
-            if (node.HasValue(key) && double.TryParse(node.GetValue(key), out val))
+            if (node.HasValue(key) && double.TryParse(node.GetValue(key), out double val))
+            {
                 return val;
+            }
+
             return defaultValue;
         }
 
@@ -231,7 +254,7 @@ namespace PilotAssistant.Utility
             {
                 try
                 {
-                    KeyCode val = (KeyCode)System.Enum.Parse(typeof(KeyCode), node.GetValue(key));
+                    var val = (KeyCode)System.Enum.Parse(typeof(KeyCode), node.GetValue(key));
                     return val;
                 }
                 catch { }
@@ -241,18 +264,10 @@ namespace PilotAssistant.Utility
 
         public static Rect TryGetValue(this ConfigNode node, string key, Rect defaultValue)
         {
-            if (node.HasValue(key))
+            var val = new Rect();
+            if (node.TryGetValue(key, ref val))
             {
-                string[] stringVals = node.GetValue(key).Split(',').Select(s => s.Trim( new char[] {' ', '(', ')' })).ToArray();
-                if (stringVals.Length != 4)
-                    return defaultValue;
-                float x = 0, y = 0, w = 0, h = 0;
-                if (!float.TryParse(stringVals[0].Substring(2), out x) || !float.TryParse(stringVals[1].Substring(2), out y) || !float.TryParse(stringVals[2].Substring(6), out w) || !float.TryParse(stringVals[3].Substring(7), out h))
-                {
-                    LogError($"{x}, {y}, {w}, {h}");
-                    return defaultValue;
-                }
-                return new Rect(x, y, w, h);
+                return val;
             }
             return defaultValue;
         }
@@ -264,7 +279,7 @@ namespace PilotAssistant.Utility
 
         public static void Log(string format, params object[] args)
         {
-            Debug.LogFormat($"[Pilot Assistant] {format}", args);
+            Log(string.Format(format, args));
         }
 
         public static void LogWarn(object obj)
@@ -274,7 +289,7 @@ namespace PilotAssistant.Utility
 
         public static void LogWarn(string format, params object[] args)
         {
-            Debug.LogWarningFormat($"[Pilot Assistant] {format}", args);
+            LogWarn(string.Format(format, args));
         }
 
         public static void LogError(object obj)
@@ -284,7 +299,7 @@ namespace PilotAssistant.Utility
 
         public static void LogError(string format, params object[] args)
         {
-            Debug.LogErrorFormat($"[Pilot Assistant] {format}", args);
+            LogError(string.Format(format, args));
         }
     }
 }

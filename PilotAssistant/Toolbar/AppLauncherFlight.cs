@@ -12,7 +12,10 @@
             get
             {
                 if (instance == null)
+                {
                     instance = new AppLauncherFlight();
+                }
+
                 return instance;
             }
         }
@@ -50,12 +53,16 @@
             PilotAssistantFlightCore.bDisplayAssistant = false;
         }
 
-        public static void setBtnState(bool state, bool click = false)
+        public static void SetBtnState(bool state, bool click = false)
         {
             if (state)
+            {
                 btnLauncher.SetTrue(click);
+            }
             else
+            {
                 btnLauncher.SetFalse(click);
+            }
         }
     }
 }
