@@ -12,20 +12,15 @@ namespace PilotAssistant
     [KSPAddon(KSPAddon.Startup.MainMenu, true)]
     public class PresetManager : MonoBehaviour
     {
-        private static PresetManager instance;
         public static PresetManager Instance
         {
-            get
-            {
-                return instance;
-            }
+            get;
+            private set;
         }
 
         //
         // A list of all the loaded PA presets and the one currently loaded
         public List<AsstPreset> AsstPresetList = new List<AsstPreset>();
-        [Obsolete("Need to move this inside the PA class as can be done per instance", true)]
-        public AsstPreset activeAsstPreset = null;
 
         //
         // stores all craft presets by name
@@ -77,7 +72,7 @@ namespace PilotAssistant
         public void Start()
         {
             // only ever a single instance of this class created upon reaching the main menu for the first time
-            instance = this;
+            Instance = this;
             // make sure that instance is never recovered while loading
             DontDestroyOnLoad(this);
             // load preset data saved from a previous time
@@ -99,7 +94,7 @@ namespace PilotAssistant
             foreach (ConfigNode node in GameDatabase.Instance.GetConfigNodes(asstPresetNodeName)) // want to move this outside GameDatabase at some point
             {
                 string name = node.GetValue("name");
-                if (ReferenceEquals(node, null) || instance.AsstPresetList.Any(p => p.name == name))
+                if (ReferenceEquals(node, null) || Instance.AsstPresetList.Any(p => p.name == name))
                 {
                     continue;
                 }
@@ -159,13 +154,13 @@ namespace PilotAssistant
             var node = new ConfigNode();
             // dummy value is required incase nothing else will be added to the file. KSP doesn't like blank .cfg's
             node.AddValue("dummy", "do not delete me");
-            foreach (AsstPreset p in instance.AsstPresetList)
+            foreach (AsstPreset p in Instance.AsstPresetList)
             {
                 node.AddNode(AsstPresetToNode(p));
             }
 
             var vesselNode = new ConfigNode(craftPresetNodeName);
-            foreach (KeyValuePair<string, string> cP in instance.craftPresetDict)
+            foreach (KeyValuePair<string, string> cP in Instance.craftPresetDict)
             {
                 vesselNode.AddValue("pair", string.Concat(cP.Key, ",", cP.Value)); // pair = craft,preset
             }
@@ -433,8 +428,8 @@ namespace PilotAssistant
         /// <param name="instance">The instance to load for</param>
         public void LoadCraftAsstPreset(PilotAssistant instance)
         {
-            Utils.Log("loading preset for craft " + instance.Vessel.name);
-            Utils.Log(craftPresetDict.TryGetValue(instance.Vessel.vesselName, out string presetName) + " " + presetName);
+            Logger.Log("loading preset for craft " + instance.Vessel.name);
+            Logger.Log(craftPresetDict.TryGetValue(instance.Vessel.vesselName, out string presetName) + " " + presetName);
             if (craftPresetDict.TryGetValue(instance.Vessel.vesselName, out presetName))
             {
                 LoadAsstPreset(presetName, instance);

@@ -43,10 +43,10 @@ namespace PilotAssistant.FlightModules
             }
             catch (Exception ex)
             {
-                Utils.LogError("Startup error");
-                Utils.LogError(ex.Message);
-                Utils.LogError(ex.InnerException);
-                Utils.LogError(ex.StackTrace);
+                Logger.Log("Startup error", Logger.LogLevel.Error);
+                Logger.Log(ex.Message, Logger.LogLevel.Error);
+                Logger.Log(ex.InnerException, Logger.LogLevel.Error);
+                Logger.Log(ex.StackTrace, Logger.LogLevel.Error);
             }
         }
 

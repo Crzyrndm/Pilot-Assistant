@@ -271,35 +271,5 @@ namespace PilotAssistant.Utility
             }
             return defaultValue;
         }
-
-        public static void Log(object obj)
-        {
-            Debug.Log($"[Pilot Assistant] {obj.ToString()}");
-        }
-
-        public static void Log(string format, params object[] args)
-        {
-            Log(string.Format(format, args));
-        }
-
-        public static void LogWarn(object obj)
-        {
-            Debug.LogWarning($"[Pilot Assistant] {obj.ToString()}");
-        }
-
-        public static void LogWarn(string format, params object[] args)
-        {
-            LogWarn(string.Format(format, args));
-        }
-
-        public static void LogError(object obj)
-        {
-            Debug.LogError($"[Pilot Assistant] {obj.ToString()}");
-        }
-
-        public static void LogError(string format, params object[] args)
-        {
-            LogError(string.Format(format, args));
-        }
     }
 }

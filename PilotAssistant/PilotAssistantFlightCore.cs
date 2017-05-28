@@ -141,12 +141,12 @@ namespace PilotAssistant
                 }
                 else
                 {
-                    Utils.LogError("Failed to create settings node");
+                    Logger.Log("Failed to create settings node", Logger.LogLevel.Error);
                 }
             }
             catch
             {
-                Utils.LogError("Config load failed");
+                Logger.Log("Config load failed", Logger.LogLevel.Error);
             }
         }
 
@@ -200,7 +200,7 @@ namespace PilotAssistant
             }
             catch
             {
-                Utils.LogError("Pilot Assistant save failed");
+                Logger.Log("Pilot Assistant save failed", Logger.LogLevel.Error);
             }
         }
 
